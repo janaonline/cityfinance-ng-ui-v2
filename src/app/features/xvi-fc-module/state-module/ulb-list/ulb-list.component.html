@@ -1,0 +1,174 @@
+<div class="container-fluid">
+  <h3 class="fw-bold my-4">ULB Registration</h3>
+
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <form class="d-flex flex-wrap align-items-end" (ngSubmit)="onSearchChange()">
+      <div class="mb-2">
+        <label for="ulbSearch" class="visually-hidden">Search</label>
+        <input
+          type="text"
+          class="form-control"
+          id="ulbSearch"
+          placeholder="Search by name or code"
+          name="search"
+          [(ngModel)]="search"
+          (ngModelChange)="onSearchChange()"
+        />
+      </div>
+      @if (showStateFilter) {
+        <div class="mx-sm-3 mb-2">
+          <label for="ulbStateFilter" class="visually-hidden">State</label>
+          <select
+            class="form-select"
+            id="ulbStateFilter"
+            name="stateFilter"
+            [(ngModel)]="stateFilter"
+            (ngModelChange)="onSearchChange()"
+          >
+            <option value="">All States</option>
+            @for (state of states; track state._id) {
+              <option [value]="state._id">{{ state.name }}</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="mx-sm-3 mb-2">
+        <label for="ulbApprovalStatusFilter" class="visually-hidden">Approval status</label>
+        <select
+          class="form-select"
+          id="ulbApprovalStatusFilter"
+          name="approvalStatusFilter"
+          [(ngModel)]="approvalStatusFilter"
+          (ngModelChange)="onSearchChange()"
+        >
+          <option value="">All Statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+          <option value="EXISTING">Existing ULB</option>
+        </select>
+      </div>
+      <div class="mx-sm-3 mb-2">
+        <label for="ulbActiveFilter" class="visually-hidden">Active status</label>
+        <select
+          class="form-select"
+          id="ulbActiveFilter"
+          name="activeStatusFilter"
+          [(ngModel)]="activeStatusFilter"
+          (ngModelChange)="onSearchChange()"
+        >
+          <option value="">All ULBs</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <button type="submit" class="btn btn-cfPrimary me-2">Search</button>
+        <button type="button" class="btn btn-outline-secondary" (click)="clearFilters()">Clear</button>
+      </div>
+    </form>
+
+    @if (canCreate) {
+      <a class="btn btn-cfPrimary" [routerLink]="['../register-ulb']">Create ULB</a>
+    }
+  </div>
+  <mat-card class="custom-mat-card mat-elevation-z1">
+    <div class="table-container mat-elevation-z8 mb-4">
+      @if (dataSource.data.length <= 0) {
+        <p class="text-center p-2 mt-2">No ULBs found for the selected filters.</p>
+      } @else {
+        <table mat-table [dataSource]="dataSource">
+          <ng-container matColumnDef="serialNo">
+            <th mat-header-cell *matHeaderCellDef>S.No</th>
+            <td mat-cell *matCellDef="let element; let i = index">{{ pageIndex * pageSize + i + 1 }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold">{{ element.code }}</span>
+                <i
+                  class="bi"
+                  [title]="element.isActive ? 'Active' : 'Inactive'"
+                  [class.bi-check-circle-fill]="element.isActive"
+                  [class.text-success]="element.isActive"
+                  [class.bi-x-circle-fill]="!element.isActive"
+                  [class.text-danger]="!element.isActive"
+                ></i>
+              </div>
+              <div>{{ element.name }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="district">
+            <th mat-header-cell *matHeaderCellDef>District</th>
+            <td mat-cell *matCellDef="let element">{{ element.district }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="state">
+            <th mat-header-cell *matHeaderCellDef>State</th>
+            <td mat-cell *matCellDef="let element">{{ element.stateName || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="ulbType">
+            <th mat-header-cell *matHeaderCellDef>ULB Type</th>
+            <td mat-cell *matCellDef="let element">{{ element.ulbTypeName || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="approvalStatus">
+            <th mat-header-cell *matHeaderCellDef>Approval</th>
+            <td mat-cell *matCellDef="let element">
+              <span
+                class="badge rounded-pill status-badge"
+                [class.text-bg-warning]="element.approval?.status === 'PENDING'"
+                [class.text-bg-success]="
+                  !element.isExistingUser && (!element.approval || element.approval.status === 'APPROVED')
+                "
+                [class.text-bg-danger]="element.approval?.status === 'REJECTED'"
+                [class.text-bg-secondary]="element.isExistingUser"
+                [class.cursor-pointer]="element.approval?.status === 'REJECTED'"
+                [title]="element.approval?.status === 'REJECTED' ? 'Click to view reject reason' : ''"
+                (click)="showRejectReason(element)"
+              >
+                {{ element.isExistingUser ? 'Existing ULB' : (element.approval?.status ?? 'APPROVED') }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="d-flex justify-content-center gap-2">
+                @if (isAdmin && element.approval?.status === 'PENDING') {
+                  <button class="btn btn-cfPrimary btn-sm" title="Review" (click)="openReviewDialog(element)">
+                    Review
+                  </button>
+                }
+                @if (isState && element.approval?.status === 'REJECTED') {
+                  <button class="btn btn-outline-cfPrimary btn-sm" title="Edit" (click)="openEditDialog(element)">
+                    Edit
+                  </button>
+                }
+                <button class="btn btn-outline-secondary btn-sm" title="View" (click)="openViewDialog(element)">
+                  View
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      }
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[10, 25, 50]"
+        (page)="onPageChange($event)"
+      ></mat-paginator>
+    </div>
+  </mat-card>
+</div>

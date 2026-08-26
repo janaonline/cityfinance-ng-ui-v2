@@ -1,0 +1,15 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.shared-mat-table;
+}
+
+// .table-container {
+//   position: relative;
+//   max-height: 110vh;
+//   overflow: auto;
+// }
+
+// table {
+//   width: 100%;
+// }

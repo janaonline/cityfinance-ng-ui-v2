@@ -1,0 +1,34 @@
+<div class="container-fluid register-ulb-page">
+  <a class="back-link d-inline-flex align-items-center gap-1 text-decoration-none mb-2" [routerLink]="['../ulb-list']">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to ULB list
+  </a>
+  <h3 class="fw-bold mb-4">Register New ULB</h3>
+
+  @if (form) {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      @if (!isProduction) {
+        <div class="d-flex justify-content-end mb-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="fillTestData()"
+            data-cy="register-ulb-fill-test-data-test"
+          >
+            <i class="bi bi-magic"></i>
+            Fill test data
+          </button>
+        </div>
+      }
+
+      <app-form-section-grid [sections]="sections" [group]="form"></app-form-section-grid>
+
+      <div class="d-flex align-items-center flex-wrap gap-3 mt-2 mb-4">
+        <button type="submit" class="btn btn-cfPrimary d-inline-flex align-items-center gap-2">
+          Submit to Admin for Approval <i class="bi bi-arrow-right" aria-hidden="true"></i>
+        </button>
+        <span class="text-body-secondary small">Admin will review and activate the ULB.</span>
+        <button type="button" class="btn btn-outline-cfPrimary" (click)="goBack()">Cancel</button>
+      </div>
+    </form>
+  }
+</div>

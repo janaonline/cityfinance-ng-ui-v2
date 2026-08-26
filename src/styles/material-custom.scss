@@ -1,0 +1,82 @@
+// Confirm dialog button color variants.
+// Uses CSS custom property tokens because the CDK overlay renders outside the
+// Angular component tree, making ViewEncapsulation-scoped styles ineffective.
+//
+// Angular Material 20 filled buttons (.mat-mdc-unelevated-button) read:
+//   background-color: var(--mat-button-filled-container-color, var(--mat-sys-primary))
+//   color:            var(--mat-button-filled-label-text-color, var(--mat-sys-on-primary))
+//
+// A class selector (specificity 0,1,0) beats the html element selector (0,0,1)
+// used by mat.theme(), so these overrides reliably win without !important.
+.confirm-dialog-btn--warn {
+  --mat-button-filled-container-color: var(--mat-sys-error, #b91c1c);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error, #ffffff);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error, #ffffff);
+  --mat-button-filled-ripple-color: color-mix(in srgb, var(--mat-sys-on-error, #ffffff) 12%, transparent);
+}
+
+.confirm-dialog-btn--accent {
+  --mat-button-filled-container-color: var(--mat-sys-tertiary, #7d5260);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-tertiary, #ffffff);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-tertiary, #ffffff);
+  --mat-button-filled-ripple-color: color-mix(in srgb, var(--mat-sys-on-tertiary, #ffffff) 12%, transparent);
+}
+
+// Borderless image lightbox (Document Upload Guide). The CDK overlay renders
+// the dialog container outside the Angular component tree, so this can't live
+// in ImageLightboxDialogComponent's own (view-encapsulated) stylesheet.
+.image-lightbox-panel .mdc-dialog__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.image-lightbox-backdrop {
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.custom-snackbar-success {
+  --mat-snackbar-container-color: green;
+  --mat-mdc-snack-bar-button-color: white;
+}
+
+// Snackbar.
+.snackbar-success {
+  --mat-snack-bar-container-color: #2e7d32;
+}
+
+.snackbar-danger {
+  --mat-snack-bar-container-color: #c62828;
+}
+
+.snackbar-warn {
+  --mat-snack-bar-container-color: #f9a825;
+}
+
+// .mdc-button .mdc-button__label {
+//   color: #fff;
+// }
+
+// .mat-mdc-form-field-hint-wrapper,
+// .mat-mdc-form-field-error-wrapper {
+//   padding: 0 5px !important;
+// }
+
+// .mat-mdc-form-field-hint-wrapper {
+//   position: relative !important;
+//   top: -20px !important;
+// }
+
+// .mat-mdc-tab-header {
+//   --mat-tab-label-text-font: var(--ff-base);
+//   --mat-tab-label-text-size: 14px;
+//   --mat-tab-label-text-tracking: 0.0892857143em;
+//   --mat-tab-label-text-line-height: 36px;
+//   --mat-tab-label-text-weight: 500;
+// }
+
+// .mat-mdc-menu-item-text {
+//   --mat-menu-item-label-text-font: var(--ff-base);
+// }

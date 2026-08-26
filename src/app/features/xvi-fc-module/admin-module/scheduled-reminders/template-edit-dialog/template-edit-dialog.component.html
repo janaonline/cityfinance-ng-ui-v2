@@ -1,0 +1,105 @@
+<div class="edit-dialog">
+
+  <!-- Header -->
+  <div mat-dialog-title class="d-flex align-items-center gap-2 px-1">
+    <mat-icon class="text-primary">{{ isCreateMode ? 'add_circle' : 'edit_note' }}</mat-icon>
+    <span class="fw-semibold">{{ dialogTitle }}</span>
+    @if (!isCreateMode && data.template?.slug) {
+      <span class="badge bg-light text-secondary ms-auto font-monospace fw-normal small">{{ data.template?.slug }}</span>
+    }
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content class="py-2">
+
+    @if (saveError()) {
+      <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-3 small">
+        <mat-icon style="font-size:16px;width:16px;height:16px;">error_outline</mat-icon>
+        {{ saveError() }}
+      </div>
+    }
+
+    <form [formGroup]="form" class="d-flex flex-column gap-3">
+
+      <!-- Name -->
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Template Name</mat-label>
+        <input matInput formControlName="name" />
+        @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+          <mat-error>Required</mat-error>
+        }
+        @if (form.get('name')?.hasError('maxlength')) {
+          <mat-error>Max 120 characters</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Slug -->
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Slug</mat-label>
+        <input matInput formControlName="slug" />
+        <mat-hint>Lowercase letters, numbers and hyphens only</mat-hint>
+        @if (form.get('slug')?.hasError('required') && form.get('slug')?.touched) {
+          <mat-error>Required</mat-error>
+        }
+        @if (form.get('slug')?.hasError('pattern') && form.get('slug')?.touched) {
+          <mat-error>Only a–z, 0–9 and hyphens allowed</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Subject -->
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Subject</mat-label>
+        <input matInput formControlName="subject" />
+        @if (form.get('subject')?.hasError('required') && form.get('subject')?.touched) {
+          <mat-error>Required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Body -->
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Body (HTML)</mat-label>
+        <textarea matInput formControlName="body" rows="7" class="font-monospace small"></textarea>
+        <mat-hint>Supports HTML. Variables: name, fy, deadline, dashboardUrl</mat-hint>
+        @if (form.get('body')?.hasError('required') && form.get('body')?.touched) {
+          <mat-error>Required</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Active toggle -->
+      <div class="d-flex align-items-center gap-3 py-1">
+        <mat-slide-toggle formControlName="isActive" color="primary">Active</mat-slide-toggle>
+        <span class="text-muted small">
+          {{ form.get('isActive')?.value ? 'Template is enabled and available for use' : 'Template is disabled' }}
+        </span>
+      </div>
+
+    </form>
+
+    <!-- HTML Preview -->
+    <div class="mt-3">
+      <button mat-stroked-button type="button" (click)="togglePreview()" class="btn-sm">
+        <mat-icon style="font-size:16px;width:16px;height:16px;">
+          {{ showPreview() ? 'visibility_off' : 'visibility' }}
+        </mat-icon>
+        {{ showPreview() ? 'Hide Preview' : 'Show HTML Preview' }}
+      </button>
+
+      @if (showPreview()) {
+        <div class="border rounded p-3 mt-2 bg-light small lh-base tpl-preview" [innerHTML]="preview"></div>
+      }
+    </div>
+
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions align="end" class="gap-2 px-4 pb-3">
+    <button mat-stroked-button (click)="onCancel()" [disabled]="saving()">Cancel</button>
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="saving() || form.invalid">
+      @if (saving()) {
+        <mat-progress-spinner diameter="16" mode="indeterminate"></mat-progress-spinner>
+      }
+      {{ saving() ? savingText : saveText }}
+    </button>
+  </mat-dialog-actions>
+
+</div>

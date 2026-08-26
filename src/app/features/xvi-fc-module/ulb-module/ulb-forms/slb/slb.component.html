@@ -1,0 +1,121 @@
+<!-- <div class="component-shell"> -->
+  <!-- <div class="form-container"> -->
+    <div class="top-accent"></div>
+
+    <section class="p-3 p-md-4">
+      <div class="content-stack d-flex flex-column gap-4">
+        <div>
+          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+            16th Finance Commission
+            @if (ulbName()) {
+              &nbsp;&middot;&nbsp; {{ ulbName() }}
+            }
+          </div>
+
+          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+            <h1 class="page-title mb-2">Service Level Benchmarks</h1>
+            @if (currentFormStatusLabel()) {
+              <span class="status-pill small fw-semibold">{{ currentFormStatusLabel() }}</span>
+            }
+          </div>
+
+          <p class="page-subtitle text-secondary mb-0">
+            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
+            and storm water indicators.
+          </p>
+        </div>
+
+        <hr class="my-0 text-body-tertiary" />
+
+        @if (isLoading()) {
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+          <app-pre-loader></app-pre-loader>
+        } @else if (hasLoadError()) {
+          <app-page-error-state
+            title="Failed to load SLB form"
+            message="We couldn't reach the server. Please check your connection and try again."
+            (retry)="retryLoadForm()"
+          />
+        } @else {
+          @if (!isProduction && canEdit()) {
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                (click)="fillTestData()"
+                data-cy="slb-fill-test-data-test"
+              >
+                <i class="bi bi-magic"></i>
+                Fill test data
+              </button>
+            </div>
+          }
+
+          <form class="content-body" (submit)="$event.preventDefault()">
+            <app-slb-form-body
+              [form]="form"
+              [fields]="visibleFields()"
+              [mode]="canEdit() ? 'edit' : 'view'"
+              [actualYearLabel]="actualYearLabel()"
+              [targetYearLabel]="yearLabel()"
+            ></app-slb-form-body>
+          </form>
+        }
+      </div>
+    </section>
+
+    <!-- Show acknowledgement section only if edit + finalSubmit is true -->
+    @if (canEdit() || canFinalSubmit()) {
+      <div class="acknowledgement">
+        <div class="acknowledgement-inner">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onCancel()"
+            data-cy="slb-cancel-test"
+          >
+            <i class="bi bi-x-circle-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Cancel</span>
+          </button>
+
+          <button
+            type="submit"
+            matButton="filled"
+            [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+            (click)="onSubmit('saveAsDraft')"
+            data-cy="slb-submit-test"
+          >
+            @if (isSavingDraft()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="d-none d-md-inline">Saving...</span>
+            } @else {
+              <i class="bi bi-bookmark-check-fill d-md-none"></i>
+              <span class="d-none d-md-inline">Save as Draft</span>
+            }
+          </button>
+
+          <!-- Show submit button only if finalSubmit = true -->
+          @if (canFinalSubmit()) {
+            <button
+              type="button"
+              matButton="filled"
+              [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+              (click)="onSubmit('finalSubmit')"
+              data-cy="slb-final-submit-test"
+            >
+              @if (isFinalSubmitting()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Submitting...</span>
+              } @else {
+                <i class="bi bi-send-check-fill d-md-none"></i>
+                <span class="d-none d-md-inline">Submit to State DMA</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  <!-- </div>
+</div> -->

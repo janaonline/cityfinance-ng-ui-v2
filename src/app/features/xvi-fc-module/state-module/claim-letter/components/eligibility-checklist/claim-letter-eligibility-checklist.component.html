@@ -1,0 +1,81 @@
+@if (sources().length) {
+  <div class="d-flex flex-column gap-2" data-cy="claim-letter-eligibility-checklist">
+    @if (stateSources().length) {
+      @if (allPassing()) {
+        <div class="d-flex align-items-center justify-content-between gap-2">
+          <span class="text-success">
+            <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
+            All state eligibility criteria met ({{ stateSources().length }}/{{ stateSources().length }})
+          </span>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            (click)="toggleExpanded()"
+            data-cy="claim-letter-eligibility-checklist-toggle"
+          >
+            {{ expanded() ? 'Hide details' : 'Show details' }}
+          </button>
+        </div>
+      }
+
+      @if (expanded()) {
+        <ul class="list-unstyled mb-0 d-flex flex-column gap-2" data-cy="claim-letter-eligibility-checklist-items">
+          @for (source of stateSources(); track source.formType) {
+            <li class="d-flex align-items-start gap-2 small">
+              @if (source.result === 'PASSED') {
+                <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1" aria-hidden="true"></i>
+              } @else if (source.result === 'EXEMPTED') {
+                <i class="bi bi-shield-check text-primary flex-shrink-0 mt-1" aria-hidden="true"></i>
+              } @else {
+                <i class="bi bi-x-circle-fill text-danger flex-shrink-0 mt-1" aria-hidden="true"></i>
+              }
+              <span>
+                <span class="fw-semibold">{{ describeLabel(source) }}</span>
+                @if (source.result === 'EXEMPTED') {
+                  <span class="badge text-bg-primary ms-1">Exempted</span>
+                }
+                <br />
+                <span class="text-secondary">{{ describeDescription(source) }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @if (ulbOnlySources().length) {
+      <hr class="my-0 text-body-tertiary" />
+      @if (ulbAllPassing()) {
+        <div class="d-flex align-items-center justify-content-between gap-2">
+          <span class="text-primary">
+            <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
+            ULB Submission Status ({{ ulbReadiness().eligible }}/{{ ulbReadiness().total }})
+          </span>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            (click)="toggleUlbExpanded()"
+            data-cy="claim-letter-eligibility-checklist-ulb-toggle"
+          >
+            {{ ulbExpanded() ? 'Hide details' : 'Show details' }}
+          </button>
+        </div>
+      }
+
+      @if (ulbExpanded()) {
+        <ul class="list-unstyled mb-0 d-flex flex-column gap-2" data-cy="claim-letter-eligibility-checklist-ulb-items">
+          @for (source of ulbOnlySources(); track source.formType) {
+            <li class="d-flex align-items-start gap-2 small">
+              <i class="bi bi-info-circle-fill text-primary flex-shrink-0 mt-1" aria-hidden="true"></i>
+              <span>
+                <span class="fw-semibold">{{ describeLabel(source) }}</span>
+                <br />
+                <span class="text-secondary">{{ describeDescription(source) }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+}

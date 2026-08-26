@@ -1,0 +1,118 @@
+@use '../../styles/page-shell' as shell;
+
+:host {
+  display: block;
+}
+
+.dug-page-title {
+  @include shell.xvifc-page-title-typography;
+}
+
+.dug-page-subtitle {
+  @include shell.xvifc-page-subtitle-typography;
+}
+
+.dug-section-card {
+  @include shell.xvifc-section-card-padding;
+}
+
+// Small-caps "N. SECTION NAME" label used in the reference design — distinct
+// from the FAQ page's bold black section headings.
+.dug-section-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #667085;
+  margin: 0 0 0.5rem;
+}
+
+.dug-lead {
+  font-size: 0.95rem;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.dug-section-card > p:not(.dug-lead) {
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.dug-dash-list {
+  list-style-type: '– ';
+  padding-left: 1.25rem;
+  margin: 0;
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.7;
+
+  li {
+    padding-left: 0.25rem;
+  }
+}
+
+.dug-steps {
+  padding-left: 1.25rem;
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.8;
+}
+
+// Reference images render as small thumbnails, not full-width banners — cap
+// them well below the card's width and let the card's remaining space stay empty.
+.dug-figure {
+  margin: 0;
+  max-width: 420px;
+}
+
+.dug-figure-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+
+  .dug-figure {
+    flex: 1 1 260px;
+    min-width: 0;
+    max-width: 420px;
+  }
+}
+
+.dug-figure-trigger {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: box-shadow 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+  }
+}
+
+.dug-figure-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+.dug-caption {
+  margin-top: 0.6rem;
+  color: #667085;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dug-help-box {
+  @include shell.xvifc-help-box;
+}
+
+.dug-help-title {
+  @include shell.xvifc-help-title-typography;
+}

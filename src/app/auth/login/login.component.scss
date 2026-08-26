@@ -1,7 +1,399 @@
-// .divider:after,
-// .divider:before {
-// content: "";
-// flex: 1;
-// height: 1px;
-// background: #eee;
-// }
+@use '../../features/xvi-fc-module/styles/xvi-fc-theme' as theme;
+
+// ─── Host ─────────────────────────────────────────────────────────────────────
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  // Row stretches to fill the full viewport height
+  > .row {
+    flex: 1;
+    min-height: 100vh;
+  }
+}
+
+// ─── Right panel — sticky so the card never moves when the left side grows ────
+
+.login-right {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  align-self: flex-start;
+}
+
+// ─── Left panel gradient + top accent line ────────────────────────────────────
+
+.login-left {
+  @include theme.grant-band-tokens;
+  @include theme.grant-band-surface;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(29, 201, 211, 0.55) 30%,
+      rgba(45, 212, 191, 0.85) 70%,
+      transparent
+    );
+    z-index: 2;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    @include theme.grant-band-dot-pattern;
+  }
+}
+
+// ─── Brand logo (rgba colors + specific sizing) ────────────────────────────────
+
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #2dd4bf;
+
+  i {
+    font-size: 15px;
+    line-height: 1;
+  }
+}
+
+// ─── Hero title (clamp sizing + custom tracking) ──────────────────────────────
+
+.hero-title {
+  font-size: clamp(24px, 3.5vw, 34px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+// ─── Hero description (rgba text + link colors on dark background) ─────────────
+
+.hero-desc {
+  font-size: 14px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.62);
+
+  a {
+    color: #2dd4bf;
+    text-decoration-color: rgba(45, 212, 191, 0.4);
+    &:hover {
+      color: #6eecec;
+    }
+  }
+
+  &--dim {
+    color: rgba(255, 255, 255, 0.42);
+  }
+}
+
+// ─── Stat cards (glassmorphism — rgba Bootstrap can't compose this) ────────────
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.stat-card__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  i {
+    font-size: 14px;
+    line-height: 1;
+  }
+}
+
+.stats-grid > .col-6:nth-child(1) .stat-card__icon {
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.15);
+}
+.stats-grid > .col-6:nth-child(2) .stat-card__icon {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+}
+.stats-grid > .col-6:nth-child(3) .stat-card__icon {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+}
+.stats-grid > .col-6:nth-child(4) .stat-card__icon {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+}
+
+.stat-card__value {
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.stat-card__label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
+// ─── Resource buttons (Material stroked on dark bg — needs rgba overrides) ─────
+
+.res-btn {
+  height: 40px;
+  padding: 0 18px !important;
+  border-radius: 8px !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.32) !important;
+    color: #ffffff !important;
+  }
+}
+
+// ─── Document items (rgba colors on dark bg) ──────────────────────────────────
+
+.doc-item {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  min-width: 0;
+  &:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+}
+
+.doc-icon {
+  width: 34px;
+  height: 34px;
+  background: rgba(45, 212, 191, 0.14);
+  i {
+    color: #2dd4bf;
+    font-size: 16px;
+  }
+}
+
+// ─── Role grid — d-grid gap-2 applied via HTML; only fc columns stay here ──────
+
+// ─── Role card (only properties Bootstrap can't express) ─────────────────────
+// Layout (d-flex flex-column align-items-center justify-content-center),
+// position-relative, overflow-hidden, bg-white are applied via HTML classes.
+
+.role-card {
+  min-height: 88px;
+  border: 1.5px solid #dce7ea;
+  border-radius: 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s,
+    background 0.2s;
+
+  &:hover:not(.role-card--disabled) {
+    transform: translateY(-2px);
+    border-color: #aac5cb;
+    box-shadow: 0 6px 20px rgba(8, 44, 53, 0.08);
+  }
+  &--active {
+    border-color: #2dd4bf;
+    background: #f0fdfa;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+  }
+  &--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f6f8f9;
+  }
+}
+
+// ─── Per-role icon (custom brand palette — can't use Bootstrap color utilities) ──
+// d-inline-flex align-items-center justify-content-center applied via HTML.
+
+.role-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  i {
+    font-size: 14px;
+  }
+
+  &--ulb {
+    color: #347d7f;
+    background: #e6f3f1;
+  }
+  &--state {
+    color: #3f77d8;
+    background: #eaf1fe;
+  }
+  &--mohua {
+    color: #d37b48;
+    background: #fff1e8;
+  }
+  &--doe {
+    color: #88979c;
+    background: #eef2f3;
+  }
+  &--inst {
+    color: #6d5bd0;
+    background: #f0edff;
+  }
+}
+
+// ─── Enhanced FC role grid (15thFC and 16thFC) — all 5 in one row ────────────
+
+.role-grid--fc {
+  grid-template-columns: repeat(5, 1fr);
+
+  .role-card {
+    min-height: 96px;
+    border-radius: 12px;
+    padding: 12px 4px 10px;
+    gap: 7px;
+    transition:
+      transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.22s,
+      border-color 0.22s,
+      background 0.22s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      transition: background 0.22s;
+    }
+
+    &:hover:not(.role-card--disabled):not(.role-card--active) {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(8, 44, 53, 0.1);
+      &::after {
+        background: rgba(45, 212, 191, 0.4);
+      }
+    }
+  }
+
+  .role-card__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    i {
+      font-size: 17px;
+    }
+  }
+
+  .role-card__label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1a3c42;
+    line-height: 1.25;
+  }
+}
+
+// ─── Role card check badge (animated, absolutely positioned) ───────────────────
+// rounded-circle, d-inline-flex, align-items-center, justify-content-center in HTML.
+
+.role-card__check {
+  top: 7px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  background: #2dd4bf;
+  animation: check-pop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  i {
+    font-size: 10px;
+    color: #fff;
+    line-height: 1;
+  }
+}
+
+@keyframes check-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// ─── Help card background (Bootstrap bg-light is too light) ───────────────────
+
+.help-card {
+  background: #edf4f5;
+  border: 1px solid #d5e4e6;
+  border-radius: 10px;
+}
+
+// ─── Step slide animations ────────────────────────────────────────────────────
+
+.step-pane--enter-right {
+  animation: step-slide-in-right 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.step-pane--enter-left {
+  animation: step-slide-in-left 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes step-slide-in-right {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes step-slide-in-left {
+  from {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+// ─── Responsive (role-grid breakpoints only — layout handled by Bootstrap) ─────
+
+@media (max-width: 480px) {
+  .role-grid--fc {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+}

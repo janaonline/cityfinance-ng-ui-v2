@@ -1,0 +1,1030 @@
+<div class="pv-page xvifc-theme">
+  <div class="container-xl py-4">
+    <div class="row g-4 align-items-stretch">
+      <!-- ══ LEFT SIDEBAR ════════════════════════════════════════════ -->
+      <div class="col-lg-4">
+        <div class="pv-sidebar h-100">
+          <span class="pv-sidebar__label">16<sup>th</sup> Finance Commission · Grant Portal</span>
+
+          @if (role === 'ulb') {
+            @if (entityDetails(); as ed) {
+              <h2 class="pv-sidebar__name">{{ ed.name || '—' }}</h2>
+              <div class="pv-sidebar__meta">
+                @if (ed.ulbCode) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">ULB Code</span>
+                    <span class="pv-meta-val">{{ ed.ulbCode }}</span>
+                  </div>
+                }
+                @if (ed.ulbType) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">Type</span>
+                    <span class="pv-meta-val">{{ ed.ulbType }}</span>
+                  </div>
+                }
+                @if (ed.stateName) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">State</span>
+                    <span class="pv-meta-val">{{ ed.stateName }}</span>
+                  </div>
+                }
+                @if (ed.censusCode) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">Census Code</span>
+                    <span class="pv-meta-val">{{ ed.censusCode }}</span>
+                  </div>
+                }
+              </div>
+            }
+          } @else {
+            @if (stateProfile(); as sp) {
+              <h2 class="pv-sidebar__name">{{ sp.name || '—' }}</h2>
+              <div class="pv-sidebar__meta">
+                @if (sp.designation) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">Designation</span>
+                    <span class="pv-meta-val">{{ sp.designation }}</span>
+                  </div>
+                }
+                @if (sp.email) {
+                  <div class="pv-meta-row">
+                    <span class="pv-meta-label">Email</span>
+                    <span class="pv-meta-val" style="word-break: break-all">{{ sp.email }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- ══ MAIN CONTENT ════════════════════════════════════════════ -->
+      <div class="col-lg-8">
+        <!-- ──────────────────────────────────────────────────────────
+             ULB FLOW
+        ─────────────────────────────────────────────────────────── -->
+        @if (role === 'ulb') {
+          @if (isLoading()) {
+            <div class="d-flex justify-content-center py-5">
+              <div class="spinner-border text-secondary" style="width: 1.5rem; height: 1.5rem" role="status">
+                <span class="visually-hidden">Loading…</span>
+              </div>
+            </div>
+          } @else if (loadError()) {
+            <app-page-error-state
+              title="Could not load contact details"
+              [message]="loadError()"
+              (retry)="retryLoad()"
+            />
+          } @else {
+            <h5 class="fw-bold mb-1">Verify your profile</h5>
+            <p class="text-muted small mb-4">
+              These contact details are from 15th Finance Commission records. Please make sure they are accurate -
+              official communications and verification codes for 16th FC grants will be sent to these addresses.
+            </p>
+            @if (errorMsg() && !otpStep()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            <!-- ── Municipal Commissioner card ─────────────────────── -->
+            <mat-card
+              appearance="outlined"
+              class="mb-3 pv-contact-card"
+              [class.pv-error-card]="commissionerForm.invalid"
+            >
+              <mat-card-header class="pv-card-header">
+                <span class="pv-card-icon"><i class="bi bi-person-vcard-fill"></i></span>
+                <mat-card-title class="pv-card-title">
+                  Municipal Commissioner / Executive Officer
+                  <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
+                </mat-card-title>
+                @if (!otpStep()) {
+                  @if (!editingCommissioner()) {
+                    <button
+                      mat-stroked-button
+                      class="ms-auto"
+                      style="height: 32px; font-size: 12px"
+                      (click)="openEditCommissioner()"
+                    >
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
+                    </button>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingCommissioner.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
+                }
+              </mat-card-header>
+              <mat-divider />
+
+              @if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
+                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mx-3 mt-3 mb-0 small">
+                  <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                  <span>
+                    <strong>Commissioner's email</strong> domain doesn't appear to accept mail. Check for a typo in
+                    the email address.
+                  </span>
+                </div>
+              }
+
+              @if (!editingCommissioner()) {
+                @if (
+                  commissionerForm.controls.commissionerName.invalid ||
+                  commissionerForm.controls.commissionerConatactNumber.invalid ||
+                  commissionerForm.controls.commissionerEmail.invalid
+                ) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i
+                      class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"
+                      style="font-size: 0.8rem"
+                      aria-hidden="true"
+                    ></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (!commissionerForm.value.commissionerName) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Name missing</span
+                        >
+                      } @else if (commissionerForm.controls.commissionerName.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Name invalid</span
+                        >
+                      }
+                      @if (!commissionerForm.value.commissionerEmail) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Email missing</span
+                        >
+                      } @else if (commissionerForm.controls.commissionerEmail.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Email invalid</span
+                        >
+                      }
+                      @if (!commissionerForm.value.commissionerConatactNumber) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Contact No missing</span
+                        >
+                      } @else if (commissionerForm.controls.commissionerConatactNumber.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Contact No invalid</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+                <mat-card-content class="p-0">
+                  <div class="row g-0 pv-field-row">
+                    <div class="col-sm-4 pv-field">
+                      <span class="pv-field-label"><i class="bi bi-person"></i>Name</span>
+                      <span class="pv-field-value" [class.text-muted]="!commissionerForm.value.commissionerName">
+                        {{ commissionerForm.value.commissionerName || '—' }}
+                      </span>
+                    </div>
+                    <div class="col-sm-4 pv-field pv-field-bordered">
+                      <span class="pv-field-label"><i class="bi bi-envelope"></i>Email ID</span>
+                      <span
+                        class="pv-field-value text-truncate d-block"
+                        [class.text-muted]="!commissionerForm.value.commissionerEmail"
+                      >
+                        {{ commissionerForm.value.commissionerEmail || '—' }}
+                      </span>
+                      @if (commissionerForm.controls.commissionerEmail.hasError('required')) {
+                        <p class="text-danger small mt-1 mb-0">Email address is required</p>
+                      } @else if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
+                        <p class="text-danger small mt-1 mb-0">
+                          This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                        </p>
+                      } @else if (commissionerForm.controls.commissionerEmail.invalid) {
+                        <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                      }
+                    </div>
+                    <div class="col-sm-4 pv-field pv-field-bordered">
+                      <span class="pv-field-label"><i class="bi bi-telephone"></i>Contact No</span>
+                      <span
+                        class="pv-field-value"
+                        [class.text-muted]="!commissionerForm.value.commissionerConatactNumber"
+                      >
+                        {{ commissionerForm.value.commissionerConatactNumber || '—' }}
+                      </span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              } @else {
+                <mat-card-content class="pt-3 pb-2">
+                  <form [formGroup]="commissionerForm" novalidate>
+                    <div class="row g-3">
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Name</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            formControlName="commissionerName"
+                            placeholder="Full name"
+                            maxlength="100"
+                            autocomplete="name"
+                          />
+                        </mat-form-field>
+                        @if (commissionerForm.controls.commissionerName.touched) {
+                          @if (commissionerForm.controls.commissionerName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Name is required</p>
+                          } @else if (commissionerForm.controls.commissionerName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Name cannot exceed 100 characters</p>
+                          } @else if (commissionerForm.controls.commissionerName.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
+                          } @else if (commissionerForm.controls.commissionerName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Name contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Email ID</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            type="email"
+                            formControlName="commissionerEmail"
+                            placeholder="email@example.com"
+                            autocomplete="email"
+                          />
+                        </mat-form-field>
+                        @if (commissionerForm.controls.commissionerEmail.touched) {
+                          @if (commissionerForm.controls.commissionerEmail.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Email address is required</p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('email')) {
+                            <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('domainMx')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                            </p>
+                          } @else if (commissionerForm.controls.commissionerEmail.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Contact No</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            type="tel"
+                            formControlName="commissionerConatactNumber"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="10-digit number"
+                            autocomplete="tel"
+                          />
+                        </mat-form-field>
+                        @if (commissionerForm.controls.commissionerConatactNumber.touched) {
+                          @if (commissionerForm.controls.commissionerConatactNumber.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Contact number is required</p>
+                          } @else if (commissionerForm.controls.commissionerConatactNumber.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9</p>
+                          }
+                        }
+                      </div>
+                    </div>
+                  </form>
+                </mat-card-content>
+              }
+            </mat-card>
+
+            <!-- ── ULB Nodal Officer card ──────────────────────────── -->
+            <mat-card
+              appearance="outlined"
+              class="mb-3 pv-contact-card"
+              [class.pv-error-card]="accountantForm.invalid"
+            >
+              <mat-card-header class="pv-card-header">
+                <span class="pv-card-icon"><i class="bi bi-patch-check-fill"></i></span>
+                <mat-card-title class="pv-card-title">
+                  ULB Nodal Officer
+                  <span class="pv-req-pill"><i class="bi bi-asterisk"></i>Required</span>
+                </mat-card-title>
+                @if (!otpStep()) {
+                  @if (!editingAccountant()) {
+                    <button
+                      mat-stroked-button
+                      class="ms-auto"
+                      style="height: 32px; font-size: 12px"
+                      (click)="openEditAccountant()"
+                    >
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
+                    </button>
+                  } @else {
+                    <!-- L3 — hint that Done does not save; Save & Continue is the actual save -->
+                    <div class="d-flex flex-column align-items-end ms-auto">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        style="height: 32px; font-size: 12px"
+                        (click)="editingAccountant.set(false)"
+                      >
+                        <i class="bi bi-check-lg me-1"></i> Done
+                      </button>
+                      <p class="mb-0 mt-1 text-muted" style="font-size: 11px">
+                        Saved when you click <strong>Save &amp; Continue</strong>
+                      </p>
+                    </div>
+                  }
+                }
+              </mat-card-header>
+              <mat-divider />
+
+              @if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
+                <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mx-3 mt-3 mb-0 small">
+                  <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                  <span>
+                    <strong>Nodal Officer's email</strong> domain doesn't appear to accept mail. Check for a typo in
+                    the email address.
+                  </span>
+                </div>
+              }
+
+              @if (!editingAccountant()) {
+                @if (accountantForm.invalid) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i
+                      class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"
+                      style="font-size: 0.8rem"
+                      aria-hidden="true"
+                    ></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (accountantForm.controls.accountantName.hasError('required')) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Name missing</span
+                        >
+                      } @else if (accountantForm.controls.accountantName.hasError('minlength')) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Name too short</span
+                        >
+                      } @else if (
+                        accountantForm.controls.accountantName.hasError('maxlength') ||
+                        accountantForm.controls.accountantName.hasError('pattern') ||
+                        accountantForm.controls.accountantName.hasError('unsafeInput')
+                      ) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Name invalid</span
+                        >
+                      }
+                      @if (accountantForm.controls.accountantEmail.hasError('required')) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Email missing</span
+                        >
+                      } @else if (
+                        accountantForm.controls.accountantEmail.hasError('email') ||
+                        accountantForm.controls.accountantEmail.hasError('maxlength') ||
+                        accountantForm.controls.accountantEmail.hasError('unsafeInput') ||
+                        accountantForm.controls.accountantEmail.hasError('domainMx')
+                      ) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Email invalid</span
+                        >
+                      }
+                      @if (accountantForm.controls.accountantConatactNumber.hasError('required')) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Contact No missing</span
+                        >
+                      } @else if (
+                        accountantForm.controls.accountantConatactNumber.hasError('pattern') ||
+                        accountantForm.controls.accountantConatactNumber.hasError('unsafeInput')
+                      ) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                          >Contact No invalid</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+                <mat-card-content class="p-0">
+                  <div class="row g-0 pv-field-row">
+                    <div class="col-sm-4 pv-field">
+                      <span class="pv-field-label"><i class="bi bi-person"></i>Name</span>
+                      <span class="pv-field-value" [class.text-muted]="!accountantForm.value.accountantName">
+                        {{ accountantForm.value.accountantName || 'Not provided' }}
+                      </span>
+                    </div>
+                    <div class="col-sm-4 pv-field pv-field-bordered">
+                      <span class="pv-field-label"><i class="bi bi-envelope"></i>Email ID</span>
+                      <span
+                        class="pv-field-value text-truncate d-block"
+                        [class.text-muted]="!accountantForm.value.accountantEmail"
+                      >
+                        {{ accountantForm.value.accountantEmail || 'Not provided' }}
+                      </span>
+                      @if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
+                        <p class="text-danger small mt-1 mb-0">
+                          This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                        </p>
+                      } @else if (
+                        accountantForm.controls.accountantEmail.invalid && accountantForm.value.accountantEmail
+                      ) {
+                        <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                      }
+                    </div>
+                    <div class="col-sm-4 pv-field pv-field-bordered">
+                      <span class="pv-field-label"><i class="bi bi-telephone"></i>Contact No</span>
+                      <span class="pv-field-value" [class.text-muted]="!accountantForm.value.accountantConatactNumber">
+                        {{ accountantForm.value.accountantConatactNumber || 'Not provided' }}
+                      </span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              } @else {
+                <mat-card-content class="pt-3 pb-1">
+                  <form [formGroup]="accountantForm" novalidate>
+                    <div class="row g-3">
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Name</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            formControlName="accountantName"
+                            placeholder="Full name"
+                            maxlength="100"
+                            autocomplete="name"
+                          />
+                        </mat-form-field>
+                        @if (accountantForm.controls.accountantName.touched) {
+                          @if (accountantForm.controls.accountantName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Name is required</p>
+                          } @else if (accountantForm.controls.accountantName.hasError('minlength')) {
+                            <p class="text-danger small mt-1 mb-0">Name must be at least 2 characters</p>
+                          } @else if (accountantForm.controls.accountantName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Name cannot exceed 100 characters</p>
+                          } @else if (accountantForm.controls.accountantName.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
+                          } @else if (accountantForm.controls.accountantName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Name contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Email ID</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            type="email"
+                            formControlName="accountantEmail"
+                            placeholder="email@example.com"
+                            maxlength="254"
+                            autocomplete="email"
+                          />
+                        </mat-form-field>
+                        @if (accountantForm.controls.accountantEmail.touched) {
+                          @if (accountantForm.controls.accountantEmail.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Email address is required</p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('email')) {
+                            <p class="text-danger small mt-1 mb-0">Enter a valid email address</p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Email address is too long</p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('domainMx')) {
+                            <p class="text-danger small mt-1 mb-0">
+                              This email domain doesn't appear to accept mail. Check for a typo in the email address.
+                            </p>
+                          } @else if (accountantForm.controls.accountantEmail.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Email contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-4">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Contact No</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            type="tel"
+                            formControlName="accountantConatactNumber"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="10-digit number"
+                            autocomplete="tel"
+                          />
+                        </mat-form-field>
+                        @if (accountantForm.controls.accountantConatactNumber.touched) {
+                          @if (accountantForm.controls.accountantConatactNumber.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Contact number is required</p>
+                          } @else if (accountantForm.controls.accountantConatactNumber.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9</p>
+                          }
+                        }
+                      </div>
+                    </div>
+                  </form>
+                </mat-card-content>
+              }
+            </mat-card>
+
+            @if (otpStep()) {
+              <!-- OTP verification step — confirms the ULB actually has access to the Nodal
+                   Officer's inbox before the contacts are saved. -->
+              <div id="pv-otp-step" class="border rounded-3 p-3 mt-3 bg-white">
+                <p class="small text-secondary mb-3">
+                  <i class="bi bi-envelope-check me-1"></i>
+                  An OTP has been sent to the ULB Nodal Officer's email <strong>{{ otpEmail() }}</strong>. Enter it
+                  below to confirm and save — valid for 10 minutes.
+                </p>
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 180px">
+                    <mat-label>Enter OTP</mat-label>
+                    <input
+                      matInput
+                      type="tel"
+                      inputmode="numeric"
+                      maxlength="4"
+                      placeholder="4-digit OTP"
+                      [value]="otpValue()"
+                      (input)="onOtpInput($event)"
+                      aria-label="One-time password"
+                      autocomplete="one-time-code"
+                    />
+                  </mat-form-field>
+                  <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                    <button mat-flat-button color="primary" [disabled]="!canConfirmOtp()" (click)="onConfirmOtp()">
+                      @if (isSaving()) {
+                        <span class="pv-spin pv-spin--light me-1"></span> Verifying…
+                      } @else {
+                        <i class="bi bi-shield-check me-1"></i> Verify &amp; Save
+                      }
+                    </button>
+                    <button mat-stroked-button (click)="resendOtp()" [disabled]="!canResend()">
+                      @if (sendingOtp()) {
+                        <span class="pv-spin me-1"></span> Sending…
+                      } @else if (resendCooldown() > 0) {
+                        <i class="bi bi-clock me-1"></i> Resend in {{ resendCooldown() }}s
+                      } @else {
+                        <i class="bi bi-arrow-repeat me-1"></i> Resend OTP
+                      }
+                    </button>
+                  </div>
+                </div>
+                @if (errorMsg()) {
+                  <p class="text-danger small mt-2 mb-0">{{ errorMsg() }}</p>
+                }
+              </div>
+            } @else {
+              <!-- Footer -->
+              <div class="d-flex align-items-center justify-content-end gap-3 mt-2">
+                <button mat-flat-button color="primary" [disabled]="!canProceed()" (click)="onSaveAndContinue()">
+                  @if (sendingOtp()) {
+                    <span class="pv-spin pv-spin--light me-1"></span> Sending OTP…
+                  } @else {
+                    Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+                  }
+                </button>
+              </div>
+            }
+          }
+        }
+
+        <!-- ──────────────────────────────────────────────────────────
+             STATE / MOHUA FLOW
+        ─────────────────────────────────────────────────────────── -->
+        @if (role !== 'ulb') {
+          @if (isLoading()) {
+            <div class="d-flex justify-content-center py-5">
+              <div class="spinner-border text-secondary" style="width: 1.5rem; height: 1.5rem" role="status">
+                <span class="visually-hidden">Loading…</span>
+              </div>
+            </div>
+          } @else if (loadError()) {
+            <app-page-error-state title="Could not load profile" [message]="loadError()" (retry)="retryLoad()" />
+            <!-- ══ STEP 2: SET NEW PASSWORD (new users, all roles) ══════ -->
+          } @else if (passwordStep()) {
+            <h5 class="fw-bold mb-1">Set your new password</h5>
+            <p class="text-muted small mb-3">
+              Your email has been verified. Choose a strong password — at least 8 characters with uppercase, lowercase,
+              a number, and a special character (&#64;#$%^&amp;*!).
+            </p>
+
+            @if (errorMsg()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            <mat-card appearance="outlined" class="mb-3">
+              <mat-card-content class="pt-3 pb-2">
+                <form [formGroup]="passwordForm" novalidate>
+                  <div class="row g-3">
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>New Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showNewPassword() ? 'text' : 'password'"
+                          formControlName="newPassword"
+                          autocomplete="new-password"
+                          placeholder="Min. 8 characters"
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="showNewPassword.set(!showNewPassword())"
+                          [attr.aria-label]="showNewPassword() ? 'Hide password' : 'Show password'"
+                        >
+                          <i [class]="showNewPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.newPassword.touched) {
+                        @if (passwordForm.controls.newPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Password is required</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('minlength')) {
+                          <p class="text-danger small mt-1 mb-0">Must be at least 8 characters</p>
+                        } @else if (passwordForm.controls.newPassword.hasError('pattern')) {
+                          <p class="text-danger small mt-1 mb-0">
+                            Must include uppercase, lowercase, a number, and &#64;#$%^&amp;*!
+                          </p>
+                        }
+                      }
+                    </div>
+                    <div class="col-sm-6">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                        <mat-label>Confirm Password</mat-label>
+                        <input
+                          matInput
+                          [type]="showConfirmPassword() ? 'text' : 'password'"
+                          formControlName="confirmPassword"
+                          autocomplete="new-password"
+                          placeholder="Repeat password"
+                        />
+                        <button
+                          mat-icon-button
+                          matSuffix
+                          type="button"
+                          (click)="showConfirmPassword.set(!showConfirmPassword())"
+                          [attr.aria-label]="showConfirmPassword() ? 'Hide' : 'Show'"
+                        >
+                          <i [class]="showConfirmPassword() ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                      </mat-form-field>
+                      @if (passwordForm.controls.confirmPassword.touched) {
+                        @if (passwordForm.controls.confirmPassword.hasError('required')) {
+                          <p class="text-danger small mt-1 mb-0">Please confirm your password</p>
+                        } @else if (passwordForm.hasError('passwordsMismatch')) {
+                          <p class="text-danger small mt-1 mb-0">Passwords do not match</p>
+                        }
+                      }
+                    </div>
+                  </div>
+                </form>
+              </mat-card-content>
+            </mat-card>
+
+            <div class="d-flex justify-content-end mt-2">
+              <button mat-flat-button color="primary" [disabled]="!canSetNewPassword()" (click)="onSetNewPassword()">
+                @if (isSaving()) {
+                  <span class="pv-spin pv-spin--light me-1"></span> Saving…
+                } @else {
+                  <i class="bi bi-lock-fill me-1"></i> Set Password &amp; Continue
+                }
+              </button>
+            </div>
+
+            <!-- ══ STATE / MOHUA: profile form (new + existing users) ══════ -->
+          } @else {
+            <h5 class="fw-bold mb-1">Verify your profile</h5>
+            <p class="text-muted small mb-3">
+              Review your contact details below. You can update your name, mobile number and designation. Email address
+              cannot be changed here.
+            </p>
+
+            @if (errorMsg() && !otpStep()) {
+              <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span class="flex-grow-1">{{ errorMsg() }}</span>
+                <button type="button" class="btn-close" (click)="errorMsg.set('')"></button>
+              </div>
+            }
+
+            <mat-card appearance="outlined" class="mb-3">
+              <mat-card-header class="pv-card-header">
+                <mat-card-title class="pv-card-title">Your Contact Details</mat-card-title>
+                @if (!editingStateProfile()) {
+                  <button
+                    mat-stroked-button
+                    class="ms-auto"
+                    style="height: 32px; font-size: 12px"
+                    (click)="openEditStateProfile()"
+                  >
+                    <i class="bi bi-pencil-fill me-1"></i> Edit
+                  </button>
+                } @else {
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    class="ms-auto"
+                    style="height: 32px; font-size: 12px"
+                    (click)="editingStateProfile.set(false)"
+                  >
+                    <i class="bi bi-check-lg me-1"></i> Done
+                  </button>
+                }
+              </mat-card-header>
+              <mat-divider />
+
+              @if (!editingStateProfile()) {
+                <!-- View mode -->
+                @if (stateFormHasErrors()) {
+                  <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-warning-subtle">
+                    <i class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0">
+                      Click <strong>Edit</strong> to update:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                      @if (stateForm.controls.firstName.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 10px; font-weight: 500"
+                          >First Name</span
+                        >
+                      }
+                      @if (stateForm.controls.lastName.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 10px; font-weight: 500"
+                          >Last Name</span
+                        >
+                      }
+                      @if (stateForm.controls.mobile.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 10px; font-weight: 500"
+                          >Mobile</span
+                        >
+                      }
+                      @if (stateForm.controls.designation.invalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 10px; font-weight: 500"
+                          >Designation</span
+                        >
+                      }
+                    </div>
+                  </div>
+                }
+                <mat-card-content class="p-0">
+                  <div class="row g-0">
+                    <div class="col-sm-3 pv-field">
+                      <span class="pv-field-label">Name</span>
+                      <span
+                        class="pv-field-value text-truncate d-block"
+                        [class.text-muted]="!stateForm.value.firstName && !stateForm.value.lastName"
+                        [title]="fullName"
+                        >{{ fullName }}</span
+                      >
+                    </div>
+                    <div class="col-sm-3 pv-field pv-field-bordered">
+                      <span class="pv-field-label">Designation</span>
+                      <span
+                        class="pv-field-value text-truncate d-block"
+                        [class.text-muted]="!stateForm.value.designation"
+                        [title]="stateForm.value.designation || ''"
+                        >{{ stateForm.value.designation || '—' }}</span
+                      >
+                    </div>
+                    <div class="col-sm-3 pv-field pv-field-bordered">
+                      <span class="pv-field-label">Email ID</span>
+                      <span
+                        class="pv-field-value text-truncate d-block text-muted"
+                        [title]="stateProfile()?.email || ''"
+                        >{{ stateProfile()?.email || '—' }}</span
+                      >
+                    </div>
+                    <div class="col-sm-3 pv-field pv-field-bordered">
+                      <span class="pv-field-label">Mobile</span>
+                      <span class="pv-field-value" [class.text-muted]="!stateForm.value.mobile">
+                        {{ stateForm.value.mobile || '—' }}
+                      </span>
+                    </div>
+                  </div>
+                </mat-card-content>
+              } @else {
+                <!-- Edit mode -->
+                <mat-card-content class="pt-3 pb-1">
+                  <form [formGroup]="stateForm" novalidate>
+                    <div class="row g-3">
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>First Name</mat-label>
+                          <input
+                            matInput
+                            formControlName="firstName"
+                            placeholder="First name"
+                            maxlength="50"
+                            autocomplete="given-name"
+                          />
+                        </mat-form-field>
+                        @if (stateForm.controls.firstName.touched) {
+                          @if (stateForm.controls.firstName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">First name is required</p>
+                          } @else if (stateForm.controls.firstName.hasError('minlength')) {
+                            <p class="text-danger small mt-1 mb-0">First name must be at least 2 characters</p>
+                          } @else if (stateForm.controls.firstName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">First name cannot exceed 50 characters</p>
+                          } @else if (stateForm.controls.firstName.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
+                          } @else if (stateForm.controls.firstName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">First name contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Last Name</mat-label>
+                          <input
+                            matInput
+                            formControlName="lastName"
+                            placeholder="Last name"
+                            maxlength="50"
+                            autocomplete="family-name"
+                          />
+                        </mat-form-field>
+                        @if (stateForm.controls.lastName.touched) {
+                          @if (stateForm.controls.lastName.hasError('required')) {
+                            <p class="text-danger small mt-1 mb-0">Last name is required</p>
+                          } @else if (stateForm.controls.lastName.hasError('minlength')) {
+                            <p class="text-danger small mt-1 mb-0">Last name must be at least 2 characters</p>
+                          } @else if (stateForm.controls.lastName.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Last name cannot exceed 50 characters</p>
+                          } @else if (stateForm.controls.lastName.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters, spaces and hyphens are allowed</p>
+                          } @else if (stateForm.controls.lastName.hasError('unsafeInput')) {
+                            <p class="text-danger small mt-1 mb-0">Last name contains invalid characters</p>
+                          }
+                        }
+                      </div>
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Email ID</mat-label>
+                          <!-- L1 — disabled read-only field -->
+                          <input matInput type="email" formControlName="email" autocomplete="email" />
+                          <mat-hint>Email address cannot be changed</mat-hint>
+                        </mat-form-field>
+                      </div>
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Mobile</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            type="tel"
+                            formControlName="mobile"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="10-digit number"
+                            autocomplete="tel"
+                          />
+                        </mat-form-field>
+                        @if (stateForm.controls.mobile.touched && stateForm.controls.mobile.hasError('pattern')) {
+                          <p class="text-danger small mt-1 mb-0">Enter a valid 10-digit number starting with 6–9</p>
+                        }
+                      </div>
+                      <div class="col-sm-6">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-100">
+                          <mat-label>Designation</mat-label>
+                          <!-- L1 -->
+                          <input
+                            matInput
+                            formControlName="designation"
+                            placeholder="e.g. Deputy Commissioner"
+                            maxlength="100"
+                            autocomplete="organization-title"
+                          />
+                        </mat-form-field>
+                        @if (stateForm.controls.designation.touched) {
+                          @if (stateForm.controls.designation.hasError('maxlength')) {
+                            <p class="text-danger small mt-1 mb-0">Designation cannot exceed 100 characters</p>
+                          } @else if (stateForm.controls.designation.hasError('pattern')) {
+                            <p class="text-danger small mt-1 mb-0">Only letters and spaces are allowed</p>
+                          }
+                        }
+                      </div>
+                    </div>
+                  </form>
+                </mat-card-content>
+              }
+            </mat-card>
+
+            @if (otpStep()) {
+              <!-- OTP verification step -->
+              <div id="pv-otp-step" class="border rounded-3 p-3 mt-3 bg-white">
+                <p class="small text-secondary mb-3">
+                  <i class="bi bi-envelope-check me-1"></i>
+                  An OTP has been sent to <strong>{{ otpEmail() }}</strong>. Enter it below to confirm — valid for 10
+                  minutes.
+                </p>
+                <div class="d-flex align-items-start gap-3 flex-wrap">
+                  <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 180px">
+                    <mat-label>Enter OTP</mat-label>
+                    <!-- L2+L4 — typed handler, aria-label, autocomplete -->
+                    <input
+                      matInput
+                      type="tel"
+                      inputmode="numeric"
+                      maxlength="4"
+                      placeholder="4-digit OTP"
+                      [value]="otpValue()"
+                      (input)="onOtpInput($event)"
+                      aria-label="One-time password"
+                      autocomplete="one-time-code"
+                    />
+                  </mat-form-field>
+                  <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                    <button mat-flat-button color="primary" [disabled]="!canConfirmOtp()" (click)="onConfirmOtp()">
+                      @if (isSaving()) {
+                        <span class="pv-spin pv-spin--light me-1"></span> Verifying…
+                      } @else {
+                        <i class="bi bi-shield-check me-1"></i> Verify &amp; Save
+                      }
+                    </button>
+                    <!-- C2 — resend with countdown -->
+                    <button mat-stroked-button (click)="resendOtp()" [disabled]="!canResend()">
+                      @if (sendingOtp()) {
+                        <span class="pv-spin me-1"></span> Sending…
+                      } @else if (resendCooldown() > 0) {
+                        <i class="bi bi-clock me-1"></i> Resend in {{ resendCooldown() }}s
+                      } @else {
+                        <i class="bi bi-arrow-repeat me-1"></i> Resend OTP
+                      }
+                    </button>
+                  </div>
+                </div>
+                @if (errorMsg()) {
+                  <p class="text-danger small mt-2 mb-0">{{ errorMsg() }}</p>
+                }
+              </div>
+            } @else {
+              <div class="d-flex justify-content-end mt-2">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  [disabled]="!canSaveStateProfile()"
+                  (click)="onSaveStateProfile()"
+                >
+                  @if (sendingOtp()) {
+                    <span class="pv-spin pv-spin--light me-1"></span> Sending OTP…
+                  } @else {
+                    Save &amp; Continue <i class="bi bi-arrow-right ms-1"></i>
+                  }
+                </button>
+              </div>
+            }
+          }
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,421 @@
+.eval-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(24, 119, 242, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  min-height: 100%;
+}
+
+/* Hero */
+
+.hero-card {
+  padding: 1.75rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #123b69 0%, #2563eb 100%);
+  color: #fff;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+
+  h3 { margin: 0; }
+}
+
+.hero-card--detail {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.subcopy {
+  margin: 0.75rem 0 0;
+  max-width: 52rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  mat-icon { font-size: 1.1rem; width: 1.1rem; height: 1.1rem; }
+
+  &:hover { background: rgba(255, 255, 255, 0.25); }
+}
+
+/* Panel */
+
+.panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+
+  h4 { margin: 0; font-size: 1rem; color: #0f172a; }
+  p  { margin: 0; font-size: 0.88rem; color: #475569; }
+}
+
+.run-form-panel {
+  border-color: #bfdbfe;
+  background: #f0f7ff;
+}
+
+/* Section header */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.section-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.results-meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* Mode toggle */
+
+.mode-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: #f1f5f9;
+  width: max-content;
+}
+
+.mode-toggle__btn {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { color: #1d4ed8; }
+}
+
+.mode-toggle__btn--active {
+  background: #fff;
+  color: #1d4ed8;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+/* Forms */
+
+.create-form,
+.run-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.jobids-field textarea {
+  resize: vertical;
+}
+
+.check-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* File picker (Excel upload) */
+
+.file-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-drop-box {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 16px;
+  background: #f8fbff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+}
+
+.file-box-name {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.file-box-placeholder {
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.file-box-meta {
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.file-picker__label {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Compare bar */
+
+.compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+/* Table */
+
+.table-shell {
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+}
+
+.eval-table {
+  width: 100%;
+  min-width: 600px;
+  background: #fff;
+}
+
+/* Cells */
+
+.benchmark-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.count-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.count-chip--excel {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.cell-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  flex-shrink: 0;
+  margin-right: 0.3rem;
+
+  &::after { content: ':'; }
+}
+
+.cell-value {
+  font-size: 0.78rem;
+  color: #1e293b;
+}
+
+.dates-cell {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.model-cell {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+}
+
+.model-label {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-right: 0.3rem;
+}
+
+.model-value {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.74rem;
+  color: #1d4ed8;
+}
+
+.mono { font-family: Consolas, 'Courier New', monospace; }
+.dim  { color: #94a3b8; }
+
+/* Status badge */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-badge--queued     { background: #f1f5f9; color: #475569; }
+.status-badge--processing { background: #dbeafe; color: #1d4ed8; }
+.status-badge--completed  { background: #dcfce7; color: #166534; }
+.status-badge--failed     { background: #fee2e2; color: #b91c1c; }
+
+.error-text {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: #b91c1c;
+  word-break: break-word;
+}
+
+/* Metrics mini row */
+
+.metrics-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-chip--overall {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.metric-lbl {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+/* Action cell */
+
+.action-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Empty state */
+
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* Mat table overrides */
+
+::ng-deep .eval-table .mat-mdc-header-cell {
+  white-space: nowrap;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: #eff6ff;
+}
+
+::ng-deep .eval-table .mat-mdc-cell,
+::ng-deep .eval-table .mat-mdc-header-cell {
+  padding: 0.7rem 0.85rem;
+  border-bottom-color: #e2e8f0;
+  vertical-align: top;
+}
+
+::ng-deep .eval-table .mat-mdc-cell {
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+::ng-deep .eval-table .mat-mdc-row:nth-child(even) .mat-mdc-cell {
+  background: #f8fbff;
+}
+
+/* Filter form overrides */
+
+::ng-deep .create-form,
+::ng-deep .run-form {
+  .mat-mdc-form-field-subscript-wrapper { display: none; }
+}
+
+@media (max-width: 640px) {
+  .eval-page { padding: 1rem; }
+  .section-header { flex-direction: column; }
+  .metrics-mini { flex-direction: column; }
+}

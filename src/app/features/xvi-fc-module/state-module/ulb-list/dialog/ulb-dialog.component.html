@@ -1,0 +1,16 @@
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">{{ data.action }} ULB</p>
+<mat-dialog-content>
+  @if (form) {
+    <form [formGroup]="form">
+      <app-form-section-grid [sections]="sections" [group]="form"></app-form-section-grid>
+    </form>
+  } @else if (loadFailed) {
+    <p class="text-danger p-2">Unable to load the edit form. Please close this dialog and try again.</p>
+  } @else {
+    <p class="text-body-secondary p-2">Loading…</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="btn btn-cfPrimary mx-2" [disabled]="!form" (click)="save()">{{ data.action === 'Resubmit' ? 'Resubmit' : 'Save' }}</button>
+  <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>
+</mat-dialog-actions>

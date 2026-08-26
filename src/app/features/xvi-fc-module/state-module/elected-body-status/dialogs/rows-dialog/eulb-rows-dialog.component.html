@@ -1,0 +1,317 @@
+<h2 mat-dialog-title class="fs-6 fw-semibold border-bottom mb-0 py-1 d-flex align-items-center justify-content-between">
+  <span>Uploaded Data - Elected Urban Local Bodies</span>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
+    <i class="bi bi-x-circle-fill fs-5"></i>
+  </button>
+</h2>
+
+<mat-dialog-content class="p-0 eulb-rows-dialog-content">
+  <!-- Filters -->
+  <div class="border-bottom px-3 py-2">
+    <form [formGroup]="filterForm" class="d-flex flex-wrap gap-2 align-items-end">
+      <div class="flex-grow-1 eulb-filter-search">
+        <label class="form-label small fw-semibold mb-1" for="eulb-search">Search</label>
+        <input
+          id="eulb-search"
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Census code or ULB name"
+          formControlName="search"
+        />
+      </div>
+
+      <div class="eulb-filter-validation">
+        <label class="form-label small fw-semibold mb-1" for="eulb-vstatus">Validation</label>
+        <select id="eulb-vstatus" class="form-select form-select-sm" formControlName="validationStatus">
+          <option value="">All</option>
+          @for (opt of validationStatusOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="table-responsive eulb-table-wrap">
+    @if (isLoading()) {
+      <div class="d-flex justify-content-center align-items-center py-5">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+        <span class="small text-secondary">Loading rows…</span>
+      </div>
+    } @else if (!rows().length) {
+      <div class="text-center py-5 text-secondary small">No rows found for the current filters.</div>
+    } @else {
+      <table class="table table-sm table-hover align-middle mb-0 eulb-rows-table">
+        <colgroup>
+          <col class="eulb-col-row-number" />
+          <col class="eulb-col-census" />
+          <col class="eulb-col-ulb-name" />
+          <col class="eulb-col-status" />
+          <col class="eulb-col-date" />
+          <col class="eulb-col-date" />
+          <col class="eulb-col-remarks" />
+          <col class="eulb-col-validation" />
+          @if (canEditRows) {
+            <col class="eulb-col-actions" />
+          }
+        </colgroup>
+        <thead class="table-light border-bottom">
+          <tr>
+            <th class="ps-3 text-nowrap small fw-semibold">#</th>
+            <th class="text-nowrap small fw-semibold">Census Code</th>
+            <th class="text-nowrap small fw-semibold">ULB Name</th>
+            <th class="text-nowrap small fw-semibold">Elected Body Status</th>
+            <th class="small fw-semibold">Date on which the elected body is in place</th>
+            <th class="text-nowrap small fw-semibold">Date of Expiry</th>
+            <th class="text-nowrap small fw-semibold">Remarks</th>
+            <th class="text-nowrap small fw-semibold">Status</th>
+            @if (canEditRows) {
+              <th class="text-nowrap small fw-semibold pe-3 eulb-actions-col">Actions</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (vm of rowViewModels(); track vm.row._id) {
+            @let row = vm.row;
+            <tr>
+              @if (editingRowId() === row._id) {
+                <!-- Edit mode -->
+                <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-secondary text-nowrap"
+                  field="censusCode"
+                  [value]="row.censusCode ?? null"
+                  [isEditing]="true"
+                  [fieldEditable]="false"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small fw-medium text-nowrap"
+                  field="ulbName"
+                  [value]="row.ulbName"
+                  [isEditing]="true"
+                  [fieldEditable]="false"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                @let electedBodyStatusCtrl = getEditFormControl('electedBodyStatus');
+                <td
+                  app-eulb-editable-field-cell
+                  field="electedBodyStatus"
+                  [value]="row.electedBodyStatus"
+                  [isEditing]="true"
+                  [cellHasError]="hasEditFieldError('electedBodyStatus')"
+                  [cellErrorText]="getEditFieldErrorText('electedBodyStatus')"
+                  [statusOptions]="electedBodyStatusOptions"
+                  [editControl]="electedBodyStatusCtrl"
+                  editControlExtraClass="eulb-edit-control"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                @let dateOfConstitutionCtrl = getEditFormControl('dateOfConstitution');
+                <td
+                  app-eulb-editable-field-cell
+                  field="dateOfConstitution"
+                  [value]="row.dateOfConstitution"
+                  [isEditing]="true"
+                  [fieldEnabled]="isEditFieldEnabled('dateOfConstitution')"
+                  [disabledReason]="getEditFieldDisabledReason('dateOfConstitution')"
+                  [dateMin]="getEditDateMin('dateOfConstitution')"
+                  [dateMax]="getEditDateMax('dateOfConstitution')"
+                  [cellHasError]="hasEditFieldError('dateOfConstitution')"
+                  [cellErrorText]="getEditFieldErrorText('dateOfConstitution')"
+                  [editControl]="dateOfConstitutionCtrl"
+                  editControlExtraClass="eulb-edit-control"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                @let dateOfExpiryCtrl = getEditFormControl('dateOfExpiry');
+                <td
+                  app-eulb-editable-field-cell
+                  field="dateOfExpiry"
+                  [value]="row.dateOfExpiry"
+                  [isEditing]="true"
+                  [fieldEnabled]="isEditFieldEnabled('dateOfExpiry')"
+                  [disabledReason]="getEditFieldDisabledReason('dateOfExpiry')"
+                  [dateMin]="getEditDateMin('dateOfExpiry')"
+                  [dateMax]="getEditDateMax('dateOfExpiry')"
+                  [cellHasError]="hasEditFieldError('dateOfExpiry')"
+                  [cellErrorText]="getEditFieldErrorText('dateOfExpiry')"
+                  [editControl]="dateOfExpiryCtrl"
+                  editControlExtraClass="eulb-edit-control"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                @let remarksCtrl = getEditFormControl('remarks');
+                <td
+                  app-eulb-editable-field-cell
+                  field="remarks"
+                  [value]="row.remarks"
+                  [isEditing]="true"
+                  [cellHasError]="hasEditFieldError('remarks')"
+                  [cellErrorText]="getEditFieldErrorText('remarks')"
+                  [editControl]="remarksCtrl"
+                  editControlExtraClass="eulb-edit-wide"
+                  editFieldDataAttribute="data-eulb-edit-field"
+                ></td>
+                <td>
+                  <span
+                    app-eulb-validation-badge
+                    [validationStatus]="row.validationStatus"
+                    class="badge rounded px-1 small"
+                  ></span>
+                </td>
+                <td class="pe-3 eulb-actions-col">
+                  <div class="d-flex gap-1 flex-nowrap">
+                    <button
+                      type="button"
+                      matButton="filled"
+                      class="eulb-row-btn"
+                      aria-label="Save row"
+                      [disabled]="isUpdatingRowId() === row._id"
+                      (click)="saveRow(row._id)"
+                    >
+                      @if (isUpdatingRowId() === row._id) {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      } @else {
+                        <i class="bi bi-floppy"></i>
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      matButton="outlined"
+                      class="eulb-row-btn"
+                      aria-label="Cancel edit"
+                      [disabled]="isUpdatingRowId() === row._id"
+                      (click)="cancelEdit()"
+                    >
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </td>
+              } @else {
+                <!-- Read mode -->
+                <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-secondary text-nowrap"
+                  field="censusCode"
+                  [value]="row.censusCode ?? null"
+                  [cellHasError]="!!vm.cellHasError['censusCode']"
+                  [cellErrorText]="vm.cellErrorText['censusCode']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small fw-medium"
+                  field="ulbName"
+                  [value]="row.ulbName"
+                  [cellHasError]="!!vm.cellHasError['ulbName']"
+                  [cellErrorText]="vm.cellErrorText['ulbName']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small"
+                  field="electedBodyStatus"
+                  [value]="row.electedBodyStatus"
+                  [canEdit]="canEditRows"
+                  [cellHasError]="!!vm.cellHasError['electedBodyStatus']"
+                  [cellErrorText]="vm.cellErrorText['electedBodyStatus']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-nowrap"
+                  field="dateOfConstitution"
+                  [value]="row.dateOfConstitution"
+                  [canEdit]="canEditRows"
+                  [cellHasError]="!!vm.cellHasError['dateOfConstitution']"
+                  [cellErrorText]="vm.cellErrorText['dateOfConstitution']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small text-nowrap"
+                  field="dateOfExpiry"
+                  [value]="row.dateOfExpiry"
+                  [canEdit]="canEditRows"
+                  [cellHasError]="!!vm.cellHasError['dateOfExpiry']"
+                  [cellErrorText]="vm.cellErrorText['dateOfExpiry']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
+                <td
+                  app-eulb-editable-field-cell
+                  class="small"
+                  field="remarks"
+                  [value]="row.remarks"
+                  [canEdit]="canEditRows"
+                  [cellHasError]="!!vm.cellHasError['remarks']"
+                  [cellErrorText]="vm.cellErrorText['remarks']"
+                  errorIconExtraClass="eulb-error-icon"
+                  [showInvalidCellClass]="true"
+                  (editRequested)="startEditAtField(row, $event)"
+                ></td>
+                <td>
+                  <span
+                    app-eulb-validation-badge
+                    [validationStatus]="row.validationStatus"
+                    class="badge rounded px-1 small"
+                  ></span>
+                </td>
+                @if (canEditRows) {
+                  <td class="pe-3 eulb-actions-col">
+                    <button
+                      type="button"
+                      matButton="outlined"
+                      class="eulb-row-btn"
+                      aria-label="Edit row"
+                      [disabled]="editingRowId() !== null"
+                      (click)="startEdit(row)"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </td>
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="border-top px-3 py-2 d-flex justify-content-end align-items-center gap-3">
+  @if (total() > 0) {
+    <div class="d-flex align-items-center gap-3 small">
+      <span class="text-secondary">Showing {{ startIndex() }}–{{ endIndex() }} of {{ total() }} rows</span>
+      <div class="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          [disabled]="!hasPrev()"
+          (click)="goToPage(page() - 1)"
+        >
+          &lsaquo; Prev
+        </button>
+        <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 text-decoration-none"
+          [disabled]="!hasNext()"
+          (click)="goToPage(page() + 1)"
+        >
+          Next &rsaquo;
+        </button>
+      </div>
+    </div>
+  }
+</mat-dialog-actions>

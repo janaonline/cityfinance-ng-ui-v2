@@ -1,0 +1,285 @@
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import {
+  compareArrFieldsValidator,
+  compareFieldsValidator,
+  actualLessThanOrEqualToTargetValidator,
+  digitsOnlyValidator,
+  matchesFieldValidator,
+} from './comparison.validator';
+
+describe('comparison validators', () => {
+  describe('matchesFieldValidator', () => {
+    function buildFlatGroup(fieldValue: string, targetValue: string) {
+      return new FormGroup({
+        confirmAccountNumber: new FormControl(fieldValue),
+        accountNumber: new FormControl(targetValue),
+      });
+    }
+
+    it('sets matchesField error on the declaring field when values differ', () => {
+      const group = buildFlatGroup('123', '456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ matchesField: true });
+    });
+
+    it('clears the error once values match', () => {
+      const group = buildFlatGroup('123', '456');
+      group.controls['confirmAccountNumber'].setErrors({ matchesField: true });
+      group.controls['confirmAccountNumber'].setValue('456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toBeNull();
+    });
+
+    it('does not touch the target field itself', () => {
+      const group = buildFlatGroup('123', '456');
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['accountNumber'].errors).toBeNull();
+    });
+
+    it('returns null when either configured field is missing', () => {
+      const group = new FormGroup({});
+
+      expect(matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group)).toBeNull();
+    });
+
+    it('resolves dotted keys as literal flat control names, not nested paths', () => {
+      // toFormGroup() builds flat controls keyed by the literal string 'bankDetails.name' —
+      // AbstractControl.get() would misinterpret the dot as a nested path and find nothing.
+      const group = new FormGroup({
+        'confirm.value': new FormControl('123'),
+        'target.value': new FormControl('456'),
+      });
+
+      matchesFieldValidator('confirm.value', 'target.value')(group);
+
+      expect(group.controls['confirm.value'].errors).toEqual({ matchesField: true });
+    });
+
+    it('does not overwrite unrelated errors already on the declaring control when values differ', () => {
+      const group = buildFlatGroup('123', '456');
+      group.controls['confirmAccountNumber'].setErrors({ required: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true, matchesField: true });
+    });
+
+    it('preserves unrelated errors when clearing matchesField', () => {
+      const group = buildFlatGroup('456', '456');
+      group.controls['confirmAccountNumber'].setErrors({ required: true, matchesField: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true });
+    });
+
+    it('does not clear the required error when both fields start empty and equal', () => {
+      // Reproduces the real bank-account bug: confirmAccountNumber declares both `required` and
+      // `matchesField`. Its own control-level validator sets `required` first; before the fix, the
+      // group-level matchesFieldValidator would then wipe it via a bare setErrors(null) simply
+      // because both empty strings are equal.
+      const group = buildFlatGroup('', '');
+      group.controls['confirmAccountNumber'].setErrors({ required: true });
+
+      matchesFieldValidator('confirmAccountNumber', 'accountNumber')(group);
+
+      expect(group.controls['confirmAccountNumber'].errors).toEqual({ required: true });
+    });
+  });
+
+  describe('digitsOnlyValidator', () => {
+    it('returns null for an empty value', () => {
+      expect(digitsOnlyValidator()(new FormControl(''))).toBeNull();
+    });
+
+    it('flags spaces', () => {
+      expect(digitsOnlyValidator()(new FormControl('123 456'))).toEqual({ hasSpaces: true });
+    });
+
+    it('flags alphabets', () => {
+      expect(digitsOnlyValidator()(new FormControl('123abc'))).toEqual({ hasAlphabets: true });
+    });
+
+    it('flags special characters', () => {
+      expect(digitsOnlyValidator()(new FormControl('123-456'))).toEqual({ hasSpecialChars: true });
+    });
+
+    it('flags too-short values against minLength', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('12345'))).toEqual({ tooShort: true });
+    });
+
+    it('flags too-long values against maxLength', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('1234567890123456789'))).toEqual({ tooLong: true });
+    });
+
+    it('returns null for a valid digit string within bounds', () => {
+      expect(digitsOnlyValidator(9, 18)(new FormControl('123456789'))).toBeNull();
+    });
+  });
+
+  describe('compareFieldsValidator', () => {
+    function buildGroup(firstValue: number, secondValue: number) {
+      return new FormGroup({
+        first: new FormGroup({ value: new FormControl(firstValue) }),
+        second: new FormGroup({ value: new FormControl(secondValue) }),
+      });
+    }
+
+    it('sets greaterThanEqualTo error when the first value is lower than the matching value', () => {
+      const group = buildGroup(2024, 2026);
+
+      compareFieldsValidator('first', 'second', 'greaterThanEqualTo')(group);
+
+      expect(group.get('first')?.get('value')?.errors).toEqual({ greaterThanEqualTo: true });
+    });
+
+    it('sets lessThan error when the first value is greater than the matching value', () => {
+      const group = buildGroup(2026, 2024);
+
+      compareFieldsValidator('first', 'second', 'lessThan')(group);
+
+      expect(group.get('first')?.get('value')?.errors).toEqual({ lessThan: true });
+    });
+
+    it('clears comparison errors when values satisfy the rule', () => {
+      const group = buildGroup(2024, 2026);
+      const control = group.get('first')?.get('value');
+      control?.setErrors({ lessThan: true });
+
+      compareFieldsValidator('first', 'second', 'lessThan')(group);
+
+      expect(control?.errors).toBeNull();
+    });
+
+    it('does not overwrite unrelated errors on the control', () => {
+      const group = buildGroup(2024, 2026);
+      const control = group.get('first')?.get('value');
+      control?.setErrors({ required: true });
+
+      compareFieldsValidator('first', 'second', 'lessThan')(group);
+
+      expect(control?.errors).toEqual({ required: true });
+    });
+
+    it('returns null when either configured field is missing', () => {
+      const group = new FormGroup({});
+
+      expect(compareFieldsValidator('first', 'second', 'lessThan')(group)).toBeNull();
+    });
+  });
+
+  describe('compareArrFieldsValidator', () => {
+    function buildArray(firstValue: string, secondValue: string) {
+      return new FormArray([
+        new FormGroup({ first: new FormControl(firstValue) }),
+        new FormGroup({ second: new FormControl(secondValue) }),
+      ]);
+    }
+
+    it('sets greaterThanEqualTo error on array controls when first value is lower', () => {
+      const formArray = buildArray('10', '20');
+
+      compareArrFieldsValidator('first', 'second', 'greaterThanEqualTo')(formArray);
+
+      expect((formArray.at(0) as FormGroup).get('first')?.errors).toEqual({
+        greaterThanEqualTo: true,
+      });
+    });
+
+    it('sets lessThan error on array controls when first value is greater', () => {
+      const formArray = buildArray('20', '10');
+
+      compareArrFieldsValidator('first', 'second', 'lessThan')(formArray);
+
+      expect((formArray.at(0) as FormGroup).get('first')?.errors).toEqual({ lessThan: true });
+    });
+
+    it('clears array comparison errors when values satisfy the rule', () => {
+      const formArray = buildArray('10', '20');
+      const control = (formArray.at(0) as FormGroup).get('first');
+      control?.setErrors({ lessThan: true });
+
+      compareArrFieldsValidator('first', 'second', 'lessThan')(formArray);
+
+      expect(control?.errors).toBeNull();
+    });
+
+    it('returns null when configured array controls cannot be found', () => {
+      const formArray = new FormArray([new FormGroup({ other: new FormControl('10') })]);
+
+      expect(compareArrFieldsValidator('first', 'second', 'lessThan')(formArray)).toBeNull();
+    });
+  });
+
+  describe('actualLessThanOrEqualToTargetValidator', () => {
+    function buildGroup(actual: number | null, target: number | null) {
+      return new FormGroup({
+        actual: new FormControl(actual),
+        target: new FormControl(target),
+      });
+    }
+
+    it('does not set an error when target equals actual', () => {
+      const group = buildGroup(100, 100);
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toBeNull();
+    });
+
+    it('sets actualLessThanOrEqualToTarget on target when actual is greater than target', () => {
+      const group = buildGroup(120, 100);
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ actualLessThanOrEqualToTarget: true });
+    });
+
+    it('clears the error when actual is strictly lower than target', () => {
+      const group = buildGroup(80, 100);
+      group.get('target')?.setErrors({ actualLessThanOrEqualToTarget: true });
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toBeNull();
+    });
+
+    it('does not overwrite unrelated errors already on the target control', () => {
+      const group = buildGroup(120, 100);
+      group.get('target')?.setErrors({ max: true });
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ max: true, actualLessThanOrEqualToTarget: true });
+    });
+
+    it('preserves unrelated errors when clearing actualLessThanOrEqualToTarget', () => {
+      const group = buildGroup(80, 100);
+      group.get('target')?.setErrors({ max: true, actualLessThanOrEqualToTarget: true });
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toEqual({ max: true });
+    });
+
+    it('does nothing when actual or target is not yet a number', () => {
+      const group = buildGroup(null, null);
+
+      actualLessThanOrEqualToTargetValidator(group);
+
+      expect(group.get('target')?.errors).toBeNull();
+    });
+
+    it('returns null when either control is missing', () => {
+      const group = new FormGroup({ actual: new FormControl(100) });
+
+      expect(actualLessThanOrEqualToTargetValidator(group)).toBeNull();
+    });
+  });
+});

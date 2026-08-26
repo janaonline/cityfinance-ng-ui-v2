@@ -1,0 +1,534 @@
+.model-option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+}
+
+.model-option-pricing {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+.model-option-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.4;
+
+  &.deprecated {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+}
+
+.ocr-validation-page {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(24, 119, 242, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  min-height: 100%;
+}
+
+.hero-card,
+.upload-card,
+.job-card {
+  border-radius: 20px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+}
+
+.hero-card {
+  padding: 1.75rem;
+  background: linear-gradient(135deg, #123b69 0%, #2563eb 100%);
+  color: #fff;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.subcopy {
+  margin: 0.75rem 0 0;
+  max-width: 65rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Upload form */
+
+.upload-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* File picker */
+
+.file-picker {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.file-drop-box {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 16px;
+  background: #f8fbff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+}
+
+.file-picker__label {
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.file-box-name {
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.file-box-placeholder {
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.file-box-meta {
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.file-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: rgba(239, 246, 255, 0.7);
+}
+
+.file-list__name {
+  flex: 1;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e40af;
+  word-break: break-all;
+}
+
+.file-list__size {
+  font-size: 0.82rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.file-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+/* Actions */
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Jobs section */
+
+.jobs-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.jobs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.jobs-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Job card variants */
+
+.job-card {
+  overflow: hidden;
+}
+
+.job-card--completed {
+  border: 1px solid rgba(22, 101, 52, 0.15) !important;
+}
+
+.job-card--failed {
+  border: 1px solid rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Job card header */
+
+.job-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.job-header__info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.job-header__meta {
+  display: grid;
+  gap: 0;
+}
+
+.job-header__filename {
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.job-header__id {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.job-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Job message */
+
+.job-message {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.job-message__step {
+  color: #2563eb;
+  font-style: italic;
+}
+
+/* Status chip */
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--queued    { background: #f1f5f9; color: #475569; }
+  &--processing { background: #dbeafe; color: #1d4ed8; }
+  &--completed  { background: #dcfce7; color: #166534; }
+  &--failed     { background: #fee2e2; color: #b91c1c; }
+}
+
+/* Spinner */
+
+.spinner {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid #93c5fd;
+  border-top-color: #1d4ed8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Assessment banner */
+
+.assessment-banner {
+  border-left: 4px solid currentColor;
+
+  &.assessment--pass              { background: #f0fdf4; color: #166534;  border-color: #22c55e; }
+  &.assessment--warning           { background: #fffbeb; color: #92400e;  border-color: #f59e0b; }
+  &.assessment--fail              { background: #fff1f2; color: #9f1239;  border-color: #f43f5e; }
+  &.assessment--extraction-fail   { background: #fff7ed; color: #9a3412;  border-color: #f97316; }
+  &.assessment--skipped           { background: #f8fafc; color: #475569;  border-color: #94a3b8; }
+}
+
+/* Check-status badge variants */
+
+.check-status--pass    { background: #dcfce7 !important; color: #166534 !important; }
+.check-status--warning { background: #fef9c3 !important; color: #92400e !important; }
+.check-status--fail    { background: #fee2e2 !important; color: #b91c1c !important; }
+.check-status--unknown { background: #f1f5f9 !important; color: #475569 !important; }
+
+/* Confidence chip: small % pill shown next to an extracted field's value */
+
+.confidence-chip {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.confidence-chip.text-success { background: #dcfce7; color: #166534 !important; }
+.confidence-chip.text-warning { background: #fef9c3; color: #92400e !important; }
+.confidence-chip.text-danger  { background: #fee2e2; color: #b91c1c !important; }
+.confidence-chip.text-secondary { background: #f1f5f9; color: #475569 !important; }
+
+/* Usage metadata */
+
+.usage-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.usage-step-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.usage-step-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.usage-step-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+
+.usage-step-model {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.68rem;
+  color: #475569;
+  text-align: right;
+  word-break: break-all;
+}
+
+.usage-token-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+
+  &--total {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.3rem;
+    margin-top: 0.1rem;
+    font-weight: 700;
+  }
+}
+
+.usage-token-label {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.usage-token-value {
+  font-family: Consolas, 'Courier New', monospace;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.usage-modality-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.usage-cost-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.3rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.usage-cost-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.usage-cost-value {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #166534;
+}
+
+.usage-cost-na {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.usage-cost-inr {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #4d7c0f;
+  margin-left: 0.3rem;
+}
+
+.usage-cost-formula {
+  margin: 0.2rem 0 0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.usage-modality-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Raw response */
+
+.raw-response-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.raw-toggle-btn {
+  justify-self: flex-start;
+}
+
+.raw-json {
+  border-radius: 14px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow: auto;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-height: 400px;
+}
+
+/* Failed state */
+
+.failure-box {
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 14px;
+  background: #fff7f7;
+  color: #991b1b;
+}
+
+.failure-title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.failure-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .ocr-validation-page {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .jobs-header,
+  .job-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

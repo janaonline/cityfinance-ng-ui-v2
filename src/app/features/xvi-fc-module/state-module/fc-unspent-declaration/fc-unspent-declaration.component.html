@@ -1,0 +1,175 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div>
+      <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+        <span class="text-secondary"> 16th Finance Commission </span>
+        @if (stateName()) {
+          &nbsp;&middot;&nbsp; {{ stateName() }}
+        }
+      </div>
+
+      <h1 class="page-title mb-2">Unspent {{ applicableFcLabel() }} FC Balance Declaration</h1>
+
+      <p class="page-subtitle text-secondary mb-0">
+        The 16th FC installment being claimed must not exceed {{ threshold() }}% of the ULB's disclosed
+        {{ applicableFcLabel() }} Finance Commission unspent balance. If no ULB in your state holds any
+        {{ applicableFcLabel() }} FC unspent balance, you may certify that here by uploading a signed declaration
+        instead of collecting ULB-wise data.
+      </p>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else if (loadError()) {
+      <div class="d-flex flex-column align-items-start gap-2 py-3">
+        <p class="text-secondary mb-0">We couldn't load the FC Unspent declaration.</p>
+        <button type="button" matButton="outlined" (click)="loadForm()" data-cy="fc-unspent-declaration-retry">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      </div>
+    } @else {
+      @if (actors().length) {
+        <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+        <hr class="my-0 text-body-tertiary" />
+      }
+
+      @if (dependency().blockingMessage) {
+        <div
+          class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-0"
+          role="alert"
+          data-cy="fc-unspent-declaration-dependency-alert"
+        >
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
+          <span class="small">{{ dependency().blockingMessage }}</span>
+        </div>
+      }
+
+      @if (formLevelErrors().length) {
+        <div
+          class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-0"
+          role="alert"
+          data-cy="fc-unspent-declaration-form-errors-alert"
+        >
+          <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
+          <ul class="small mb-0 ps-3">
+            @for (message of formLevelErrors(); track message) {
+              <li>{{ message }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <form class="content-body" [formGroup]="form">
+        @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
+          <div
+            class="my-2"
+            [class.border-bottom]="!isLast"
+            [class.border-secondary]="!isLast"
+            [class.border-opacity-25]="!isLast"
+          >
+            <app-dynamic-form
+              class="p-2 d-block"
+              [field]="item"
+              [group]="form"
+              [mode]="canEdit() ? 'edit' : 'view'"
+              (supportingAction)="onSupportingAction($event)"
+            ></app-dynamic-form>
+
+            @if (item.key === 'isFcUnspent' && isYesBranch()) {
+              <div class="d-flex justify-content-end">
+                <app-amount-display-toggle />
+              </div>
+              <app-unspent-ulb-table
+                class="p-2 d-block"
+                [rows]="unspentUlbData"
+                [savedRows]="savedUnspentUlbData()"
+                [canEdit]="canEdit()"
+                [applicableFcLabel]="applicableFcLabel()"
+                [threshold]="threshold()"
+                [stateId]="stateId"
+                [yearId]="yearId"
+                [rowEditFields]="rowEditFields()"
+                [blockingMessage]="dependency().blockingMessage"
+              ></app-unspent-ulb-table>
+
+              @if (!hasSavedUnspentRows()) {
+                <div
+                  class="alert alert-info small d-flex gap-2 mb-2"
+                  role="status"
+                  data-cy="fc-unspent-declaration-save-prompt"
+                >
+                  <i class="bi bi-info-circle-fill flex-shrink-0" aria-hidden="true"></i>
+                  @if (unspentUlbData.length === 0) {
+                    Add at least one ULB with an unspent balance, then save your draft to unlock the signed declaration
+                    upload.
+                  } @else {
+                    You have unsaved ULB-wise entries. Save your draft to unlock the signed declaration upload.
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </form>
+    }
+  </div>
+</section>
+
+<!-- Show acknowledgement section only if any action is permitted -->
+@if (canEdit() || canSaveDraft() || canFinalSubmit()) {
+  <div class="acknowledgement">
+    <div class="acknowledgement-inner">
+      <button
+        type="button"
+        matButton="outlined"
+        [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+        (click)="onCancel()"
+        data-cy="fc-unspent-declaration-cancel-test"
+      >
+        <i class="bi bi-x-circle-fill d-md-none"></i>
+        <span class="d-none d-md-inline">Cancel</span>
+      </button>
+
+      <button
+        type="submit"
+        matButton="filled"
+        [disabled]="!canSaveDraft() || isSubmitting() || isLoading() || !visibleFields().length"
+        (click)="onSubmit('saveAsDraft')"
+        data-cy="fc-unspent-declaration-submit-test"
+      >
+        @if (isSavingDraft()) {
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          <span class="d-none d-md-inline">Saving...</span>
+        } @else {
+          <i class="bi bi-bookmark-check-fill d-md-none"></i>
+          <span class="d-none d-md-inline">Save</span>
+        }
+      </button>
+
+      <!-- Show submit button only if finalSubmit = true -->
+      @if (canFinalSubmit()) {
+        <button
+          type="button"
+          matButton="filled"
+          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+          (click)="onSubmit('finalSubmit')"
+          data-cy="fc-unspent-declaration-final-submit-test"
+        >
+          @if (isFinalSubmitting()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <span class="d-none d-md-inline">Submitting...</span>
+          } @else {
+            <i class="bi bi-send-check-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Final Submit</span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+}

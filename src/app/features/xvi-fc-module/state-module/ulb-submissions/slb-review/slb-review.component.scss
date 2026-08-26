@@ -1,0 +1,16 @@
+// Reuses this page's own established tokens (annual-account-review.component.scss's
+// .checks-badge green, muted grays) rather than a different palette from elsewhere in the app.
+// Indicator-table/declaration-card styling lives in the shared app-slb-form-body component now.
+
+.slb-approved-banner {
+  background-color: #e6f6ec;
+  color: #1e7e42;
+  border: 1px solid #bfe6cd;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+
+  i {
+    font-size: 1.1rem;
+    margin-top: 0.1rem;
+  }
+}

@@ -1,0 +1,123 @@
+a {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+  width: 100%;
+  color: var(--nav-item-color);
+}
+
+ul {
+  list-style: none;
+  padding-left: 1.5rem;
+}
+
+// Transparent so the sidebar background pattern shows through submenu rows.
+.submenu-item {
+  background-color: var(--nav-submenu-bg, transparent);
+}
+
+.menu-item {
+  padding: 5px 12px 5px 5px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+a.menu-item,
+button.menu-item--command {
+  border-radius: var(--radius-split-rouned);
+  display: flex;
+  transition:
+    background-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+
+  &:hover,
+  &:focus {
+    background-color: var(--nav-item-hover-bg);
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--nav-surface);
+    outline-offset: 2px;
+  }
+}
+
+button.menu-item--command {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--nav-item-color);
+  cursor: pointer;
+  text-align: left;
+}
+
+a.menu-item.active {
+  background-color: var(--nav-item-active-bg);
+  color: var(--nav-item-color);
+  border-left: 3px solid var(--nav-item-active-border);
+}
+
+.menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-header {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: var(--fs-7);
+  border-radius: var(--radius-split-squared);
+  color: var(--color-muted);
+  letter-spacing: 0.04em;
+  margin-top: 0.2rem;
+}
+
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.menu-item.icon-only {
+  justify-content: center;
+  padding: 0.4rem 0;
+  border-radius: var(--radius-split-squared);
+
+  i {
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+.menu-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu-item-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--nav-surface, #fff);
+
+  &--returned {
+    background: #c62828;
+  }
+
+  &--review {
+    background: #2563eb;
+  }
+
+  &--approved {
+    background: #15803d;
+  }
+}

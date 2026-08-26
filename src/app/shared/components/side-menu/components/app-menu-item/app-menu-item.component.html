@@ -1,0 +1,155 @@
+<div class="menu-container">
+  <!-- Leaf Menu Item -->
+  @if (!hasChildren()) {
+    <!-- Header Label: section titles — not interactive, hidden when collapsed -->
+    @if (root() && item().label && !item().routerLink && !item().url) {
+      @if (!collapsed()) {
+        <div class="menu-header menu-item" [class.disabled]="isDisabled()">
+          @if (item().icon) {
+            <i [class]="item().icon" aria-hidden="true"></i>
+          }
+          {{ item().label }}
+        </div>
+      }
+    } @else {
+      <!-- Internal Router Link -->
+      @if (isInternalLink()) {
+        <a
+          class="menu-item"
+          [class.icon-only]="collapsed()"
+          [class.disabled]="isDisabled()"
+          [routerLink]="isDisabled() ? null : item().routerLink"
+          routerLinkActive="active"
+          #rla="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: item().exact ?? true }"
+          [ngClass]="item().class"
+          [title]="item().label"
+          [attr.aria-label]="item().label"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          [attr.aria-disabled]="isDisabled() || null"
+          [attr.tabindex]="isDisabled() ? -1 : null"
+          (click)="onLinkActivated()"
+        >
+          @if (item().icon) {
+            <span class="menu-icon-wrap">
+              <i [class]="item().icon" aria-hidden="true"></i>
+              @if (badgeSeverity(); as severity) {
+                <span class="menu-item-badge" [class]="'menu-item-badge--' + severity"></span>
+              }
+            </span>
+          }
+          @if (!collapsed()) {
+            <span class="menu-label">{{ item().label }}</span>
+          }
+        </a>
+      }
+
+      <!-- External Link -->
+@if (isExternalLink()) {
+        <a
+          class="menu-item"
+          [class.icon-only]="collapsed()"
+          [class.disabled]="isDisabled()"
+          [href]="item().url"
+          [target]="item().target ?? '_self'"
+          [attr.rel]="item().target === '_blank' ? 'noopener noreferrer' : null"
+          [title]="item().label"
+          [attr.aria-label]="item().label"
+          [attr.aria-disabled]="isDisabled() || null"
+          [attr.tabindex]="isDisabled() ? -1 : null"
+          (click)="onExternalLinkActivated($event)"
+        >
+          @if (item().icon) {
+            <i [class]="item().icon" aria-hidden="true"></i>
+          }
+          @if (!collapsed()) {
+            <span class="menu-label">{{ item().label }}</span>
+          }
+        </a>
+      }
+
+      <!-- Command Button (e.g. Sign Out) -->
+      @if (isCommandItem()) {
+        <button
+          type="button"
+          class="menu-item menu-item--command"
+          [class.icon-only]="collapsed()"
+          [class.disabled]="isDisabled()"
+          [disabled]="isDisabled()"
+          [attr.aria-disabled]="isDisabled() || null"
+          [ngClass]="item().class"
+          [title]="item().label"
+          [attr.aria-label]="item().label"
+          (click)="executeCommand()"
+        >
+          @if (item().icon) {
+            <i [class]="item().icon" aria-hidden="true"></i>
+          }
+          @if (!collapsed()) {
+            <span class="menu-label">{{ item().label }}</span>
+          }
+        </button>
+      }
+    }
+  }
+
+  <!-- Parent Menu Item (has children) -->
+  @if (hasChildren()) {
+    <!-- Root section header: label only, never interactive -->
+    @if (root()) {
+      @if (!collapsed()) {
+        <div class="menu-header menu-item" [class.disabled]="isDisabled()">
+          {{ item().label }}
+        </div>
+      }
+    } @else {
+      <!-- Non-root parent: toggle expand/collapse -->
+      <button
+        type="button"
+        class="menu-item menu-item--command"
+        [class.icon-only]="collapsed()"
+        [class.disabled]="isDisabled()"
+        [disabled]="isDisabled()"
+        [attr.aria-disabled]="isDisabled() || null"
+        [title]="item().label"
+        [attr.aria-label]="item().label"
+        [attr.aria-expanded]="expanded()"
+        [attr.aria-controls]="submenuId()"
+        (click)="toggle()"
+      >
+        @if (item().icon) {
+          <i [class]="item().icon" aria-hidden="true"></i>
+        }
+        @if (!collapsed()) {
+          <span class="menu-label">{{ item().label }}</span>
+          <i
+            class="bi ms-auto fs-6 fw-bold"
+            [class.bi-chevron-down]="expanded()"
+            [class.bi-chevron-up]="!expanded()"
+            aria-hidden="true"
+          ></i>
+        }
+      </button>
+    }
+
+    <!-- Sub-menu: collapsed mode hides nested lists for non-root parents -->
+    @if (expanded() && !collapsed()) {
+      <ul [id]="submenuId()" class="submenu-item">
+        @for (child of item().items; track child.label) {
+          <li>
+            <app-menu-item
+              [item]="child"
+              [collapsed]="collapsed()"
+              (itemActivated)="itemActivated.emit()"
+            ></app-menu-item>
+          </li>
+        }
+      </ul>
+    }
+    @if (collapsed() && root()) {
+      @for (child of item().items; track child.label) {
+        <app-menu-item [item]="child" [collapsed]="collapsed()" (itemActivated)="itemActivated.emit()"></app-menu-item>
+      }
+    }
+  }
+</div>

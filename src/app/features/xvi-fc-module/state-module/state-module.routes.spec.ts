@@ -1,0 +1,27 @@
+import { ACTIVE_STATE_CHILD_ROUTES } from './state-module.routes';
+import { StateDashboardComponent } from './state-dashboard/state-dashboard.component';
+import { RegisterUlbComponent } from './ulb-list/register-ulb/register-ulb.component';
+
+describe('state-module.routes — register-ulb', () => {
+  it('registers a "register-ulb" child route', () => {
+    const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'register-ulb');
+    expect(route).toBeTruthy();
+  });
+
+  it('"/xvifc/:yearId/register-ulb" resolves to RegisterUlbComponent', async () => {
+    const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'register-ulb');
+    const loaded = await route?.loadComponent?.();
+    expect(loaded).toBe(RegisterUlbComponent);
+  });
+
+  it('registers a "dashboard" child route', () => {
+    const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'dashboard');
+    expect(route).toBeTruthy();
+  });
+
+  it('"/xvifc/:yearId/dashboard" resolves to StateDashboardComponent', async () => {
+    const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'dashboard');
+    const loaded = await route?.loadComponent?.();
+    expect(loaded).toBe(StateDashboardComponent);
+  });
+});

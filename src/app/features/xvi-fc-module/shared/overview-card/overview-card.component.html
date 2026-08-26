@@ -1,0 +1,169 @@
+<main class="overview-card-shell">
+  @if (isLoading) {
+    <div class="overview-skeleton">
+      <div class="overview-skeleton__header mb-3">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-badge"></div>
+      </div>
+
+      <section class="ap-overview__hero mb-4">
+        <div class="overview-container">
+          <div class="hero-band mt-1 skeleton-hero">
+            <div class="skeleton skeleton-eyebrow mb-2"></div>
+            <div class="skeleton skeleton-amount mb-2"></div>
+            <div class="skeleton skeleton-meta mb-2"></div>
+            <div class="skeleton skeleton-sub"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grant-details-card">
+        <div class="row g-0">
+          <div class="col-12 col-lg-3 grant-sidebar-wrap">
+            <div class="grant-sidebar d-flex flex-column skeleton-sidebar">
+              @for (item of [1, 2]; track item) {
+                <div class="skeleton skeleton-tab"></div>
+              }
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-9">
+            <div class="grant-content skeleton-content">
+              <div class="skeleton skeleton-content-eyebrow mb-2"></div>
+              <div class="skeleton skeleton-content-title mb-2"></div>
+              <div class="skeleton skeleton-content-amount mb-4"></div>
+
+              <div class="grant-points mb-0">
+                @for (item of [1, 2, 3]; track item) {
+                  <div class="skeleton skeleton-point mb-2"></div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  } @else {
+    @if (overviewData; as data) {
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+        <h2
+          class="title-with-badge my-1"
+          [matBadge]="selectedYear"
+          [matBadgeHidden]="!selectedYear"
+          matBadgeOverlap="false"
+          matBadgeColor="primary"
+          matBadgePosition="above after"
+        >
+          {{ data.name }}
+        </h2>
+        <app-amount-display-toggle />
+      </div>
+
+      <section class="ap-overview__hero mb-4">
+        <span class="hero-deco hero-deco--1" aria-hidden="true"></span>
+        <span class="hero-deco hero-deco--2" aria-hidden="true"></span>
+
+        <div class="overview-container">
+          <div class="hero-layout">
+            <div class="hero-main">
+              <p class="hero-band__eyebrow mb-2">{{ data.subHeader1 }}</p>
+              <h3 class="hero-band__amount mb-2">
+                {{ isAmountNumber(data.totalAllocation) ? formatAmount(data.totalAllocation) : data.totalAllocation }}
+              </h3>
+              <p class="hero-band__meta mb-1">
+                {{ data.financialYear }}&ensp;·&ensp;{{ data.subHeader2 }}
+              </p>
+              <p class="hero-band__sub mb-0">{{ data.totalAllocationNote }}</p>
+            </div>
+
+            <div class="hero-divider" aria-hidden="true"></div>
+
+            <div class="hero-chips">
+              @for (section of data.grantSections; track section.id) {
+                @if (section.id === 'basic' || section.id === 'performance') {
+                  <div class="hero-chip">
+                    <span class="hero-chip__label">{{ section.label }}</span>
+                    <span class="hero-chip__amount">
+                      {{ isAmountNumber(section.amount) ? formatAmount(section.amount) : section.amount }}
+                    </span>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grant-details-card">
+        <div class="row g-0">
+          <div class="col-12 col-lg-3 grant-sidebar-wrap">
+            <div
+              class="grant-sidebar d-flex flex-column"
+              role="tablist"
+              aria-label="Grant categories"
+            >
+              @for (item of data.grantSections; track item.id) {
+                <button
+                  type="button"
+                  class="grant-tab text-start"
+                  [class.grant-tab--active]="isSelected(item.id)"
+                  [attr.aria-selected]="isSelected(item.id)"
+                  [attr.aria-controls]="'panel-' + item.id"
+                  role="tab"
+                  (click)="selectGrant(item.id)"
+                >
+                  {{ item.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-9">
+            @if (selectedGrant; as activeGrant) {
+              <div class="grant-content" [attr.id]="'panel-' + activeGrant.id" role="tabpanel">
+                <p class="grant-content__eyebrow mb-2">{{ activeGrant.componentLabel }}</p>
+                <h3 class="grant-content__title mb-2">{{ activeGrant.title }}</h3>
+
+                @if (activeGrant.amount) {
+                  <div class="grant-content__amount mb-4">
+                    {{ isAmountNumber(activeGrant.amount) ? formatAmount(activeGrant.amount) : activeGrant.amount }}
+                    @if (activeGrant.amountSuffix) {
+                      <span class="grant-content__amount-suffix">{{ activeGrant.amountSuffix }}</span>
+                    }
+                  </div>
+                }
+
+                @if (activeGrant.description) {
+                  <p class="grant-content__description mb-3">{{ activeGrant.description }}</p>
+                }
+
+                <ul class="grant-points mb-0">
+                  @for (point of activeGrant.points; track $index) {
+                    @if (isGrantPoint(point)) {
+                      <li>
+                        {{ point.text }}
+                        @if (point.subPoints?.length) {
+                          <ul class="grant-points grant-points--nested mt-2">
+                            @for (sub of point.subPoints; track sub) {
+                              <li>{{ sub }}</li>
+                            }
+                          </ul>
+                        }
+                      </li>
+                    } @else {
+                      <li>{{ point }}</li>
+                    }
+                  }
+                </ul>
+
+                @if (activeGrant.note) {
+                  <p class="grant-content__note mt-3 mb-0">{{ activeGrant.note }}</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  }
+</main>

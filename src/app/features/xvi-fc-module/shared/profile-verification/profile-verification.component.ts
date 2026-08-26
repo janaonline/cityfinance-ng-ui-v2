@@ -1,0 +1,744 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { EMPTY, Subscription, filter, fromEvent, switchMap } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators, FormControlStatus, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { ProfileVerificationService } from './profile-verification.service';
+import { StateProfile, UlbEntityInfo } from './profile-verification.models';
+import {
+  IDENTIFIER_SECURITY_VALIDATORS,
+  noHtmlOrScript,
+  noMongoOperators,
+} from '../../../../auth/validators/auth-security.validators';
+import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
+import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
+
+type ProfileRole = 'state' | 'ulb' | 'mohua';
+
+const ROLE_MAP: Record<string, ProfileRole> = {
+  STATE: 'state',
+  XVIFC_STATE: 'state',
+  ULB: 'ulb',
+  XVIFC: 'ulb',
+  MoHUA: 'mohua',
+};
+
+const ROUTE_ROLE_MAP: Record<string, Roles> = {
+  STATE: 'STATE',
+  XVIFC_STATE: 'STATE',
+  ULB: 'ULB',
+  XVIFC: 'ULB',
+  MoHUA: 'MOHUA',
+};
+
+@Component({
+  selector: 'app-profile-verification',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCardModule,
+    MatDividerModule,
+    PageErrorStateComponent,
+  ],
+  templateUrl: './profile-verification.component.html',
+  styleUrl: './profile-verification.component.scss',
+})
+export class ProfileVerificationComponent implements OnInit, OnDestroy {
+  private popstateSub?: Subscription;
+  private resendTimer?: number;
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
+  private readonly profileService = inject(ProfileVerificationService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
+
+  role: ProfileRole = 'state';
+  private year = '';
+  private entityId = '';
+  // M3 — cached from single localStorage parse in ngOnInit
+  private userId = '';
+  private routeRole: Roles = 'STATE';
+
+  // ── Shared ───────────────────────────────────────────────────
+  readonly isLoading = signal(true);
+  readonly loadError = signal('');
+  readonly errorMsg = signal('');
+  readonly isSaving = signal(false);
+
+  // ── ULB flow ─────────────────────────────────────────────────
+  readonly entityDetails = signal<UlbEntityInfo | null>(null);
+  readonly editingCommissioner = signal(false);
+  readonly editingAccountant = signal(false);
+
+  private static readonly NAME_PATTERN = /^[a-zA-Z\s.\-']+$/;
+  private static readonly PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!])/;
+
+  readonly commissionerForm = this.fb.nonNullable.group({
+    commissionerName: ['', [
+      Validators.required,
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    commissionerEmail: ['', [Validators.required, Validators.email, ...IDENTIFIER_SECURITY_VALIDATORS]],
+    commissionerConatactNumber: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
+  });
+
+  readonly accountantForm = this.fb.nonNullable.group({
+    accountantName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    accountantEmail: ['', [
+      Validators.required,
+      Validators.email,
+      Validators.maxLength(254),
+      ...IDENTIFIER_SECURITY_VALIDATORS,
+    ]],
+    accountantConatactNumber: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
+  });
+
+  private readonly _accountantStatus = toSignal(this.accountantForm.statusChanges, {
+    initialValue: this.accountantForm.status as FormControlStatus,
+  });
+  private readonly _commissionerStatus = toSignal(this.commissionerForm.statusChanges, {
+    initialValue: this.commissionerForm.status as FormControlStatus,
+  });
+
+  readonly canProceed = computed(
+    () =>
+      this._commissionerStatus() === 'VALID' &&
+      this._accountantStatus() === 'VALID' &&
+      !this.isSaving() &&
+      !this.sendingOtp(),
+  );
+
+  // ── State / MoHUA flow ───────────────────────────────────────
+  readonly stateProfile = signal<StateProfile | null>(null);
+  readonly editingStateProfile = signal(false);
+  readonly otpStep = signal(false);
+  /** The exact address the OTP was sent to — shown in the OTP box so the user knows which inbox to check. */
+  readonly otpEmail = signal('');
+  readonly otpValue = signal('');
+  readonly sendingOtp = signal(false);
+  // C2 — resend cooldown countdown (seconds)
+  readonly resendCooldown = signal(0);
+
+  // ── New-user onboarding ──────────────────────────────────────
+  readonly isNewUser = signal(false);
+  readonly passwordStep = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmPassword = signal(false);
+  private profileSaveToken = '';
+
+  private passwordsMatch(group: AbstractControl): ValidationErrors | null {
+    const pass = group.get('newPassword')?.value as string;
+    const confirm = group.get('confirmPassword')?.value as string;
+    return pass && confirm && pass !== confirm ? { passwordsMismatch: true } : null;
+  }
+
+  readonly passwordForm = this.fb.nonNullable.group(
+    {
+      newPassword: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(ProfileVerificationComponent.PASSWORD_PATTERN),
+      ]],
+      confirmPassword: ['', [Validators.required]],
+    },
+    { validators: this.passwordsMatch },
+  );
+
+  private readonly _passwordFormStatus = toSignal(this.passwordForm.statusChanges, {
+    initialValue: this.passwordForm.status as FormControlStatus,
+  });
+
+  readonly canSetNewPassword = computed(
+    () => this._passwordFormStatus() === 'VALID' && !this.isSaving(),
+  );
+
+  readonly stateForm = this.fb.nonNullable.group({
+    firstName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(50),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    lastName: ['', [
+      Validators.required,
+      Validators.minLength(2),
+      Validators.maxLength(50),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+    email: [{ value: '', disabled: true }],
+    mobile: ['', [Validators.pattern(/^[6-9]\d{9}$/), noHtmlOrScript, noMongoOperators]],
+    designation: ['', [
+      Validators.maxLength(100),
+      Validators.pattern(ProfileVerificationComponent.NAME_PATTERN),
+      noHtmlOrScript,
+      noMongoOperators,
+    ]],
+  });
+
+  get fullName(): string {
+    const f = this.stateForm.value.firstName ?? '';
+    const l = this.stateForm.value.lastName ?? '';
+    return (f + (f && l ? ' ' : '') + l) || '—';
+  }
+
+  private readonly _stateFormStatus = toSignal(this.stateForm.statusChanges, {
+    initialValue: this.stateForm.status as FormControlStatus,
+  });
+
+  readonly canSaveStateProfile = computed(
+    () => this._stateFormStatus() === 'VALID' && !this.isSaving() && !this.sendingOtp(),
+  );
+  readonly stateFormHasErrors = computed(() => this._stateFormStatus() === 'INVALID');
+  // H3 — enforce 6 numeric digits
+  readonly canConfirmOtp = computed(() => /^\d{4}$/.test(this.otpValue()) && !this.isSaving());
+  // C2 — resend allowed only after cooldown expires
+  readonly canResend = computed(() => this.resendCooldown() === 0 && !this.sendingOtp());
+
+  // ── Lifecycle ────────────────────────────────────────────────
+  ngOnDestroy(): void {
+    this.popstateSub?.unsubscribe();
+    if (this.resendTimer) window.clearInterval(this.resendTimer);
+  }
+
+  ngOnInit(): void {
+    // Intercept browser back button: redirect to year selection
+    history.pushState(null, '', window.location.href);
+    this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
+      history.pushState(null, '', window.location.href);
+      void this.router.navigate(['/xvifc/year'], { replaceUrl: true });
+    });
+
+    // H1 — validate year param; redirect if missing
+    this.year = this.route.snapshot.queryParamMap.get('year') ?? '';
+    if (!this.year) {
+      void this.router.navigate(['/xvifc/year'], { replaceUrl: true });
+      return;
+    }
+
+    this.entityId = this.route.snapshot.queryParamMap.get('entityId') ?? '';
+
+    // M3 — parse localStorage exactly once; cache role, userId, routeRole
+    const stored = this.profileService.readStoredUser();
+    const rawRole = stored.role ?? '';
+    this.role = ROLE_MAP[rawRole] ?? 'state';
+    this.routeRole = ROUTE_ROLE_MAP[rawRole] ?? 'STATE';
+    this.userId = stored._id ?? stored.id ?? '';
+    this.isNewUser.set(stored['isNewUser'] === true);
+
+    // New users must complete the onboarding flow regardless of isXVIFCProfileVerified
+    if (!this.isNewUser() && this.isAlreadyVerified()) {
+      void this.navigateToHome();
+      return;
+    }
+
+    if (this.role === 'ulb') {
+      // H4 — guard empty userId early for ULB
+      if (!this.userId) {
+        this.loadError.set('Unable to identify your account. Please log in again.');
+        this.isLoading.set(false);
+        return;
+      }
+      this.entityDetails.set(this.profileService.readUlbEntityInfo());
+      this.loadUlbContacts();
+    } else {
+      this.loadStateProfile(stored);
+    }
+  }
+
+  // ── ULB methods ──────────────────────────────────────────────
+  private loadUlbContacts(): void {
+    this.isLoading.set(true);
+    this.loadError.set('');
+    this.profileService.getProfileContacts(this.userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (contacts) => {
+          this.commissionerForm.patchValue(contacts);
+          this.accountantForm.patchValue(contacts);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.loadError.set('Failed to load your contact details. Please check your connection and try again.');
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  retryLoad(): void {
+    if (this.role === 'ulb') {
+      this.loadUlbContacts();
+    } else {
+      this.loadStateProfile();
+    }
+  }
+
+  openEditCommissioner(): void {
+    this.commissionerForm.markAsUntouched();
+    this.editingCommissioner.set(true);
+  }
+
+  openEditAccountant(): void {
+    this.accountantForm.markAsUntouched();
+    this.editingAccountant.set(true);
+  }
+
+  /**
+   * Validates both contact cards, then sends an OTP to the ULB Nodal Officer's email
+   * (`accountantEmail`) to confirm the ULB actually has access to that inbox before the
+   * contacts are saved. The actual save happens in `persistUlbContacts()` after OTP verification.
+   */
+  onSaveAndContinue(): void {
+    if (this.commissionerForm.invalid) {
+      this.openEditCommissioner();
+      return;
+    }
+    if (this.accountantForm.invalid) {
+      this.openEditAccountant();
+      return;
+    }
+    // H4 — guard empty userId
+    if (!this.userId) {
+      this.errorMsg.set('Session expired. Please log in again.');
+      return;
+    }
+
+    this.sendOtpAndShowStep(this.accountantForm.getRawValue().accountantEmail, () => {
+      this.editingCommissioner.set(false);
+      this.editingAccountant.set(false);
+    });
+  }
+
+  /**
+   * Shared by ULB (`onSaveAndContinue`) and STATE/MoHUA (`onSaveStateProfile`): sends an OTP to
+   * `email` and, on success, flips the UI into the OTP-entry step. `onSent` runs first so a
+   * caller can close its own edit mode — both cards must be locked once the OTP box is showing,
+   * or a still-editable Nodal Officer email field would let the user change it after the code
+   * was sent to the original address, verifying against the wrong email.
+   */
+  private sendOtpAndShowStep(email: string, onSent?: () => void): void {
+    this.sendingOtp.set(true);
+    this.errorMsg.set('');
+
+    this.profileService.sendProfileOtp(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ sent }) => {
+          this.sendingOtp.set(false);
+          if (!sent) {
+            this.errorMsg.set('Failed to send OTP. Please try again.');
+            return;
+          }
+          onSent?.();
+          this.otpEmail.set(email);
+          this.otpStep.set(true);
+          this.otpValue.set('');
+          this.errorMsg.set('');
+          this.startResendCooldown();
+          this.scrollOtpStepIntoView();
+        },
+      });
+  }
+
+  /** Scrolls the OTP box into view once it renders — it can otherwise land below the fold under
+   *  the contact cards (ULB) or the profile card (STATE/MoHUA), leaving users unsure where to
+   *  enter the code without scrolling down themselves. */
+  private scrollOtpStepIntoView(): void {
+    setTimeout(() => {
+      document.getElementById('pv-otp-step')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+
+  /** Persists both contact cards — called only after the Nodal Officer's OTP is verified and a
+   *  save token has been issued for that verification (see onConfirmOtp's ULB branch). */
+  private persistUlbContacts(saveToken: string): void {
+    // Always send all commissioner fields even when empty — backend transforms "" → null
+    // so the DB field is explicitly cleared rather than left with its old value.
+    const commRaw = this.commissionerForm.getRawValue();
+    const commissionerPayload = {
+      commissionerName: commRaw.commissionerName,
+      commissionerEmail: commRaw.commissionerEmail,
+      commissionerConatactNumber: commRaw.commissionerConatactNumber,
+    };
+
+    this.profileService
+      .saveUlbContacts(
+        this.userId,
+        {
+          ...commissionerPayload,
+          ...this.accountantForm.getRawValue(),
+        },
+        saveToken,
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ ok, fieldErrors }) => {
+          if (!ok) {
+            this.isSaving.set(false);
+            this.otpStep.set(false);
+            if (fieldErrors?.['commissionerEmail']) {
+              this.openEditCommissioner();
+              const control = this.commissionerForm.controls.commissionerEmail;
+              control.setErrors({ domainMx: true });
+              control.markAsTouched();
+            }
+            if (fieldErrors?.['accountantEmail']) {
+              this.openEditAccountant();
+              const control = this.accountantForm.controls.accountantEmail;
+              control.setErrors({ domainMx: true });
+              control.markAsTouched();
+            }
+            // Field-specific errors already show inline on the relevant card — no need to
+            // repeat them in the generic top banner too.
+            if (!fieldErrors) {
+              this.errorMsg.set('Failed to save contacts. Please try again.');
+            }
+            return;
+          }
+          this.markVerifiedInStorage();
+          this.snackBar.open('Profile saved successfully!', 'Close', {
+            duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+      });
+  }
+
+  // ── State / MoHUA methods ────────────────────────────────────
+  private loadStateProfile(stored?: Record<string, unknown>): void {
+    const user = stored ?? this.profileService.readStoredUser();
+    const fullName = ((user['name'] as string) ?? '').trim();
+    const spaceIdx = fullName.indexOf(' ');
+    const firstName = spaceIdx >= 0 ? fullName.slice(0, spaceIdx).trim() : fullName;
+    const lastName = spaceIdx >= 0 ? fullName.slice(spaceIdx + 1).trim() : '';
+    const profile: StateProfile = {
+      name: fullName,
+      firstName,
+      lastName,
+      email: (user['email'] as string) ?? '',
+      mobile: ((user['mobile'] as string) ?? ''),
+      designation: (user['designation'] as string) ?? '',
+    };
+    this.stateProfile.set(profile);
+    this.stateForm.patchValue({ firstName, lastName, email: profile.email, mobile: profile.mobile, designation: profile.designation });
+    this.stateForm.markAllAsTouched();
+    this.isLoading.set(false);
+  }
+
+  openEditStateProfile(): void {
+    this.editingStateProfile.set(true);
+  }
+
+  onSaveStateProfile(): void {
+    if (this.stateForm.invalid) {
+      this.stateForm.markAllAsTouched();
+      return;
+    }
+    // H2 — guard empty email
+    const email = this.stateProfile()?.email ?? '';
+    if (!email) {
+      this.errorMsg.set('No email address found. Please log in again.');
+      return;
+    }
+    // H4 — guard empty userId
+    if (!this.userId) {
+      this.errorMsg.set('Session expired. Please log in again.');
+      return;
+    }
+
+    this.sendOtpAndShowStep(email, () => this.editingStateProfile.set(false));
+  }
+
+  onConfirmOtp(): void {
+    const otp = this.otpValue();
+    if (!/^\d{4}$/.test(otp)) return; // H3
+
+    if (this.role === 'ulb') {
+      // Verify against the address the OTP was actually sent to (otpEmail), not a fresh read of
+      // the form — the form is locked during this step, but this stays correct even if that ever
+      // regresses, and avoids checking the code against a different email than it was issued for.
+      const nodalOfficerEmail = this.otpEmail();
+      if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
+      this.isSaving.set(true);
+      this.errorMsg.set('');
+
+      this.profileService.verifyProfileOtp(nodalOfficerEmail, otp)
+        .pipe(
+          switchMap(({ verified }) => {
+            if (!verified) {
+              this.isSaving.set(false);
+              this.errorMsg.set('Invalid or expired OTP. Please check the Nodal Officer\'s email and try again.');
+              return EMPTY;
+            }
+            // The backend requires this save token as proof OTP verification actually happened —
+            // saveUlbContacts() alone (client-side "only called after verified") is not a security
+            // boundary, same reasoning as the STATE/MoHUA save-token flow below.
+            return this.profileService.issueProfileSaveToken(this.userId);
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: ({ token }) => {
+            if (!token) {
+              this.isSaving.set(false);
+              this.errorMsg.set('Could not secure save session. Please verify your email again.');
+              return;
+            }
+            this.persistUlbContacts(token);
+          },
+        });
+      return;
+    }
+
+    const email = this.stateProfile()?.email ?? '';
+    if (!email) { this.errorMsg.set('No email address found. Please log in again.'); return; }
+    if (!this.userId) { this.errorMsg.set('Session expired. Please log in again.'); return; }
+
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+
+    if (this.role === 'mohua') {
+      // MOHUA: verified but doesn't redisplay the profile or restore name/mobile/designation into
+      // localStorage afterward — only STATE does that (preserved as-is, not unified).
+      this.verifyOtpThenSaveProfile({
+        email, otp, name, firstName, lastName, mobile, designation,
+        extraSaveFields: { isXviFcdeleted: false },
+        successMessage: 'Email verified successfully!',
+        updateStateProfileAfterSave: false,
+      });
+      return;
+    }
+
+    // STATE
+    this.verifyOtpThenSaveProfile({
+      email, otp, name, firstName, lastName, mobile, designation,
+      successMessage: 'Profile verified successfully!',
+      updateStateProfileAfterSave: true,
+    });
+  }
+
+  /**
+   * Shared by the STATE and MoHUA branches of `onConfirmOtp()`: OTP verify → issue a single-use
+   * save token → if this is a new user's first login, show the set-password step; otherwise save
+   * the profile fields and navigate home. `extraSaveFields`/`updateStateProfileAfterSave` carry
+   * the only two real differences between the STATE and MoHUA call sites.
+   */
+  private verifyOtpThenSaveProfile(options: {
+    email: string;
+    otp: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    mobile: string;
+    designation: string;
+    extraSaveFields?: Record<string, unknown>;
+    successMessage: string;
+    updateStateProfileAfterSave: boolean;
+  }): void {
+    const { email, otp, name, firstName, lastName, mobile, designation, extraSaveFields, successMessage, updateStateProfileAfterSave } = options;
+
+    this.profileService.verifyProfileOtp(email, otp).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      filter(({ verified }) => {
+        if (!verified) {
+          this.isSaving.set(false);
+          this.errorMsg.set('Invalid or expired OTP. Please check your email and try again.');
+        }
+        return verified;
+      }),
+      switchMap(() => this.profileService.issueProfileSaveToken(this.userId)),
+      filter(({ token }) => {
+        if (!token) {
+          this.isSaving.set(false);
+          this.errorMsg.set('Could not secure save session. Please verify your email again.');
+        }
+        return token.length > 0;
+      }),
+    ).subscribe({
+      next: ({ token }) => {
+        if (this.isNewUser()) {
+          this.isSaving.set(false);
+          this.profileSaveToken = token;
+          this.passwordStep.set(true);
+          return;
+        }
+        this.profileService.saveStateProfile(this.userId, { name, mobile, designation }, token, extraSaveFields)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: ({ ok }) => {
+              if (!ok) {
+                this.isSaving.set(false);
+                this.errorMsg.set('Profile save failed. Please try again.');
+                return;
+              }
+              if (updateStateProfileAfterSave) {
+                this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
+                this.markVerifiedInStorage({ name, mobile, designation });
+              } else {
+                this.markVerifiedInStorage();
+              }
+              this.snackBar.open(successMessage, 'Close', {
+                duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+                panelClass: ['snack-success'],
+              });
+              void this.navigateToHome();
+            },
+          });
+      },
+    });
+  }
+
+  onSetNewPassword(): void {
+    if (this.passwordForm.invalid) { this.passwordForm.markAllAsTouched(); return; }
+    const { newPassword } = this.passwordForm.getRawValue();
+    const { firstName, lastName, mobile, designation } = this.stateForm.getRawValue();
+    const name = [firstName, lastName].filter(Boolean).join(' ');
+    const email = this.stateProfile()?.email ?? '';
+    this.isSaving.set(true);
+    this.errorMsg.set('');
+
+    const token = this.profileSaveToken;
+
+    if (this.role === 'mohua') {
+      this.profileService.setNewPassword(newPassword, token, { name, mobile, designation })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: ({ ok }) => {
+            if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+            this.markVerifiedInStorage({ name, mobile, designation });
+            this.snackBar.open('Password set! Welcome to CityFinance.', 'Close', {
+              duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+              panelClass: ['snack-success'],
+            });
+            void this.navigateToHome();
+          },
+        });
+      return;
+    }
+
+    // STATE: set password + save profile fields in one call (single-use token)
+    this.profileService.setNewPassword(newPassword, token, { name, mobile, designation })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ ok }) => {
+          if (!ok) { this.isSaving.set(false); this.errorMsg.set('Failed to set password. Please try again.'); return; }
+          this.stateProfile.set({ name, firstName, lastName, mobile, designation, email });
+          this.markVerifiedInStorage({ name, mobile, designation });
+          this.snackBar.open('Profile verified successfully!', 'Close', {
+            duration: 3000, horizontalPosition: 'center', verticalPosition: 'top',
+            panelClass: ['snack-success'],
+          });
+          void this.navigateToHome();
+        },
+      });
+  }
+
+  resendOtp(): void {
+    if (!this.canResend()) return;
+    this.otpStep.set(false);
+    this.otpValue.set('');
+    if (this.role === 'ulb') {
+      this.onSaveAndContinue();
+    } else {
+      this.onSaveStateProfile();
+    }
+  }
+
+  // L4 — typed event handler (no $any); H3 — strip non-digits
+  onOtpInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 4);
+    input.value = digits;
+    this.otpValue.set(digits);
+  }
+
+  // C2 — 60-second countdown before resend is allowed
+  private startResendCooldown(): void {
+    if (this.resendTimer) window.clearInterval(this.resendTimer);
+    this.resendCooldown.set(60);
+    this.resendTimer = window.setInterval(() => {
+      const next = this.resendCooldown() - 1;
+      this.resendCooldown.set(next);
+      if (next <= 0) window.clearInterval(this.resendTimer);
+    }, 1000);
+  }
+
+  // ── Storage helpers ───────────────────────────────────────────
+  private isAlreadyVerified(): boolean {
+    try {
+      if (localStorage.getItem('isXVIFCProfileVerified') === 'true') return true;
+      const raw = localStorage.getItem('userData');
+      if (raw) {
+        const user = JSON.parse(raw) as { isXVIFCProfileVerified?: boolean };
+        return user.isXVIFCProfileVerified === true;
+      }
+    } catch { /* ignore */ }
+    return false;
+  }
+
+  private markVerifiedInStorage(profileUpdates?: { name?: string; mobile?: string; designation?: string }): void {
+    localStorage.setItem('isXVIFCProfileVerified', 'true');
+    try {
+      const raw = localStorage.getItem('userData');
+      if (raw) {
+        const user = JSON.parse(raw) as Record<string, unknown>;
+        user['isXVIFCProfileVerified'] = true;
+        user['isNewUser'] = false;
+        if (profileUpdates) {
+          if (profileUpdates.name !== undefined) user['name'] = profileUpdates.name;
+          if (profileUpdates.mobile !== undefined) user['mobile'] = profileUpdates.mobile;
+          if (profileUpdates.designation !== undefined) user['designation'] = profileUpdates.designation;
+        }
+        localStorage.setItem('userData', JSON.stringify(user));
+      }
+    } catch { /* ignore */ }
+  }
+
+  private navigateToHome(): Promise<boolean> {
+    if (this.role === 'mohua') {
+      return this.router.navigate(['/xvifc', this.year], { replaceUrl: true });
+    }
+    return this.router.navigate(
+      buildXvifcFeatureLink(this.routeRole, this.entityId, this.year, 'overview'),
+      { replaceUrl: true },
+    );
+  }
+}

@@ -4,6 +4,32 @@ import { environment } from '../../../../../environments/environment';
 import { Observable, map } from 'rxjs';
 import { S3FileURLResponse } from '../../../../core/models/s3Responses/fileURLResponse';
 
+export interface S3SignedUrlRequestItem {
+  fileName: string;
+  folder: string;
+  mimeType: string;
+  fileSize?: number;
+  pages?: number;
+  uploadId?: string;
+  expiresIn: number;
+}
+
+export interface S3UrlResult {
+  url: string;
+  fileUrl: string;
+  fileAlias?: string;
+  path?: string;
+  fileSize?: number;
+  uploadId?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  timestamp?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -28,6 +54,20 @@ export class FileService {
     );
     // .pipe(map((response) => this.changeKeys(response['data'][0])));
   }
+
+  getSignedUrls(items: S3SignedUrlRequestItem[]): Observable<S3UrlResult[]> {
+    return this.http
+      .post<ApiResponse<S3UrlResult[]> | S3UrlResult[]>(`${environment.api.url2}file/signed-url`, items)
+      .pipe(map((res) => this.unwrap(res)));
+  }
+
+  private unwrap<T>(res: ApiResponse<T> | T): T {
+    if (res !== null && typeof res === 'object' && 'success' in (res as object)) {
+      return (res as ApiResponse<T>).data;
+    }
+    return res as T;
+  }
+
   changeKeys(el: any) {
     let formattedObj = {
       data: [
@@ -83,9 +123,7 @@ export class FileService {
     });
   }
 
-  getFileProcessingStatus(
-    fileId: string,
-  ): Observable<{ message: string; completed: boolean; status: 'FAILED' }> {
+  getFileProcessingStatus(fileId: string): Observable<{ message: string; completed: boolean; status: 'FAILED' }> {
     // IMPORTANT Comment this and uncomment below line. Some changes may be required there...
     // return of({
     //   status: Math.random() > 0.5,

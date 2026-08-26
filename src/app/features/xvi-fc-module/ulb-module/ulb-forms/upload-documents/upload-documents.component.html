@@ -1,0 +1,365 @@
+<input #fileInput type="file" accept=".pdf" class="d-none" (change)="onFileSelected($event)" />
+
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+<div class="upload-documents-page container">
+  <h1 class="page-heading fw-bold mb-1">Upload Documents</h1>
+
+  @if (ulbDetails(); as details) {
+    <p class="page-subtitle text-muted mb-3">
+      <span class="text-primary fw-semibold">{{ details.ulbName }}</span>
+      &nbsp;·&nbsp;{{ details.selectedYear }}
+    </p>
+  }
+
+  @if (sectionLocked()) {
+    <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+      <mat-icon class="locked-banner-icon">lock</mat-icon>
+      <span class="body-sm">{{ lockedBannerMessage() }}</span>
+    </div>
+  }
+
+  @if (returnNotice(); as notice) {
+    <div class="section-returned-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+      <mat-icon class="returned-banner-icon">error_outline</mat-icon>
+      <span class="body-sm">{{ notice }}</span>
+    </div>
+  }
+
+  @if (configError()) {
+    <app-page-error-state
+      title="Failed to load document configuration"
+      message="We couldn't reach the server. Please check your connection and try again."
+      (retry)="retryLoadConfig()"
+    />
+  } @else {
+    <p class="upload-description body-sm mb-3">{{ config()?.description }}</p>
+    <p class="body-xs text-danger mb-3">
+      * Required documents must be uploaded before submitting. Documents marked "Optional" are not required.
+    </p>
+    <p class="body-xs text-muted mb-3">
+      These automated checks use AI and may occasionally produce incorrect results. You can request a manual review
+      at any time.
+    </p>
+
+    <div class="support-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+      <mat-icon class="support-banner-icon">mail_outline</mat-icon>
+      <span class="body-sm">
+        If you're facing an issue with any document, email
+        <a [href]="supportMailto()">16fc.grant&#64;cityfinance.in</a>
+        for help.
+      </span>
+    </div>
+
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="flex-grow-1">
+        <mat-progress-bar mode="determinate" [value]="progressPct()"></mat-progress-bar>
+      </div>
+      <span class="body-xs text-muted text-nowrap">{{ passedCount() }} of {{ totalCount() }} verified</span>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <div class="documents-list d-flex flex-column gap-3">
+          @if (isLoadingConfig() || isLoadingExisting()) {
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="doc-row doc-row--skeleton">
+                <div class="d-flex align-items-center gap-3 px-3 py-3">
+                  <div class="flex-grow-1">
+                    <div class="skeleton-line skeleton-line--title mb-1"></div>
+                    <div class="skeleton-line skeleton-line--sub"></div>
+                  </div>
+                  <div class="skeleton-btn"></div>
+                </div>
+              </div>
+            }
+          } @else {
+            @for (doc of documents(); track doc.id) {
+              <div class="doc-row">
+                <!-- ── Main row: title + status control ─────────────────────────── -->
+                <div class="doc-row-main d-flex align-items-start gap-3 px-3 py-3">
+                  <div class="flex-grow-1 min-w-0">
+                    <p class="doc-title fw-semibold mb-0">
+                      {{ doc.title }}
+                      @if (doc.required !== false) {
+                        <span class="text-danger">*</span>
+                      } @else {
+                        <span class="optional-badge ms-1">Optional</span>
+                      }
+                    </p>
+                    <p class="doc-subtitle text-muted mb-0">{{ doc.subtitle }}</p>
+                  </div>
+
+                  <div class="doc-right-col flex-shrink-0">
+                    <!-- UPLOADING: multipart in-flight -->
+                    @if (doc.status === 'uploading') {
+                      <div class="file-chip file-chip--uploading d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                        <mat-progress-bar
+                          mode="indeterminate"
+                          class="doc-upload-progress flex-grow-1"
+                        ></mat-progress-bar>
+                        <span class="doc-filename text-muted">Uploading…</span>
+                      </div>
+                    }
+
+                    <!-- PROCESSING: OCR running -->
+                    @if (doc.status === 'processing') {
+                      <div class="uploaded-block">
+                        <div
+                          class="file-chip file-chip--processing d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                        >
+                          <mat-progress-bar
+                            mode="indeterminate"
+                            class="doc-ocr-progress flex-grow-0"
+                            style="width: 60px"
+                          ></mat-progress-bar>
+                          <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{
+                            doc.fileName
+                          }}</span>
+                          @if (doc.sizeKb) {
+                            <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
+                          }
+                          @if (doc.versionLabel) {
+                            <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                          }
+                          <span class="processing-badge ms-1"> <span class="processing-dot">●</span> VERIFYING </span>
+                        </div>
+                        @if (doc.ocrProgressStep) {
+                          <p class="uploader-meta body-xs text-muted mt-1 mb-0">{{ doc.ocrProgressStep }}</p>
+                        }
+                        @if (doc.isStale) {
+                          <div class="manual-review-note mt-2">
+                            <mat-icon class="align-middle">schedule</mat-icon>
+                            This is taking longer than expected. You can retry verification or re-upload the file.
+                          </div>
+                          <div class="d-flex gap-2 mt-2">
+                            <app-document-action-row
+                              role="ULB"
+                              [sectionStatusId]="sectionStatusId() ?? 1"
+                              [gates]="actionGates()"
+                              [doc]="toRuntimeState(doc)"
+                              [readOnly]="!canUpload()"
+                              (actionClicked)="onDocAction($event)"
+                            />
+                          </div>
+                        }
+                      </div>
+                    }
+
+                    <!-- PASSED -->
+                    @if (doc.status === 'passed') {
+                      <div class="uploaded-block">
+                        <div class="d-flex align-items-center gap-2">
+                          <div class="file-chip file-chip--passed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                            <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{
+                              doc.fileName
+                            }}</span>
+                            @if (doc.sizeKb) {
+                              <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
+                            }
+                            @if (doc.versionLabel) {
+                              <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                            }
+                            @if (doc.required !== false) {
+                              @if (doc.latestDecision?.status === 'RETURNED') {
+                                <span class="returned-badge ms-1"> <span class="returned-dot">●</span> RETURNED </span>
+                              } @else {
+                                <span class="passed-badge ms-1"> <span class="passed-dot">●</span> PASSED </span>
+                              }
+                            }
+                            <button
+                              mat-icon-button
+                              class="chip-icon-btn"
+                              type="button"
+                              matTooltip="Preview document"
+                              (click)="previewFile(doc)"
+                            >
+                              <mat-icon class="chip-icon">visibility</mat-icon>
+                            </button>
+                          </div>
+                          <app-document-action-row
+                            role="ULB"
+                            [sectionStatusId]="sectionStatusId() ?? 1"
+                            [gates]="actionGates()"
+                            [doc]="toRuntimeState(doc)"
+                            [readOnly]="!canDelete() && !canUpload()"
+                            (actionClicked)="onDocAction($event)"
+                          />
+                        </div>
+                        <p class="uploader-meta body-xs text-muted mt-1 mb-0">
+                          Uploaded by <strong>{{ uploaderLabel(doc) }}</strong>
+                          @if (doc.uploadedAt) {
+                            &nbsp;·&nbsp;{{ timeAgo(doc.uploadedAt) }}
+                          }
+                        </p>
+                      </div>
+                    }
+
+                    <!-- FAILED: chip + action buttons (validation details shown below in full-width panel) -->
+                    @if (doc.status === 'failed') {
+                      <div class="uploaded-block">
+                        <div class="file-chip file-chip--failed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                          <mat-icon class="chip-fail-icon">error_outline</mat-icon>
+                          <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{
+                            doc.fileName
+                          }}</span>
+                          @if (doc.versionLabel) {
+                            <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                          }
+                          <span class="failed-badge ms-1"> <span class="failed-dot">●</span> FAILED </span>
+                        </div>
+                        <!-- // TODO: move this to the action row component so that it can be reused in the manual review
+                        queue -->
+                        @if (doc.manualReviewDecision?.status === 'RETURNED') {
+                          <div class="manual-review-returned mt-2">
+                            <mat-icon class="align-middle">error_outline</mat-icon>
+                            Manual review declined: {{ doc.manualReviewDecision?.note ?? 'No reason given.' }}
+                          </div>
+                        } @else if (doc.isManualReviewRequested) {
+                          <div class="manual-review-note mt-2">
+                            <mat-icon class="align-middle">support_agent</mat-icon>
+                            Manual review requested — our team will review this document within 48 hours.
+                          </div>
+                        } @else if (canDelete() && !sectionLocked()) {
+                          @if (doc.retryValidationCount > 0) {
+                            <div class="d-flex mt-2">
+                              <button
+                                mat-stroked-button
+                                class="manual-review-btn flex-grow-1"
+                                type="button"
+                                (click)="requestManualReview(doc.id)"
+                              >
+                                <mat-icon>support_agent</mat-icon> Request Manual Review
+                              </button>
+                            </div>
+                          }
+                          @if (doc.manualReviewError) {
+                            <p class="manual-review-error mt-1 mb-0">{{ doc.manualReviewError }}</p>
+                          }
+                        }
+                        <div class="d-flex gap-2 mt-2">
+                          <app-document-action-row
+                            role="ULB"
+                            [sectionStatusId]="sectionStatusId() ?? 1"
+                            [gates]="actionGates()"
+                            [doc]="toRuntimeState(doc)"
+                            [readOnly]="!canUpload()"
+                            (actionClicked)="onDocAction($event)"
+                          />
+                        </div>
+                      </div>
+                    }
+
+                    <!-- ERROR: validation or network failure -->
+                    @if (doc.status === 'error') {
+                      <div class="file-chip file-chip--error d-flex align-items-center gap-2 px-3 py-2 rounded-2 mb-2">
+                        <mat-icon class="doc-status-icon text-danger">
+                          {{ doc.validationError ? 'info_outline' : 'error_outline' }}
+                        </mat-icon>
+                        <span class="doc-filename text-danger">
+                          {{ doc.validationError ?? 'Upload failed. Try again.' }}
+                        </span>
+                      </div>
+                      <app-document-action-row
+                        role="ULB"
+                        [sectionStatusId]="sectionStatusId() ?? 1"
+                        [gates]="actionGates()"
+                        [doc]="toRuntimeState(doc)"
+                        [readOnly]="!canUpload()"
+                        (actionClicked)="onDocAction($event)"
+                      />
+                    }
+
+                    <!-- PENDING -->
+                    @if (doc.status === 'pending') {
+                      <app-document-action-row
+                        role="ULB"
+                        [sectionStatusId]="sectionStatusId() ?? 1"
+                        [gates]="actionGates()"
+                        [doc]="toRuntimeState(doc)"
+                        [readOnly]="!canUpload()"
+                        (actionClicked)="onDocAction($event)"
+                      />
+                    }
+                  </div>
+                </div>
+
+                <!-- ── Approved/returned banner (full-width, spans the whole row) ── -->
+                @if (doc.status === 'passed' && isDocLocked(doc)) {
+                  <div class="px-3 pb-3">
+                    <p class="doc-approved-note mb-0">
+                      <mat-icon class="align-middle">check_circle</mat-icon>
+                      Approved by your state — this document is locked and cannot be re-uploaded.
+                    </p>
+                  </div>
+                } @else if (doc.status === 'passed' && doc.latestDecision?.status === 'RETURNED') {
+                  <div class="px-3 pb-3">
+                    <p class="doc-returned-note mb-0">
+                      <mat-icon class="align-middle">error_outline</mat-icon>
+                      Returned by your state: {{ doc.latestDecision?.note ?? 'No reason given.' }}
+                    </p>
+                  </div>
+                }
+
+                <!-- ── Validation results panel (full-width, only when FAILED with details) ── -->
+                @if (doc.status === 'failed' && (doc.failedChecks.length || doc.validationDetails)) {
+                  <div class="validation-panel px-3 pb-3">
+                    <div class="validation-header d-flex align-items-center gap-2 mb-2">
+                      <mat-icon class="validation-header-icon">report_problem</mat-icon>
+                      <span class="validation-header-label">Validation failed — issues found in this document</span>
+                    </div>
+
+                    @if (doc.validationDetails) {
+                      <p class="validation-summary mb-2">{{ doc.validationDetails }}</p>
+                    }
+
+                    @if (doc.failedChecks.length) {
+                      <ul class="validation-checks mb-0 ps-0">
+                        @for (check of doc.failedChecks; track check) {
+                          <li class="validation-check-item d-flex align-items-start gap-2">
+                            <mat-icon class="check-x-icon flex-shrink-0">cancel</mat-icon>
+                            <span>{{ formatCheckLabel(check) }}</span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (canConfirm() && !sectionLocked()) {
+      <div class="page-footer d-flex justify-content-end align-items-center border-top pt-3">
+        <div class="d-flex flex-column align-items-end gap-1">
+          <button
+            mat-flat-button
+            class="confirm-btn"
+            type="button"
+            [disabled]="!allPassed()"
+            (click)="confirmDocuments()"
+          >
+            {{ config()?.confirmLabel }}
+          </button>
+          <p class="footer-note body-xs text-muted mb-0">
+            @if (hasReturnedDocs()) {
+              Please re-upload the returned document(s) above before confirming.
+            } @else {
+              All documents must pass verification before confirming. Once confirmed, documents are locked.
+            }
+          </p>
+        </div>
+      </div>
+    }
+  }
+  <!-- end @else (configError) -->
+</div>
+      </div>
+    </div>
+  </div>
+</div>

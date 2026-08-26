@@ -1,0 +1,105 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div>
+      <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+        <span class="text-secondary">16th Finance Commission</span>
+        @if (stateName()) {
+          &nbsp;&middot;&nbsp; {{ stateName() }}
+        }
+      </div>
+
+      <h1 class="page-title mb-2">State Finance Commission Verification</h1>
+
+      <p class="page-subtitle text-secondary mb-0">
+        As part of the 16th Finance Commission grant conditions, the constitution and functioning of the State Finance
+        Commission (SFC) must be verified by the state government.
+      </p>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else {
+      @if (actors().length) {
+        <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
+        <hr class="my-0 text-body-tertiary" />
+      }
+
+      <form class="content-body" [formGroup]="form">
+        @for (item of visibleFields(); track item.key; let isLast = $last) {
+          <div
+            class="my-2"
+            [class.border-bottom]="!isLast"
+            [class.border-secondary]="!isLast"
+            [class.border-opacity-25]="!isLast"
+          >
+            <app-dynamic-form
+              class="p-2 d-block"
+              [field]="item"
+              [group]="form"
+              [mode]="canEdit() ? 'edit' : 'view'"
+            ></app-dynamic-form>
+          </div>
+        }
+      </form>
+    }
+  </div>
+</section>
+
+<!-- Show acknowledgement section only if edit + finalSubmit is true -->
+@if (canEdit() || canFinalSubmit()) {
+  <div class="acknowledgement">
+    <div class="acknowledgement-inner">
+      <button
+        type="button"
+        matButton="outlined"
+        [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+        (click)="onCancel()"
+        data-cy="sfc-status-cancel-test"
+      >
+        <i class="bi bi-x-circle-fill d-md-none"></i>
+        <span class="d-none d-md-inline">Cancel</span>
+      </button>
+
+      <button
+        type="submit"
+        matButton="filled"
+        [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
+        (click)="onSubmit('saveAsDraft')"
+        data-cy="sfc-status-submit-test"
+      >
+        @if (isSavingDraft()) {
+          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          <span class="d-none d-md-inline">Saving...</span>
+        } @else {
+          <i class="bi bi-bookmark-check-fill d-md-none"></i>
+          <span class="d-none d-md-inline">Save</span>
+        }
+      </button>
+
+      <!-- Show submit button only if finalSubmit = true -->
+      @if (canFinalSubmit()) {
+        <button
+          type="button"
+          matButton="filled"
+          [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
+          (click)="onSubmit('finalSubmit')"
+          data-cy="sfc-status-final-submit-test"
+        >
+          @if (isFinalSubmitting()) {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <span class="d-none d-md-inline">Submitting...</span>
+          } @else {
+            <i class="bi bi-send-check-fill d-md-none"></i>
+            <span class="d-none d-md-inline">Final Submit</span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+}

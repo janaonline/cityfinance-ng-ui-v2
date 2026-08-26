@@ -1,0 +1,66 @@
+@use '@angular/material' as mat;
+
+// Angular Material's default (density 0) form fields render ~56px tall — much taller than
+// Bootstrap's ~38px `.form-control`. Density -4 brings them down to 40px, close to Bootstrap's
+// sizing, without touching the color/typography inherited from the ancestor theme.
+:host {
+  @include mat.theme(
+    (
+      density: -4,
+    )
+  );
+}
+
+.form-section-grid__card {
+  border-radius: 0.5rem;
+  color: var(--color-primary);
+  background-color: white;
+
+  // position: relative;
+  // // box-shadow: 0 12px 32px rgba(23, 32, 51, 0.06) !important;
+  // animation-delay: 60ms;
+
+  &::before {
+    content: '';
+    // position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #0f6f49, #087b7f, #82ccba);
+    // z-index: 1;
+  }
+}
+
+.form-section-grid__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  // color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.form-section-grid__icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.form-section-grid__label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.form-section-grid__divider {
+  // Breaks out of mat-card-content's horizontal padding so the divider spans the full card width.
+  margin: 1.5rem -1rem;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.12);
+}

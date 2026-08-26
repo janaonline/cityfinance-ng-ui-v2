@@ -1,0 +1,16 @@
+@use '../../../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+  @include layout.acknowledgement-layout;
+}
+
+.eulb-cell-invalid {
+  background-color: var(--bs-danger-bg-subtle);
+  box-shadow: inset 3px 0 0 var(--bs-danger);
+  cursor: pointer;
+}
+
+.eulb-error-icon {
+  line-height: 1;
+}

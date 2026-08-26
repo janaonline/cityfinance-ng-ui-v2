@@ -1,0 +1,365 @@
+@use '../../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.shared-page-header;
+}
+
+.back-btn {
+  color: var(--mat-sys-on-surface-variant, #5f6368);
+  background: #f3f5f8;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  height: auto;
+  font-size: 0.8rem;
+}
+
+.ulb-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fy-badge {
+  background-color: var(--color-primary, #114551);
+  color: var(--color-on-primary, #fff);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.35em 0.75em;
+}
+
+.section-tab {
+  border: 1px solid var(--mat-sys-outline-variant, #d5d9dd);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  transition: all 150ms ease;
+
+  &:disabled {
+    color: #9aa1ab;
+    background: #f3f5f8;
+    cursor: not-allowed;
+  }
+
+  &--active {
+    background: var(--color-primary, #114551);
+    border-color: var(--color-primary, #114551);
+    color: var(--color-on-primary, #fff);
+  }
+}
+
+.checks-badge {
+  background-color: #e6f6ec;
+  color: #1e7e42;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.4em 0.85em;
+}
+
+.review-meta {
+  white-space: nowrap;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.doc-row {
+  border: 1px solid var(--mat-sys-outline-variant, #e2e6ec);
+  border-radius: 0.75rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.doc-row-controls {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+.doc-title {
+  font-size: 0.8rem;
+}
+
+.optional-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 7px;
+  height: 16px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.doc-date {
+  font-size: 0.68rem;
+  margin-top: 0.1rem;
+}
+
+.doc-status-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.3em 0.6em;
+}
+
+.passed-badge {
+  background-color: #e6f6ec;
+  color: #1e7e42;
+}
+
+.failed-badge {
+  background-color: #fdecea;
+  color: #c62828;
+}
+
+.reuploaded-badge {
+  background-color: #eef4ff;
+  color: #1d4ed8;
+}
+
+.pending-badge {
+  background-color: #fff4e0;
+  color: #9a6700;
+}
+
+.view-pdf-btn {
+  --mat-button-outlined-container-height: 30px;
+  --mat-button-outlined-horizontal-padding: 0.75rem;
+  height: 30px;
+  font-size: 0.78rem;
+
+  i {
+    font-size: 0.85rem;
+  }
+}
+
+.returned-note {
+  font-size: 0.8rem;
+  color: #c62828;
+  background: #fdecea;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pfms-details-panel {
+  background: #f3f5f8;
+  border-radius: 0.6rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pfms-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pfms-detail-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #647085;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pfms-detail-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+// CSS-grid accordion: animates open/closed purely via class toggle, no JS timing needed.
+.return-box-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms ease;
+  margin-top: 0;
+
+  &--open {
+    grid-template-rows: 1fr;
+    margin-top: 0.85rem;
+  }
+}
+
+.return-box-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.history-panel .return-box-inner {
+  border: 1px solid var(--mat-sys-outline-variant, #e2e6ec);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.1rem;
+}
+
+.return-box-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.4rem;
+}
+
+.return-box-textarea {
+  width: 100%;
+  border: 1px solid var(--mat-sys-outline-variant, #d5d9dd);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+
+  &:focus {
+    outline: none;
+    border-color: var(--mat-sys-primary, #114551);
+  }
+}
+
+.return-box-submit {
+  --mat-button-filled-container-color: #c62828;
+}
+
+.return-box-char-count {
+  font-size: 0.72rem;
+  color: #8a939f;
+
+  &--invalid {
+    color: #c62828;
+  }
+}
+
+.pfms-history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mat-sys-primary, #114551);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.history-item {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.history-item-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: #1e7e42;
+
+  &--returned {
+    background: #c62828;
+  }
+}
+
+.history-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-item-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-transform: capitalize;
+}
+
+.history-item-date {
+  font-size: 0.7rem;
+  color: #8a939f;
+  white-space: nowrap;
+}
+
+.history-item-note {
+  font-size: 0.78rem;
+  color: #4b5563;
+  margin-top: 0.2rem;
+}
+
+.history-item-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #647085;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-dot,
+.skeleton-bar {
+  display: inline-block;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eef0f3 25%, #e2e6ec 37%, #eef0f3 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+}
+
+.skeleton-bar {
+  height: 0.7rem;
+
+  &--title {
+    width: 130px;
+  }
+
+  &--date {
+    width: 90px;
+  }
+
+  &--status {
+    width: 100px;
+    margin-top: 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-dot,
+  .skeleton-bar {
+    animation: none;
+  }
+}

@@ -1,0 +1,94 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
+// ── Font size fix for long placeholder amount text ────────────────────────────
+::ng-deep app-overview-card .grant-content__amount {
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0 !important;
+  font-weight: 700 !important;
+}
+
+// ── Hero band: clamp the large amount on small screens ────────────────────────
+::ng-deep app-overview-card .hero-band__amount {
+  font-size: clamp(0.95rem, 1.6vw, 1.2rem) !important;
+  line-height: 1.3 !important;
+}
+
+// ── Hero chips: never overflow the container ──────────────────────────────────
+::ng-deep app-overview-card .hero-chips {
+  width: min(22rem, 100%) !important;
+}
+
+// ── Tablet (≤ 991px) ─────────────────────────────────────────────────────────
+@media (max-width: 991.98px) {
+  ::ng-deep app-overview-card .hero-layout {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  ::ng-deep app-overview-card .hero-chips {
+    width: 100% !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  ::ng-deep app-overview-card .hero-divider {
+    display: none !important;
+  }
+
+  ::ng-deep app-overview-card .grant-sidebar-wrap {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(17, 69, 81, 0.12) !important;
+  }
+
+  ::ng-deep app-overview-card .grant-sidebar {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0 !important;
+  }
+}
+
+// ── Mobile (≤ 575px) ─────────────────────────────────────────────────────────
+@media (max-width: 575.98px) {
+  .content-wrap {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 1rem !important;
+  }
+
+  ::ng-deep app-overview-card .ap-overview__hero {
+    padding: 0.85rem 1rem !important;
+  }
+
+  ::ng-deep app-overview-card .hero-band__eyebrow {
+    font-size: 0.55rem !important;
+  }
+
+  ::ng-deep app-overview-card .hero-band__meta,
+  ::ng-deep app-overview-card .hero-band__sub {
+    font-size: 0.6rem !important;
+  }
+
+  ::ng-deep app-overview-card .hero-chips {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  ::ng-deep app-overview-card .grant-sidebar {
+    grid-template-columns: 1fr !important;
+  }
+
+  ::ng-deep app-overview-card .grant-content {
+    padding: 1rem !important;
+  }
+
+  ::ng-deep app-overview-card .grant-content__title {
+    font-size: 0.9rem !important;
+  }
+
+  ::ng-deep app-overview-card .title-with-badge {
+    font-size: 1.3rem !important;
+  }
+}

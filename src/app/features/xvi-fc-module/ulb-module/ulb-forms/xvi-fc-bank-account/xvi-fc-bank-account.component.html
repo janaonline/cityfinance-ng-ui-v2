@@ -1,0 +1,161 @@
+<input #proofInput type="file" accept=".pdf,.jpg,.jpeg,.png" class="d-none" aria-hidden="true"
+  (change)="onProofSelected($event)" />
+
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+<div class="container xvifc-theme">
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+    <h1 class="fs-4 fw-bold mb-0">{{ pageTitle }}</h1>
+    @if (existingRecord(); as record) {
+    <span class="status-pill small fw-semibold" [class.status-pill--returned]="isReturnedStatus()">{{
+      record.currentFormStatusLabel }}</span>
+    }
+  </div>
+
+  @if (ulbDetails(); as details) {
+  <p class="small text-muted mb-3">
+    <span class="text-primary fw-semibold">{{ details.ulbName }}</span>
+    &nbsp;·&nbsp;
+    {{ details.stateName }}
+    &nbsp;·&nbsp;
+    {{ details.selectedYear }}
+  </p>
+  }
+
+  <p class="small text-secondary mb-4">{{ pageDescription }}</p>
+
+  @if (loadError()) {
+  <div class="alert alert-danger py-2 px-3 small mb-3" role="alert">
+    {{ loadError() }}
+  </div>
+  }
+
+  @if (isFormLoading()) {
+  <div class="d-flex align-items-center gap-2 text-muted small py-2 mb-3" role="status" aria-live="polite">
+    <span class="spinner-border spinner-border-sm flex-shrink-0" aria-hidden="true"></span>
+    Loading bank account details...
+  </div>
+  }
+
+  @if (!isFormLoading() && !isEditable()) {
+  <div class="alert alert-info py-2 px-3 small mb-3" role="status">
+    <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>{{ lockedBannerMessage() }}
+  </div>
+  }
+
+  @if (returnNotice(); as notice) {
+  <div class="returned-notice-banner py-2 px-3 small mb-3" role="status">
+    <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ notice }}
+  </div>
+  }
+
+  <section class="card border-0 shadow-sm rounded-3 p-3 mb-4 account-card" aria-labelledby="account-card-title">
+
+    @if (existingRecord()?.accountNumberMasked; as maskedAccount) {
+    <div class="masked-account rounded-2 p-3 mb-3">
+      <p class="small text-muted mb-1">Saved account number</p>
+      <p class="fw-semibold mb-0">{{ maskedAccount }}</p>
+    </div>
+    }
+
+    <form novalidate>
+      @for (item of visibleFields(); track item.key) {
+      <app-dynamic-form class="d-block mb-3" [field]="item" [group]="form"
+        [mode]="isEditable() ? 'edit' : 'view'"></app-dynamic-form>
+      @if (item.key === 'ifscCode') {
+      @if (bankDetailsSummary(); as bank) {
+      <div class="bank-details rounded-2 p-3 mb-3" role="status" aria-live="polite">
+        <div class="bank-details__name d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span>{{ bank.name }}</span>
+        </div>
+        <p class="small mb-1"><strong>Branch:</strong> {{ bank.branch }}</p>
+        <p class="small mb-1"><strong>Address:</strong> {{ bank.address }}</p>
+        <p class="small mb-1"><strong>City:</strong> {{ bank.city }}</p>
+        @if (bank.state) {
+        <p class="small mb-1"><strong>State:</strong> {{ bank.state }}</p>
+        }
+        <p class="small mb-0"><strong>MICR:</strong> {{ bank.micr || 'Not available' }}</p>
+      </div>
+      }
+      }
+      }
+
+      <div class="mb-0">
+        <p class="form-label fw-semibold small mb-0">
+          {{ proofField.label }}
+          <span class="text-danger" aria-hidden="true">*</span>
+        </p>
+        <p class="small text-muted mt-0 mb-2">Cancelled cheque &middot; {{ proofField.acceptedFormatsText }}</p>
+
+        @if (selectedProof(); as proof) {
+        <div class="file-chip--ready d-flex align-items-center gap-2 rounded-2 px-3 py-2 mb-2">
+          <mat-icon class="proof-file-icon flex-shrink-0" aria-hidden="true">picture_as_pdf</mat-icon>
+          <span class="text-truncate fw-semibold text-success small">{{ proof.originalName }}</span>
+          <span class="text-muted flex-shrink-0 small">· {{ formatFileSize(proof.sizeKb) }}</span>
+          @if (proof.mimeType === 'application/pdf' && proof.pages !== null) {
+          <span class="text-muted flex-shrink-0 small">· {{ proof.pages }} {{ proof.pages === 1 ? 'page' : 'pages'
+            }}</span>
+          }
+          <button type="button" mat-icon-button class="chip-icon-btn ms-auto"
+            [matTooltip]="'View ' + proof.originalName" (click)="viewProof(proof)" aria-label="View document">
+            <mat-icon class="chip-icon">visibility</mat-icon>
+          </button>
+          @if (isEditable()) {
+          <button type="button" mat-icon-button class="chip-icon-btn chip-icon-btn--delete" matTooltip="Remove"
+            (click)="removeProof()" aria-label="Remove proof document">
+            <mat-icon class="chip-icon">close</mat-icon>
+          </button>
+          }
+        </div>
+        }
+
+        @if (isEditable() && !selectedProof()) {
+        <div class="proof-dropzone d-flex flex-column align-items-center justify-content-center gap-1 rounded-3 mb-2"
+          role="button" tabindex="0" [attr.aria-disabled]="isProofUploading() || isSubmitting()"
+          [class.proof-dropzone--disabled]="isProofUploading() || isSubmitting()" (click)="triggerProofUpload()"
+          (keydown.enter)="triggerProofUpload()" (keydown.space)="$event.preventDefault(); triggerProofUpload()">
+          @if (isProofUploading()) {
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          <span class="fw-semibold small">Uploading...</span>
+          } @else {
+          <i class="bi bi-arrow-up-circle proof-dropzone__icon" aria-hidden="true"></i>
+          <span class="fw-semibold small">{{ proofField.uploadLabel }}</span>
+          <span class="text-muted small">{{ proofField.acceptedFormatsText }} &middot; Max {{ proofField.maxSizeMb }}
+            MB</span>
+          }
+        </div>
+        }
+
+        @if (proofError()) {
+        <div class="text-danger small mt-2" role="alert">{{ proofError() }}</div>
+        }
+      </div>
+    </form>
+  </section>
+
+  <div class="pt-2">
+    <div class="d-flex align-items-center gap-2">
+      @if (isEditable()) {
+      <button class="btn btn-success btn-sm d-inline-flex align-items-center gap-2" type="button"
+        [disabled]="!canSubmit()" (click)="submit()">
+        @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Submitting...
+        } @else {
+        Submit to State DMA
+        }
+      </button>
+      }
+    </div>
+    @if (isEditable() && submitBlockedReason(); as reason) {
+    <p class="text-danger small mt-2 mb-0" role="status">{{ reason }}</p>
+    }
+  </div>
+</div>
+      </div>
+    </div>
+  </div>
+</div>

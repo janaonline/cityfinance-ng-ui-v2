@@ -1,0 +1,17 @@
+@use '../../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+  @include layout.acknowledgement-layout;
+}
+
+.status-pill {
+  color: #0f5132;
+  background: #d1e7dd;
+  border: 1px solid #badbcc;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  white-space: nowrap;
+}
+
+// Indicator-table/declaration-card styling lives in the shared app-slb-form-body component now.

@@ -1,0 +1,261 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <div>
+        <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+          <span class="text-secondary">16th Finance Commission</span>
+          @if (stateName()) {
+            &nbsp;&middot;&nbsp; {{ stateName() }}
+          }
+        </div>
+
+        <h1 class="page-title mb-2">Generate Claim Letter</h1>
+
+        <p class="page-subtitle text-secondary mb-0">
+          Select ULBs and claim amounts against your state's Installment {{ installment }} allocation, then upload a
+          signed claim letter for MoHUA. You may hold multiple claim batches at a time, up to the slot limit shown
+          below.
+        </p>
+      </div>
+
+      @if (!isLoading() && !loadError()) {
+        <div class="">
+          <button
+            type="button"
+            matButton="filled"
+            [disabled]="!canCreateNewClaim()"
+            (click)="createNewClaim()"
+            data-cy="claim-letter-new-button"
+          >
+            <i class="bi bi-plus-lg me-1"></i>New Claim
+          </button>
+
+          @if (newClaimDisabledReason(); as reason) {
+            <div
+              class="alert alert-danger py-1 px-2 mt-2 mb-0 small"
+              role="alert"
+              data-cy="claim-letter-new-disabled-reason"
+            >
+              <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+              <span class="px-1">{{ reason }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else if (loadError()) {
+      <div class="d-flex flex-column align-items-start gap-2 py-3">
+        <p class="text-secondary mb-0">We couldn't load Claim Letter data.</p>
+        <button type="button" matButton="outlined" (click)="loadAll()" data-cy="claim-letter-retry">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      </div>
+    } @else {
+      @if (eligibility(); as eligibilitySummary) {
+        <div class="border shadow-sm rounded-3 p-3 d-flex flex-column gap-2" data-cy="claim-letter-eligibility-panel">
+          <div class="d-flex flex-wrap align-items-center gap-3">
+            @if (isEligible()) {
+              <span class="custom-font-size-6 badge text-bg-success">Eligible</span>
+            } @else {
+              <span class="custom-font-size-6 badge text-bg-danger">Not Eligible</span>
+            }
+            &middot;
+            <span class="small">
+              Expected ULBs: <b>{{ eligibilitySummary.expectedUlbCount }}</b>
+            </span>
+            &middot;
+            <span
+              class="small"
+              [class.text-danger]="eligibilitySummary.ulbReadiness.eligible === 0"
+              [class.fw-semibold]="eligibilitySummary.ulbReadiness.eligible === 0"
+              data-cy="claim-letter-ulb-readiness"
+            >
+              ULBs meeting all requirements:
+              <b>{{ eligibilitySummary.ulbReadiness.eligible }}/{{ eligibilitySummary.ulbReadiness.total }}</b>
+            </span>
+            &middot;
+            <span class="small">
+              Batch slots used:
+              <b>{{ eligibilitySummary.batchSlotsUsed }}/ {{ eligibilitySummary.batchSlotsMax }}</b>
+            </span>
+            @if (eligibilitySummary.nextBatchNumber !== null) {
+              &middot;
+              <span class="small">
+                Preparing:
+                <b>Batch {{ eligibilitySummary.nextBatchNumber }}</b>
+              </span>
+            }
+          </div>
+
+          @if (checklistItems().length) {
+            <hr class="my-1 text-body-tertiary" />
+            <app-claim-letter-eligibility-checklist
+              [sources]="checklistItems()"
+              [ulbReadiness]="eligibilitySummary.ulbReadiness"
+            />
+          }
+
+          @if (showFinalBatchWarning()) {
+            <div
+              class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-0"
+              role="alert"
+              data-cy="claim-letter-final-batch-warning"
+            >
+              <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+              <span class="small">
+                <b>{{ eligibilitySummary.expectedUlbCount - eligibilitySummary.remainingUlbCount }}</b> of
+                <b>{{ eligibilitySummary.expectedUlbCount }}</b> ULBs claimed so far. The remaining
+                <b>{{ eligibilitySummary.remainingUlbCount }}</b> ULB(s) must all be included in your final batch (Batch
+                {{ eligibilitySummary.batchSlotsMax }}) - any ULB left out cannot be claimed after that.
+              </span>
+            </div>
+          }
+
+          <hr class="my-1 text-body-tertiary" />
+          <div>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-decoration-none"
+              (click)="toggleInstructions()"
+              data-cy="claim-letter-instructions-toggle"
+            >
+              <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
+              {{ showInstructions() ? 'Hide' : 'How this works' }}
+            </button>
+
+            @if (showInstructions()) {
+              <div
+                class="alert alert-primary d-flex align-items-start gap-2 py-2 mt-2 mb-0"
+                role="note"
+                data-cy="claim-letter-instructions"
+              >
+                <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+                <ul class="small mb-0 ps-3">
+                  <li>
+                    Click <strong>New Claim</strong> to start. Only ULBs meeting every eligibility criterion above will
+                    be selectable in the picker.
+                  </li>
+                  <li>
+                    Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its full
+                    allocation amount, which you can adjust from there.
+                  </li>
+                  <li>
+                    Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
+                    outside that range will be rejected.
+                  </li>
+                  <li>
+                    Submitting to MoHUA requires the signed claim letter upload first; until then your batch stays an
+                    editable draft.
+                  </li>
+                </ul>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (summaryTiles().length) {
+        <div>
+          <app-amount-display-toggle class="mb-2 text-end" />
+          <app-claim-letter-summary-tiles [tiles]="summaryTiles()" />
+        </div>
+      }
+
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="small fw-semibold">Claim Letter History</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content class="p-2">
+          <div class="table-responsive overflow-y-hidden rounded-3 border">
+            @if (!claims().length) {
+              <div class="text-center py-5 text-secondary small" data-cy="claim-letter-empty-state">
+                No claim letters yet. Start a new claim once you're eligible.
+              </div>
+            } @else {
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light border-bottom">
+                  <tr>
+                    <th scope="col" class="ps-3 small fw-semibold">Batch #</th>
+                    <th scope="col" class="small fw-semibold">Version</th>
+                    <th scope="col" class="small fw-semibold">Status</th>
+                    <th scope="col" class="small fw-semibold text-end">ULBs</th>
+                    <th scope="col" class="small fw-semibold text-end">Claimed Total</th>
+                    <th scope="col" class="text-center small fw-semibold">Submitted</th>
+                    <th scope="col" class="text-center small fw-semibold text-end pe-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (claim of claims(); track claim.claimLetterId) {
+                    <tr
+                      class="claim-letter-row-selectable"
+                      (click)="viewClaim(claim.claimLetterId)"
+                      data-cy="claim-letter-row"
+                    >
+                      <td class="ps-3 small">{{ claim.batchNumber }}</td>
+                      <td class="small">{{ claim.version }}</td>
+                      <td class="small">{{ claim.currentFormStatusLabel }}</td>
+                      <td class="small text-end">{{ claim.ulbCount }}</td>
+                      <td class="small text-end">
+                        {{ formatAmount(claim.financialSummary.currentSelectedClaim) }}
+                      </td>
+                      <td class="small text-center">
+                        {{ claim.submittedAt ? (claim.submittedAt | date: 'mediumDate') : '-' }}
+                      </td>
+                      <td class="text-center pe-3">
+                        <button
+                          type="button"
+                          matButton="outlined"
+                          (click)="viewClaim(claim.claimLetterId); $event.stopPropagation()"
+                          data-cy="claim-letter-view-button"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      @if (total() > 0) {
+        <div class="d-flex align-items-center justify-content-end gap-2 small">
+          @if (isHistoryLoading()) {
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+          }
+          <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasPrev() || isHistoryLoading()"
+            (click)="goToPage(page() - 1)"
+            aria-label="Previous page"
+          >
+            &lsaquo; Prev
+          </button>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasNext() || isHistoryLoading()"
+            (click)="goToPage(page() + 1)"
+            aria-label="Next page"
+          >
+            Next &rsaquo;
+          </button>
+        </div>
+      }
+    }
+  </div>
+</section>

@@ -1,0 +1,126 @@
+<div class="container-fluid">
+  <h3 class="fw-bold my-4">Manual Review Queue</h3>
+
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end">
+      <div class="mb-2">
+        <label for="manual-review-queue-search" class="visually-hidden">Search</label>
+        <input
+          type="search"
+          class="form-control"
+          id="manual-review-queue-search"
+          placeholder="Search by ULB name or code"
+          formControlName="search"
+        />
+      </div>
+    </form>
+  </div>
+
+  <mat-card class="custom-mat-card mat-elevation-z1">
+    <div class="table-container mat-elevation-z8 mb-4">
+      @if (isLoading()) {
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+      } @else if (loadError()) {
+        <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
+        <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      } @else if (rows().length <= 0) {
+        <p class="text-center p-2 mt-2">Nothing awaiting manual review.</p>
+      } @else {
+        <table mat-table [dataSource]="rows()">
+          <ng-container matColumnDef="serialNo">
+            <th mat-header-cell *matHeaderCellDef>S.No</th>
+            <td mat-cell *matCellDef="let row; let i = index">{{ srNo(i) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="details">
+            <th mat-header-cell *matHeaderCellDef>Input</th>
+            <td mat-cell *matCellDef="let row">
+              <div>
+                <span class="fw-bold">ULB:</span> {{ row.ulbName ?? '—' }} <span>{{ row.ulbCode }}</span>
+              </div>
+              <div><span class="fw-bold">State:</span> {{ row.stateName ?? '—' }}</div>
+              <div><span class="fw-bold">Section:</span> {{ sectionLabel(row.section) }}</div>
+              <div><span class="fw-bold">Year:</span> {{ row.year }}</div>
+              <div><span class="fw-bold">Document:</span> {{ row.docId }} &middot; {{ row.fileName }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="validationIssues">
+            <th mat-header-cell *matHeaderCellDef>Validation issues</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.validationDetails) {
+                <div>{{ row.validationDetails }}</div>
+              }
+              @if (row.failedChecks.length) {
+                <ul class="ps-3 mb-0">
+                  @for (check of row.failedChecks; track check) {
+                    <li>{{ check }}</li>
+                  }
+                </ul>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="requestedAt">
+            <th mat-header-cell *matHeaderCellDef>Requested</th>
+            <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'mediumDate' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex justify-content-center gap-2">
+                @if (row.jobId) {
+                  <a
+                    class="btn btn-outline-secondary btn-sm"
+                    routerLink="/ocr/validation"
+                    [queryParams]="{ jobId: row.jobId }"
+                    target="_blank"
+                    title="View OCR job log"
+                  >
+                    <i class="bi bi-eye"></i> Log
+                  </a>
+                }
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  [disabled]="isDeciding(row)"
+                  (click)="onReject(row)"
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-cfPrimary btn-sm"
+                  [disabled]="isDeciding(row)"
+                  (click)="onApprove(row)"
+                >
+                  @if (isDeciding(row)) {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  }
+                  Approve
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      }
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="pageSize()"
+        [pageIndex]="page() - 1"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        aria-label="Select page of the manual-review queue"
+      ></mat-paginator>
+    </div>
+  </mat-card>
+</div>

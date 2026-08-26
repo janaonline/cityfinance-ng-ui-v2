@@ -1,0 +1,30 @@
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+  <div class="sh-page-header mb-3">
+    <h1 class="sh-page-title mb-1">Support Hours</h1>
+    <p class="sh-page-subtitle mb-0">
+      Drop in to ask questions about grant submissions, financial statements, or validations.
+      Members from the Product and PMU teams are available to help.
+    </p>
+  </div>
+
+  @if (hasError()) {
+    <app-page-error-state
+      title="Failed to load support hours"
+      message="We couldn't reach the server. Please check your connection and try again."
+      (retry)="loadSupportHours()"
+    />
+  } @else {
+    <app-support-hours-card
+      [nextSupportHour]="nextSupportHour()"
+      [upcomingSupportHours]="upcomingSupportHours()"
+      [isLoading]="isLoading()"
+      [errorMessage]="''"
+    />
+  }
+      </div>
+    </div>
+  </div>
+</div>

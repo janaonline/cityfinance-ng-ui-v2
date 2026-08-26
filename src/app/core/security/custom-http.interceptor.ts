@@ -9,7 +9,6 @@ import { inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
-import Swal from 'sweetalert2';
 
 import { AuthService } from '../services/auth.service';
 import { Login_Logout } from '../util/logout.util';
@@ -28,6 +27,10 @@ export const customHttpInterceptor: HttpInterceptorFn = (
 
   return next(preparedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
+      if (!authService.isApiRequest(preparedRequest.url)) {
+        return throwError(() => error);
+      }
+
       if (shouldAttemptRefresh(error, preparedRequest, authService)) {
         return authService.refreshAccessToken().pipe(
           switchMap(() =>
@@ -46,7 +49,9 @@ export const customHttpInterceptor: HttpInterceptorFn = (
       }
 
       return handleError(error, authService, router, snackBar, {
-        logoutOnUnauthorized: authService.isAuthRequest(preparedRequest.url),
+        logoutOnUnauthorized:
+          authService.isAuthRequest(preparedRequest.url) &&
+          !authService.isLoginRequest(preparedRequest.url),
       });
     }),
   );
@@ -56,7 +61,7 @@ function prepareRequest(
   req: HttpRequest<unknown>,
   authService: AuthService,
 ) {
-  if ((req.body instanceof File || req.body instanceof FormData) && req.method === 'PUT') {
+  if (!authService.isApiRequest(req.url)) {
     return req;
   }
 
@@ -117,16 +122,15 @@ function handleError(
   options: { logoutOnUnauthorized: boolean },
 ) {
   switch (error.status) {
-    case 401:
+    case 401: // Unauthorized can occur when access token is invalid/expired. If logoutOnUnauthorized is true, we should logout the user to be safe. If it's false, it means this 401 occurred on a login request, so we should not logout but just show the error.
       if (options.logoutOnUnauthorized) {
         logoutRedirection(authService, router);
       }
       break;
-    case 403:
-      void Swal.fire('Error', error.error?.message ?? 'Something went wrong', 'error');
-      logoutRedirection(authService, router);
+    case 403: // Forbidden can occur when refresh token is invalid/expired or user doesn't have access to a resource. In both cases, we should logout the user to be safe.
+      logoutRedirection(authService, router, false);
       break;
-    case 503:
+    case 503: // Service Unavailable can occur when backend is down or undergoing maintenance. Redirecting to a dedicated maintenance page.
       clearLocalStorage(authService);
       void router.navigate(['maintenance']);
       break;
@@ -136,7 +140,7 @@ function handleError(
         ? router.url
         : location.pathname + location.search + location.hash;
       if (!url.includes('login')) {
-        sessionStorage.setItem('postLoginNavigation', url);
+        sessionStorage.setItem('postLoginNavigationV2', url);
       }
       void router.navigate(['login'], {
         queryParams: { message: 'Session expired. Kindly login again.' },
@@ -164,10 +168,13 @@ function handleError(
   return throwError(() => error);
 }
 
+const INLINE_HANDLED_CODES = new Set(['EMAIL_ALREADY_ACTIVE', 'EMAIL_PREVIOUSLY_REGISTERED']);
+
 function shouldShowError(
   error: HttpErrorResponse,
   options: { logoutOnUnauthorized: boolean },
 ) {
+  if (INLINE_HANDLED_CODES.has(error.error?.code)) return false;
   return error.status !== 401 || !options.logoutOnUnauthorized;
 }
 
@@ -180,27 +187,25 @@ function showError(snackBar: MatSnackBar, message?: string) {
   });
 }
 
-function logoutRedirection(authService: AuthService, router: Router) {
-  const url = !['/', ''].includes(router.url)
-    ? router.url
-    : location.pathname + location.search + location.hash;
+function logoutRedirection(authService: AuthService, router: Router, saveReturnUrl = true) {
+  const loginType = localStorage.getItem('loginType') ?? '16thFC';
 
-  if (!url.includes('login')) {
-    sessionStorage.setItem('postLoginNavigation', url);
+  if (saveReturnUrl) {
+    const url = !['/', ''].includes(router.url)
+      ? router.url
+      : location.pathname + location.search + location.hash;
+    if (!url.includes('login')) {
+      sessionStorage.setItem('postLoginNavigationV2', url);
+    }
+  } else {
+    sessionStorage.removeItem('postLoginNavigationV2');
   }
 
   clearLocalStorage(authService);
 
   // const loginType = localStorage.getItem('loginType');
-  // if (loginType === 'state-dashboard') {
-  //   void router.navigate(['login/state-dashboard']);
-  // } else if (loginType === 'XVIFC') {
-  //   void router.navigate(['login/xvi-fc']);
-  // } else {
-  //   void router.navigate(['fc_grant']);
-  // }
-  void router.navigate(['login'], {
-    queryParams: { message: 'Your session expired. Please sign in again.' },
+  void router.navigate(['auth/login', loginType], {
+    // queryParams: { message: 'Your session expired. Please sign in again.' },
   });
 }
 

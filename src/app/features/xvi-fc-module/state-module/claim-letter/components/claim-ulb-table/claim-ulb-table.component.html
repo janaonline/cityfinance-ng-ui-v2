@@ -1,0 +1,170 @@
+<div class="claim-ulb-table-wrap mt-2">
+  <div class="table-responsive border rounded-3">
+    <table class="table table-sm table-hover align-middle mb-0 claim-ulb-table border">
+      <colgroup>
+        <col class="col-slno" />
+        <col class="col-ulb" />
+        <col class="col-code" />
+        <col class="col-alloc" />
+        <col class="col-claim" />
+        <col class="col-pct" />
+        <col class="col-action" />
+      </colgroup>
+      <thead class="table-light border-bottom">
+        <tr>
+          <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
+          <th scope="col" class="text-center small fw-semibold">ULB</th>
+          <th scope="col" class="text-center small fw-semibold">Census Code</th>
+          <th scope="col" class="text-center small fw-semibold">Allocation ({{ unitSuffix() }})</th>
+          <th scope="col" class="text-center small fw-semibold">Claim Amount ({{ canEdit() ? '₹' : unitSuffix() }})</th>
+          <th scope="col" class="text-center small fw-semibold">Difference (%)</th>
+          <th scope="col" class="text-center text-nowrap small fw-semibold">Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (rows().controls.length === 0) {
+          <tr>
+            <td colspan="7" class="text-center text-secondary small py-3" data-cy="claim-ulb-table-empty">
+              No ULBs added yet.
+            </td>
+          </tr>
+        }
+        @for (row of rows().controls; track row; let i = $index) {
+          <tr [formGroup]="row" data-cy="claim-ulb-table-row">
+            @let claimErrorText = claimedAmountErrorText(row.controls.claimedAmount);
+            @let liveWithinVariance = rowViewModels()[i].liveWithinVariance;
+            <td class="ps-3 small text-secondary">{{ i + 1 }}</td>
+            <td>
+              <span class="text-truncate d-block" [title]="rowViewModels()[i].ulbName ?? ''">
+                {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
+              </span>
+            </td>
+            <td class="small text-center text-secondary text-nowrap text-truncate">
+              {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
+            </td>
+            <td
+              class="small text-end pe-3 text-secondary"
+              [title]="formatAmountExact(rowViewModels()[i].allocationAmount)"
+            >
+              {{ formatAmount(rowViewModels()[i].allocationAmount) }}
+            </td>
+            <td class="text-end pe-3">
+              @if (canEdit()) {
+                <label class="visually-hidden" [attr.for]="'claim-amount-' + i">Claim amount</label>
+                <div class="d-flex align-items-center gap-2">
+                  <input
+                    [id]="'claim-amount-' + i"
+                    type="number"
+                    min="1"
+                    step="1"
+                    [appDecimalLimit]="0"
+                    appZeroOnStepChange
+                    class="form-control form-control-sm"
+                    [class.is-invalid]="!!claimErrorText"
+                    [title]="formatAmountExact(row.controls.claimedAmount.value)"
+                    formControlName="claimedAmount"
+                    aria-label="Claim amount"
+                    data-cy="claim-ulb-table-claim-amount"
+                  />
+                  <app-info-icon [text]="wholeNumberInfoText(row.controls.claimedAmount.value)" />
+                </div>
+              } @else {
+                <span
+                  class="small text-secondary"
+                  [title]="formatAmountExact(row.controls.claimedAmount.value)"
+                >
+                  {{ formatAmount(row.controls.claimedAmount.value) }}
+                </span>
+              }
+            </td>
+            <td class="text-center">
+              <div class="d-flex align-items-center justify-content-center gap-1">
+                @if (liveWithinVariance !== null) {
+                  <span
+                    class="badge rounded px-1 small"
+                    [class.text-bg-success]="liveWithinVariance"
+                    [class.text-bg-danger]="!liveWithinVariance"
+                  >
+                    {{ rowViewModels()[i].liveDifferencePercentage! > 0 ? '+' : ''
+                    }}{{ rowViewModels()[i].liveDifferencePercentage | number: '1.0-1' }}%
+                  </span>
+                } @else if (rowViewModels()[i].savedDifferencePercentage !== null) {
+                  {{ rowViewModels()[i].savedDifferencePercentage! > 0 ? '+' : ''
+                  }}{{ rowViewModels()[i].savedDifferencePercentage | number: '1.0-2' }}%
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+                @if (claimErrorText) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-danger flex-shrink-0"
+                    [matTooltip]="claimErrorText"
+                    matTooltipPosition="above"
+                    aria-label="Claim amount has a validation error"
+                    data-cy="claim-ulb-table-amount-error-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                } @else if (liveWithinVariance === false) {
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm p-0 text-warning flex-shrink-0"
+                    matTooltip="Claim amount is outside ±10% of the ULB's allocation."
+                    matTooltipPosition="above"
+                    aria-label="Claim amount is outside the allowed variance"
+                    data-cy="claim-ulb-table-variance-warning-icon"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                  </button>
+                } @else {
+                  <i
+                    class="bi bi-exclamation-triangle-fill claim-ulb-flag-placeholder flex-shrink-0"
+                    aria-hidden="true"
+                  ></i>
+                }
+              </div>
+            </td>
+            <td class="text-end pe-3">
+              <button
+                type="button"
+                matButton="outlined"
+                class="claim-ulb-row-btn"
+                [disabled]="!canEdit()"
+                (click)="removeRow(i)"
+                aria-label="Remove row"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+      @if (rows().controls.length > 0) {
+        <tfoot class="table-light border-top">
+          <tr>
+            <td colspan="3" class="ps-3 small fw-semibold text-secondary">Total</td>
+            <td class="small text-end pe-3 fw-semibold" [title]="formatAmountExact(totalAllocation())">
+              {{ formatAmount(totalAllocation()) }}
+            </td>
+            <td class="small text-end pe-3 fw-semibold" colspan="1">{{ formatAmount(totalClaim()) }}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      }
+    </table>
+  </div>
+
+  <button
+    type="button"
+    matButton="outlined"
+    class="mt-2"
+    [disabled]="!canEdit()"
+    (click)="addRow()"
+    aria-label="Add ULB"
+    data-cy="claim-ulb-table-add"
+  >
+    <i class="bi bi-plus-lg me-1"></i>Add ULB
+  </button>
+</div>

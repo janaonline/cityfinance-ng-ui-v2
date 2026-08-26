@@ -1,0 +1,471 @@
+import { Component, OnInit, computed, inject, signal, ElementRef, ViewChild } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
+import { AnnualAccountStateService } from '../annual-account-state.service';
+import { UtilityService } from '../../../../core/services/utility.service';
+import { XviFcBudgetDocumentService } from './budget-document/xvi-fc-budget-document.service';
+import { BudgetDocumentResponse } from './budget-document/xvi-fc-budget-document.models';
+
+const BUDGET_DOC_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const BUDGET_DOC_UPLOAD_URL_EXPIRES_IN_SECONDS = 300;
+
+interface UlbDetails {
+  ulbName: string;
+  stateName: string;
+  selectedYear: string;
+}
+
+interface WhatIfScenario {
+  id: string;
+  label: string;
+  likelihood: number;
+  likelihoodLabel: string;
+  severity: 'critical' | 'high' | 'medium';
+  description: string;
+}
+
+interface Condition {
+  id: string;
+  title: string;
+  subtitle: string;
+  status: 'complete' | 'pending' | 'locked' | 'Awaiting State Upload';
+  actionLabel: string | null;
+  route: string | null;
+}
+
+interface ConditionGroup {
+  deadline: string;
+  conditions: Condition[];
+}
+
+/** Condition ids whose display is driven live by the numeric form_status_id (1–7) rather than the static config above. */
+const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account', 'slb']);
+
+type ConditionIconTier = 'pending-neutral' | 'pending-active' | 'success' | 'warning';
+
+interface ConditionStatusDisplay {
+  iconTier: ConditionIconTier;
+  buttonLabel: string;
+  showPreview: boolean;
+}
+
+/** form_status_id (1–7, shared across Audited/Provisional/PFMS) → how the condition row should look. */
+const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>> = {
+  1: { iconTier: 'pending-neutral', buttonLabel: 'Start Upload', showPreview: false },
+  2: { iconTier: 'pending-active', buttonLabel: 'Continue Uploading', showPreview: true },
+  3: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
+  4: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
+  5: { iconTier: 'success', buttonLabel: 'Approved by State', showPreview: true },
+  6: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
+  7: { iconTier: 'success', buttonLabel: 'Approved by MoHUA', showPreview: true },
+  // SLB is auto-approved by State on submission (no review workflow) — form_status_id 8 is
+  // FORM_STATUS.APPROVED_BY_STATE in the shared enum (src/common/constants/form-status.constants.ts).
+  8: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
+};
+
+const SCENARIOS: WhatIfScenario[] = [
+  {
+    id: 'no-audit',
+    label: 'What if my audit statements are not prepared?',
+    likelihood: 12,
+    likelihoodLabel: 'Very Low',
+    severity: 'critical',
+    description:
+      'Audited financial statements are a mandatory entry condition for the 16th FC basic grant. Without them, your submission cannot proceed to the State review stage, and your entire grant allocation would be withheld until the condition is met.',
+  },
+  {
+    id: 'no-slb',
+    label: "What if I don't report Service Level Benchmarks?",
+    likelihood: 30,
+    likelihoodLabel: 'Low',
+    severity: 'high',
+    description:
+      'Service Level Benchmark reporting is required for the performance-linked grant component. Missing it disqualifies the ULB from the performance grant tranche, significantly reducing the total allocation.',
+  },
+  {
+    id: 'no-elected-body',
+    label: "What if I don't have an elected body in the ULB?",
+    likelihood: 10,
+    likelihoodLabel: 'Very Low',
+    severity: 'critical',
+    description:
+      'An elected council is a constitutional prerequisite for grant eligibility. Without a duly constituted elected body, the State cannot certify eligibility, blocking all grant tranches for the financial year.',
+  },
+];
+
+const CONDITION_GROUPS: ConditionGroup[] = [
+  {
+    deadline: 'FIRST INSTALLMENT',
+    conditions: [
+      {
+        id: 'sfc-status',
+        title: 'State Finance Commission Status',
+        subtitle: 'Status will be displayed once the State uploads this information',
+        status: 'Awaiting State Upload',
+        actionLabel: null,
+        route: null,
+      },
+      {
+        id: 'elected-body',
+        title: 'Elected Body Status',
+        subtitle: 'Status will be displayed once the State uploads this information',
+        status: 'Awaiting State Upload',
+        actionLabel: null,
+        route: null,
+      },
+      {
+        id: 'unspent-balance',
+        title: '14th FC Unspent Balance',
+        subtitle: 'Status will be displayed once the State uploads this information',
+        status: 'Awaiting State Upload',
+        actionLabel: null,
+        route: null,
+      },
+      {
+        id: 'audited-statement',
+        title: 'Audited Financial Statement FY 2024–25',
+        subtitle: 'Upload Audited Annual Financial Statements signed/stamped by the auditor (CA, LFAD, or CAG)',
+        status: 'pending',
+        actionLabel: 'Upload',
+        route: 'upload-audited',
+      },
+      {
+        id: 'provisional-statement',
+        title: 'Provisional Financial Statement FY 2025–26',
+        subtitle: 'Upload provisional statements as of March 31, 2026',
+        status: 'pending',
+        actionLabel: 'Upload',
+        route: 'upload-provisional',
+      },
+      // {
+      //   id: 'unspent-balance',
+      //   title: '14th FC Unspent Balance',
+      //   subtitle: 'Status will be displayed once the State uploads this information.',
+      //   status: 'Awaiting State Upload',
+      //   actionLabel: null,
+      //   route: null,
+      // },
+      {
+        id: 'xvi-fc-bank-account',
+        title: 'XVI-FC Bank Account (PFMS)',
+        subtitle: 'Confirm a dedicated bank account exists for XVI-FC grants',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'xvi-fc-bank-account',
+      },
+      {
+        id: 'slb',
+        title: 'Service Level Benchmarks',
+        subtitle: 'Report SLB data for water supply, sanitation, solid waste, and storm water drainage',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'slb',
+      },
+    ],
+  },
+  // {
+  //   deadline: 'FIRST INSTALLMENT',
+  //   conditions: [
+  //     {
+  //       id: 'slb',
+  //       title: 'Service Level Benchmarks',
+  //       subtitle: 'SLB data for water, sanitation and solid waste — opens in July',
+  //       status: 'locked',
+  //       actionLabel: null,
+  //       route: null,
+  //     },
+  //     // {
+  //     //   id: 'utilization-certificate',
+  //     //   title: 'Utilization Certificate',
+  //     //   subtitle: 'Certificate of utilization for XV-FC grant funds — opens after fund release',
+  //     //   status: 'locked',
+  //     //   actionLabel: null,
+  //     //   route: null,
+  //     // },
+  //   ],
+  // },
+];
+
+const ALL_CONDITIONS = CONDITION_GROUPS.flatMap((g) => g.conditions);
+
+@Component({
+  selector: 'app-ulb-forms',
+  standalone: true,
+  imports: [
+    MatFormFieldModule,
+    MatSelectModule,
+    MatProgressBarModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+  ],
+  templateUrl: './ulb-forms.component.html',
+  styleUrl: './ulb-forms.component.scss',
+})
+export class UlbFormsComponent implements OnInit {
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly state = inject(AnnualAccountStateService);
+  private readonly budgetDocumentService = inject(XviFcBudgetDocumentService);
+  private readonly utilityService = inject(UtilityService);
+
+  @ViewChild('budgetDocInput') private readonly budgetDocInputRef!: ElementRef<HTMLInputElement>;
+
+  readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
+  readonly sectionFormStatus = this.state.formStatus;
+
+  readonly budgetDocument = signal<BudgetDocumentResponse | null>(null);
+  readonly isBudgetDocLoading = signal(true);
+  readonly isBudgetDocUploading = signal(false);
+  readonly budgetDocError = signal<string | null>(null);
+
+  readonly grantBand = computed(() => {
+    const details = this.ulbDetails();
+    const year = details?.selectedYear ?? 'FY 2026-27';
+    return {
+      eyebrow: 'ESTIMATED GRANT',
+      amount: 'Allocation will be displayed once the State submits the ULB-wise allocation',
+      tag: `${year}`,
+      note: details ? `For ${details.ulbName}, ${details.stateName}` : '',
+    };
+  });
+
+  readonly scenarios: WhatIfScenario[] = SCENARIOS;
+  readonly selectedScenarioId = signal<string | null>(null);
+  readonly selectedScenario = computed<WhatIfScenario | null>(() => {
+    const id = this.selectedScenarioId();
+    return id ? (SCENARIOS.find((s) => s.id === id) ?? null) : null;
+  });
+
+  readonly conditionGroups: ConditionGroup[] = CONDITION_GROUPS;
+  readonly conditionsFooterNote =
+    'Confirm both document sets above to automatically submit your package to the State DMA.';
+
+  readonly conditionsProgress = computed(() => {
+    const complete = ALL_CONDITIONS.filter((c) => this.resolveStatus(c) === 'complete').length;
+    const total = ALL_CONDITIONS.filter((c) => c.status !== 'locked').length;
+    return { complete, total, pct: Math.round((complete / total) * 100) };
+  });
+
+  private readonly SEVERITY_COLORS: Record<WhatIfScenario['severity'], string> = {
+    critical: '#ef4444',
+    high: '#f97316',
+    medium: '#f59e0b',
+  };
+
+  async ngOnInit(): Promise<void> {
+    const ulbId = this.resolveUlbId();
+    const designYearId = this.resolveDesignYearId();
+    if (!ulbId || !designYearId) return;
+    await this.state.loadFormStatus(ulbId, designYearId);
+    await this.loadBudgetDocument(designYearId);
+  }
+
+  private async loadBudgetDocument(designYearId: string): Promise<void> {
+    this.isBudgetDocLoading.set(true);
+    try {
+      const response = await firstValueFrom(this.budgetDocumentService.getBudgetDocument(designYearId));
+      this.budgetDocument.set(response);
+    } catch {
+      this.budgetDocError.set('Unable to load the budget document status. Please refresh the page.');
+    } finally {
+      this.isBudgetDocLoading.set(false);
+    }
+  }
+
+  triggerBudgetDocUpload(): void {
+    if (this.isBudgetDocUploading()) return;
+    this.budgetDocInputRef.nativeElement.value = '';
+    this.budgetDocInputRef.nativeElement.click();
+  }
+
+  async onBudgetDocSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.budgetDocError.set(null);
+
+    if (!file) return;
+
+    const doc = this.budgetDocument();
+    if (!doc) {
+      this.budgetDocError.set('Year context is missing. Please refresh the page.');
+      return;
+    }
+
+    const ulbId = this.resolveUlbId();
+    if (!ulbId) {
+      this.budgetDocError.set('ULB context is missing. Please refresh the page.');
+      return;
+    }
+
+    if (file.type !== 'application/pdf') {
+      this.budgetDocError.set('Only PDF files are allowed.');
+      return;
+    }
+
+    if (file.size > BUDGET_DOC_MAX_FILE_SIZE_BYTES) {
+      this.budgetDocError.set('File size must not exceed 20 MB.');
+      return;
+    }
+
+    this.isBudgetDocUploading.set(true);
+
+    const validation = await this.validateBudgetDocPdf(file);
+    if (!validation.valid) {
+      this.budgetDocError.set(validation.error ?? 'This PDF could not be validated. Please try a different file.');
+      this.isBudgetDocUploading.set(false);
+      return;
+    }
+
+    try {
+      const folder = `budgets/${doc.designYear}/${ulbId}`;
+      const [signedUrl] = await firstValueFrom(
+        this.budgetDocumentService.getSignedUrls([
+          {
+            fileName: file.name,
+            folder,
+            mimeType: file.type,
+            fileSize: file.size,
+            expiresIn: BUDGET_DOC_UPLOAD_URL_EXPIRES_IN_SECONDS,
+          },
+        ]),
+      );
+      if (!signedUrl?.url || !signedUrl.path) {
+        throw new Error('Signed URL response is missing upload details.');
+      }
+
+      await firstValueFrom(this.budgetDocumentService.uploadToS3(signedUrl.url, file));
+
+      const response = await firstValueFrom(
+        this.budgetDocumentService.uploadBudgetDocument({
+          designYearId: doc.designYearId,
+          originalName: file.name,
+          sizeKb: Number((file.size / 1024).toFixed(2)),
+          s3Key: signedUrl.path,
+        }),
+      );
+
+      this.budgetDocument.set(response);
+      this.utilityService.triggerSnackbar('Budget document uploaded successfully.');
+    } catch {
+      this.budgetDocError.set('Budget document upload failed. Please try again.');
+      this.utilityService.triggerSnackbar('Budget document upload failed. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isBudgetDocUploading.set(false);
+    }
+  }
+
+  // TODO: wire in the render-based blank/encrypted-PDF check (checkPdfHasContent) once the
+  // shared util lands from its own change — currently only a fast header check runs here.
+  private async validateBudgetDocPdf(file: File): Promise<{ valid: boolean; error?: string }> {
+    const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+    const hasPdfHeader =
+      header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46 && header[4] === 0x2d;
+    if (!hasPdfHeader) {
+      return { valid: false, error: 'Please upload a valid PDF file.' };
+    }
+
+    return { valid: true };
+  }
+
+  // Returns the effective display status for a condition, overriding the static
+  // value for the two upload conditions based on live API data.
+  resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' | 'Awaiting State Upload' {
+    const status = this.sectionFormStatus();
+    if (status) {
+      const display = this.conditionStatusDisplay(condition);
+      if (display) return display.iconTier === 'success' ? 'complete' : 'pending';
+    }
+    return condition.status;
+  }
+
+  isNumericStatusCondition(condition: Condition): boolean {
+    return NUMERIC_STATUS_CONDITION_IDS.has(condition.id);
+  }
+
+  /** Live form_status_id-driven icon/label/preview for Audited, Provisional, and PFMS — null until data loads. */
+  conditionStatusDisplay(condition: Condition): ConditionStatusDisplay | null {
+    const id = this.formStatusIdFor(condition);
+    return id === null ? null : (CONDITION_STATUS_DISPLAY[id] ?? null);
+  }
+
+  actionLabelFor(condition: Condition): string {
+    return condition.actionLabel ?? '';
+  }
+
+  isSubmitted(): boolean {
+    return false;
+  }
+
+  private formStatusIdFor(condition: Condition): number | null {
+    const status = this.sectionFormStatus();
+    if (!status) return null;
+    if (condition.id === 'audited-statement') return status.auditedData.form_status_id;
+    if (condition.id === 'provisional-statement') return status.unauditedData.form_status_id;
+    if (condition.id === 'xvi-fc-bank-account') return status.xviFcBankAccount?.form_status_id ?? null;
+    if (condition.id === 'slb') return status.serviceLevelBenchmarks?.form_status_id ?? null;
+    return null;
+  }
+
+  severityColor(scenario: WhatIfScenario): string {
+    return this.SEVERITY_COLORS[scenario.severity];
+  }
+
+  badgeClass(scenario: WhatIfScenario): string {
+    return {
+      critical: 'simulator-badge--critical',
+      high: 'simulator-badge--high',
+      medium: 'simulator-badge--medium',
+    }[scenario.severity];
+  }
+
+  navigateTo(route: string): void {
+    this.router.navigate([route], { relativeTo: this.activatedRoute.parent });
+  }
+
+  private resolveUlbId(): string | null {
+    let current = this.activatedRoute as ActivatedRoute | null;
+    while (current) {
+      const id = current.snapshot.paramMap.get('entityId');
+      if (id) return id;
+      current = current.parent;
+    }
+    try {
+      const raw = localStorage.getItem('userData');
+      return raw ? ((JSON.parse(raw) as { ulb?: string }).ulb ?? null) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private resolveDesignYearId(): string | null {
+    const stored = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
+    if (stored) return stored;
+    let current = this.activatedRoute as ActivatedRoute | null;
+    while (current) {
+      const id = current.snapshot.paramMap.get('yearId');
+      if (id) return id;
+      current = current.parent;
+    }
+    return null;
+  }
+
+  private loadUlbDetails(): UlbDetails | null {
+    try {
+      const raw = localStorage.getItem('xvifc_ulb_details');
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<UlbDetails>;
+      if (!parsed.ulbName || !parsed.stateName || !parsed.selectedYear) return null;
+      return { ulbName: parsed.ulbName, stateName: parsed.stateName, selectedYear: parsed.selectedYear };
+    } catch {
+      return null;
+    }
+  }
+}

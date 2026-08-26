@@ -1,5 +1,5 @@
 import { Directive, ElementRef, HostListener, Input } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { UtilityService } from '../services/utility.service';
 
 @Directive({
   selector: '[appDecimalLimit]',
@@ -10,15 +10,13 @@ export class DecimalLimitDirective {
 
   constructor(
     private el: ElementRef,
-    private _snackBar: MatSnackBar,
+    private utilityService: UtilityService,
   ) {}
 
   @HostListener('keydown', ['$event']) onKeyDown(event: KeyboardEvent) {
-    // console.log(event.key);
     if (this.appDecimalLimit == null) return;
     if (this.appDecimalLimit == 0 && event.key == '.') {
-      // swal.fire('Warning', 'Deciamls are not allow', 'warning');
-      this.triggerSnackbar('Please enter a whole number');
+      this.utilityService.triggerSnackbar('Please enter a whole number', 'snackbar-danger');
       return event.preventDefault();
     }
     const inputValue = this.el.nativeElement.value;
@@ -29,20 +27,9 @@ export class DecimalLimitDirective {
 
     const decimal = inputValue.split('.')?.[1];
 
-    // console.log(decimal?.length, this.appDecimalLimit);
     if (decimal?.length >= this.appDecimalLimit) {
-      // swal.fire('Warning', `Upto ${this.appDecimalLimit} are allowed`, 'warning');
-      this.triggerSnackbar(`Decimals are allowed up to ${this.appDecimalLimit} places only`);
+      this.utilityService.triggerSnackbar(`Decimals are allowed up to ${this.appDecimalLimit} places only`, 'snackbar-danger');
       event.preventDefault();
     }
-  }
-  triggerSnackbar(msg: string) {
-    this._snackBar.open(msg, 'Close', {
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      duration: 2000,
-      // panelClass: ['snackbar-success']
-      panelClass: ['custom-snackbar-success'],
-    });
   }
 }

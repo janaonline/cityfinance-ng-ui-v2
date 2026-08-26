@@ -1,0 +1,57 @@
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">{{ data.readOnly ? 'View' : 'Review' }} ULB</p>
+<mat-dialog-content>
+  <div class="row g-2 px-2">
+    <div class="col-6">
+      <div class="text-body-secondary small">Name</div>
+      <div class="fw-medium">{{ data.ulb.name }}</div>
+    </div>
+    <div class="col-6">
+      <div class="text-body-secondary small">Code</div>
+      <div class="fw-medium">{{ data.ulb.code }}</div>
+    </div>
+    @for (field of fields; track field.label) {
+      <div class="col-6">
+        <div class="text-body-secondary small">{{ field.label }}</div>
+        <div class="fw-medium">{{ field.value }}</div>
+      </div>
+    }
+  </div>
+
+  @if (gazetteFile; as file) {
+    <div class="px-2 mt-3">
+      <div class="text-body-secondary small">Gazette Notification File</div>
+      <a class="btn btn-outline-cfPrimary btn-sm mt-1" [appSignedUrl]="file.path" target="_blank">
+        <i class="bi bi-eye"></i> View File
+      </a>
+    </div>
+  }
+
+  @if (previousRejectReason) {
+    <div class="px-2 mt-3">
+      <div class="text-body-secondary small">Previous Reject Reason</div>
+      <div class="fw-medium text-danger">{{ previousRejectReason }}</div>
+    </div>
+  }
+
+  @if (rejecting) {
+    <div class="px-2 mt-3">
+      <label for="rejectReason" class="form-label">Reason for rejection</label>
+      <textarea id="rejectReason" class="form-control" rows="3" [(ngModel)]="reason" name="reason"></textarea>
+      @if (submitted && !reason.trim()) {
+        <p class="text-danger mb-0">Reason is required to reject.</p>
+      }
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  @if (data.readOnly) {
+    <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Close</button>
+  } @else if (!rejecting) {
+    <button class="btn btn-success mx-2" (click)="approve()">Approve</button>
+    <button class="btn btn-danger mx-2" (click)="startReject()">Reject</button>
+    <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>
+  } @else {
+    <button class="btn btn-danger mx-2" (click)="confirmReject()">Confirm Reject</button>
+    <button class="btn btn-outline-cfPrimary mx-2" (click)="cancelReject()">Back</button>
+  }
+</mat-dialog-actions>

@@ -6,19 +6,29 @@ import {
   Validators,
   FormControl,
   AbstractControl,
+  ValidatorFn,
 } from '@angular/forms';
 import {
   compareArrFieldsValidator,
   compareFieldsValidator,
+  actualLessThanOrEqualToTargetValidator,
+  digitsOnlyValidator,
+  matchesFieldValidator,
 } from '../../core/validators/comparison.validator';
+import { decimalPlacesValidator } from '../../core/validators/decimal-places.validator';
 import { FieldConfig } from './field.interface';
+import { isUploadedFileMetadata, normalizeUploadedFileMetadata } from './components/file/file-metadata.types';
+import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
+import { resolveDateConstraint } from './date-constraint-resolver';
+import { yearRangeValidator } from '../../core/validators/year-range.validator';
+import { toUtcIsoDateString } from './components/date/utc-iso-date-adapter';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DynamicFormService {
   form!: FormGroup;
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder) {}
 
   getFG(tabKey: string, i: number): any {
     return (this.form.get(tabKey) as FormArray).controls[i];
@@ -175,9 +185,7 @@ export class DynamicFormService {
       fileValidator.push(Validators.required);
     }
     // except accept/reject others null
-    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus))
-      ? yearField.verifyStatus
-      : null;
+    const verifyStatus = [2, 3].includes(Number(yearField.verifyStatus)) ? yearField.verifyStatus : null;
     return new FormGroup({
       file: new FormGroup({
         name: new FormControl(yearField.file?.name || null, fileValidator),
@@ -190,13 +198,23 @@ export class DynamicFormService {
     });
   }
 
-  bindValidations(validations: any) {
-    if (validations && validations.length > 0) {
-      const validators: any = [];
-      validations.forEach((row: any) => {
+  bindValidations(
+    validations: FieldConfig['validations'] | false | undefined,
+    field?: Pick<FieldConfig, 'formFieldType' | 'minDate' | 'maxDate'>,
+  ) {
+    const validators: ValidatorFn[] = [];
+    const validationList = validations || [];
+    let hasMinDateValidation = false;
+    let hasMaxDateValidation = false;
+
+    if (validationList.length > 0) {
+      validationList.forEach((row: any) => {
         switch (row.name) {
           case 'required':
             validators.push(Validators.required);
+            break;
+          case 'requiredTrue':
+            validators.push(Validators.requiredTrue);
             break;
           case 'nullValidator':
             validators.push(Validators.nullValidator);
@@ -210,6 +228,19 @@ export class DynamicFormService {
           case 'max':
             validators.push(Validators.max(row.validator));
             break;
+          case 'decimal':
+            validators.push(decimalPlacesValidator(row.validator));
+            break;
+          case 'minDate': {
+            hasMinDateValidation = true;
+            validators.push(minDateValidator(resolveDateConstraint(row.validator ?? field?.minDate)));
+            break;
+          }
+          case 'maxDate': {
+            hasMaxDateValidation = true;
+            validators.push(maxDateValidator(resolveDateConstraint(row.validator ?? field?.maxDate)));
+            break;
+          }
           case 'minlength':
             validators.push(Validators.minLength(row.validator));
             break;
@@ -219,19 +250,63 @@ export class DynamicFormService {
           case 'email':
             validators.push(Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$'));
             break;
+          case 'yearRange':
+            validators.push(yearRangeValidator(row.validator));
+            break;
         }
       });
-
-      return Validators.compose(validators);
     }
-    return null;
+
+    if (field?.formFieldType === 'date') {
+      if (!hasMinDateValidation && field.minDate !== undefined) {
+        validators.push(minDateValidator(field.minDate));
+      }
+
+      if (!hasMaxDateValidation && field.maxDate !== undefined) {
+        validators.push(maxDateValidator(field.maxDate));
+      }
+    }
+
+    return validators.length > 0 ? Validators.compose(validators) : null;
   }
-  createContorl(field: any, validations = false, readonly = false) {
+  createContorl(field: any, validations = false, readonly = false): AbstractControl {
     const validationsData = validations || field.validations;
     // const val = field.value ? { value: field.value, disabled: readonly || field.readonly } : '';
-    const val = { value: field.value, disabled: readonly || field.readonly };
-    return new FormControl(val, this.bindValidations(validationsData));
+    const resolvedReadonly = readonly || field.readonly;
+
+    if (field.formFieldType === 'actualTarget') {
+      return this.createActualTargetGroup(field, validationsData, resolvedReadonly);
+    }
+
+    const val = {
+      value: this.resolveInitialControlValue(field, false),
+      disabled: field.disabled === true ? true : field.formFieldType === 'date' ? false : resolvedReadonly,
+    };
+    return new FormControl(val, this.bindValidations(validationsData, field));
     // return new FormControl(field.value || '');
+  }
+
+  /**
+   * Builds a nested FormGroup with `actual`/`target` sub-controls for a single
+   * `formFieldType: 'actualTarget'` question. Both sub-controls share the field's
+   * `validations` array (required/min/max) so a single question definition validates
+   * two related numbers. Angular's dot-path `form.get('key.actual')` resolves the
+   * sub-control directly, and `.value` naturally serializes to `{ actual, target }`.
+   */
+  private createActualTargetGroup(field: any, validationsData: any, readonly: boolean): FormGroup {
+    const pairValue = (field.value ?? {}) as { actual?: unknown; target?: unknown };
+    const disabled = field.disabled === true ? true : readonly;
+    const validationList: Array<{ name?: string }> = validationsData || [];
+    const validators = this.bindValidations(validationsData, field);
+    const hasActualLteTargetRule = validationList.some((v) => v.name === 'actualLessThanOrEqualToTarget');
+
+    return new FormGroup(
+      {
+        actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
+        target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
+      },
+      hasActualLteTargetRule ? { validators: actualLessThanOrEqualToTargetValidator } : undefined,
+    );
   }
   tabControl(fields: any[]) {
     // const form = this.fb.group({});
@@ -239,17 +314,13 @@ export class DynamicFormService {
     fields.forEach((field: any) => {
       const fieldFormArrays = field.data || field.formArrays;
       if (fieldFormArrays && fieldFormArrays.length) {
-        let formArrays: any[] = [];
+        const formArrays: any[] = [];
         const validators: any = [];
         fieldFormArrays.forEach((childField: any) => {
-          const compareValid = childField.validations?.find(
-            (e: { name: string }) => e.name === 'greaterThanEqualTo',
-          );
+          const compareValid = childField.validations?.find((e: { name: string }) => e.name === 'greaterThanEqualTo');
 
           if (compareValid) {
-            validators.push(
-              compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name),
-            );
+            validators.push(compareArrFieldsValidator(childField.key, compareValid.field, compareValid.name));
           }
           // table row
           const childFieldData: any = {};
@@ -279,9 +350,95 @@ export class DynamicFormService {
 
   toFormGroup(questions: FieldConfig[]): FormGroup {
     const group: any = {};
+    const groupValidators: ValidatorFn[] = [];
+
     questions.forEach((question: FieldConfig) => {
-      group[question.key] = new FormControl(question.value || '', this.bindValidations(question.validations))
+      const baseValidator = this.bindValidations(question.validations, question);
+      const controlValidator = question.digitsOnly
+        ? Validators.compose(
+            [baseValidator, this.digitsOnlyValidatorFor(question)].filter((v): v is ValidatorFn => v !== null),
+          )
+        : baseValidator;
+
+      group[question.key] = new FormControl(
+        { value: this.resolveInitialControlValue(question, true), disabled: question.disabled === true },
+        controlValidator,
+      );
+
+      if (question.matchesField) {
+        groupValidators.push(matchesFieldValidator(question.key, question.matchesField));
+      }
     });
-    return new FormGroup(group);
+
+    return new FormGroup(group, { validators: groupValidators });
+  }
+
+  /** Reads `minlength`/`maxlength` off the field's own `validations[]` so digit-count bounds
+   *  aren't declared twice — same source `bindValidations` already reads for `Validators.minLength`/`maxLength`. */
+  private digitsOnlyValidatorFor(question: FieldConfig): ValidatorFn {
+    const minLength = question.validations?.find((v) => v.name === 'minlength')?.validator;
+    const maxLength = question.validations?.find((v) => v.name === 'maxlength')?.validator;
+    return digitsOnlyValidator(minLength, maxLength);
+  }
+
+  /**
+   * Convert dynamic-form values into the payload shape expected by persistence layers.
+   * Date fields stay compatible with the Material datepicker in form state and are
+   * serialized to UTC ISO strings only when building the outbound payload.
+   */
+  serializeFormPayload(
+    fields: ReadonlyArray<Pick<FieldConfig, 'key' | 'formFieldType'>>,
+    values: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = Object.create(null);
+
+    for (const field of fields) {
+      const key = field.key;
+      if (typeof key !== 'string' || key.length === 0 || !Object.prototype.hasOwnProperty.call(values, key)) {
+        continue;
+      }
+
+      payload[key] = this.serializeFieldValue(field, values[key]);
+    }
+
+    return payload;
+  }
+
+  serializeFieldValue(field: Pick<FieldConfig, 'formFieldType'>, value: unknown): unknown {
+    if (field.formFieldType === 'file') {
+      // Standalone file controls already hold the persistence-ready canonical shape.
+      return isUploadedFileMetadata(value) ? value : null;
+    }
+
+    if (field.formFieldType !== 'date') {
+      return value;
+    }
+
+    const serializedDate = toUtcIsoDateString(value);
+    return serializedDate === undefined ? value : serializedDate;
+  }
+
+  /**
+   * Resolve the initial value assigned to a dynamic form control at creation time.
+   *
+   * File fields require a dedicated normalization path so standalone uploads start with `null`
+   * when they are effectively empty. This keeps Angular validators such as `required` aligned
+   * with the actual UI state and preserves patched edit values when a valid uploaded file object
+   * is already present. Non-file controls retain the existing fallback behavior used across the
+   * dynamic-form system.
+   *
+   * @param field - Minimal field configuration used to determine the control type and seed value
+   * @param useEmptyStringFallback - Whether falsy non-file values should default to an empty string
+   * @returns The normalized initial control value for the field
+   */
+  private resolveInitialControlValue(
+    field: Pick<FieldConfig, 'formFieldType' | 'value'>,
+    useEmptyStringFallback: boolean,
+  ): unknown {
+    if (field.formFieldType === 'file') {
+      return normalizeUploadedFileMetadata(field.value);
+    }
+
+    return useEmptyStringFallback ? field.value || '' : field.value;
   }
 }

@@ -1,0 +1,22 @@
+@if (data(); as formData) {
+<div class="slb-approved-banner d-flex align-items-start gap-2 mb-3" role="status">
+  <i class="bi bi-check-circle-fill flex-shrink-0" aria-hidden="true"></i>
+  <span>Service Level Benchmarks are deemed approved on submission. No State review or action is required for this form.</span>
+</div>
+
+<div>
+  <h2 class="h6 fw-bold text-uppercase mb-1">Service Level Benchmarks</h2>
+  <p class="text-secondary small mb-3">
+    All 28 indicators as submitted by the ULB. <strong>Actual</strong> is last year's performance;
+    <strong>Target</strong> is the ULB's commitment for next year &mdash; not a pass mark.
+  </p>
+
+  <app-slb-form-body
+    [form]="form()"
+    [fields]="visibleFields()"
+    mode="view"
+    [actualYearLabel]="priorYearLabel()"
+    [targetYearLabel]="yearLabel()"
+  ></app-slb-form-body>
+</div>
+}

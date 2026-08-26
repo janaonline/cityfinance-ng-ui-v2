@@ -1,0 +1,303 @@
+<div class="wrapper app-wrapper">
+  <section class="eval-run-page">
+
+    @if (loading() && !run()) {
+      <div class="hero-card">
+        <h3>Loading eval run...</h3>
+      </div>
+    }
+
+    @if (run(); as r) {
+
+      <!-- Hero -->
+      <div class="hero-card">
+        <div class="hero-row">
+          <div>
+            <h3>Eval Run Results</h3>
+            <p class="subcopy mono id-line" style="font-size:0.82rem;">
+              {{ r.eval_run_id }}
+              <button
+                type="button"
+                class="copy-btn copy-btn--ghost"
+                [attr.aria-label]="isCopied('Run ID', r.eval_run_id) ? 'Copied' : 'Copy run ID'"
+                [attr.title]="isCopied('Run ID', r.eval_run_id) ? 'Copied' : 'Copy run ID'"
+                (click)="copyValue('Run ID', r.eval_run_id)"
+              >
+                <mat-icon>{{ isCopied('Run ID', r.eval_run_id) ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </p>
+          </div>
+          <div class="hero-actions">
+            <span class="status-badge" [ngClass]="getStatusClass(r.status)">{{ r.status | titlecase }}</span>
+            <button
+              type="button"
+              mat-icon-button
+              [disabled]="loading() || exporting()"
+              (click)="downloadDump()"
+              title="Download Excel dump"
+            >
+              @if (exporting()) {
+                <mat-icon>hourglass_empty</mat-icon>
+              } @else {
+                <mat-icon>download</mat-icon>
+              }
+            </button>
+            <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="hero-meta">
+          <span><span class="meta-lbl">Benchmark</span> {{ r.benchmark_id }}</span>
+          <span class="id-line">
+            <span class="meta-lbl">Batch</span> {{ r.job_batch_id || '—' }}
+            @if (r.job_batch_id) {
+              <button
+                type="button"
+                class="copy-btn copy-btn--ghost"
+                [attr.aria-label]="isCopied('Batch ID', r.job_batch_id) ? 'Copied' : 'Copy batch ID'"
+                [attr.title]="isCopied('Batch ID', r.job_batch_id) ? 'Copied' : 'Copy batch ID'"
+                (click)="copyValue('Batch ID', r.job_batch_id)"
+              >
+                <mat-icon>{{ isCopied('Batch ID', r.job_batch_id) ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            }
+          </span>
+          <span><span class="meta-lbl">Extract</span> {{ r.extraction_model }}</span>
+          <span><span class="meta-lbl">Validate</span> {{ r.validation_model }}</span>
+          <span><span class="meta-lbl">Started</span> {{ formatDate(r.created_at) }}</span>
+          @if (r.completed_at) {
+            <span><span class="meta-lbl">Completed</span> {{ formatDate(r.completed_at) }}</span>
+          }
+        </div>
+        @if (r.error) {
+          <p class="hero-error">{{ r.error }}</p>
+        }
+      </div>
+
+      <!-- Metrics -->
+      @if (r.status === 'completed' && r.metrics) {
+        <div class="metrics-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Rows</div>
+            <div class="stat-value">{{ r.metrics['total'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-label">Successful</div>
+            <div class="stat-value">{{ r.metrics['successful'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-label">Errored</div>
+            <div class="stat-value">{{ r.metrics['errored'] ?? '—' }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">ULB Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['ulb_name_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">FY Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['financial_year_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Doc Type Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['doc_type_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Audit Type Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['audit_type_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Seal Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['seal_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Signature Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['signature_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Table Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['table_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Audit Date Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['audit_date_present_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Doc Quality Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['doc_quality_good_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
+            <div class="stat-label">Final Status Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['final_status_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--indigo" hidden>
+            <div class="stat-label">Overall Accuracy</div>
+            <div class="stat-value stat-value--lg">{{ acc(r.metrics['overall_accuracy']) }}</div>
+          </div>
+        </div>
+      }
+
+      <!-- Results table -->
+      <section class="panel">
+        <div class="section-header">
+          <div>
+            <h4>Per-Job Results</h4>
+            <p>{{ dataSource.filteredData.length }} job{{ dataSource.filteredData.length === 1 ? '' : 's' }}</p>
+          </div>
+          <div class="match-filter-group">
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Field</mat-label>
+              <mat-select [value]="matchField()" (selectionChange)="onMatchFieldChange($event.value)">
+                @for (opt of matchFieldOptions; track opt.key) {
+                  <mat-option [value]="opt.key">{{ opt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="match-filter-field">
+              <mat-label>Match</mat-label>
+              <mat-select [value]="matchValue()" (selectionChange)="onMatchValueChange($event.value)">
+                <mat-option value="all">All</mat-option>
+                <mat-option value="match">Match</mat-option>
+                <mat-option value="mismatch">Mismatch</mat-option>
+                <mat-option value="na">N/A</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="table-shell">
+          <table mat-table [dataSource]="dataSource" class="results-table">
+
+            <!-- Serial No -->
+            <ng-container matColumnDef="serialNo">
+              <th mat-header-cell *matHeaderCellDef>#</th>
+              <td mat-cell *matCellDef="let row; let i = index">{{ serialNumber(i) }}</td>
+            </ng-container>
+
+            <!-- Job / File -->
+            <ng-container matColumnDef="jobFile">
+              <th mat-header-cell *matHeaderCellDef>Job / File</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="id-line">
+                  <span class="mono dim" style="font-size:0.7rem;" [title]="row.jobId">{{ truncate(row.jobId, 22) }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    [attr.title]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    (click)="copyValue('Job ID', row.jobId)"
+                  >
+                    <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <a
+                      class="copy-btn"
+                      [routerLink]="['/ocr/validation']"
+                      [queryParams]="{ jobId: row.jobId }"
+                      target="_blank"
+                      rel="noopener"
+                      aria-label="View job"
+                      title="View job result (opens in new tab)"
+                    >
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  }
+                </div>
+                <div class="id-line" style="margin-top:0.3rem;">
+                  <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
+                    [attr.title]="isCopied('File Name', row.filename) ? 'Copied' : 'Copy file name'"
+                    (click)="copyValue('File Name', row.filename)"
+                  >
+                    <mat-icon>{{ isCopied('File Name', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                  @if (row.jobId && row.jobId !== '—') {
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      aria-label="Download file"
+                      title="Open source file in a new tab"
+                      (click)="downloadJobFile(row)"
+                    >
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  }
+                </div>
+                <div class="id-line" style="margin-top:0.3rem;">
+                  <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Input (values used when the source job was created) -->
+            <ng-container matColumnDef="input">
+              <th mat-header-cell *matHeaderCellDef>Input</th>
+              <td mat-cell *matCellDef="let row">
+                <div class="field-grid">
+                  <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.inputUlb">{{ truncate(row.inputUlb, 22) }}</span></div>
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.inputFy }}</span></div>
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.inputDocType }}</span></div>
+                  <div><span class="cell-label">Audit</span><span class="cell-value">{{ row.inputAuditType }}</span></div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Benchmark ground truth vs freshly-extracted values -->
+            <ng-container matColumnDef="benchmark">
+              <th mat-header-cell *matHeaderCellDef>
+                <div class="col-header-badge col-header-badge--bmk">Benchmark</div>
+                <div class="col-header-sub">Ground truth → Extracted</div>
+              </th>
+              <td mat-cell *matCellDef="let row">
+                <div class="extraction-cell">
+                  @for (f of row.fields; track f.label) {
+                    <div class="extr-row">
+                      <span class="cell-label">{{ f.label }}</span>
+                      <span class="cell-value" [title]="f.benchmark + ' → ' + f.extracted">{{ truncate(f.benchmark, 14) }} → {{ truncate(f.extracted, 14) }}</span>
+                      <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(f.match)">{{ matchIcon(f.match) }}</mat-icon>
+                    </div>
+                  }
+                  <div class="extr-row extr-row--overall">
+                    <span class="cell-label">Overall</span>
+                    <mat-icon class="match-icon match-icon--sm" [ngClass]="matchClass(row.overallMatch)">{{ matchIcon(row.overallMatch) }}</mat-icon>
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Error -->
+            <ng-container matColumnDef="error">
+              <th mat-header-cell *matHeaderCellDef>Error</th>
+              <td mat-cell *matCellDef="let row">
+                @if (row.error !== '—') {
+                  <span class="error-text" [title]="row.error">{{ truncate(row.error, 40) }}</span>
+                } @else {
+                  <span class="dim">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+                @if (loading()) { Loading results... } @else { No results available yet. }
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [pageSize]="25"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          showFirstLastButtons
+        />
+      </section>
+
+    }
+
+  </section>
+</div>

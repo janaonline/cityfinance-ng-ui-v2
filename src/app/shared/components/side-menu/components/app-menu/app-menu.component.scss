@@ -1,0 +1,281 @@
+// ─── Sidebar shell layout ────────────────────────────────────────────────────
+// Item-level styles (link colours, hover, active, icon-only) live in
+// app-menu-item.component.scss.  This file owns the wrapper dimensions, panel
+// transitions, the desktop edge-toggle, the mobile drawer + backdrop,
+// and the mobile open button.
+
+hr {
+  margin-block: 0.5rem;
+  opacity: 0.35;
+}
+
+// ─── Wrapper ─────────────────────────────────────────────────────────────────
+// height: 100% gives the wrapper real height so .layout-menu can fill it
+.menu-wrapper {
+  width: var(--nav-width);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+// ─── Sidebar panel ───────────────────────────────────────────────────────────
+// height: 100% fills the wrapper. overflow: hidden clips content; scrolling is
+// flex: 0 0 auto on .layout-menu-ul-secondary.
+
+.layout-menu {
+  position: relative;
+  isolation: isolate;
+
+  font-size: var(--fs-6);
+  background-color: var(--nav-surface);
+  border-radius: 0 0 5px 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  display: flex;
+  flex-direction: column;
+
+  transition:
+    width 0.3s ease,
+    transform 0.3s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    scrollbar-color: var(--nav-scrollbar-thumb) transparent;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    pointer-events: none;
+
+    background-color: var(--nav-surface);
+    background-image:
+      radial-gradient(circle at 95% 8%,
+        transparent 0 76px,
+        var(--nav-pattern-ring-color-strong) 77px 78px,
+        transparent 79px),
+      radial-gradient(circle at 112% 22%,
+        transparent 0 54px,
+        var(--nav-pattern-ring-color-soft) 55px 56px,
+        transparent 57px),
+      radial-gradient(var(--nav-pattern-dot-color) 1px, transparent 1px),
+      linear-gradient(110deg, transparent 0 74%, var(--nav-pattern-sheen-color) 74% 100%),
+      radial-gradient(circle at 96% 0%, var(--nav-pattern-glow-primary), transparent 25%),
+      radial-gradient(circle at 30% 100%, var(--nav-pattern-glow-secondary), transparent 20%);
+
+    background-size:
+      auto,
+      auto,
+      18px 18px,
+      auto,
+      auto,
+      auto;
+
+    background-attachment: scroll;
+    filter: blur(1px);
+  }
+}
+
+.layout-menu-ul {
+  padding: 0;
+  margin: 0;
+}
+
+// Scrollable primary nav — grows to fill available height, scrolls internally.
+.layout-menu-ul-pimary {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0.25rem 0.5rem 0.5rem;
+}
+
+// Sign Out / bottom actions — shrinks to content, anchored at the bottom via flex.
+.layout-menu-ul-secondary {
+  flex: 0 0 auto;
+  position: static;
+  margin: 0;
+  padding: 0.5rem;
+  box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-split-squared);
+  background-color: var(--nav-bottom-bg);
+  backdrop-filter: blur(2px);
+}
+
+// ─── Desktop: icon-rail (collapsed) ──────────────────────────────────────────
+
+.sidebar--collapsed {
+  width: var(--nav-icon-width, 3.5rem);
+
+  .layout-menu-ul-pimary {
+    margin: 0.25rem;
+    padding-left: 0;
+  }
+
+  .layout-menu ul {
+    padding-left: 0;
+  }
+}
+
+// ─── Desktop: edge-toggle button ─────────────────────────────────────────────
+// Absolutely positioned on the right edge of the sidebar panel.
+// Does NOT participate in block layout, so zero extra width is consumed.
+
+.sidebar-toggle {
+  position: absolute;
+  top: 4rem;
+  right: -14px; // half outside the panel — creates a "tab" effect
+  z-index: 15;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 14px;
+  padding: 0.6rem 0;
+
+  color: var(--color-primary-accent);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-primary-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-accent);
+    outline-offset: 2px;
+  }
+}
+
+// ─── Mobile overlay (≤ 991.98px) ─────────────────────────────────────────────
+
+@media (max-width: 991.98px) {
+
+  // Wrapper collapses to zero — the drawer is position: fixed and does not
+  // participate in document flow at all.
+  .sidebar--overlay.menu-wrapper {
+    width: 0;
+    height: 0;
+    overflow: visible;
+  }
+
+  // Drawer panel: fixed to the left edge of the viewport.
+  // Uses position: fixed because its parent wrapper reserves no space.
+  .sidebar--overlay .layout-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(var(--nav-width), calc(100vw - 4.5rem));
+    border-radius: 0 var(--radius-split-squared, 8px) var(--radius-split-squared, 8px) 0;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.22);
+    transform: translateX(calc(-100% - 1px));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 45;
+    transition:
+      transform 0.28s ease,
+      opacity 0.2s ease;
+  }
+
+  .sidebar--overlay-open .layout-menu {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  // Compact header row inside the drawer (mobile only).
+  .mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 3rem;
+    border-bottom: 1px solid var(--nav-drawer-border);
+    flex-shrink: 0;
+  }
+
+  .mobile-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: var(--color-primary-accent);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  // Hamburger tab: fixed pill at the left viewport edge when drawer is closed.
+  .mobile-open-btn {
+    position: fixed;
+    top: 4rem;
+    left: 0;
+    z-index: 46;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 16px;
+    padding: 0.6rem 1rem;
+
+    color: var(--color-primary-accent);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+
+    transition:
+      background-color 0.15s ease,
+      opacity 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-accent);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// ─── Backdrop (mobile only) ───────────────────────────────────────────────────
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 35;
+  cursor: pointer;
+}

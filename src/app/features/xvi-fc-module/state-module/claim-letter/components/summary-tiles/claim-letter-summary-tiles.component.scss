@@ -1,0 +1,28 @@
+.summary-tile {
+  min-width: 160px;
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  // Scale cqw units to this tile's width.
+  container-type: inline-size;
+
+  &.summary-tile-emphasized {
+    border-width: 2px;
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+  }
+
+  .summary-tile-value {
+    // Shrink long values to fit; scroll only when necessary.
+    font-size: clamp(0.95rem, 9cqw, 1.3rem);
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}

@@ -1,9 +1,4 @@
-<nav
-  #stickyMenu
-  [class.sticky]="isSticky"
-  [ngClass]="{ 'position-relative': !isSticky }"
-  class="bg-white shadow-bottom"
->
+<nav class="bg-white shadow-bottom">
   <div class="container d-flex justify-content-between align-items-center bg-white">
     <!-- Hamburger Menu -->
     <button
@@ -25,7 +20,7 @@
     <div class="d-flex flex-grow-1 align-items-center justify-content-end gap-1">
       <ul
         id="primary-navigation"
-        class="primary-navigation d-flex gap-3"
+        class="primary-navigation d-flex gap-3 fw-semibold"
         [ngClass]="showMobileNav ? 'primary-navigation-data-visible' : ''"
       >
         <!-- Cancel Hamburger Menu -->
@@ -40,39 +35,79 @@
           </button>
         }
 
-        @for (menu of menus; track $index) {
-          @if (menu.child?.length) {
-            <li class="active" [matMenuTriggerFor]="DashboardMenu">
-              <a class="nav-link" routerLinkActive="active">
-                {{ menu.name }}<i class="bi bi-caret-down-fill"></i>
+        @for (menu of menus; track menu.id) {
+          @if (menu.children?.length) {
+            <li class="active" [matMenuTriggerFor]="childMenu">
+              <a class="nav-link" [class.active]="menu.isActiveRoute">
+                @if (menu.icon) {
+                  <i [class]="menu.icon"></i>&nbsp;
+                }
+                <span class="fw-semibold" [innerHTML]="menu.label"></span><i class="bi bi-caret-down-fill"></i>
               </a>
             </li>
-            <mat-menu #DashboardMenu="matMenu">
-              @for (childMenu of menu.child; track childMenu) {
-                <a mat-menu-item [href]="childMenu.href" class="" routerLinkActive="active">
-                  {{ childMenu.name }}
-                </a>
+            <mat-menu #childMenu="matMenu">
+              @for (child of menu.children; track child.id) {
+                @if (child.resolvedLink) {
+                  <a mat-menu-item [routerLink]="child.resolvedLink" [class.active]="child.isActiveRoute">
+                    @if (child.icon) {
+                      <i [class]="child.icon"></i>&nbsp;
+                    }
+                    <span [innerHTML]="child.label"></span>
+                  </a>
+                } @else {
+                  <a
+                    mat-menu-item
+                    [href]="child.resolvedHref"
+                    [target]="child.target || '_self'"
+                    [class.active]="child.isActiveRoute"
+                  >
+                    @if (child.icon) {
+                      <i [class]="child.icon"></i>&nbsp;
+                    }
+                    <span [innerHTML]="child.label"></span>
+                  </a>
+                }
               }
             </mat-menu>
+          } @else if (menu.renderAs === 'button') {
+            <li class="active">
+              <button
+                type="button"
+                class="btn"
+                [ngClass]="menu.buttonClass || 'btn-cfPrimary fw-bold'"
+                [routerLink]="menu.resolvedLink"
+              >
+                @if (menu.icon) {
+                  <i [class]="menu.icon"></i>&nbsp;
+                }
+                <span [innerHTML]="menu.label"></span>
+              </button>
+            </li>
           } @else {
             <li class="active">
-              @if (menu.link) {
+              @if (menu.imageUrl) {
+                @if (menu.resolvedLink) {
+                  <a class="nav-link cfr-img-logo" [routerLink]="menu.resolvedLink">
+                    <img [src]="menu.imageUrl" [alt]="menu.imageAlt" />
+                  </a>
+                } @else {
+                  <a class="nav-link cfr-img-logo" [href]="menu.resolvedHref" [target]="menu.target || '_self'">
+                    <img [src]="menu.imageUrl" [alt]="menu.imageAlt" />
+                  </a>
+                }
+              } @else if (menu.resolvedLink) {
+                <a class="nav-link" [routerLink]="menu.resolvedLink" [class.active]="menu.isActiveRoute">
+                  @if (menu.icon) {
+                    <i [class]="menu.icon"></i>&nbsp;
+                  }
+                  <span [innerHTML]="menu.label" class="fw-semibold"></span>
+                </a>
+              } @else {
                 <a
                   class="nav-link"
-                  [ngClass]="menu.class"
-                  [routerLink]="menu.link"
-                  routerLinkActive="active"
-                  [innerHTML]="menu.name"
-                ></a>
-              }
-              @if (menu.href) {
-                <a
-                  class="nav-link"
-                  [ngClass]="menu.class"
-                  [attr.href]="menu.href"
-                  [innerHTML]="menu.name"
-                  [target]="menu.target"
-                  routerLinkActive="active"
+                  [href]="menu.resolvedHref"
+                  [target]="menu.target || '_self'"
+                  [innerHTML]="menu.label"
                 ></a>
               }
             </li>
@@ -80,18 +115,88 @@
         }
       </ul>
 
+      <!-- Notification bell (ULB only) -->
+      @if (showNotificationBell) {
+        <button
+          type="button"
+          class="notification-bell"
+          [class.notification-bell--ring]="ulbNotifications.notifications().length > 0"
+          [matMenuTriggerFor]="notificationMenu"
+          [attr.aria-label]="ulbNotifications.notifications().length + ' notifications'"
+        >
+          <i class="bi bi-bell-fill"></i>
+          @if (ulbNotifications.notifications().length > 0) {
+            <span class="notification-bell__badge">{{ ulbNotifications.notifications().length }}</span>
+          }
+        </button>
+        <mat-menu #notificationMenu="matMenu" class="notification-menu-panel">
+          @if (ulbNotifications.notifications().length === 0) {
+            <p class="notification-menu-empty mb-0 px-3 py-2">No updates right now.</p>
+          } @else {
+            @for (n of ulbNotifications.notifications(); track n.route) {
+              <button
+                type="button"
+                mat-menu-item
+                class="notification-menu-item"
+                [class]="'notification-menu-item--' + n.severity"
+                (click)="navigateToNotification(n.route)"
+              >
+                <i [class]="'bi ' + n.icon"></i>
+                <span class="notification-menu-item__text">
+                  <strong>{{ n.title }}</strong>
+                  <span>{{ n.message }}</span>
+                </span>
+              </button>
+            }
+          }
+        </mat-menu>
+      }
+
       <!-- Login/ Logout -->
       <div class="ms-2">
         @if (!isAuthResolved) {
-          <button class="btn btn-cfPrimary fw-bold" type="button" disabled>
-            Checking session...
-          </button>
+          <button class="btn btn-cfPrimary fw-bold" type="button" disabled>Checking session...</button>
         }
         @if (isAuthResolved && !isLoggedIn) {
           <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="loginMenu">
             Login <i class="bi bi-caret-down-fill"></i>
           </button>
           <mat-menu #loginMenu="matMenu">
+            @for (routePage of routePages; track routePage) {
+              <!-- XVIFC_PROD_CUTOVER: this @if (routePage.href) branch only exists for the
+                   'xvifc-coming-soon' entry — once that entry is deleted (see login-menu.constant.ts),
+                   no remaining row has an href and this branch is dead; safe to delete too. -->
+              @if (routePage.href) {
+                <a
+                  mat-menu-item
+                  class="border-bottom"
+                  [class.login-menu-item--new]="routePage.isNew"
+                  [href]="routePage.href"
+                >
+                  <i [class]="routePage.icon ?? 'bi-box-arrow-in-right'" style="margin-right: 8px"></i>
+                  <span [class.login-menu-label--new]="routePage.isNew">{{ routePage.label }}</span>
+                  @if (routePage.isNew) {
+                    <span class="login-menu-new-badge">NEW</span>
+                  }
+                </a>
+              } @else {
+                <button
+                  mat-menu-item
+                  class="border-bottom"
+                  [class.login-menu-item--new]="routePage.isNew"
+                  [routerLink]="['auth/login', routePage.type]"
+                >
+                  <i class="bi bi-box-arrow-in-right" style="margin-right: 8px"></i>
+                  <span [class.login-menu-label--new]="routePage.isNew">{{ routePage.label }}</span>
+                  @if (routePage.isNew) {
+                    <span class="login-menu-new-badge">NEW</span>
+                  }
+                </button>
+              }
+            }
+            <!-- <button mat-menu-item class="border-bottom" (click)="loginLogout('16thFC')">
+              <i class="bi bi-box-arrow-in-right"></i> XVI FC Grant
+            </button>
             <button mat-menu-item class="border-bottom" (click)="loginLogout('15thFC')">
               <i class="bi bi-box-arrow-in-right"></i> XV FC Grant
             </button>
@@ -100,11 +205,11 @@
             </button>
             <button mat-menu-item (click)="loginLogout('ranking')">
               <i class="bi bi-box-arrow-in-right"></i> Rankings 2022
-            </button>
+            </button> -->
           </mat-menu>
         }
         @if (isAuthResolved && isLoggedIn) {
-          <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
+          <button class="btn btn-sm btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
             <i class="bi bi-person-circle fs-5 text-white"></i>&nbsp;
             <i class="bi bi-caret-down-fill"></i>
           </button>
@@ -119,164 +224,10 @@
               </div>
             </div>
 
-            <button mat-menu-item class="text-center" (click)="loginLogout('logout')">
-              Logout
-            </button>
+            <button mat-menu-item class="text-center" (click)="loginLogout('logout')">Logout</button>
           </mat-menu>
         }
       </div>
     </div>
   </div>
 </nav>
-<!-- <nav
-  class="navbar navbar-expand-lg navbar-light bg-white py-0 shadow p-3 bg-body"
-  #stickyMenu
-  [ngClass]="{ 'stiky-tp': isSticky }"
->
-  <div class="container" style="max-width: 94%">
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-      (click)="isCollapsed = !isCollapsed"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <a class="navbar-brand" href="/home" [ngClass]="sticky ? 'show' : ''">
-      <span class="city" style="font-size: 2rem">city</span>
-      <span class="fy" style="font-size: 2rem; color: #1d5290; font-weight: bold">finance</span>
-    </a>
-    <div class="collapse navbar-collapse me-3">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        @for (menu of menus; track menu.name) {
-          @if (menu.child?.length) {
-            <li class="nav-item dropdown" dropdown>
-              <a
-                class="nav-link dropdown-toggle"
-                id="navbarDropdown"
-                role="button"
-                aria-controls="dropdown-basic"
-                dropdownToggle
-              >
-                {{ menu.name }}
-              </a>
-              <ul class="dropdown-menu" id="dropdown-basic" *dropdownMenu>
-                @for (childMenu of menu.child; track childMenu) {
-                  <li>
-                    <a class="dropdown-item" [attr.href]="childMenu.href">{{ childMenu.name }}</a>
-                  </li>
-                }
-              </ul>
-            </li>
-          } @else {
-            <li class="btn-group" [ngClass]="!menu.class ? 'nav-item' : ''">
-              @if (menu.link) {
-                <a
-                  class="nav-link"
-                  [ngClass]="menu.class"
-                  [routerLink]="menu.link"
-                  [innerHTML]="menu.name"
-                ></a>
-              }
-              @if (menu.href) {
-                <a
-                  class="nav-link"
-                  [ngClass]="menu.class"
-                  [attr.href]="menu.href"
-                  [innerHTML]="menu.name"
-                  [target]="menu.target"
-                ></a>
-              }
-            </li>
-          }
-        }
-      </ul>
-    </div>
-    <div class="ms-auto">
-      @if (!isLoggedIn) {
-        <div class="dropdown" dropdown>
-          <button
-            class="primary-btn-1 dropdown-toggle fw-bold"
-            type="button"
-            id="loginDrp"
-            role="button"
-            aria-controls="dropdown-basic"
-            dropdownToggle
-          >
-            Login
-          </button>
-          <ul
-            class="dropdown-menu dropdown-menu-login"
-            *dropdownMenu
-            aria-labelledby="loginDrp"
-            style="left: -7px"
-          >
-            <li>
-              <a class="dropdown-item" (click)="loginLogout('15thFC')" href="javascript:;">
-                <i class="bi bi-box-arrow-in-right"></i> XV FC Grant
-              </a>
-            </li>
-            <hr class="m-0" />
-            <li>
-              <a class="dropdown-item" (click)="loginLogout('XVIFC')" href="javascript:;">
-                <i class="bi bi-box-arrow-in-right"></i> XVI FC Data Collection
-              </a>
-            </li>
-            <hr class="m-0" />
-            <li>
-              <a class="dropdown-item" (click)="loginLogout('ranking')" href="javascript:;">
-                <i class="bi bi-box-arrow-in-right"></i> Rankings 2022
-              </a>
-            </li>
-          </ul>
-        </div>
-      }
-      @if (isLoggedIn) {
-        <div class="btn-group ms-2 dropdown" dropdown>
-          <button
-            id="button-disabled-menu"
-            dropdownToggle
-            type="button"
-            class="btn btn-login-icon dropdown-toggle"
-            aria-controls="dropdown-disabled-menu"
-          >
-            <i class="bi bi-person-circle fs-4 text-white"></i>
-            <span class="caret"></span>
-          </button>
-          <ul
-            id="dropdown-disabled-menu"
-            *dropdownMenu
-            class="dropdown-menu"
-            role="menu"
-            aria-labelledby="button-disabled-menu"
-            style="margin-left: -7rem"
-          >
-            <li role="menuitem" style="padding: 0 1rem" class="mb-3">
-              <div class="user-avt text-center" style="font-size: 2.5rem">
-                <i class="fa fa-user-circle"></i>
-              </div>
-              <div class="text-center">{{ user?.name }}</div>
-              <div class="mat-card-subtitle text-center" style="font-size: 0.9rem">
-                {{ user?.email }}
-              </div>
-            </li>
-            <li class="divider dropdown-divider"></li>
-            <li class="divider dropdown-divider"></li>
-            <li role="menuitem">
-              <a
-                class="dropdown-item text-center"
-                (click)="loginLogout('logout')"
-                href="javascript: void()"
-                >Logout</a
-              >
-            </li>
-          </ul>
-        </div>
-      }
-    </div>
-  </div>
-</nav> -->

@@ -1,0 +1,430 @@
+import { DevolutionValidationSummary } from './devolution-formula.models';
+import {
+  buildDevolutionDraftPayloadData,
+  buildDevolutionFinalSubmitPayloadData,
+  buildDfRowUpdatePayload,
+  extractApiErrorResponse,
+  extractValidationSummaryFromError,
+  getDfValidationStatusLabel,
+  getDuplicateUlbMessage,
+  getRegisterUlbErrorMessage,
+  hasPersistedValidationData,
+  isDfRowValidationStatus,
+  isRecord,
+  isValidDevolutionFileRef,
+  parseDfRowUpdateErrors,
+} from './devolution-formula.utils';
+
+const mockFileValue = {
+  originalName: 'test.xlsx',
+  path: 'https://example.com/test.xlsx',
+  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sizeKb: 2,
+  pageCount: null,
+};
+
+const mockValidationSummary: DevolutionValidationSummary = {
+  validationStatus: 'VALID',
+  excelRowCount: 10,
+  validRowCount: 8,
+  errorRowCount: 2,
+  missingUlbCount: 0,
+  totalMoHUAAllocation: 5000000,
+  totalAllocatedSum: 5000000,
+  allUlbsCovered: true,
+  allocationBalanced: true,
+  activeDatasetVersion: 1,
+};
+
+// ─── isRecord ─────────────────────────────────────────────────────────────────
+
+describe('isRecord', () => {
+  it('returns true for a plain object', () => expect(isRecord({})).toBeTrue());
+  it('returns true for an object with keys', () => expect(isRecord({ a: 1 })).toBeTrue());
+  it('returns false for null', () => expect(isRecord(null)).toBeFalse());
+  it('returns false for a string', () => expect(isRecord('hello')).toBeFalse());
+  it('returns false for a number', () => expect(isRecord(42)).toBeFalse());
+  it('returns false for undefined', () => expect(isRecord(undefined)).toBeFalse());
+  it('returns true for an array (arrays are objects in JS)', () => expect(isRecord([])).toBeTrue());
+});
+
+// ─── isValidDevolutionFileRef ─────────────────────────────────────────────────
+
+describe('isValidDevolutionFileRef', () => {
+  it('returns true for a canonical uploaded-file value', () =>
+    expect(isValidDevolutionFileRef(mockFileValue)).toBeTrue());
+  it('returns false when originalName is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, originalName: '' })).toBeFalse());
+  it('returns false when path is empty', () =>
+    expect(isValidDevolutionFileRef({ ...mockFileValue, path: '' })).toBeFalse());
+  it('returns false for the pre-canonical fileName/fileUrl shape', () =>
+    expect(isValidDevolutionFileRef({ fileName: 'test.xlsx', fileUrl: 'https://example.com/test.xlsx' })).toBeFalse());
+  it('returns false for null', () => expect(isValidDevolutionFileRef(null)).toBeFalse());
+  it('returns false for a string', () => expect(isValidDevolutionFileRef('file.xlsx')).toBeFalse());
+});
+
+// ─── extractApiErrorResponse ──────────────────────────────────────────────────
+
+describe('extractApiErrorResponse', () => {
+  it('returns null for a non-object error', () => {
+    expect(extractApiErrorResponse('string error')).toBeNull();
+    expect(extractApiErrorResponse(null)).toBeNull();
+    expect(extractApiErrorResponse(42)).toBeNull();
+  });
+
+  it('returns null when neither err.error.message nor err.success===false is present', () => {
+    expect(extractApiErrorResponse({ status: 500 })).toBeNull();
+    expect(extractApiErrorResponse({ error: { statusCode: 500 } })).toBeNull();
+  });
+
+  it('extracts message from an Angular HttpErrorResponse-like object (err.error.message)', () => {
+    const err = {
+      status: 400,
+      error: { statusCode: 400, message: 'File not allowed.', errors: {} },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.message).toBe('File not allowed.');
+    expect(result?.statusCode).toBe(400);
+  });
+
+  it('extracts errors map from an HttpErrorResponse-like object', () => {
+    const err = {
+      error: {
+        message: 'Validation failed.',
+        errors: {
+          excelFile: [{ message: 'Invalid file.', code: 'INVALID_FILE' }],
+        },
+      },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.errors?.['excelFile']?.[0]?.message).toBe('Invalid file.');
+  });
+
+  it('extracts data from an HttpErrorResponse-like object', () => {
+    const err = {
+      error: {
+        message: 'Mismatch.',
+        data: { validationSummary: mockValidationSummary },
+      },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.data).toEqual(jasmine.objectContaining({ validationSummary: mockValidationSummary }));
+  });
+
+  it('extracts from a service-thrown plain body (success:false + message)', () => {
+    const err = { success: false as const, message: 'Server refused.', errors: {} };
+    const result = extractApiErrorResponse(err);
+    expect(result?.message).toBe('Server refused.');
+  });
+
+  it('extracts errors from a service-thrown plain body', () => {
+    const err = {
+      success: false as const,
+      message: 'Server refused.',
+      errors: {
+        checkboxConfirmation: [{ message: 'Must be confirmed.', code: 'REQUIRED_TRUE' }],
+      },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.errors?.['checkboxConfirmation']?.[0]?.code).toBe('REQUIRED_TRUE');
+  });
+
+  it('returns errors as undefined when errors map entries are not arrays', () => {
+    const err = {
+      error: {
+        message: 'Bad shape.',
+        errors: { excelFile: 'not an array' },
+      },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.errors).toBeUndefined();
+  });
+
+  it('returns errors as undefined when error objects lack a message string', () => {
+    const err = {
+      error: {
+        message: 'Bad shape.',
+        errors: { excelFile: [{ code: 'NO_MSG' }] },
+      },
+    };
+    const result = extractApiErrorResponse(err);
+    expect(result?.errors).toBeUndefined();
+  });
+});
+
+// ─── hasPersistedValidationData ───────────────────────────────────────────────
+
+describe('hasPersistedValidationData', () => {
+  it('returns true when err.error.data.validationSummary.excelRowCount > 0', () => {
+    const err = {
+      error: { data: { validationSummary: { excelRowCount: 5 } } },
+    };
+    expect(hasPersistedValidationData(err)).toBeTrue();
+  });
+
+  it('returns false when excelRowCount is 0', () => {
+    const err = {
+      error: { data: { validationSummary: { excelRowCount: 0 } } },
+    };
+    expect(hasPersistedValidationData(err)).toBeFalse();
+  });
+
+  it('returns false when validationSummary is missing', () => {
+    expect(hasPersistedValidationData({ error: { data: {} } })).toBeFalse();
+  });
+
+  it('returns false for null', () => expect(hasPersistedValidationData(null)).toBeFalse());
+  it('returns false for a non-object', () => expect(hasPersistedValidationData('err')).toBeFalse());
+});
+
+// ─── extractValidationSummaryFromError ────────────────────────────────────────
+
+describe('extractValidationSummaryFromError', () => {
+  it('returns a typed summary when all fields are present and correctly typed', () => {
+    const err = { error: { data: { validationSummary: mockValidationSummary } } };
+    const result = extractValidationSummaryFromError(err);
+    expect(result).toEqual(mockValidationSummary);
+  });
+
+  it('returns null when validationSummary is missing', () => {
+    expect(extractValidationSummaryFromError({ error: { data: {} } })).toBeNull();
+  });
+
+  it('returns null when a required numeric field is absent', () => {
+    const partial = { ...mockValidationSummary };
+    const withoutCount = { ...partial } as Partial<DevolutionValidationSummary>;
+    delete withoutCount.excelRowCount;
+    const err = { error: { data: { validationSummary: withoutCount } } };
+    expect(extractValidationSummaryFromError(err)).toBeNull();
+  });
+
+  it('returns null when a required boolean field has wrong type', () => {
+    const err = {
+      error: {
+        data: {
+          validationSummary: { ...mockValidationSummary, allUlbsCovered: 'yes' },
+        },
+      },
+    };
+    expect(extractValidationSummaryFromError(err)).toBeNull();
+  });
+
+  it('returns null when err.error is absent', () => {
+    expect(extractValidationSummaryFromError({ status: 400 })).toBeNull();
+  });
+
+  it('returns null for non-object input', () => {
+    expect(extractValidationSummaryFromError(null)).toBeNull();
+    expect(extractValidationSummaryFromError('string')).toBeNull();
+  });
+});
+
+// ─── getDfValidationStatusLabel ───────────────────────────────────────────────
+
+describe('getDfValidationStatusLabel', () => {
+  it('returns "Valid" for VALID', () => expect(getDfValidationStatusLabel('VALID')).toBe('Valid'));
+  it('returns "Invalid" for INVALID', () => expect(getDfValidationStatusLabel('INVALID')).toBe('Invalid'));
+  it('returns "Not Validated" for NOT_VALIDATED', () =>
+    expect(getDfValidationStatusLabel('NOT_VALIDATED')).toBe('Not Validated'));
+});
+
+// ─── isDfRowValidationStatus ──────────────────────────────────────────────────
+
+describe('isDfRowValidationStatus', () => {
+  it('returns true for "VALID"', () => expect(isDfRowValidationStatus('VALID')).toBeTrue());
+  it('returns true for "INVALID"', () => expect(isDfRowValidationStatus('INVALID')).toBeTrue());
+  it('returns false for "NOT_VALIDATED"', () => expect(isDfRowValidationStatus('NOT_VALIDATED')).toBeFalse());
+  it('returns false for empty string', () => expect(isDfRowValidationStatus('')).toBeFalse());
+  it('returns false for null', () => expect(isDfRowValidationStatus(null)).toBeFalse());
+});
+
+// ─── buildDfRowUpdatePayload ──────────────────────────────────────────────────
+
+describe('buildDfRowUpdatePayload', () => {
+  it('includes all four fields when all values are finite numbers and non-null formula', () => {
+    const payload = buildDfRowUpdatePayload(1000, 500, 500, 'Pop * 2');
+    expect(payload.totalGrantAllocation).toBe(1000);
+    expect(payload.installment1Amount).toBe(500);
+    expect(payload.installment2Amount).toBe(500);
+    expect(payload.devolutionFormula).toBe('Pop * 2');
+  });
+
+  it('omits a numeric field when its value is null', () => {
+    const payload = buildDfRowUpdatePayload(null, 500, 500, 'Pop * 2');
+    expect('totalGrantAllocation' in payload).toBeFalse();
+  });
+
+  it('omits a numeric field when its value is NaN', () => {
+    const payload = buildDfRowUpdatePayload(NaN, 500, 500, 'Pop * 2');
+    expect('totalGrantAllocation' in payload).toBeFalse();
+  });
+
+  it('omits devolutionFormula when value is null', () => {
+    const payload = buildDfRowUpdatePayload(1000, 500, 500, null);
+    expect('devolutionFormula' in payload).toBeFalse();
+  });
+
+  it('includes devolutionFormula when value is an empty string (intentional clear)', () => {
+    const payload = buildDfRowUpdatePayload(1000, 500, 500, '');
+    expect(payload.devolutionFormula).toBe('');
+  });
+});
+
+// ─── buildDevolutionDraftPayloadData ──────────────────────────────────────────
+
+describe('buildDevolutionDraftPayloadData', () => {
+  it('includes excelFile when value is a valid file ref', () => {
+    const result = buildDevolutionDraftPayloadData({ excelFile: mockFileValue, checkboxConfirmation: true });
+    expect(result.excelFile).toEqual(mockFileValue);
+  });
+
+  it('omits excelFile when value is null', () => {
+    const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: true });
+    expect(result.excelFile).toBeUndefined();
+  });
+
+  it('includes checkboxConfirmation when value is a boolean', () => {
+    const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: false });
+    expect(result.checkboxConfirmation).toBeFalse();
+  });
+
+  it('omits checkboxConfirmation when value is not a boolean', () => {
+    const result = buildDevolutionDraftPayloadData({ excelFile: null, checkboxConfirmation: 'yes' });
+    expect(result.checkboxConfirmation).toBeUndefined();
+  });
+});
+
+// ─── getRegisterUlbErrorMessage ───────────────────────────────────────────────
+
+describe('getRegisterUlbErrorMessage', () => {
+  it('returns the backend message when excelFile has a newUlbsAdded error', () => {
+    const errors = {
+      excelFile: [
+        {
+          field: 'excelFile',
+          code: 'newUlbsAdded',
+          message: 'You have added 3 ULB(s). Please register before proceeding.',
+        },
+      ],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBe('You have added 3 ULB(s). Please register before proceeding.');
+  });
+
+  it('returns null when excelFile errors do not include newUlbsAdded', () => {
+    const errors = {
+      excelFile: [{ field: 'excelFile', code: 'allocationMismatch', message: 'Sums do not match.' }],
+    };
+    expect(getRegisterUlbErrorMessage(errors)).toBeNull();
+  });
+
+  it('returns null when excelFile key is absent', () => {
+    expect(getRegisterUlbErrorMessage({ checkboxConfirmation: [{ message: 'Required.' }] })).toBeNull();
+  });
+
+  it('returns null when errors is undefined', () => {
+    expect(getRegisterUlbErrorMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── getDuplicateUlbMessage ────────────────────────────────────────────────────
+
+describe('getDuplicateUlbMessage', () => {
+  it('returns the message of the first row error with code duplicate', () => {
+    const rowErrors = [
+      {
+        rowNumber: 2,
+        field: 'censusCode',
+        code: 'duplicate',
+        message: 'This ULB appears more than once in the uploaded Excel file.',
+      },
+    ];
+    expect(getDuplicateUlbMessage(rowErrors)).toBe('This ULB appears more than once in the uploaded Excel file.');
+  });
+
+  it('returns null when no row error has code duplicate', () => {
+    const rowErrors = [{ rowNumber: 1, field: 'censusCode', code: 'unknownUlb', message: 'ULB not found in registry.' }];
+    expect(getDuplicateUlbMessage(rowErrors)).toBeNull();
+  });
+
+  it('returns null when rowErrors is undefined', () => {
+    expect(getDuplicateUlbMessage(undefined)).toBeNull();
+  });
+});
+
+// ─── buildDevolutionFinalSubmitPayloadData ────────────────────────────────────
+
+describe('buildDevolutionFinalSubmitPayloadData', () => {
+  it('returns payload when excelFile and checkboxConfirmation are present (ulbCount excluded by backend)', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({
+      excelFile: mockFileValue,
+      checkboxConfirmation: true,
+    });
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
+  });
+
+  it('returns null when excelFile is missing', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({ checkboxConfirmation: true });
+    expect(result).toBeNull();
+  });
+
+  it('returns null when checkboxConfirmation is not a boolean', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({
+      excelFile: mockFileValue,
+      checkboxConfirmation: 'yes',
+    });
+    expect(result).toBeNull();
+  });
+
+  it('ignores ulbCount even when present in the payload (backend-owned field)', () => {
+    const result = buildDevolutionFinalSubmitPayloadData({
+      ulbCount: 100,
+      excelFile: mockFileValue,
+      checkboxConfirmation: true,
+    });
+    expect(result).toEqual({ excelFile: mockFileValue, checkboxConfirmation: true });
+    expect((result as unknown as Record<string, unknown>)?.['ulbCount']).toBeUndefined();
+  });
+});
+
+// ─── parseDfRowUpdateErrors ────────────────────────────────────────────────────
+
+describe('parseDfRowUpdateErrors', () => {
+  it('returns [] for a non-object error', () => {
+    expect(parseDfRowUpdateErrors('boom')).toEqual([]);
+    expect(parseDfRowUpdateErrors(null)).toEqual([]);
+  });
+
+  it('prefers a structured errors map over a bare message array when both are present', () => {
+    const err = {
+      error: {
+        message: ['installment2Amount must be an integer number'],
+        errors: { installment1Amount: [{ message: 'From the map.' }] },
+      },
+    };
+    expect(parseDfRowUpdateErrors(err)).toEqual([{ field: 'installment1Amount', message: 'From the map.', code: undefined }]);
+  });
+
+  it('falls back to the bare class-validator message array when there is no errors map', () => {
+    const err = { error: { message: ['installment2Amount must be an integer number'] } };
+    expect(parseDfRowUpdateErrors(err)).toEqual([
+      { field: 'installment2Amount', message: 'installment2Amount must be an integer number' },
+    ]);
+  });
+
+  it('tags a message that matches none of this row\'s editable fields as _form', () => {
+    const err = { error: { message: ['unknownProperty should not exist'] } };
+    expect(parseDfRowUpdateErrors(err)).toEqual([{ field: '_form', message: 'unknownProperty should not exist' }]);
+  });
+
+  it('handles multiple bare messages across known and unknown fields', () => {
+    const err = {
+      error: {
+        message: ['totalGrantAllocation must be an integer number', 'installment2Amount must be an integer number'],
+      },
+    };
+    expect(parseDfRowUpdateErrors(err)).toEqual([
+      { field: 'totalGrantAllocation', message: 'totalGrantAllocation must be an integer number' },
+      { field: 'installment2Amount', message: 'installment2Amount must be an integer number' },
+    ]);
+  });
+});

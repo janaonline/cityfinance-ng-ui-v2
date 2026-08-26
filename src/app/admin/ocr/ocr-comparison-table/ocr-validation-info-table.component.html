@@ -1,0 +1,26 @@
+<div class="table-responsive border rounded-3 comparison-table-shell">
+  <table class="table table-sm align-middle mb-0 comparison-table validation-info-table">
+    <thead>
+      <tr>
+        <th>Validations OCR Digitization</th>
+        @for (column of validationInfoColumns; track column.key) {
+          <th>{{ column.label }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of validationInfoRows; track row.rule) {
+        <tr>
+          <td class="fw-semibold">{{ $index + 1 }}. {{ row.rule }}</td>
+          @for (column of validationInfoColumns; track column.key) {
+            <td>
+              <span [class]="getValidationInfoClass(row.values[column.key])">
+                {{ row.values[column.key] ? 'Yes' : 'No' }}
+              </span>
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

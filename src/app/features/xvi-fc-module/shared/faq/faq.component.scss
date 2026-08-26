@@ -1,0 +1,119 @@
+@use '../../styles/page-shell' as shell;
+
+:host {
+  display: block;
+}
+
+.sh-page-title {
+  @include shell.xvifc-page-title-typography;
+}
+
+.sh-page-subtitle {
+  @include shell.xvifc-page-subtitle-typography;
+}
+
+.faq-section-card {
+  @include shell.xvifc-section-card-padding;
+}
+
+// Shadow/border/radius come from the shared "card border-0 shadow-sm rounded-3"
+// utility classes (same box design used by the document upload cards).
+.faq-section-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.faq-section-title {
+  @include shell.xvifc-section-title-typography;
+}
+
+.faq-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+  margin-bottom: 0.5rem;
+
+  &::before {
+    display: none;
+  }
+
+  // Accordion headers should blend into the white section card instead of
+  // using Material's default surface color.
+  ::ng-deep .mat-expansion-panel-header {
+    background-color: #ffffff;
+  }
+}
+
+.faq-panel-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.faq-number {
+  color: #667085;
+  font-weight: 600;
+}
+
+.faq-question {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.faq-toggle-icon {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #667085;
+}
+
+// Content is injected via [innerHTML] from JSON, so nested rules must pierce
+// view encapsulation to reach it.
+.faq-answer {
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.6;
+
+  ::ng-deep {
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      color: #344054;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.25rem;
+    }
+
+    .faq-example {
+      background: #f8fafc;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      margin: 0.75rem 0;
+    }
+
+    .faq-example-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #98a2b3;
+      margin-bottom: 0.35rem;
+    }
+  }
+}
+
+.faq-help-box {
+  @include shell.xvifc-help-box;
+}
+
+.faq-help-title {
+  @include shell.xvifc-help-title-typography;
+}

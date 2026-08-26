@@ -1,0 +1,408 @@
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+<main class="roles-page xvifc-theme">
+  @if (hasError()) {
+    <app-page-error-state
+      title="Failed to load contacts"
+      message="We couldn't load the profile contacts. Please check your connection and try again."
+      (retry)="loadData()"
+    />
+  } @else {
+    <!-- ═══ ULB Band ═══════════════════════════════════════════════════════════════ -->
+    <div class="profile-hero mb-4" role="region" aria-label="ULB Profile">
+      <span class="profile-deco profile-deco--1" aria-hidden="true"></span>
+      <span class="profile-deco profile-deco--2" aria-hidden="true"></span>
+
+      @if (isLoading()) {
+        <div class="d-flex align-items-center gap-3 position-relative" style="z-index: 1">
+          <span class="loading-block loading-block--logo"></span>
+          <div class="flex-grow-1">
+            <span class="loading-block loading-block--title d-block"></span>
+            <span class="loading-block loading-block--meta d-block mt-2"></span>
+          </div>
+        </div>
+      } @else if (ulbInfo()) {
+        <div class="row align-items-center gy-3 position-relative" style="z-index: 1">
+          <div class="col-12 col-lg">
+            <p class="band-eyebrow mb-2">ULB PROFILE</p>
+            <div class="d-flex align-items-center gap-3">
+              <div class="band-logo flex-shrink-0" aria-hidden="true">{{ ulbInfo()!.initials }}</div>
+              <div class="min-w-0">
+                <h1 class="band-name mb-1">{{ ulbInfo()!.name }}</h1>
+                <p class="band-meta mb-0">
+                  {{ ulbInfo()!.code }}&nbsp;&middot;&nbsp;Urban Local Body&nbsp;&middot;&nbsp;{{
+                    ulbInfo()!.stateName
+                  }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-auto">
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="band-chip">
+                <span class="band-chip__label">ULB CODE</span>
+                <strong class="band-chip__value">{{ ulbInfo()!.code }}</strong>
+              </div>
+              <div class="band-chip">
+                <span class="band-chip__label">STATE</span>
+                <strong class="band-chip__value">{{ ulbInfo()!.stateName }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ═══ Registered Municipal Information ══════════════════════════════════════ -->
+    <mat-card class="info-mat-card mb-4">
+      <!-- Coloured header -->
+      <div class="info-card-header d-flex align-items-center justify-content-between px-4 py-3">
+        <div class="d-flex align-items-center gap-2">
+          <mat-icon class="info-card-header__icon">location_city</mat-icon>
+          <span class="fw-bold text-uppercase info-card-header__title"> Information registered on City Finance </span>
+        </div>
+        <span class="badge rounded-pill info-card-header__badge d-inline-flex align-items-center gap-1">
+          <mat-icon style="font-size: 0.7rem; width: 0.7rem; height: 0.7rem; line-height: 1">lock</mat-icon>
+          Read-only
+        </span>
+      </div>
+      <mat-divider></mat-divider>
+
+      @if (isLoading()) {
+        <div class="row g-3 p-4">
+          @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
+            <div class="col-6 col-md-4">
+              <span class="loading-block--light d-block mb-1 rounded" style="width: 70px; height: 10px"></span>
+              <span class="loading-block--light d-block rounded" style="width: 130px; height: 14px"></span>
+            </div>
+          }
+        </div>
+      } @else if (municipalFields().length) {
+        <div class="row g-0">
+          @for (field of municipalFields(); track field.label) {
+            <div class="col-6 col-md-4 info-field">
+              <div class="d-flex align-items-center gap-1 mb-1">
+                <mat-icon class="info-field__icon">{{ field.icon }}</mat-icon>
+                <span class="info-field__label">{{ field.label }}</span>
+              </div>
+              <strong class="info-field__value">{{ field.value || '—' }}</strong>
+            </div>
+          }
+        </div>
+        <mat-divider></mat-divider>
+        <div class="px-4 py-2 d-flex align-items-center gap-1">
+          <mat-icon class="flex-shrink-0 info-card-info-icon">info</mat-icon>
+          <p class="small text-muted mb-0">
+            To request corrections, email
+            <a href="mailto:16fc.grant@cityfinance.in" class="info-link">16fc.grant&#64;cityfinance.in</a>
+          </p>
+        </div>
+      } @else {
+        <div class="px-4 py-3">
+          <p class="text-muted small mb-0">Municipal information not available.</p>
+        </div>
+      }
+    </mat-card>
+
+    <!-- ═══ People & Roles ════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="contacts-heading">
+      <div class="mb-3">
+        <h2 id="contacts-heading" class="fs-5 fw-bold mb-1">People &amp; Roles</h2>
+        @if (ulbInfo()?.name) {
+          <p class="text-muted small mb-0">Mapped contacts for {{ ulbInfo()!.name }}</p>
+        }
+      </div>
+
+      <mat-card class="contacts-mat-card">
+        @if (isLoading()) {
+          @for (i of [1, 2]; track i) {
+            <div class="d-flex align-items-center gap-3 p-4" [class.border-bottom]="i === 1">
+              <span class="loading-block--light rounded-circle flex-shrink-0" style="width: 38px; height: 38px"></span>
+              <div class="flex-grow-1">
+                <span class="loading-block--light d-block mb-2 rounded" style="width: 160px; height: 13px"></span>
+                <span class="loading-block--light d-block rounded" style="width: 100px; height: 11px"></span>
+              </div>
+              <span class="loading-block--light d-none d-md-block rounded" style="width: 120px; height: 13px"></span>
+            </div>
+          }
+        } @else {
+          <div class="table-responsive">
+            <table
+              mat-table
+              [dataSource]="contactRows()"
+              multiTemplateDataRows
+              class="w-100"
+              aria-label="Commissioner and nodal officer contacts"
+            >
+              <!-- Name column (includes edit pencil + avatar) -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>NAME</th>
+                <td mat-cell *matCellDef="let row">
+                  <div class="d-flex align-items-center gap-2">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      class="edit-icon-btn"
+                      [color]="editingContact() === row.type ? undefined : 'primary'"
+                      [class.is-active]="editingContact() === row.type"
+                      [disabled]="editingContact() !== null && editingContact() !== row.type"
+                      [attr.aria-label]="(editingContact() === row.type ? 'Cancel editing ' : 'Edit ') + row.label"
+                      (click)="toggleEdit(row.type)"
+                    >
+                      <mat-icon>{{ editingContact() === row.type ? 'close' : 'edit' }}</mat-icon>
+                    </button>
+                    <span class="member-avatar" aria-hidden="true">
+                      {{ row.name ? getInitials(row.name) : '?' }}
+                    </span>
+                    <div class="min-w-0">
+                      <span class="contact-name d-block">{{ row.name || '—' }}</span>
+                      @if (row.email) {
+                        <span class="contact-email d-block d-md-none">{{ row.email }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Designation column (hidden on mobile) -->
+              <ng-container matColumnDef="designation">
+                <th mat-header-cell *matHeaderCellDef class="d-none d-md-table-cell">DESIGNATION</th>
+                <td mat-cell *matCellDef="let row" class="d-none d-md-table-cell">
+                  <span class="designation-badge">{{ row.label }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Contact column -->
+              <ng-container matColumnDef="contact">
+                <th mat-header-cell *matHeaderCellDef>CONTACT</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="contact-mobile">{{ row.mobile || '—' }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Warning banner row (spans all columns, only for rows with invalid stored data) -->
+              <ng-container matColumnDef="warningBanner">
+                <td
+                  mat-cell
+                  *matCellDef="let row"
+                  [attr.colspan]="displayedColumns.length"
+                  class="warn-banner-cell"
+                  [attr.aria-label]="'Data quality warning for ' + row.label"
+                >
+                  <div class="d-flex align-items-center gap-2 px-4 py-2 bg-warning-subtle border-bottom">
+                    <i
+                      class="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"
+                      style="font-size: 0.75rem"
+                      aria-hidden="true"
+                    ></i>
+                    <span class="small fw-medium text-warning-emphasis flex-shrink-0"
+                      >{{ row.label }}: click edit to fix</span
+                    >
+                    <div class="d-flex gap-1 flex-wrap">
+                      @if (row.nameInvalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
+                          {{ row.name ? 'Name invalid' : 'Name missing' }}
+                        </span>
+                      }
+                      @if (row.emailInvalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
+                          Email invalid
+                        </span>
+                      }
+                      @if (row.mobileInvalid) {
+                        <span
+                          class="badge rounded-pill text-bg-warning"
+                          style="font-size: 10px; padding: 3px 8px; font-weight: 500"
+                        >
+                          {{ row.mobile ? 'Mobile invalid' : 'Mobile missing' }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Expanded edit form row (spans all columns) -->
+              <ng-container matColumnDef="expandedDetail">
+                <td mat-cell *matCellDef="let row" [attr.colspan]="displayedColumns.length">
+                  <div
+                    class="edit-panel-wrapper"
+                    [@detailExpand]="editingContact() === row.type ? 'expanded' : 'collapsed'"
+                    [attr.aria-hidden]="editingContact() !== row.type"
+                  >
+                    <div class="edit-panel">
+                      <p class="edit-panel__heading mb-3">
+                        <mat-icon class="align-middle me-1" style="font-size: 1rem; width: 1rem; height: 1rem"
+                          >edit</mat-icon
+                        >
+                        Editing {{ row.label }}
+                      </p>
+
+                      <form [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
+                        <div class="row g-3">
+                          <div class="col-12 col-md-4">
+                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
+                              <mat-label>Full Name</mat-label>
+                              <input
+                                matInput
+                                formControlName="name"
+                                placeholder="e.g. Ramesh Kumar"
+                                maxlength="100"
+                                autocomplete="name"
+                                [attr.aria-describedby]="'name-err-' + row.type"
+                              />
+                            </mat-form-field>
+                            <div [id]="'name-err-' + row.type" aria-live="polite" aria-atomic="true">
+                              @if (editForm.get('name')?.touched) {
+                                @if (editForm.get('name')?.hasError('required')) {
+                                  <p class="text-danger small mt-1 mb-0">Name is required.</p>
+                                } @else if (editForm.get('name')?.hasError('minlength')) {
+                                  <p class="text-danger small mt-1 mb-0">Name must be at least 2 characters.</p>
+                                } @else if (editForm.get('name')?.hasError('pattern')) {
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Only letters, spaces, hyphens, dots, and apostrophes are allowed — no numbers or
+                                    special characters.
+                                  </p>
+                                } @else if (editForm.get('name')?.hasError('unsafeInput')) {
+                                  <p class="text-danger small mt-1 mb-0">Name contains disallowed characters.</p>
+                                }
+                              }
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-md-4">
+                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
+                              <mat-label>Mobile</mat-label>
+                              <input
+                                matInput
+                                type="tel"
+                                formControlName="mobile"
+                                placeholder="10-digit number"
+                                inputmode="numeric"
+                                maxlength="10"
+                                autocomplete="tel"
+                                [attr.aria-describedby]="'mobile-err-' + row.type"
+                                (input)="onMobileInput($event)"
+                              />
+                            </mat-form-field>
+                            <div [id]="'mobile-err-' + row.type" aria-live="polite" aria-atomic="true">
+                              @if (editForm.get('mobile')?.touched) {
+                                @if (editForm.get('mobile')?.hasError('required')) {
+                                  <p class="text-danger small mt-1 mb-0">Mobile number is required.</p>
+                                } @else if (editForm.get('mobile')?.hasError('pattern')) {
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Enter a valid 10-digit number starting with 6–9.
+                                  </p>
+                                } @else if (editForm.get('mobile')?.hasError('unsafeInput')) {
+                                  <p class="text-danger small mt-1 mb-0">
+                                    Mobile number contains disallowed characters.
+                                  </p>
+                                }
+                              }
+                            </div>
+                          </div>
+
+                          <div class="col-12 col-md-4">
+                            <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
+                              <mat-label>Email <span class="fw-normal text-muted">(optional)</span></mat-label>
+                              <input
+                                matInput
+                                type="email"
+                                formControlName="email"
+                                placeholder="official@ulb.gov.in"
+                                autocomplete="email"
+                                [attr.aria-describedby]="'email-err-' + row.type"
+                              />
+                            </mat-form-field>
+                            <div [id]="'email-err-' + row.type" aria-live="polite" aria-atomic="true">
+                              @if (editForm.get('email')?.touched) {
+                                @if (editForm.get('email')?.hasError('email')) {
+                                  <p class="text-danger small mt-1 mb-0">Enter a valid email address.</p>
+                                } @else if (editForm.get('email')?.hasError('maxlength')) {
+                                  <p class="text-danger small mt-1 mb-0">Email must not exceed 254 characters.</p>
+                                } @else if (editForm.get('email')?.hasError('unsafeInput')) {
+                                  <p class="text-danger small mt-1 mb-0">Email contains disallowed characters.</p>
+                                }
+                              }
+                            </div>
+                          </div>
+                        </div>
+
+                        <div aria-live="assertive" aria-atomic="true">
+                          @if (saveError()) {
+                            <div
+                              class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small"
+                              role="alert"
+                            >
+                              <mat-icon
+                                class="flex-shrink-0"
+                                style="font-size: 1rem; width: 1rem; height: 1rem"
+                                aria-hidden="true"
+                                >error</mat-icon
+                              >
+                              {{ saveError() }}
+                            </div>
+                          }
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end mt-3 pt-2 border-top">
+                          <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="cancelEdit()">
+                            Cancel
+                          </button>
+                          <button
+                            mat-flat-button
+                            color="primary"
+                            type="submit"
+                            [disabled]="editForm.invalid || isSaving()"
+                          >
+                            @if (isSaving()) {
+                              <span
+                                class="spinner-border spinner-border-sm me-1"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Saving…
+                            } @else {
+                              Save Changes
+                            }
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: ['warningBanner']; when: rowHasWarning"
+                class="warn-banner-row"
+              ></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns"
+                class="contact-row"
+                [class.contact-row--editing]="editingContact() === row.type"
+              ></tr>
+              <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+            </table>
+          </div>
+        }
+      </mat-card>
+    </section>
+  }
+</main>
+      </div>
+    </div>
+  </div>
+</div>

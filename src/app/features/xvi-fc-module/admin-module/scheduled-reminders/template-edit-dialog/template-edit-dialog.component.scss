@@ -1,0 +1,8 @@
+.edit-dialog { width: min(680px, 92vw); }
+
+.tpl-preview {
+  max-height: 200px;
+  overflow-y: auto;
+  p { margin-bottom: 0.35rem; }
+  a { color: #1976d2; }
+}
