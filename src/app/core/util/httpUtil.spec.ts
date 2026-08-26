@@ -28,4 +28,14 @@ describe('HttpUtility', () => {
     expect(params.get('count')).toBe('10');
     expect(params.get('enabled')).toBe('true');
   });
+
+  it('keeps falsy-but-meaningful values like false and 0', () => {
+    const params = utility.convertToHttpParams({
+      isActive: false,
+      page: 0,
+    } as any);
+
+    expect(params.get('isActive')).toBe('false');
+    expect(params.get('page')).toBe('0');
+  });
 });
