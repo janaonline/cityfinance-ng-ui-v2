@@ -42,7 +42,10 @@ export class NavbarComponent implements OnInit {
   menus: NavMenuItem[] = [];
   showMobileNav = false;
 
-  routePages = ROUTE_PAGES.filter((page) => page.isMenu);
+  // Getter, not a field: isProd is only set in ngOnInit(), after field initializers run.
+  get routePages() {
+    return ROUTE_PAGES.filter((page) => page.isMenu && !(page.isHiddenInProd && this.isProd));
+  }
 
   constructor(
     public _router: Router,
