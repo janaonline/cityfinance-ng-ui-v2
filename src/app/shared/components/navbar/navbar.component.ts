@@ -227,6 +227,17 @@ export class NavbarComponent implements OnInit {
     if (v.hideOnRoutePrefixes && matchesAnyRoutePrefix(this._router.url, v.hideOnRoutePrefixes)) {
       return false;
     }
+    // Third gating dimension: unlike the two above (each independently OR'd
+    // into "hide if any one fires"), this is a single AND of role + route —
+    // hidden only when BOTH match together (e.g. Resources/Blog hidden for
+    // ULB while inside the XVI FC flow, but still visible to ULB elsewhere).
+    if (
+      v.hideWhenRoleOnRoute &&
+      this.inRole(v.hideWhenRoleOnRoute.roles) &&
+      matchesAnyRoutePrefix(this._router.url, v.hideWhenRoleOnRoute.routePrefixes)
+    ) {
+      return false;
+    }
     // readonlyGated: mirrors SSR/UI's isReadonlyUser() (inverted 3-email
     // allowlist), now that rankings-22-form (the first V2 item to set this
     // flag) is visible here too. moduleAccess still has no V2 equivalent —
