@@ -1,0 +1,100 @@
+@use '../../styles/xvi-fc-theme' as theme;
+
+// This page is a top-level route (like /auth/login), not nested inside XviFcModuleComponent's DOM
+// tree, so it can't inherit the module's `.xvifc-theme` class/tokens from an ancestor the way pages
+// under /xvifc/** do.
+:host {
+  @include theme.xvifc-theme-tokens;
+  display: block;
+}
+
+.cs-page {
+  min-height: 100vh;
+  background: #f7f8fa;
+}
+
+/* ── Hero card — same grant-band pattern as support-hours-card / profile-verification sidebar ── */
+.cs-card {
+  @include theme.grant-band-tokens;
+  @include theme.grant-band-surface;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  padding: 3rem 2.5rem;
+  width: 100%;
+}
+
+.cs-card::before { @include theme.grant-band-overlay; }
+.cs-card::after  { @include theme.grant-band-left-bar; }
+
+.cs-deco    { @include theme.grant-band-deco-base; }
+.cs-deco--1 { @include theme.grant-band-deco-large; }
+.cs-deco--2 { @include theme.grant-band-deco-small; }
+
+.cs-body {
+  position: relative;
+  z-index: 1;
+}
+
+.cs-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.cs-title {
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  font-weight: 800;
+  line-height: 1.25;
+  color: #fff;
+  margin: 0;
+}
+
+.cs-desc {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 460px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Log out button — light pill on the dark gradient, matching support-hours-card's .sh-btn */
+.cs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 2.25rem;
+  border: none;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #114551;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: background 0.18s ease, transform 0.14s ease;
+}
+
+.cs-btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+  color: #0f4c4d;
+}
+
+.cs-btn__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+@media (max-width: 575.98px) {
+  .cs-card {
+    padding: 2.25rem 1.5rem;
+  }
+}

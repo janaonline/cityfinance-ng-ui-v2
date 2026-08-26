@@ -87,6 +87,18 @@ export const routes: Routes = [
       ),
   },
   {
+    // TEMP — 16th FC ULB "forms coming soon" gate. Added 2026-08-26, meant to live only a few
+    // days. To remove: delete this route, ulb-module/guards/ulb-forms-coming-soon.guard.ts,
+    // its canMatch usage in xvi-fc-module.routes.ts, and shared/ulb-forms-coming-soon/.
+    //
+    // Kept outside /xvifc to avoid a redirect loop with ulbFormsComingSoonGuard.
+    path: 'xvifc-forms-coming-soon',
+    loadComponent: () =>
+      import('./features/xvi-fc-module/shared/ulb-forms-coming-soon/ulb-forms-coming-soon.component').then(
+        (m) => m.UlbFormsComingSoonComponent,
+      ),
+  },
+  {
     path: 'auth',
     loadChildren: () => import('./auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
