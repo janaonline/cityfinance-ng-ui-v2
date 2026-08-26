@@ -214,6 +214,13 @@ interface UploadResponse {
 
 const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
+/** Universal upper bound on PDF length for any document on this page (audited or unaudited/provisional). */
+const MAX_PDF_PAGES = 1000;
+
+/** Pure so it's directly unit-testable without going through pdf.js/checkPdfHasContent. */
+export function getMaxPageCountError(pageCount: number | null, maxPages = MAX_PDF_PAGES): string | null {
+  return pageCount !== null && pageCount > maxPages ? `This document exceeds the maximum of ${maxPages} pages.` : null;
+}
 /** Stop polling a document that's been stuck PROCESSING this long — the backend's cron fallback
  *  will eventually settle it, and a full page reload will pick up the final status. */
 const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
@@ -1113,6 +1120,10 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (doc.minPages && result.pageCount !== null && result.pageCount < doc.minPages) {
       return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
     }
+
+    // Max page count — fixed universal cap, not per-document config like minPages.
+    const maxPagesError = getMaxPageCountError(result.pageCount);
+    if (maxPagesError) return maxPagesError;
 
     return null;
   }

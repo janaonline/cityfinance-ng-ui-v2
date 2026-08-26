@@ -8,6 +8,7 @@ import {
   UploadDocumentsComponent,
   UploadDocumentDef,
   UploadPageConfig,
+  getMaxPageCountError,
 } from './upload-documents.component';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
@@ -175,6 +176,36 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
       const result = await checkFileValidity(file, noTypesDoc);
 
       expect(result).toContain('No file type is configured');
+    });
+  });
+
+  // getMaxPageCountError is the exact rule checkFileValidity() applies (right after the existing
+  // minPages check) for every PDF document on this page. It's a pure function specifically so it
+  // can be unit-tested directly, without mocking pdf.js's checkPdfHasContent (ES module named
+  // exports aren't spyable in this project's Karma/webpack build — `spyOn` on a namespace import
+  // throws "not declared writable"). The component instance for BOTH the audited (uploadType:
+  // 'audited') and provisional/unaudited (uploadType: 'provisional') routes is the same
+  // UploadDocumentsComponent calling the same checkFileValidity()/getMaxPageCountError() — there
+  // is no per-type branching in this rule, so one shared test suite covers both pages.
+  describe('getMaxPageCountError() — max page count for a PDF document (shared by audited and provisional pages)', () => {
+    it('rejects a PDF over the 1000-page limit', () => {
+      expect(getMaxPageCountError(1001)).toBe('This document exceeds the maximum of 1000 pages.');
+    });
+
+    it('rejects a PDF far over the 1000-page limit', () => {
+      expect(getMaxPageCountError(5000)).toBe('This document exceeds the maximum of 1000 pages.');
+    });
+
+    it('accepts a PDF at exactly the 1000-page limit', () => {
+      expect(getMaxPageCountError(1000)).toBeNull();
+    });
+
+    it('accepts a PDF well under the page limit', () => {
+      expect(getMaxPageCountError(3)).toBeNull();
+    });
+
+    it('does not apply when the page count is unknown (pdf.js could not determine it)', () => {
+      expect(getMaxPageCountError(null)).toBeNull();
     });
   });
 });
