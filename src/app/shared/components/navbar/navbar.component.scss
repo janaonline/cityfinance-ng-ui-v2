@@ -17,12 +17,8 @@ a {
 }
 
 // mat-menu content is portaled to the CDK overlay, outside this component's
-// encapsulated view — ::ng-deep (same pattern already used below for
-// .notification-menu-panel) is what lets routerLinkActive's "active" class
-// actually show up once a dropdown item matches the current route, and what
-// gets the dropdown items themselves to fw-semibold (600) to match SSR's
-// top-level nav weight — `fw-semibold` on the <ul> above never reaches this
-// portaled content, so it has to be set explicitly here.
+// view encapsulation — ::ng-deep is required to style it from here (same
+// pattern used below for .notification-menu-panel).
 ::ng-deep .mat-mdc-menu-item {
   font-weight: var(--fw-semi-bold);
 }
@@ -42,12 +38,12 @@ a {
   background: hsla(0, 0%, 100%, 1);
 }
 
-@supports (backdrop-filter: blur(4rem)) {
-  .primary-navigation {
-    background: hsla(0, 0%, 100%, 0.1);
-    backdrop-filter: blur(4rem);
-  }
-}
+// @supports (backdrop-filter: blur(4rem)) {
+//   .primary-navigation {
+//     background: hsla(0, 0%, 100%, 0.1);
+//     backdrop-filter: blur(4rem);
+//   }
+// }
 
 .nav-link {
   padding-block: 1.25rem;
