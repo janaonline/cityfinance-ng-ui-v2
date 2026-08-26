@@ -192,6 +192,7 @@ export class NavbarComponent implements OnInit {
   }
 
   private isMenuItemVisible(item: NavMenuItem): boolean {
+    if (item.isDisabled) return false;
     if (!item.apps.includes('v2')) return false;
 
     const v = item.visibility;
