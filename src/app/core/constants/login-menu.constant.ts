@@ -10,8 +10,20 @@ export interface IRoutePages {
     route?: string;
     roles?: USER_TYPE[];
     isHiddenInProd?: boolean; // hidden once environment.isProduction is true; still shown in dev/staging/local
+    icon?: string; // Bootstrap Icons class for this row; defaults to bi-box-arrow-in-right in the template
+    href?: string; // literal href, used as-is — for a destination that isn't V2's own auth/login/:type route,
+                    // e.g. SSR's coming-soon page below (rendered via [href], not [routerLink])
 }
 export const ROUTE_PAGES: IRoutePages[] = [{
+    // XVIFC_PROD_CUTOVER: delete this whole entry once the real 16th FC login is ready for
+    // production — at that point this row and the one below (isHiddenInProd) swap places.
+    type: 'xvifc-coming-soon',
+    label: 'XVI FC Grant',
+    icon: 'bi-rocket-takeoff-fill',
+    href: '/auth/login/16thfc', // SSR occupies the shared domain's root, so a relative path reaches it
+    isMenu: true,
+    isNew: true,
+}, {
     type: '16thFC',
     label: 'XVI FC Grant',
     route: '/xvifc/year',
