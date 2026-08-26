@@ -173,13 +173,7 @@ export class NavbarComponent implements OnInit {
     this._router.navigate(['/xvifc', yearId, route]);
   }
 
-  /**
-   * Rebuilds `menus` from the shared NAV_MENU_ITEMS config. Replaces the old
-   * setLoggedInUserMenu(), which rebuilt the logged-in branch from scratch
-   * instead of extending the base set — that's what silently dropped
-   * Dashboard/Resources for every logged-in user. This version always starts
-   * from the full filtered tree, so nothing gets lost based on auth state.
-   */
+  /** Rebuilds `menus` from the shared NAV_MENU_ITEMS config — see ./CLAUDE.md, "Resolution pipeline". */
   private refreshMenus(): void {
     const resolved = resolveMenus(
       NAV_MENU_ITEMS,
@@ -189,14 +183,7 @@ export class NavbarComponent implements OnInit {
     this.menus = resolved.map((item) => this.resolveLinks(item));
   }
 
-  /**
-   * True when `item` is this app's own route AND the current URL is either
-   * exactly its match path or a descendant of it (boundary-safe: '/xvifc'
-   * matches '/xvifc/year' and '/xvifc/2024-25/...', but never '/xvifc-form',
-   * which merely happens to share the same string prefix without a '/').
-   * `activePathPrefix` overrides `path` for items whose real flow lives under
-   * a broader/different url root than their own link target — see nav-menu.config.ts.
-   */
+  /** True when `item` is this app's own route and the current URL is on/under it — see ./CLAUDE.md, "Active-route highlighting". */
   private isActiveGroupChild(item: NavMenuItem): boolean {
     if (item.hostApp !== 'v2') return false;
     const prefix = item.activePathPrefix ?? item.path;
@@ -217,20 +204,13 @@ export class NavbarComponent implements OnInit {
     if (v.loggedOutOnly && this.isLoggedIn) return false;
     if (v.roles && !this.inRole(v.roles)) return false;
     if (v.excludeRoles && this.inRole(v.excludeRoles)) return false;
-    // Second, independent gating dimension: which page the user is on right
-    // now (AND'd with the role checks above). Recomputed on every
-    // NavigationEnd via bindRouteChanges() -> refreshMenus(), so this updates
-    // live as the user navigates, same as the role checks do on login/logout.
+    // Route-based gating — see ./CLAUDE.md, "How the three role/route dimensions actually combine".
     if (v.showOnlyOnRoutePrefixes && !matchesAnyRoutePrefix(this._router.url, v.showOnlyOnRoutePrefixes)) {
       return false;
     }
     if (v.hideOnRoutePrefixes && matchesAnyRoutePrefix(this._router.url, v.hideOnRoutePrefixes)) {
       return false;
     }
-    // Third gating dimension: unlike the two above (each independently OR'd
-    // into "hide if any one fires"), this is a single AND of role + route —
-    // hidden only when BOTH match together (e.g. Resources/Blog hidden for
-    // ULB while inside the XVI FC flow, but still visible to ULB elsewhere).
     if (
       v.hideWhenRoleOnRoute &&
       this.inRole(v.hideWhenRoleOnRoute.roles) &&
@@ -238,10 +218,7 @@ export class NavbarComponent implements OnInit {
     ) {
       return false;
     }
-    // readonlyGated: mirrors SSR/UI's isReadonlyUser() (inverted 3-email
-    // allowlist), now that rankings-22-form (the first V2 item to set this
-    // flag) is visible here too. moduleAccess still has no V2 equivalent —
-    // no item that includes 'v2' in `apps` sets it today.
+    // moduleAccess has no V2 equivalent — no 'v2' item sets it today.
     if (v.readonlyGated && !this.isReadonlyUser()) return false;
 
     return true;
@@ -271,9 +248,7 @@ export class NavbarComponent implements OnInit {
           : undefined;
         break;
       case 'ssr':
-        // SSR occupies the site root, so a plain relative path resolves
-        // there via the shared-domain reverse proxy (same limitation as
-        // today's code when running each app's own local dev server).
+        // SSR occupies the site root — a relative path resolves via the shared-domain reverse proxy.
         resolved.resolvedHref = item.path;
         break;
       case 'external':
