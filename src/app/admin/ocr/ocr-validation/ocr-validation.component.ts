@@ -91,13 +91,13 @@ export class OcrValidationComponent implements OnInit {
   ];
 
   readonly form = this.fb.group({
-    extractionModel: this.fb.nonNullable.control('gemini-3.1-flash-lite', Validators.required),
+    extractionModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
     validationModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
     docType: this.fb.control<string | null>(null),
     auditType: this.fb.control<string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
-    enableOrientationCheck: this.fb.control<boolean | null>(null),
+    enableOrientationCheck: this.fb.control<boolean | null>(false),
     enableFinancialValidation: this.fb.control<boolean | null>(false),
     enableQualityCheck: this.fb.control<boolean | null>(false),
   });

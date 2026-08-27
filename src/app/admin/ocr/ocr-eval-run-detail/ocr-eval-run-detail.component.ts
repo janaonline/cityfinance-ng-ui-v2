@@ -23,6 +23,7 @@ const MATCH_FIELD_OPTIONS: { key: string; label: string }[] = [
   { key: 'ulb_name', label: 'ULB' },
   { key: 'financial_year', label: 'FY' },
   { key: 'doc_type', label: 'Doc Type' },
+  { key: 'audit_type', label: 'Audit Type' },
   { key: 'language', label: 'Language' },
   { key: 'seal_present', label: 'Seal' },
   { key: 'signature_present', label: 'Signature' },
@@ -40,6 +41,7 @@ interface ResultRow {
   inputUlb: string;
   inputFy: string;
   inputDocType: string;
+  inputAuditType: string;
   fields: FieldCell[];
   overallMatch: boolean;
   error: string;
@@ -232,6 +234,9 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       { key: 'ulb_name', label: 'ULB', benchmark: bmk.ulb_name || '—', extracted: ext.ulb_name || '—', match: match.ulb_name ?? null },
       { key: 'financial_year', label: 'FY', benchmark: bmk.financial_year || '—', extracted: ext.financial_year || '—', match: match.financial_year ?? null },
       { key: 'doc_type', label: 'Doc Type', benchmark: bmk.doc_type || '—', extracted: ext.document_type || '—', match: match.doc_type ?? null },
+      // audit_type has no extraction counterpart — it's caller-declared, so this compares
+      // the declared input value against the ground truth instead of an extracted value.
+      { key: 'audit_type', label: 'Audit Type', benchmark: bmk.audit_type || '—', extracted: r.input_value?.audit_type || '—', match: match.audit_type ?? null },
       { key: 'language', label: 'Language', benchmark: bmk.language || '—', extracted: ext.language_detected || '—', match: match.language ?? null },
       { key: 'seal_present', label: 'Seal', benchmark: this.boolText(bmk.seal_present), extracted: this.boolText(ext.seal_present), match: match.seal_present ?? null },
       { key: 'signature_present', label: 'Signature', benchmark: this.boolText(bmk.signature_present), extracted: this.boolText(ext.signature_present), match: match.signature_present ?? null },
@@ -249,6 +254,7 @@ export class OcrEvalRunDetailComponent implements OnInit, AfterViewInit {
       inputUlb: r.input_value?.ulb_name || '—',
       inputFy: r.input_value?.financial_year || '—',
       inputDocType: r.input_value?.doc_type || '—',
+      inputAuditType: r.input_value?.audit_type || '—',
       fields,
       overallMatch: match.overall ?? false,
       error: r.error || '—',

@@ -21,6 +21,7 @@ interface CompareRow {
   bmkUlb: string;
   bmkFy: string;
   bmkDocType: string;
+  bmkAuditType: string;
   bmkSeal: string;
   bmkSignature: string;
   bmkTable: string;
@@ -52,6 +53,7 @@ const METRIC_LABELS: Record<string, string> = {
   ulb_name_accuracy: 'ULB Accuracy',
   financial_year_accuracy: 'FY Accuracy',
   doc_type_accuracy: 'Doc Type Accuracy',
+  audit_type_accuracy: 'Audit Type Accuracy',
   seal_present_accuracy: 'Seal Accuracy',
   signature_present_accuracy: 'Signature Accuracy',
   table_present_accuracy: 'Table Accuracy',
@@ -247,6 +249,7 @@ export class OcrEvalRunCompareComponent implements OnInit {
       bmkUlb: bmk.ulb_name || '—',
       bmkFy: bmk.financial_year || '—',
       bmkDocType: bmk.doc_type || '—',
+      bmkAuditType: bmk.audit_type || '—',
       bmkSeal: this.boolText(bmk.seal_present),
       bmkSignature: this.boolText(bmk.signature_present),
       bmkTable: this.boolText(bmk.table_present),

@@ -103,6 +103,10 @@
             <div class="stat-value">{{ acc(r.metrics['doc_type_accuracy']) }}</div>
           </div>
           <div class="stat-card stat-card--blue">
+            <div class="stat-label">Audit Type Accuracy</div>
+            <div class="stat-value">{{ acc(r.metrics['audit_type_accuracy']) }}</div>
+          </div>
+          <div class="stat-card stat-card--blue">
             <div class="stat-label">Seal Accuracy</div>
             <div class="stat-value">{{ acc(r.metrics['seal_present_accuracy']) }}</div>
           </div>
@@ -236,6 +240,7 @@
                   <div><span class="cell-label">ULB</span><span class="cell-value" [title]="row.inputUlb">{{ truncate(row.inputUlb, 22) }}</span></div>
                   <div><span class="cell-label">FY</span><span class="cell-value">{{ row.inputFy }}</span></div>
                   <div><span class="cell-label">Type</span><span class="cell-value">{{ row.inputDocType }}</span></div>
+                  <div><span class="cell-label">Audit</span><span class="cell-value">{{ row.inputAuditType }}</span></div>
                 </div>
               </td>
             </ng-container>
