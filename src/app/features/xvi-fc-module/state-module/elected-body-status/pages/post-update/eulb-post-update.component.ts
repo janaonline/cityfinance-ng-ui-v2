@@ -57,6 +57,7 @@ import {
 import { EulbEditableFieldCellComponent } from '../../components/editable-field-cell/eulb-editable-field-cell.component';
 import { EulbValidationBadgeComponent } from '../../components/validation-badge/eulb-validation-badge.component';
 import { EulbStatusSummaryComponent } from '../../components/status-summary/eulb-status-summary.component';
+import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../../../shared/breadcrumb/breadcrumb.component';
 import { FormStatusValue } from '../../../../shared/form-progress/form-progress.component';
 import { EulbPostUpdateEditForm, EulbPostUpdateEditFormFacade } from './eulb-post-update-edit-form.facade';
 import {
@@ -112,6 +113,7 @@ function isPostUpdateElectedBodyStatus(value: unknown): value is EulbPostSubmiss
     EulbEditableFieldCellComponent,
     EulbValidationBadgeComponent,
     EulbStatusSummaryComponent,
+    XvifcBreadcrumbComponent,
   ],
   templateUrl: './eulb-post-update.component.html',
   styleUrl: './eulb-post-update.component.scss',
@@ -197,6 +199,13 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
   readonly rowViewModels = computed(() =>
     this.rows().map((row) => buildEulbModifiedRowViewModel(row, this.changedRows())),
   );
+
+  /** Mirrors Claim Letter's "Claim Letter > New Claim Letter" breadcrumb pattern
+   *  (`claim-letter-detail.component.ts`'s `breadcrumbLinks`). */
+  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => [
+    { label: 'Elected Body Status', routerLink: ['/xvifc', this.yearId, 'elected-body-status'] },
+    { label: 'Update Elected Body Status' },
+  ]);
 
   readonly isFormViewAllowed = computed(() => {
     const metadata = this.metadata();
