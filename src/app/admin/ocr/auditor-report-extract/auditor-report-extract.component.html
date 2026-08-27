@@ -1,0 +1,224 @@
+<div class="wrapper app-wrapper">
+  <section class="ocr-upload-page">
+    <div class="hero-card">
+      <h1>Auditor Report Extraction</h1>
+      <p class="subcopy">
+        @if (viewingStoredRecord()) {
+          Viewing a previously stored extraction result.
+        } @else {
+          Upload an auditor's report PDF to extract the opinion type, qualified opinion, basis for
+          opinion, audit observations, audit objections, and qualified audit certificate content.
+        }
+      </p>
+    </div>
+
+    <mat-card class="upload-card">
+      <mat-card-content>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Gemini model</mat-label>
+            <mat-select [(ngModel)]="selectedModel">
+              @for (model of geminiModels; track model.value) {
+                <mat-option [value]="model.value">{{ model.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="file-picker">
+          <input
+            #fileInput
+            id="auditor-report-file"
+            class="file-input-hidden"
+            type="file"
+            accept="application/pdf"
+            (change)="onFileSelected($event)"
+          />
+
+          <button type="button" class="file-drop-box" (click)="openFilePicker()">
+            <span class="file-picker__label">PDF file</span>
+            @if (selectedFile) {
+              <span class="file-box-name">{{ selectedFile.name }}</span>
+              <span class="file-box-meta">{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB</span>
+            } @else {
+              <span class="file-box-placeholder">Click to choose a PDF file</span>
+              <span class="file-box-meta">Accepted format: PDF</span>
+            }
+          </button>
+          <p class="file-note">Accepted format: PDF. Maximum size: {{ maxFileSizeMb }} MB.</p>
+        </div>
+
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="clearSelectedFile()">Clear</button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!selectedFile || globalLoader.loading()"
+            (click)="extractFile()"
+          >
+            @if (globalLoader.loading()) {
+              Extracting...
+            } @else {
+              Extract Auditor Report
+            }
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (result(); as res) {
+      <mat-card class="response-card" [class.response-card--error]="extractState() === 'error'">
+        <mat-card-content>
+          <div class="response-header">
+            <h2>Extraction Result</h2>
+            <div class="response-header-actions">
+              <span
+                class="status-chip"
+                [class.status-chip--error]="!res.extraction.is_auditor_report"
+              >
+                {{ res.extraction.is_auditor_report ? 'Auditor Report' : 'Not an Auditor Report' }}
+              </span>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary response-action-btn"
+                (click)="toggleRawResponse()"
+              >
+                {{ showRawResponse() ? 'Hide Raw Response' : 'Show Raw Response' }}
+              </button>
+            </div>
+          </div>
+
+          @if (!res.extraction.is_auditor_report) {
+            <div class="failure-box">
+              <h3 class="failure-title">Document does not appear to be an auditor's report</h3>
+              <p class="failure-text">
+                Detected type: {{ res.extraction.document_type_detected || 'Unknown' }}
+                @if (res.extraction.extraction_notes) {
+                  — {{ res.extraction.extraction_notes }}
+                }
+              </p>
+            </div>
+          }
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">ULB Name</span>
+              <span class="meta-value">{{ res.extraction.ulb_name || '—' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Financial Year</span>
+              <span class="meta-value">{{ res.extraction.financial_year || '—' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Auditor Name</span>
+              <span class="meta-value">{{ res.extraction.auditor_name || '—' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Auditor Firm</span>
+              <span class="meta-value">{{ res.extraction.auditor_firm || '—' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Audited Date</span>
+              <span class="meta-value">{{ res.extraction.audited_date || '—' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Opinion Type</span>
+              <span [class]="opinionChipClass(res.extraction.opinion_type)">
+                {{ res.extraction.opinion_type || 'NOT_STATED' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Qualified Opinion</h3>
+            <p class="section-text">{{ res.extraction.qualified_opinion || 'Not found in document.' }}</p>
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Basis for Opinion</h3>
+            <p class="section-text">{{ res.extraction.basis_for_opinion || 'Not found in document.' }}</p>
+          </div>
+
+          @if (res.extraction.emphasis_of_matter) {
+            <div class="section-block">
+              <h3 class="section-title">Emphasis of Matter</h3>
+              <p class="section-text">{{ res.extraction.emphasis_of_matter }}</p>
+            </div>
+          }
+
+          <div class="section-block">
+            <h3 class="section-title">Audit Observations</h3>
+            @if (res.extraction.audit_observations.length) {
+              <ul class="section-list">
+                @for (item of res.extraction.audit_observations; track $index) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="section-text section-text--muted">None found.</p>
+            }
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">Audit Objections</h3>
+            @if (res.extraction.audit_objections.length) {
+              <ul class="section-list">
+                @for (item of res.extraction.audit_objections; track $index) {
+                  <li>{{ item }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="section-text section-text--muted">None found.</p>
+            }
+          </div>
+
+          <div class="section-block">
+            <h3 class="section-title">
+              Qualified Audit Certificate
+              @if (res.extraction.qualified_audit_certificate_issued !== null) {
+                <span
+                  class="chip"
+                  [class.chip--warn]="res.extraction.qualified_audit_certificate_issued"
+                  [class.chip--good]="!res.extraction.qualified_audit_certificate_issued"
+                >
+                  {{ res.extraction.qualified_audit_certificate_issued ? 'Issued' : 'Not Qualified' }}
+                </span>
+              }
+            </h3>
+            <p class="section-text">
+              {{ res.extraction.qualified_audit_certificate || 'No qualified audit certificate section found.' }}
+            </p>
+          </div>
+
+          <p class="processing-meta">
+            Model: {{ res.model }} · Processing time: {{ res.processing_time_seconds }}s
+            @if (res.total_tokens !== null && res.total_tokens !== undefined) {
+              · Tokens spent: {{ res.total_tokens | number }}
+            }
+            @if (res.price_inr !== null && res.price_inr !== undefined) {
+              · Cost: ₹{{ res.price_inr | number: '1.2-4' }}
+            }
+            · Doc ID: {{ res.doc_id }}
+          </p>
+
+          @if (showRawResponse()) {
+            <div class="raw-response-section">
+              <h3 class="raw-title">Raw response</h3>
+              <pre class="raw-json">{{ res | json }}</pre>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    } @else if (extractState() === 'error') {
+      <mat-card class="response-card response-card--error">
+        <mat-card-content>
+          <div class="failure-box">
+            <h3 class="failure-title">Extraction failed</h3>
+            <p class="failure-text">{{ errorMessage() }}</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </section>
+</div>

@@ -44,4 +44,18 @@ export const OCR_ROUTES: Route[] = [
     loadComponent: () =>
       import('./ocr-eval-run-compare/ocr-eval-run-compare.component').then((mod) => mod.OcrEvalRunCompareComponent),
   },
+  {
+    path: 'auditor-report',
+    loadComponent: () =>
+      import('./auditor-report-extract/auditor-report-extract.component').then(
+        (mod) => mod.AuditorReportExtractComponent,
+      ),
+  },
+  {
+    path: 'auditor-report-list',
+    loadComponent: () =>
+      import('./auditor-report-list/auditor-report-list.component').then(
+        (mod) => mod.AuditorReportListComponent,
+      ),
+  },
 ];
