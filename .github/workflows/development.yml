@@ -30,11 +30,11 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_key
           chmod 600 ssh_key
   
-    - name: Rename existing dist_live_server folder on server
+    - name: Remove existing dist_live_server folder on server
       run: |
               ssh -o StrictHostKeyChecking=no -i ssh_key ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "
               if [ -d /var/www/html/development-cicd/cityfinance-ng-ui-v2/dist_live_server ]; then
-                mv /var/www/html/development-cicd/cityfinance-ng-ui-v2/dist_live_server /var/www/html/development-cicd/cityfinance-ng-ui-v2/bkp/dist_$(date +'%Y-%m-%d_%I.%M%p');
+                rm -rf /var/www/html/development-cicd/cityfinance-ng-ui-v2/dist_live_server;
               fi"
     - name: Copy dist files to server
       uses: appleboy/scp-action@master
