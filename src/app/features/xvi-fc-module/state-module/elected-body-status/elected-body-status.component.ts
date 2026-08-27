@@ -43,9 +43,11 @@ import {
   EulbRowsDialogResult,
   EulbRowValidationStatus,
   EulbSaveDraftPayload,
+  EulbStatusSummary,
   EulbValidationSummary,
   SubmitType,
 } from './eulb-status.models';
+import { EulbStatusSummaryComponent } from './components/status-summary/eulb-status-summary.component';
 import {
   buildEulbFinalSubmitPayloadData,
   buildEulbFormPayloadData,
@@ -96,6 +98,7 @@ export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
     PreLoaderComponent,
     MatButtonModule,
     FormProgressComponent,
+    EulbStatusSummaryComponent,
   ],
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
@@ -178,6 +181,9 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
    *  own `validationSummary` signal. */
   readonly validationSummary = signal<EulbValidationSummary | null>(null);
 
+  /** Constituted/not-constituted/exempt row breakdown; `null` until the form has been submitted. */
+  readonly statusSummary = signal<EulbStatusSummary | null>(null);
+
   readonly permissions = signal<EulbPermissions>({ canView: true, canEdit: true, canFinalSubmit: false });
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
@@ -185,6 +191,12 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
     const status = this.formStatus();
     return POST_SUBMISSION_UPDATE_STATUS.includes(status);
   });
+
+  /** Shows the status-summary section once the form is read-only and has actually been
+   *  submitted (UNDER_REVIEW_BY_MOHUA or later) — not merely returned for correction. */
+  readonly showStatusSummary = computed(
+    () => !this.canEdit() && this.formStatus() >= FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+  );
 
   /** Maps field keys to their dependency relationships for reactive visibility evaluation. */
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
@@ -268,6 +280,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           this.actors.set(data.actors ?? []);
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
           this.validationSummary.set(data.validationSummary ?? null);
+          this.statusSummary.set(data.statusSummary ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
           this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);

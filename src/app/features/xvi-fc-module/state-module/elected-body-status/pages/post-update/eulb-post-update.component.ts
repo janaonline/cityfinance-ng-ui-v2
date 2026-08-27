@@ -56,6 +56,7 @@ import {
 } from '../../shared/eulb-row-edit.utils';
 import { EulbEditableFieldCellComponent } from '../../components/editable-field-cell/eulb-editable-field-cell.component';
 import { EulbValidationBadgeComponent } from '../../components/validation-badge/eulb-validation-badge.component';
+import { EulbStatusSummaryComponent } from '../../components/status-summary/eulb-status-summary.component';
 import { FormStatusValue } from '../../../../shared/form-progress/form-progress.component';
 import { EulbPostUpdateEditForm, EulbPostUpdateEditFormFacade } from './eulb-post-update-edit-form.facade';
 import {
@@ -65,13 +66,6 @@ import {
 } from './eulb-post-update-state.adapter';
 
 type EulbPostUpdateEditableFieldKey = EulbEditableFieldKey;
-
-interface EulbStatusSummaryCard {
-  readonly count: number;
-  readonly label: string;
-  readonly borderClass: string;
-  readonly textClass: string;
-}
 
 interface EulbPostUpdateRequestContext {
   readonly stateId: string;
@@ -117,6 +111,7 @@ function isPostUpdateElectedBodyStatus(value: unknown): value is EulbPostSubmiss
     DynamicFormComponent,
     EulbEditableFieldCellComponent,
     EulbValidationBadgeComponent,
+    EulbStatusSummaryComponent,
   ],
   templateUrl: './eulb-post-update.component.html',
   styleUrl: './eulb-post-update.component.scss',
@@ -202,31 +197,6 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
   readonly rowViewModels = computed(() =>
     this.rows().map((row) => buildEulbModifiedRowViewModel(row, this.changedRows())),
   );
-
-  readonly statusSummaryCards = computed<EulbStatusSummaryCard[]>(() => {
-    const summary = this.statusSummary();
-    if (!summary) return [];
-    return [
-      {
-        count: summary.constitutedCount,
-        label: 'Eligible - elected body constituted',
-        borderClass: 'border-success',
-        textClass: 'text-success',
-      },
-      {
-        count: summary.notConstitutedCount,
-        label: 'Ineligible - no elected body',
-        borderClass: 'border-danger',
-        textClass: 'text-danger',
-      },
-      {
-        count: summary.exemptCount,
-        label: '6th Schedule',
-        borderClass: 'border-secondary',
-        textClass: '',
-      },
-    ];
-  });
 
   readonly isFormViewAllowed = computed(() => {
     const metadata = this.metadata();
