@@ -24,6 +24,7 @@ import {
   EulbFinalSubmitPayload,
   EulbFormResponseData,
   EulbSaveDraftPayload,
+  EulbStatusSummary,
   EulbValidationSummary,
 } from './eulb-status.models';
 import { EulbStatusService } from './eulb-status.service';
@@ -260,6 +261,53 @@ describe('ElectedBodyStatusComponent', () => {
       ['elected-body-post-update'],
       jasmine.objectContaining({ relativeTo: parentRoute }),
     );
+  });
+
+  describe('showStatusSummary', () => {
+    const summary: EulbStatusSummary = {
+      totalUlbCount: 10,
+      constitutedCount: 7,
+      notConstitutedCount: 2,
+      exemptCount: 1,
+    };
+
+    it('is false when canEdit is true, regardless of formStatus', () => {
+      component.permissions.set({ canView: true, canEdit: true, canFinalSubmit: false });
+      component.formStatus.set(FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA);
+      fixture.detectChanges();
+
+      expect(component.showStatusSummary()).toBeFalse();
+    });
+
+    it('is false when formStatus is below UNDER_REVIEW_BY_MOHUA, even if canEdit is false', () => {
+      component.permissions.set({ canView: true, canEdit: false, canFinalSubmit: false });
+      component.formStatus.set(FORM_STATUS.IN_PROGRESS);
+      fixture.detectChanges();
+
+      expect(component.showStatusSummary()).toBeFalse();
+    });
+
+    it('is true, and renders the shared summary component, when canEdit is false and formStatus is UNDER_REVIEW_BY_MOHUA or later', () => {
+      component.permissions.set({ canView: true, canEdit: false, canFinalSubmit: false });
+      component.formStatus.set(FORM_STATUS.UNDER_REVIEW_BY_MOHUA);
+      component.statusSummary.set(summary);
+      fixture.detectChanges();
+
+      expect(component.showStatusSummary()).toBeTrue();
+      expect(fixture.debugElement.query(By.css('[data-testid="status-summary-section"]'))).not.toBeNull();
+    });
+
+    // Regression-lock: RETURNED_BY_MOHUA (6) is >= UNDER_REVIEW_BY_MOHUA (5), but the form is
+    // editable again in that status, so canEdit is true and the summary must stay hidden.
+    it('is false at RETURNED_BY_MOHUA even though its status value is >= UNDER_REVIEW_BY_MOHUA, because the form is editable again', () => {
+      component.permissions.set({ canView: true, canEdit: true, canFinalSubmit: false });
+      component.formStatus.set(FORM_STATUS.RETURNED_BY_MOHUA);
+      component.statusSummary.set(summary);
+      fixture.detectChanges();
+
+      expect(component.showStatusSummary()).toBeFalse();
+      expect(fixture.debugElement.query(By.css('[data-testid="status-summary-section"]'))).toBeNull();
+    });
   });
 
   it('allows save-as-draft when required confirmation is not checked (requiredTrue is temporarily not mandatory for drafts)', () => {

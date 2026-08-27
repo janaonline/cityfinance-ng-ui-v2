@@ -30,6 +30,11 @@
         <hr class="my-0 text-body-tertiary" />
       }
 
+      @if (showStatusSummary()) {
+        <app-eulb-status-summary [summary]="statusSummary()" />
+        <hr class="my-0 text-body-tertiary" />
+      }
+
       <!-- Questions/ Form -->
       <form class="content-body" [formGroup]="form">
         @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
