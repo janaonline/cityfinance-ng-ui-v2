@@ -17,6 +17,7 @@ export interface OcrValidationBatchSubmitResponse {
 export interface OcrValidationJobStatusResponse {
   job_id: string;
   batch_id: string | null;
+  source: string | null;
   status: OcrValidationStatus;
   filename: string;
   extraction_model: string;
@@ -157,6 +158,7 @@ export interface OcrMatchStatus {
 export interface OcrValidationJobResult {
   job_id: string;
   batch_id: string | null;
+  source: string | null;
   status: string;
   filename: string;
   extraction_model: string | null;

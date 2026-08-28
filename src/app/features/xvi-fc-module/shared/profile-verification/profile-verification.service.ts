@@ -62,6 +62,22 @@ export class ProfileVerificationService {
       );
   }
 
+  /** Checks the email's domain can plausibly receive mail, with no side effects — lets a caller
+   *  catch a typo'd/made-up domain up front, before spending an OTP send on it. */
+  checkEmailDomain(email: string): Observable<{ deliverable: boolean }> {
+    return this.http
+      .post<{ success?: boolean; data?: { deliverable: boolean }; deliverable?: boolean }>(
+        `${environment.api.url2}email/checkEmailDomain`,
+        { email },
+      )
+      .pipe(
+        map((resp) => ({ deliverable: (resp?.data ?? resp)?.deliverable === true })),
+        // Fail open — a transient check failure shouldn't block a save that the final MX check
+        // (already enforced server-side at save time) would otherwise have allowed.
+        catchError(() => of({ deliverable: true })),
+      );
+  }
+
   sendProfileOtp(email: string): Observable<{ sent: boolean }> {
     return this.http
       .post<{ success?: boolean; data?: { isOtpSent: boolean }; isOtpSent?: boolean }>(

@@ -64,7 +64,9 @@ export function resolveDocumentActions(
     if (doc.processingStatus === 'PROCESSING') {
       if (!doc.isStale) return [];
       if (doc.isAwaitingManualReview) return [];
-      return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
+      // Retrying an OCR job that's already stuck past the stale threshold just re-queues the same
+      // work and is likely to get stuck the same way — only Re-upload gives it a real chance.
+      return (['reupload'] as const).filter(gated).map((a) => build(a, false));
     }
     if (doc.processingStatus === 'FAILED') {
       // A manual-review request is pending ADMIN's decision — retrying or re-uploading now would
