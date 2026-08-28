@@ -517,14 +517,16 @@
                             <h6 class="card-title fw-bold text-primary-emphasis mb-3">Job Info</h6>
                             <table class="table table-sm table-borderless mb-0 small">
                               <tbody>
-                                @if (job.rawResult.source) {
-                                  <tr>
-                                    <td class="text-secondary fw-medium ps-0" style="width:45%">Source</td>
-                                    <td class="pe-0">
+                                <tr>
+                                  <td class="text-secondary fw-medium ps-0" style="width:45%">Source</td>
+                                  <td class="pe-0">
+                                    @if (job.rawResult.source) {
                                       <span class="badge text-bg-info text-uppercase">{{ job.rawResult.source }}</span>
-                                    </td>
-                                  </tr>
-                                }
+                                    } @else {
+                                      <span class="text-secondary">N/A</span>
+                                    }
+                                  </td>
+                                </tr>
                                 @if (job.rawResult.batch_id) {
                                   <tr>
                                     <td class="text-secondary fw-medium ps-0" style="width:45%">Batch ID</td>

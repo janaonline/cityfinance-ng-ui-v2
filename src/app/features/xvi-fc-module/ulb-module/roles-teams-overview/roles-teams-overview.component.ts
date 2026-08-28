@@ -98,7 +98,7 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
   private ulbCode = '';
   private localStateName = '';
 
-  readonly displayedColumns = ['name', 'designation', 'contact'];
+  readonly displayedColumns = ['name', 'designation', 'email', 'contact'];
 
   readonly isLoading = signal(true);
   readonly hasError = signal(false);
@@ -108,6 +108,17 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
   readonly editingContact = signal<ContactType | null>(null);
   readonly isSaving = signal(false);
   readonly saveError = signal<string | null>(null);
+
+  // ── Email-change OTP step (mirrors profile-verification.component.ts's own OTP flow) ──────────
+  readonly otpStep = signal(false);
+  readonly otpValue = signal('');
+  readonly pendingEmail = signal('');
+  readonly sendingOtp = signal(false);
+  readonly resendCooldown = signal(0);
+  private resendTimer?: ReturnType<typeof setInterval>;
+
+  readonly canConfirmOtp = computed(() => /^\d{4}$/.test(this.otpValue()) && !this.isSaving());
+  readonly canResend = computed(() => this.resendCooldown() === 0 && !this.sendingOtp());
 
   readonly contactRows = computed(() => {
     const c = this.contacts();
@@ -159,6 +170,7 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
     email: [
       '',
       [
+        Validators.required,
         Validators.email,
         Validators.maxLength(254),
         ...IDENTIFIER_SECURITY_VALIDATORS,
@@ -169,6 +181,7 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
   ngOnInit(): void {
     this.resolveFromStorage();
     this.loadData();
+    this.destroyRef.onDestroy(() => clearInterval(this.resendTimer));
   }
 
   private resolveFromStorage(): void {
@@ -263,6 +276,16 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
   cancelEdit(): void {
     this.editingContact.set(null);
     this.saveError.set(null);
+    this.otpStep.set(false);
+    clearInterval(this.resendTimer);
+  }
+
+  /** Original (stored) email for the contact currently being edited — used to tell whether the
+   *  form's email value is actually a change, or just the same address being resent. */
+  private originalEmailFor(type: ContactType): string {
+    const c = this.contacts();
+    if (!c) return '';
+    return (type === 'commissioner' ? c.commissionerEmail : c.accountantEmail) ?? '';
   }
 
   saveEdit(): void {
@@ -275,15 +298,133 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
     const type = this.editingContact();
     if (!type || !this.userId) return;
 
+    const { email } = this.editForm.getRawValue();
+    const emailChanged = email.trim() !== this.originalEmailFor(type).trim();
+
+    if (emailChanged) {
+      this.checkDomainThenSendOtp(email.trim());
+      return;
+    }
+
+    this.performSave(type);
+  }
+
+  /** Catches a typo'd/made-up domain up front, before spending an OTP send on it — the same
+   *  check the backend would otherwise only run at final save time. */
+  private checkDomainThenSendOtp(email: string): void {
+    this.sendingOtp.set(true);
+    this.saveError.set(null);
+
+    this.profileService
+      .checkEmailDomain(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ deliverable }) => {
+        if (!deliverable) {
+          this.sendingOtp.set(false);
+          this.saveError.set(
+            "This email domain doesn't appear to accept mail. Check for a typo in the email address.",
+          );
+          return;
+        }
+        this.sendOtpForEmailChange(email);
+      });
+  }
+
+  /** Sends (or resends) an OTP to the new email address and, on success, switches this row into
+   *  the OTP-entry step — mirrors profile-verification.component.ts's sendOtpAndShowStep(). */
+  private sendOtpForEmailChange(email: string): void {
+    this.sendingOtp.set(true);
+    this.saveError.set(null);
+
+    this.profileService
+      .sendProfileOtp(email)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ sent }) => {
+        this.sendingOtp.set(false);
+        if (!sent) {
+          this.saveError.set('Failed to send OTP. Please try again.');
+          return;
+        }
+        this.pendingEmail.set(email);
+        this.otpValue.set('');
+        this.otpStep.set(true);
+        this.saveError.set(null);
+        this.startResendCooldown();
+      });
+  }
+
+  onOtpInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/\D/g, '').slice(0, 4);
+    input.value = cleaned;
+    this.otpValue.set(cleaned);
+  }
+
+  onConfirmOtp(): void {
+    if (!this.canConfirmOtp()) return;
+    const type = this.editingContact();
+    if (!type) return;
+
+    this.isSaving.set(true);
+    this.saveError.set(null);
+
+    this.profileService
+      .verifyProfileOtp(this.pendingEmail(), this.otpValue())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ verified }) => {
+        if (!verified) {
+          this.isSaving.set(false);
+          this.saveError.set('Invalid or expired OTP. Please try again.');
+          return;
+        }
+
+        this.profileService
+          .issueProfileSaveToken(this.userId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(({ token }) => {
+            if (!token) {
+              this.isSaving.set(false);
+              this.saveError.set('Could not verify. Please try again.');
+              return;
+            }
+            this.performSave(type, token);
+          });
+      });
+  }
+
+  resendOtp(): void {
+    if (!this.canResend()) return;
+    this.sendOtpForEmailChange(this.pendingEmail());
+  }
+
+  private startResendCooldown(): void {
+    clearInterval(this.resendTimer);
+    this.resendCooldown.set(60);
+    this.resendTimer = setInterval(() => {
+      const next = this.resendCooldown() - 1;
+      this.resendCooldown.set(next);
+      if (next <= 0) clearInterval(this.resendTimer);
+    }, 1000);
+  }
+
+  /** Actual PATCH to profile-contacts. `saveToken` is only present once the new email has been
+   *  OTP-verified for this session — an unchanged email never needs one. */
+  private performSave(type: ContactType, saveToken?: string): void {
     this.isSaving.set(true);
     this.saveError.set(null);
 
     const { name, mobile, email } = this.editForm.getRawValue();
     const isComm = type === 'commissioner';
 
-    const payload = isComm
+    const payload: Record<string, unknown> = isComm
       ? { commissionerName: name, commissionerEmail: email, commissionerConatactNumber: mobile }
       : { accountantName: name, accountantEmail: email, accountantConatactNumber: mobile };
+
+    if (saveToken) {
+      payload['saveToken'] = saveToken;
+      // Proves (server-side, via the token) that the new email above was just OTP-verified.
+      payload['isXviFcEmailVerified'] = true;
+    }
 
     this.http
       .patch(`${this.baseUrl}users/${this.userId}/profile-contacts`, payload)
@@ -297,7 +438,9 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
               : { ...cur, accountantName: name, accountantEmail: email, accountantConatactNumber: mobile },
           );
           this.editingContact.set(null);
+          this.otpStep.set(false);
           this.isSaving.set(false);
+          clearInterval(this.resendTimer);
           this.snackBar.open(
             `${isComm ? 'Commissioner' : 'Nodal Officer'} details updated.`,
             'Dismiss',
@@ -309,6 +452,9 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
           const errors = err.error?.errors as Record<string, { message: string }[]> | undefined;
           const fieldMessage = errors && Object.values(errors)[0]?.[0]?.message;
           this.saveError.set(fieldMessage ?? err.error?.message ?? 'Failed to save. Please try again.');
+          // A save-token rejection (expired/invalid) can't be retried by re-submitting the same
+          // form — back out to a plain edit so the user restarts the email-change/OTP flow.
+          if (saveToken) this.otpStep.set(false);
         },
       });
   }
@@ -347,8 +493,7 @@ export class UlbRolesTeamsOverviewComponent implements OnInit {
       email,
       mobile,
       nameInvalid: !name.trim() || !UlbRolesTeamsOverviewComponent.NAME_PATTERN.test(name),
-      // Email is optional — only flag if a value is present but malformed
-      emailInvalid: emailTrimmed.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed),
+      emailInvalid: !emailTrimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed),
       mobileInvalid: !mobile.trim() || !/^[6-9]\d{9}$/.test(mobile),
     };
   }
