@@ -66,6 +66,9 @@ export interface EulbFormResponseData {
   actors?: FormActor[];
   rowEditFields?: ConditionalFieldConfig[];
   validationSummary?: EulbValidationSummary;
+  /** Constituted/not-constituted/exempt row breakdown; `null`/absent until the form has reached
+   *  UNDER_REVIEW_BY_MOHUA or later. */
+  statusSummary?: EulbStatusSummary | null;
   errorExcelFile?: EulbFileValue;
   /** Some backend versions nest errorExcelFile here; normalised in loadForm(). */
   response?: { errorExcelFile?: EulbFileValue; [key: string]: unknown };

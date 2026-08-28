@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -28,7 +27,7 @@ interface LandingCardsConfig {
 
 @Component({
   selector: 'app-landing',
-  imports: [CommonModule, RouterLink, MatCardModule, MatIconModule, MatButtonModule],
+  imports: [RouterLink, MatCardModule, MatIconModule, MatButtonModule],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss',
 })

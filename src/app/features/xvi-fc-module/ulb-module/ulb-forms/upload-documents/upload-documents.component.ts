@@ -676,7 +676,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       title: 'Request manual review?',
       icon: { name: 'support_agent', color: '#1976d2' },
       description:
-        'This document has failed automated verification. Our team will manually review it instead — this can take longer than the automated checks. You will not be able to request this again for this document until you retry or re-upload it.',
+        "Our team will verify this document manually and get back to you. Please expect a reply within 48 hours (weekends excluded). You'll receive an email notification too.",
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
         { label: 'Request Manual Review', result: 'request', variant: 'flat' },
