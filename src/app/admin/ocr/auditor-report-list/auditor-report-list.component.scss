@@ -219,20 +219,6 @@
   letter-spacing: 0.02em;
 }
 
-.source-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: #ecfeff;
-  color: #0e7490;
-  border: 1px solid #a5f3fc;
-}
-
 /* Model cell */
 
 .model-cell {
@@ -448,6 +434,22 @@
 ::ng-deep .val-table .mat-mdc-row:nth-child(even) .mat-mdc-cell {
   background: #f8fbff;
 }
+
+/* Opinion type chip (matches the extraction page) */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.chip--good { background: #dcfce7; color: #166534; }
+.chip--warn { background: #fef3c7; color: #92400e; }
+.chip--bad { background: #fee2e2; color: #b91c1c; }
+.chip--neutral { background: #e2e8f0; color: #475569; }
 
 /* Responsive */
 
