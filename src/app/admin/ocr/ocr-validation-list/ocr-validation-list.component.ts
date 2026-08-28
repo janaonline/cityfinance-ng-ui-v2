@@ -88,9 +88,15 @@ export class OcrValidationListComponent implements OnInit {
   readonly errorCodeOptions = ERROR_CODE_OPTIONS;
   readonly progressStepOptions = PROGRESS_STEP_OPTIONS;
   readonly validationModelOptions = this.ocrService.models.map((m) => m.value);
+  readonly sourceOptions = [
+    { value: '', label: 'All' },
+    { value: 'ocr', label: 'OCR' },
+    { value: '16thFC', label: '16thFC' },
+  ];
 
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
+    source: [''],
     batchId: [''],
     jobId: [''],
     filename: [''],
@@ -127,7 +133,7 @@ export class OcrValidationListComponent implements OnInit {
 
   resetFilters(): void {
     this.filterForm.reset({
-      status: '', batchId: '', jobId: '', filename: '', ulbName: '',
+      status: '', source: '', batchId: '', jobId: '', filename: '', ulbName: '',
       docType: '', progressStep: '', validationModel: '',
       matchStatus: '', dateFrom: null, dateTo: null,
     });
@@ -154,14 +160,14 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
+    const { status, source, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
       matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
 
     this.exporting.set(true);
 
     this.ocrService.dumpOcrValidationJobs({
-      source: this.ocrService.source,
+      source: source || undefined,
       batch_id: batchId.trim() || undefined,
       job_id: jobId.trim() || undefined,
       filename: filename.trim() || undefined,
@@ -269,14 +275,14 @@ export class OcrValidationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
+    const { status, source, batchId, jobId, filename, ulbName, docType, progressStep, validationModel,
       matchStatus, dateFrom, dateTo } =
       this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.ocrService
       .listOcrValidationJobs({
-        source: this.ocrService.source,
+        source: source || undefined,
         batch_id: batchId.trim() || undefined,
         job_id: jobId.trim() || undefined,
         filename: filename.trim() || undefined,
@@ -314,7 +320,7 @@ export class OcrValidationListComponent implements OnInit {
     return {
       jobId: job.job_id || '—',
       batchId: job.batch_id || '—',
-      source: job.source || '—',
+      source: job.source || 'N/A',
       filename: job.filename || '—',
       extractionModel: job.extraction_model || '—',
       validationModel: job.validation_model || '—',

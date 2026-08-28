@@ -70,6 +70,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Source</mat-label>
+          <mat-select formControlName="source">
+            @for (opt of sourceOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Document Type</mat-label>
           <mat-select formControlName="docType">
             <mat-option value="">All</mat-option>
@@ -229,10 +238,10 @@
           <ng-container matColumnDef="source">
             <th mat-header-cell *matHeaderCellDef>Source</th>
             <td mat-cell *matCellDef="let row">
-              @if (row.source !== '—') {
+              @if (row.source !== 'N/A') {
                 <span class="source-chip">{{ row.source }}</span>
               } @else {
-                <span class="dim">—</span>
+                <span class="dim">N/A</span>
               }
             </td>
           </ng-container>
