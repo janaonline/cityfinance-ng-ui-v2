@@ -225,6 +225,18 @@
             </td>
           </ng-container>
 
+          <!-- Source -->
+          <ng-container matColumnDef="source">
+            <th mat-header-cell *matHeaderCellDef>Source</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.source !== '—') {
+                <span class="source-chip">{{ row.source }}</span>
+              } @else {
+                <span class="dim">—</span>
+              }
+            </td>
+          </ng-container>
+
           <!-- Models -->
           <ng-container matColumnDef="models">
             <th mat-header-cell *matHeaderCellDef>Models</th>

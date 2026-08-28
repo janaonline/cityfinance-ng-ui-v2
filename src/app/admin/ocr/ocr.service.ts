@@ -269,6 +269,9 @@ export interface AuditorReportListResponse {
 export class OcrService {
   private readonly http = inject(HttpClient);
 
+  /** Identifies this admin app as the job source; the 16thFC portal omits it and the API defaults to "16thFC". */
+  readonly source = 'ocr';
+
   readonly models: ModelOption[] = [
     {
       value: 'gemini-3.6-flash',
@@ -430,6 +433,7 @@ export class OcrService {
   ) {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('source', this.source);
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
     const ulbName = this.getulb(ulb);
@@ -465,6 +469,7 @@ export class OcrService {
   ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
+    formData.append('source', this.source);
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
     const ulbName = this.getulb(ulb);
@@ -506,6 +511,7 @@ export class OcrService {
   listOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     filename?: string;
     ulb_name?: string;
@@ -526,6 +532,7 @@ export class OcrService {
     const queryParams: Record<string, string | number> = {};
     if (params?.status) queryParams['status'] = params.status;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
@@ -552,6 +559,7 @@ export class OcrService {
   dumpOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     filename?: string;
     ulb_name?: string;
@@ -569,6 +577,7 @@ export class OcrService {
     const queryParams: Record<string, string> = {};
     if (params?.status) queryParams['status'] = params.status;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
