@@ -131,6 +131,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
         hostApp: 'ui',
         path: '/dashboard/slb',
         apps: ['ui', 'ssr', 'v2'],
+        isDisabled: true,
       },
       {
         id: 'dashboard.municipal-bonds',
@@ -277,7 +278,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     hostApp: 'ui',
     path: '/rankings/ulb-form',
     apps: ['ui', 'ssr', 'v2'],
-    isDisabled: true,
+    isDisabled: true, // Rankings temporarily disabled for all users — see CLAUDE.md, "Disabling without deleting"
     groupId: 'ulb-forms',
     groupDefaultLabel: 'My Forms',
     visibility: { requiresAuth: true, readonlyGated: true, roles: ['ULB'] },
