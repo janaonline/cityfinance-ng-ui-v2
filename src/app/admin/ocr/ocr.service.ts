@@ -189,11 +189,88 @@ export interface EvalRunCompareResponse {
   rows_only_in_b: string[];
 }
 
+export interface AuditorReportExtraction {
+  ulb_name: string | null;
+  financial_year: string | null;
+  document_type_detected: string | null;
+  is_auditor_report: boolean;
+  auditor_name: string | null;
+  auditor_firm: string | null;
+  audited_date: string | null;
+  opinion_type: string | null;
+  qualified_opinion: string | null;
+  basis_for_opinion: string | null;
+  emphasis_of_matter: string | null;
+  audit_observations: string[];
+  audit_objections: string[];
+  qualified_audit_certificate_issued: boolean | null;
+  qualified_audit_certificate: string | null;
+  extraction_notes: string | null;
+}
+
+export interface AuditorReportExtractResponse {
+  filename: string;
+  doc_id: string;
+  model: string;
+  processing_time_seconds: number;
+  extraction: AuditorReportExtraction;
+  usage_metadata?: Record<string, unknown> | null;
+  total_tokens: number | null;
+  price_inr: number | null;
+}
+
+export type AuditorReportRecordStatus = 'COMPLETED' | 'FAILED';
+
+export interface AuditorReportRecord {
+  doc_id: string;
+  filename: string;
+  model: string;
+  status: AuditorReportRecordStatus;
+  processing_time_seconds: number | null;
+  extraction: AuditorReportExtraction | null;
+  error_message: string | null;
+  usage_metadata?: Record<string, unknown> | null;
+  total_tokens: number | null;
+  price_inr: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface AuditorReportListItem {
+  doc_id: string;
+  filename: string;
+  status: AuditorReportRecordStatus;
+  model: string;
+  ulb_name: string | null;
+  financial_year: string | null;
+  auditor_name: string | null;
+  auditor_firm: string | null;
+  opinion_type: string | null;
+  is_auditor_report: boolean | null;
+  qualified_audit_certificate_issued: boolean | null;
+  processing_time_seconds: number | null;
+  total_tokens: number | null;
+  price_inr: number | null;
+  error_message: string | null;
+  created_at: string | null;
+}
+
+export interface AuditorReportListResponse {
+  items: AuditorReportListItem[];
+  total: number;
+  skip: number;
+  limit: number;
+  total_pages: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class OcrService {
   private readonly http = inject(HttpClient);
+
+  /** Identifies this admin app as the job source; the 16thFC portal omits it and the API defaults to "16thFC". */
+  readonly source = 'ocr';
 
   readonly models: ModelOption[] = [
     {
@@ -356,6 +433,7 @@ export class OcrService {
   ) {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('source', this.source);
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
     const ulbName = this.getulb(ulb);
@@ -391,6 +469,7 @@ export class OcrService {
   ) {
     const formData = new FormData();
     files.forEach((f) => formData.append('files', f));
+    formData.append('source', this.source);
     formData.append('extraction_model', extractionModel);
     formData.append('validation_model', validationModel);
     const ulbName = this.getulb(ulb);
@@ -432,6 +511,7 @@ export class OcrService {
   listOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     filename?: string;
     ulb_name?: string;
@@ -452,6 +532,7 @@ export class OcrService {
     const queryParams: Record<string, string | number> = {};
     if (params?.status) queryParams['status'] = params.status;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
@@ -478,6 +559,7 @@ export class OcrService {
   dumpOcrValidationJobs(params?: {
     status?: string;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     filename?: string;
     ulb_name?: string;
@@ -495,6 +577,7 @@ export class OcrService {
     const queryParams: Record<string, string> = {};
     if (params?.status) queryParams['status'] = params.status;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
@@ -575,6 +658,56 @@ export class OcrService {
     return this.http.get(environment.api.url3 + `ocr-validation/evals/runs/${evalRunId}/export`, {
       responseType: 'blob',
     });
+  }
+
+  // ─── Auditor Report Extraction API ───────────────────────────────────────────
+
+  extractAuditorReport(file: File, model: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('model', model);
+    return this.http.post<AuditorReportExtractResponse>(
+      environment.api.url3 + 'auditor-report/extract',
+      formData,
+    );
+  }
+
+  listAuditorReportExtractions(params?: {
+    status?: AuditorReportRecordStatus;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    opinion_type?: string;
+    is_auditor_report?: boolean;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+    skip?: number;
+    limit?: number;
+  }) {
+    const queryParams: Record<string, string | number> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.opinion_type) queryParams['opinion_type'] = params.opinion_type;
+    if (params?.is_auditor_report !== undefined)
+      queryParams['is_auditor_report'] = String(params.is_auditor_report);
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    if (params?.skip !== undefined) queryParams['skip'] = params.skip;
+    if (params?.limit !== undefined) queryParams['limit'] = params.limit;
+    return this.http.get<AuditorReportListResponse>(
+      environment.api.url3 + 'auditor-report/extractions',
+      { params: queryParams },
+    );
+  }
+
+  getAuditorReportExtraction(docId: string) {
+    return this.http.get<AuditorReportRecord>(
+      environment.api.url3 + `auditor-report/extractions/${docId}`,
+    );
   }
 
   getOcrTasks(params: {

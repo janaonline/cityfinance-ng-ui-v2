@@ -30,6 +30,37 @@ export class NavbarComponent implements OnInit {
   private readonly accessChecker = new AccessChecker();
   readonly ulbNotifications = inject(UlbNotificationService);
 
+  readonly ocrMenu = {
+    name: 'OCR',
+    href: '',
+    child: [
+      // { name: 'Jobs List', link: '/ocr/list' },
+      // { name: 'Upload', link: '/ocr/upload' },
+      { name: 'Job Details', link: '/ocr/details' },
+      { name: 'Validation', link: '/ocr/validation' },
+      { name: 'Validation List', link: '/ocr/validation-list' },
+      { name: 'Eval Benchmarks', link: '/ocr/eval-benchmarks' },
+      { name: 'Compare Runs', link: '/ocr/eval-run-compare' },
+      { name: 'Auditor Report Extraction', link: '/ocr/auditor-report' },
+      { name: 'Auditor Report List', link: '/ocr/auditor-report-list' },
+    ],
+  };
+
+  readonly defaultMenus: any[] = [
+    {
+      name: 'Dashboard',
+      href: '',
+      child: [
+        { name: 'National Performance', href: '/dashboard/national/61e150439ed0e8575c881028' },
+        { name: 'Own Revenue Performance', href: '/own-revenue-dashboard' },
+        { name: 'Service Level Benchmarks Performance', href: '/dashboard/slb' },
+        { name: 'Municipal Bonds', href: '/municipal-bonds' },
+        { name: 'Municipal Budgets', href: '/municipal-budgets' },
+      ],
+    },
+    { name: 'Resources', href: '/resources-dashboard/data-sets/income_statement' },
+  ];
+
   isProd = false;
   canViewUserList = false;
   canViewULBSingUpListing = false;

@@ -1,0 +1,260 @@
+<div class="wrapper app-wrapper">
+  <section class="ocr-validation-list-page">
+    <div class="hero-card">
+      <h3>Auditor Report Extractions</h3>
+      <p class="subcopy">
+        Browse all past auditor report extractions. Filter by status, ULB, or opinion type, then
+        view the full result.
+      </p>
+    </div>
+
+    <div class="card-grid">
+      <article class="menu-card">
+        <div>
+          <h2>New Extraction</h2>
+          <p>Upload an auditor's report PDF and extract its opinion narrative.</p>
+        </div>
+        <a class="btn btn-outline-primary menu-btn" routerLink="/ocr/auditor-report">Extract</a>
+      </article>
+    </div>
+
+    <section class="list-section">
+      <div class="section-header">
+        <div>
+          <h2>Extractions</h2>
+          <p>Filter and paginate through all stored extraction results.</p>
+        </div>
+        <div class="section-header-right">
+          @if (loading()) {
+            <span class="results-meta">Loading...</span>
+          } @else {
+            <span class="results-meta">{{ totalItems }} result{{ totalItems === 1 ? '' : 's' }}</span>
+          }
+          <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <form [formGroup]="filterForm" class="filter-grid">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">All</mat-option>
+            <mat-option value="COMPLETED">Completed</mat-option>
+            <mat-option value="FAILED">Failed</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Opinion Type</mat-label>
+          <mat-select formControlName="opinionType">
+            <mat-option value="">All</mat-option>
+            @for (opt of opinionTypeOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Is Auditor Report</mat-label>
+          <mat-select formControlName="isAuditorReport">
+            <mat-option value="">All</mat-option>
+            <mat-option value="true">Yes</mat-option>
+            <mat-option value="false">No</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filename</mat-label>
+          <input matInput formControlName="filename" placeholder="Search filename" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ULB Name</mat-label>
+          <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Financial Year</mat-label>
+          <input matInput formControlName="financialYear" placeholder="e.g. 2023-24" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created From</mat-label>
+          <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFrom" />
+          <mat-datepicker #pickerFrom />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Created To</mat-label>
+          <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerTo" />
+          <mat-datepicker #pickerTo />
+        </mat-form-field>
+
+        <div class="filter-actions">
+          <button type="button" class="btn btn-primary" (click)="applyFilters()">Apply</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="resetFilters()">Reset</button>
+        </div>
+      </form>
+
+      <div class="table-shell">
+        <table mat-table [dataSource]="dataSource" class="val-table">
+          <ng-container matColumnDef="file">
+            <th mat-header-cell *matHeaderCellDef>File</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="identity-cell">
+                <span class="cell-value" [title]="row.filename">{{ truncate(row.filename, 26) }}</span>
+              </div>
+              <div class="identity-cell">
+                <span class="cell-label">ID</span>
+                <span class="cell-value mono" [title]="row.docId">{{ truncate(row.docId, 18) }}</span>
+              </div>
+              <div class="file-meta-row">
+                <span class="file-meta-chip">{{ row.model }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ulbAndYear">
+            <th mat-header-cell *matHeaderCellDef>ULB / Year</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell">
+                <div>
+                  <span class="cell-label">ULB</span>
+                  <span class="cell-value" [title]="row.ulbName">{{ truncate(row.ulbName, 22) }}</span>
+                </div>
+                <div>
+                  <span class="cell-label">FY</span>
+                  <span class="cell-value">{{ row.financialYear }}</span>
+                </div>
+                @if (row.isAuditorReport === false) {
+                  <p class="error-text">Not an auditor's report</p>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="auditor">
+            <th mat-header-cell *matHeaderCellDef>Auditor</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell">
+                <div>
+                  <span class="cell-label">Name</span>
+                  <span class="cell-value" [title]="row.auditorName">{{ truncate(row.auditorName, 20) }}</span>
+                </div>
+                <div>
+                  <span class="cell-label">Firm</span>
+                  <span class="cell-value" [title]="row.auditorFirm">{{ truncate(row.auditorFirm, 20) }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="opinion">
+            <th mat-header-cell *matHeaderCellDef>Opinion</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.opinionType !== '—') {
+                <span [class]="opinionChipClass(row.opinionType)">{{ row.opinionType }}</span>
+              } @else {
+                <span class="dim">—</span>
+              }
+              @if (row.qualifiedCertIssued) {
+                <p class="progress-step-chip">
+                  <span class="progress-step-label">Cert</span>
+                  Qualified certificate issued
+                </p>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="usage">
+            <th mat-header-cell *matHeaderCellDef>Usage</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.totalTokens !== null) {
+                <div class="expected-cell">
+                  <div>
+                    <span class="cell-label">Tokens</span>
+                    <span class="cell-value">{{ row.totalTokens | number }}</span>
+                  </div>
+                  @if (row.priceInr !== null) {
+                    <div>
+                      <span class="cell-label">Cost</span>
+                      <span class="cell-value">₹{{ row.priceInr | number: '1.2-4' }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <span class="dim">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
+              @if (row.status === 'FAILED' && row.errorMessage !== '—') {
+                <p class="error-text" [title]="row.errorMessage">{{ truncate(row.errorMessage, 40) }}</p>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>
+              <button
+                type="button"
+                class="sort-header-btn"
+                (click)="toggleSortOrder()"
+                [title]="sortOrder() === 'desc' ? 'Newest first — click for oldest first' : 'Oldest first — click for newest first'"
+              >
+                Created
+                <mat-icon class="sort-icon">{{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <span class="cell-value">{{ row.createdAt }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <a
+                class="btn btn-sm btn-outline-primary"
+                routerLink="/ocr/auditor-report"
+                [queryParams]="{ docId: row.docId }"
+                title="View result"
+              >
+                View
+              </a>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+              @if (loading()) {
+                Loading extractions...
+              } @else {
+                No auditor report extractions found. Adjust filters or run a new extraction.
+              }
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        showFirstLastButtons
+        (page)="onPageChange($event)"
+      />
+    </section>
+  </section>
+</div>
