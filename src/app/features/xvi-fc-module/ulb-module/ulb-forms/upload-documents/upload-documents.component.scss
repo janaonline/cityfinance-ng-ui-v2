@@ -359,6 +359,83 @@
   }
 }
 
+// ── stale-processing state (PROCESSING past the 5-minute threshold) ───────────
+// Same red palette as .file-chip--failed — a document stuck this long reads as an error to the
+// ULB, not as "still verifying", even though the backend hasn't marked it FAILED yet.
+.file-chip--stale {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  min-width: 0;
+  max-width: 360px;
+
+  .chip-stale-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: #dc2626;
+  }
+
+  .chip-filename {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #991b1b;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+  }
+
+  .chip-meta {
+    font-size: 0.68rem;
+    color: #6b7280;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .stale-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 999px;
+    padding: 0 7px;
+    height: 18px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #991b1b;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    .stale-dot {
+      font-size: 0.5rem;
+      color: #dc2626;
+      line-height: 1;
+    }
+  }
+}
+
+.stale-processing-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #991b1b;
+  background: #fff1f2;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+  }
+}
+
 //TODO: move
 .manual-review-btn {
   font-size: 0.78rem;
