@@ -24,6 +24,12 @@ export const FORM_TO_TAB: Partial<Record<ReviewFormId, string>> = {
   SERVICE_LEVEL_BENCHMARKS: 'SLB',
 };
 
+/** Reverse of `FORM_TO_TAB` — lets the submissions list restore its "Select Form" dropdown from
+ *  the `?form=` query param the review page's "Back to Submissions" link sends back. */
+export const TAB_TO_FORM: Readonly<Record<string, ReviewFormId>> = Object.fromEntries(
+  Object.entries(FORM_TO_TAB).map(([form, tab]) => [tab, form as ReviewFormId]),
+);
+
 /** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
 export type ReviewStatus =
   | 'NOT_STARTED'

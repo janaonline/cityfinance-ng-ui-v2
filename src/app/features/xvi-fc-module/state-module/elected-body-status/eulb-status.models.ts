@@ -66,6 +66,9 @@ export interface EulbFormResponseData {
   actors?: FormActor[];
   rowEditFields?: ConditionalFieldConfig[];
   validationSummary?: EulbValidationSummary;
+  /** Constituted/not-constituted/exempt row breakdown; `null`/absent until the form has reached
+   *  UNDER_REVIEW_BY_MOHUA or later. */
+  statusSummary?: EulbStatusSummary | null;
   errorExcelFile?: EulbFileValue;
   /** Some backend versions nest errorExcelFile here; normalised in loadForm(). */
   response?: { errorExcelFile?: EulbFileValue; [key: string]: unknown };
@@ -127,7 +130,6 @@ export interface EulbRowsQuery {
   limit?: number;
   search?: string;
   validationStatus?: EulbRowValidationStatus | '';
-  errorField?: string;
 }
 
 export interface EulbRowsApiResponse {
@@ -203,6 +205,9 @@ export interface EulbRowsDialogData {
   yearId: string;
   rowEditFields?: ConditionalFieldConfig[];
   canEdit: boolean;
+  /** Pre-selects the Validation filter to this status on open — used to land the user directly
+   *  on Invalid rows when the last known validation had errors, instead of "All". */
+  initialValidationStatusFilter?: EulbRowValidationStatus;
 }
 
 export interface EulbRowsDialogResult {

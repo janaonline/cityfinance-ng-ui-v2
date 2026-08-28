@@ -3,26 +3,10 @@ import {
   computeClaimDifferencePercentage,
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
-  formatCrore,
-  formatCroreFull,
   formatUlbBreakdown,
   humanizeToken,
   isClaimWithinVariance,
 } from './claim-letter.utils';
-
-describe('formatCrore', () => {
-  it('returns "—" for null', () => expect(formatCrore(null)).toBe('—'));
-  it('returns "—" for undefined', () => expect(formatCrore(undefined)).toBe('—'));
-  it('appends "Cr." without rescaling', () => expect(formatCrore(13.948)).toBe('13.95 Cr.'));
-  it('formats zero', () => expect(formatCrore(0)).toBe('0 Cr.'));
-});
-
-describe('formatCroreFull', () => {
-  it('returns "—" for null', () => expect(formatCroreFull(null)).toBe('—'));
-  it('returns "—" for undefined', () => expect(formatCroreFull(undefined)).toBe('—'));
-  it('appends "Cr." without rounding', () => expect(formatCroreFull(13.948235)).toBe('13.948235 Cr.'));
-  it('formats zero', () => expect(formatCroreFull(0)).toBe('0 Cr.'));
-});
 
 describe('computeClaimDifferencePercentage', () => {
   it('returns 0 when allocation is 0 (avoids divide-by-zero)', () =>
@@ -104,6 +88,7 @@ describe('buildBatchNarrative', () => {
     remainingAfterThisBatch: 25,
     slotsRemaining: 2,
     installment: 1 as const,
+    formatAmount: (value: number) => `${value} Cr.`,
   };
 
   it('shows a neutral placeholder when no rows have been added yet', () => {

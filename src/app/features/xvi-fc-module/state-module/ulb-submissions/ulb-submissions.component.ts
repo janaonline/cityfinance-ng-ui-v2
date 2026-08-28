@@ -26,6 +26,7 @@ import {
   ReviewStatus,
   SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
+  TAB_TO_FORM,
   UlbSubmissionRow,
   UlbSubmissionSortField,
   UlbSubmissionsQuery,
@@ -104,7 +105,7 @@ export class UlbSubmissionsComponent {
   readonly pageSizeOptions = [10, 15, 25, 50];
 
   readonly filterForm = this.fb.nonNullable.group({
-    form: this.fb.nonNullable.control<ReviewFormId>(FORM_OPTIONS[0].value),
+    form: this.fb.nonNullable.control<ReviewFormId>(this.resolveInitialFormId()),
     search: this.fb.nonNullable.control(''),
   });
 
@@ -210,6 +211,20 @@ export class UlbSubmissionsComponent {
         if (this.isSelectedFormLive()) this.loadRows();
         else this.rows.set([]);
       });
+
+    // Mirrors the selected form into the URL (in place, no new history entry) so the plain
+    // browser back button restores it too — not just the explicit "Back to Submissions" link,
+    // which already forwards it via goBack()'s own ?form= query param.
+    this.filterForm.controls.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((formId) => {
+      const tab = FORM_TO_TAB[formId];
+      if (!tab) return;
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { form: tab },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
 
     // Switching to SLB can leave the currently-selected bucket (e.g. the default "Under Review
     // by State") pointing at one of the three buckets SLB doesn't have — fall back to a bucket
@@ -371,5 +386,13 @@ export class UlbSubmissionsComponent {
     } catch {
       return '';
     }
+  }
+
+  /** Restores the "Select Form" dropdown from the `?form=` query param the review page's "Back to
+   *  Submissions" link sends back, so returning from a ULB's review doesn't reset the filter to
+   *  its default (Audited Statements). */
+  private resolveInitialFormId(): ReviewFormId {
+    const requested = this.route.snapshot.queryParamMap.get('form');
+    return (requested && TAB_TO_FORM[requested]) || FORM_OPTIONS[0].value;
   }
 }

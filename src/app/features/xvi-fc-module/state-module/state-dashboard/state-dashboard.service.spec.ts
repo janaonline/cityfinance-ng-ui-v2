@@ -142,7 +142,7 @@ const dashboardData: StateDashboardData = {
     totalUlbs: 2,
     allocatedAmount: 15_620_000_000,
     claimedAmount: 0,
-    amountUnit: 'CRORE',
+    amountUnit: 'RUPEE',
     currency: 'INR',
     compliance: { rate: 50, compliantUlbs: 1, totalUlbs: 2 },
   },

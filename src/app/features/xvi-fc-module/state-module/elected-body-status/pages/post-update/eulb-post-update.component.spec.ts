@@ -59,7 +59,7 @@ describe('EulbPostUpdateComponent', () => {
           formFieldType: 'select',
           options: ['Constituted', 'Not Constituted', '6th Schedule'],
         },
-        { key: 'dateOfConstitution', label: 'Date on which the elected body is in place.', formFieldType: 'date' },
+        { key: 'dateOfConstitution', label: 'Date on which the elected body is in place', formFieldType: 'date' },
         { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
         { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
       ],
@@ -247,6 +247,13 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.isLoadingRows()).toBeFalse();
   });
 
+  it('breadcrumb reads Elected Body Status > Update Elected Body Status, linking back to the form', () => {
+    expect(component.breadcrumbLinks()).toEqual([
+      { label: 'Elected Body Status', routerLink: ['/xvifc', yearId, 'elected-body-status'] },
+      { label: 'Update Elected Body Status' },
+    ]);
+  });
+
   it('shows not-available state and does not call rows endpoint when canUpdate is false', () => {
     service.getPostSubmissionUpdateMetadata.and.returnValue(
       of(
@@ -354,7 +361,7 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.editingRowId()).toBe('row-1');
     expect(fixture.debugElement.query(By.css('select[aria-label="Elected Body Status"]'))).not.toBeNull();
     expect(
-      fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place."]')),
+      fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place"]')),
     ).not.toBeNull();
     expect(fixture.debugElement.query(By.css('input[aria-label="Remarks"]'))).not.toBeNull();
   });

@@ -16,6 +16,19 @@ a {
   display: none;
 }
 
+// mat-menu content is portaled to the CDK overlay, outside this component's
+// view encapsulation — ::ng-deep is required to style it from here (same
+// pattern used below for .notification-menu-panel).
+::ng-deep .mat-mdc-menu-item {
+  font-weight: var(--fw-semi-bold);
+}
+
+::ng-deep .mat-mdc-menu-item.active {
+  background: var(--clr-primary-soft, rgba(29, 82, 144, 0.08));
+  color: var(--clr-primary);
+  font-weight: var(--fw-semi-bold);
+}
+
 .primary-navigation {
   margin: 0;
   padding: 0;
@@ -25,18 +38,18 @@ a {
   background: hsla(0, 0%, 100%, 1);
 }
 
-@supports (backdrop-filter: blur(4rem)) {
-  .primary-navigation {
-    background: hsla(0, 0%, 100%, 0.1);
-    backdrop-filter: blur(4rem);
-  }
-}
+// @supports (backdrop-filter: blur(4rem)) {
+//   .primary-navigation {
+//     background: hsla(0, 0%, 100%, 0.1);
+//     backdrop-filter: blur(4rem);
+//   }
+// }
 
 .nav-link {
   padding-block: 1.25rem;
   border-bottom: 2px solid transparent;
   color: var(--clr-secondary);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semi-bold);
 
   &:not(.cfr-img-logo):hover,
   &:not(.cfr-img-logo).active {
@@ -98,18 +111,17 @@ a {
     padding-block: 0.25rem;
   }
 
-  nav > div {
+  nav>div {
     padding-block: 0.35rem;
   }
 }
 
 .login-menu-item--new {
-  font-weight: 700 !important;
+  font-weight: var(--fw-semi-bold) !important;
 }
 
 .login-menu-label--new {
-  font-weight: 700;
-  color: #0f3540;
+  font-weight: var(--fw-bold);
 }
 
 .login-menu-new-badge {
@@ -118,10 +130,10 @@ a {
   margin-left: 8px;
   padding: 1px 7px;
   border-radius: 999px;
-  background: #e8530a;
+  background: var(--clr-primary);
   color: #fff;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: var(--fw-semi-bold);
   letter-spacing: 0.06em;
   line-height: 1.6;
   vertical-align: middle;
@@ -160,28 +172,36 @@ a {
 }
 
 @keyframes notification-bell-ring {
+
   0%,
   100% {
     transform: rotate(0deg);
   }
+
   1% {
     transform: rotate(14deg);
   }
+
   3% {
     transform: rotate(-12deg);
   }
+
   5% {
     transform: rotate(10deg);
   }
+
   7% {
     transform: rotate(-8deg);
   }
+
   9% {
     transform: rotate(6deg);
   }
+
   11% {
     transform: rotate(-4deg);
   }
+
   13% {
     transform: rotate(0deg);
   }

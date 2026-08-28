@@ -4,16 +4,14 @@ import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import FileSaver from 'file-saver';
 import { Subject, finalize, from, map, startWith, takeUntil } from 'rxjs';
-import {
-  CanComponentDeactivate,
-  warnBeforeUnloadWhenDirty,
-} from '../../../../core/guards/unsaved-changes.guard';
+import { CanComponentDeactivate, warnBeforeUnloadWhenDirty } from '../../../../core/guards/unsaved-changes.guard';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
   themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -26,6 +24,7 @@ import {
   DynamicFormVisibilityService,
 } from '../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
+import { parseFieldPrefixedMessages } from '../../common/utils/xvi-fc-error-lookup.utils';
 import {
   FORM_STATUS,
   FormActor,
@@ -77,6 +76,7 @@ const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount)$/;
     MatButtonModule,
     FormProgressComponent,
     UnspentUlbTableComponent,
+    AmountDisplayToggleComponent,
   ],
   templateUrl: './fc-unspent-declaration.component.html',
   styleUrl: './fc-unspent-declaration.component.scss',
@@ -109,6 +109,10 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    *  kept alongside the editable FormArray so the table can render already-saved rows without ever
    *  needing to open the ULB picker. */
   readonly savedUnspentUlbData = signal<readonly FcUnspentUlbData[]>([]);
+  /** Drives the save-prompt banner: fcUnspentDeclaration's backend visibleWhen hides the whole
+   *  field (not just its download action) until at least one row is saved, which also hides that
+   *  field's own in-field "save your changes" message along with it — this banner fills that gap. */
+  readonly hasSavedUnspentRows = computed(() => this.savedUnspentUlbData().length > 0);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -164,14 +168,15 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
 
     return {
       ...withActionState,
-      supportingContent: withActionState.supportingContent?.map((block): FieldSupportingContent =>
-        block.type === 'actions'
-          ? {
-              ...block,
-              description: 'Save your changes as a draft before downloading the declaration.',
-              descriptionTone: 'danger',
-            }
-          : block,
+      supportingContent: withActionState.supportingContent?.map(
+        (block): FieldSupportingContent =>
+          block.type === 'actions'
+            ? {
+                ...block,
+                description: 'Save your changes as a draft before downloading the declaration.',
+                descriptionTone: 'danger',
+              }
+            : block,
       ),
     };
   }
@@ -208,7 +213,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   private readonly liveUnspentRows = toSignal(
     this.unspentUlbData.valueChanges.pipe(
       startWith(this.unspentUlbData.getRawValue()),
-      map((values) => values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null }))),
+      map((values) =>
+        values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null })),
+      ),
     ),
     { initialValue: [] as { ulbId: string | null; unspentAmount: number | null }[] },
   );
@@ -347,6 +354,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     this.form.addControl('unspentUlbData', this.unspentUlbData);
     this.hydrateUnspentUlbData(savedRows);
 
+    // Synthetic control bridging saved row data into the reactive form.
+    // Used by fcUnspentDeclaration.visibleWhen to check for saved rows, not live FormArray data.
+    // It reflects only persisted data and updates on loadForm()/reloadForm().
+    this.form.addControl('savedUnspentUlbData', this.fb.control(savedRows));
+
     const isFcUnspentControl = this.form.get('isFcUnspent');
     const initialIsFcUnspentRaw: unknown = isFcUnspentControl?.value;
     const initialIsFcUnspent = typeof initialIsFcUnspentRaw === 'string' ? initialIsFcUnspentRaw : null;
@@ -431,7 +443,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (blob) => FileSaver.saveAs(blob, 'fc-unspent-declaration.docx'),
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? `Fc-unspent-declaration-${this.isYesBranch() ? 'yes' : 'no'}.docx`);
+        },
         error: (err: unknown) => {
           console.error('Failed to download the FC Unspent declaration document', err);
           this.handleDownloadApiError(err, 'Failed to download the declaration document.');
@@ -632,27 +646,67 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    * Extracts a structured error response from two possible error shapes:
    * 1. `HttpErrorResponse` (HTTP 4xx): body is in `err.error` with `{ statusCode, message, errors }`.
    * 2. Service map throw (2xx with success:false): `err` itself is `{ success, message, errors }`.
+   *
+   * `message` may be either NestJS's normal single string, or the plain `string[]` a
+   * `ValidationPipe`/class-validator 400 sends when no custom `errors` map exists (e.g. `@IsInt()`
+   * rejecting a decimal `unspentAmount`) — previously only the string case was recognized, so this
+   * shape fell through to `null` entirely and the real backend message was dropped. When there's no
+   * structured `errors` map already, one is synthesized from the message array via
+   * `buildErrorMapFromMessages` so `applyApiErrors`/`ROW_ERROR_KEY_PATTERN` need no separate path.
    */
   private extractApiErrorResponse(err: unknown): ApiErrorResponse | null {
     if (!this.isObject(err)) return null;
 
     const errorBody = err['error'];
-    if (this.isObject(errorBody) && typeof errorBody['message'] === 'string') {
-      return {
-        statusCode: typeof errorBody['statusCode'] === 'number' ? errorBody['statusCode'] : undefined,
-        message: errorBody['message'],
-        errors: this.isApiErrorMap(errorBody['errors']) ? errorBody['errors'] : undefined,
-      };
+    if (this.isObject(errorBody) && this.hasMessage(errorBody)) {
+      return this.buildApiErrorResponse(errorBody);
     }
 
-    if (err['success'] === false && typeof err['message'] === 'string') {
-      return {
-        message: err['message'],
-        errors: this.isApiErrorMap(err['errors']) ? err['errors'] : undefined,
-      };
+    if (err['success'] === false && this.hasMessage(err)) {
+      return this.buildApiErrorResponse(err);
     }
 
     return null;
+  }
+
+  private hasMessage(body: Record<string, unknown>): boolean {
+    return typeof body['message'] === 'string' || this.isStringArray(body['message']);
+  }
+
+  private isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every((v) => typeof v === 'string');
+  }
+
+  private buildApiErrorResponse(body: Record<string, unknown>): ApiErrorResponse {
+    const rawMessage = body['message'];
+    const messages = typeof rawMessage === 'string' ? [rawMessage] : this.isStringArray(rawMessage) ? rawMessage : [];
+    const structuredErrors = this.isApiErrorMap(body['errors']) ? body['errors'] : undefined;
+
+    return {
+      statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
+      message: messages.join(' '),
+      errors: structuredErrors ?? this.buildErrorMapFromMessages(messages),
+    };
+  }
+
+  /** Parses a plain class-validator `message: string[]` (no `errors` map) into the same
+   *  `unspentUlbData.<row>.<field>` keys `applyApiErrors`/`ROW_ERROR_KEY_PATTERN` already expect —
+   *  see `parseFieldPrefixedMessages`'s doc comment for why this parsing is safe, not a heuristic.
+   *  Unmatched messages land under `_form`, which `applyApiErrors` already routes to
+   *  `formLevelErrors` instead of dropping. */
+  private buildErrorMapFromMessages(messages: readonly string[]): ApiErrorMap | undefined {
+    if (!messages.length) return undefined;
+
+    const { claimed, unclaimed } = parseFieldPrefixedMessages(messages, ['ulbId', 'unspentAmount'], 'unspentUlbData');
+    const errors: ApiErrorMap = {};
+    for (const entry of claimed) {
+      const key = entry.rowIndex !== null ? `unspentUlbData.${entry.rowIndex}.${entry.field}` : entry.field;
+      errors[key] = [...(errors[key] ?? []), { message: entry.message }];
+    }
+    if (unclaimed.length) {
+      errors['_form'] = unclaimed.map((message) => ({ message }));
+    }
+    return Object.keys(errors).length ? errors : undefined;
   }
 
   private isObject(value: unknown): value is Record<string, unknown> {

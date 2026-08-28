@@ -39,6 +39,10 @@ export interface DocumentRuntimeState {
   /** True once ADMIN has rejected a ULB's manual-review request for this failed document — re-running
    *  OCR on the same file would fail the same way, so Retry is hidden until a fresh file is uploaded. */
   manualReviewReturned?: boolean;
+  /** True while a manual-review request is outstanding and ADMIN hasn't decided yet — mirrors the
+   *  backend's isAwaitingManualReviewDecision guard. Retry/Re-upload are hidden so the file ADMIN
+   *  is reviewing can't change out from under them. */
+  isAwaitingManualReview?: boolean;
 }
 
 export interface ResolvedDocumentAction {

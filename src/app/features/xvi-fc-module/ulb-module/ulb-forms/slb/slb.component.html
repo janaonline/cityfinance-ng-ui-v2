@@ -1,8 +1,8 @@
-<div class="component-shell">
-  <div class="form-container">
+<!-- <div class="component-shell"> -->
+  <!-- <div class="form-container"> -->
     <div class="top-accent"></div>
 
-    <div class="content-wrap p-3 p-md-4">
+    <section class="p-3 p-md-4">
       <div class="content-stack d-flex flex-column gap-4">
         <div>
           <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
@@ -52,123 +52,18 @@
             </div>
           }
 
-          <form class="content-body" [formGroup]="form">
-            @if (indicatorFields().length) {
-              <div class="table-responsive slb-indicator-table-wrap">
-                <table class="table align-middle mb-0 slb-indicator-table">
-                  <thead>
-                    <tr>
-                      <th scope="col" class="slb-col-num">#</th>
-                      <th scope="col">Sections/Indicators</th>
-                      <th scope="col" class="text-nowrap">
-                        <div>Actual Indicator</div>
-                        @if (actualYearLabel()) {
-                          <div>{{ actualYearLabel() }}</div>
-                        }
-                      </th>
-                      <th scope="col" class="text-nowrap">
-                        <div>Target Indicator</div>
-                        @if (yearLabel()) {
-                          <div>{{ yearLabel() }}</div>
-                        }
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (group of groupedIndicatorFields(); track group.section) {
-                      @if (group.section) {
-                        <tr class="slb-section-row">
-                          <td colspan="4">{{ group.section }}</td>
-                        </tr>
-                      }
-                      @for (item of group.fields; track item.key; let i = $index) {
-                        <tr [formGroupName]="item.key">
-                          <td class="slb-col-num text-secondary">{{ item.position ?? i + 1 }}</td>
-                          <td class="fw-semibold">{{ item.label }}</td>
-                          <td>
-                            <div class="input-group input-group-sm slb-indicator-input">
-                              <input
-                                type="number"
-                                class="form-control"
-                                onwheel="this.blur()"
-                                formControlName="actual"
-                                [placeholder]="item.placeholder || ''"
-                                [attr.data-cy]="item.key + '_actual-test'"
-                              />
-                              @if (item.inputCardConfig?.suffixText) {
-                                <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
-                              }
-                            </div>
-                            @for (validation of item.validations; track validation.name) {
-                              @if (hasIndicatorError(item.key, 'actual', validation.name)) {
-                                <div class="text-danger small mt-1">{{ validation.message }}</div>
-                              }
-                            }
-                          </td>
-                          <td>
-                            <div class="input-group input-group-sm slb-indicator-input">
-                              <input
-                                type="number"
-                                class="form-control"
-                                onwheel="this.blur()"
-                                formControlName="target"
-                                [placeholder]="item.placeholder || ''"
-                                [attr.data-cy]="item.key + '_target-test'"
-                              />
-                              @if (item.inputCardConfig?.suffixText) {
-                                <span class="input-group-text">{{ item.inputCardConfig?.suffixText }}</span>
-                              }
-                            </div>
-                            @for (validation of item.validations; track validation.name) {
-                              @if (hasIndicatorError(item.key, 'target', validation.name)) {
-                                <div class="text-danger small mt-1">{{ validation.message }}</div>
-                              }
-                            }
-                          </td>
-                        </tr>
-                      }
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-
-            @if (declarationFields().length) {
-              <div class="slb-declaration mt-4">
-                <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">Self Declaration</div>
-                <div class="slb-declaration-card rounded-3 p-3">
-                  @if (declarationTextFields().length) {
-                    <div class="row g-3">
-                      @for (item of declarationTextFields(); track item.key) {
-                        <div class="col-12 col-md-6">
-                          <app-dynamic-form
-                            class="d-block"
-                            [field]="item"
-                            [group]="form"
-                            [mode]="canEdit() ? 'edit' : 'view'"
-                          ></app-dynamic-form>
-                        </div>
-                      }
-                    </div>
-                  }
-
-                  @for (item of declarationOtherFields(); track item.key) {
-                    <div class="mt-2">
-                      <app-dynamic-form
-                        class="d-block"
-                        [field]="item"
-                        [group]="form"
-                        [mode]="canEdit() ? 'edit' : 'view'"
-                      ></app-dynamic-form>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
+          <form class="content-body" (submit)="$event.preventDefault()">
+            <app-slb-form-body
+              [form]="form"
+              [fields]="visibleFields()"
+              [mode]="canEdit() ? 'edit' : 'view'"
+              [actualYearLabel]="actualYearLabel()"
+              [targetYearLabel]="yearLabel()"
+            ></app-slb-form-body>
           </form>
         }
       </div>
-    </div>
+    </section>
 
     <!-- Show acknowledgement section only if edit + finalSubmit is true -->
     @if (canEdit() || canFinalSubmit()) {
@@ -222,5 +117,5 @@
         </div>
       </div>
     }
-  </div>
-</div>
+  <!-- </div>
+</div> -->

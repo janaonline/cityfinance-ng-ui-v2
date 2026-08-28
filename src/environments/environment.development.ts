@@ -3,9 +3,11 @@ export const environment = {
   api: {
     url: baseUrl + '/api/v1/',
     url2: baseUrl + '/api/v2/',
-    url3: baseUrl + '/api/v3/',
+    // url3: baseUrl + '/api/v3/',
+    url3: 'http://localhost:8000/',
   },
   ui: { urlV1: baseUrl + '/v1/', urlV2: baseUrl + '/fc/' },
+  blogUrl: 'https://blog.cityfinance.in',
   environment: 'dev_local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

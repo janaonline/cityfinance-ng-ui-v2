@@ -6,9 +6,10 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterInstallment, ClaimLetterUlbOption } from '../../claim-letter.models';
 import { ClaimLetterService } from '../../claim-letter.service';
-import { formatCrore, formatCroreFull, humanizeToken } from '../../claim-letter.utils';
+import { humanizeToken } from '../../claim-letter.utils';
 
 export type ClaimLetterEligibilityFilter = 'ALL' | 'ELIGIBLE' | 'INELIGIBLE';
 
@@ -66,9 +67,10 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
   private readonly excludeSet = computed(() => new Set(this.data.excludeUlbIds));
+  private readonly amountDisplay = inject(AmountDisplayModeService);
 
-  readonly formatCrore = formatCrore;
-  readonly formatCroreFull = formatCroreFull;
+  readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   readonly humanizeToken = humanizeToken;
 
   /** Monotonically increasing request id — guards against a stale page/search/filter response

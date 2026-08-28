@@ -120,6 +120,8 @@ export type FieldSupportingContent =
       descriptionTone?: FieldSupportingActionTone;
       actions: FieldSupportingAction[];
       badges?: FieldSupportingBadge[];
+      /** Plain-English fix message shown after badges when the form is invalid. */
+      validationMessage?: string;
     };
 
 export type { UploadedFileMetadata } from './components/file/file-metadata.types';
@@ -162,7 +164,10 @@ export interface FieldConfig {
   verifyStatus?: number;
   allowedFileTypes?: string[];
   fileRejectOptions?: string[];
-  decimal?: 0;
+  /** Max decimal places allowed; `0` means whole numbers only. Feeds both `DecimalLimitDirective`
+   *  (keystroke-blocking on the rendered input) and, via a `{ name: 'decimal', validator: N }`
+   *  entry in `validations`, a real `decimalPlacesValidator` FormControl error. */
+  decimal?: number;
   file?: LegacyFileValue;
   fileViewType?: 'button' | 'dropzone';
   folderPath?: string;

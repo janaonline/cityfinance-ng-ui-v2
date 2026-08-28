@@ -69,7 +69,7 @@ export class OverviewService {
       financialYear: `FY-${response.years}`,
       subHeader1: 'TOTAL 5-YEAR ALLOCATION',
       subHeader2: 'BASIC + PERFORMANCE',
-      totalAllocation: this.formatCrore(response.totalAllocation),
+      totalAllocation: response.totalAllocation,
       totalAllocationNote: `For ${response.totalUlbs} ULBs in ${response.stateName}`,
       grantSections: [
         {
@@ -77,7 +77,7 @@ export class OverviewService {
           label: 'Basic Grants',
           componentLabel: 'Grant Component',
           title: 'Basic Grants',
-          amount: this.formatCrore(totalBasic),
+          amount: totalBasic,
           description: 'Basic grants are allocated as 50% tied and 50% untied, subject to:',
           points: [
             'Confirmation of an active SFC and timely submission of the ATR',
@@ -90,7 +90,7 @@ export class OverviewService {
           label: 'Performance Grants',
           componentLabel: 'Grant Component',
           title: 'Performance Grants',
-          amount: this.formatCrore(totalPerformance),
+          amount: totalPerformance,
           description: 'Untied performance grants contingent on:',
           points: [
             'Achievement of 5% annual increase in OSR',
@@ -135,13 +135,13 @@ export class OverviewService {
   }
 
   private mapToDisbursementRows(response: StateOverviewApiResponse): DisbursementRow[] {
-    const basicValues: Record<string, string> = {};
-    const performanceValues: Record<string, string> = {};
+    const basicValues: Record<string, number | null> = {};
+    const performanceValues: Record<string, number | null> = {};
 
     response.tableData.forEach((row) => {
       const key = this.toColumnKey(row.year);
-      basicValues[key] = this.formatCrore(row.basic);
-      performanceValues[key] = row.performance > 0 ? this.formatCrore(row.performance) : '—';
+      basicValues[key] = row.basic;
+      performanceValues[key] = row.performance > 0 ? row.performance : null;
     });
 
     return [
@@ -152,9 +152,5 @@ export class OverviewService {
 
   private toColumnKey(year: string): string {
     return year.toLowerCase().replace(/\s+/g, '').replace(/-/g, '_');
-  }
-
-  private formatCrore(value: number): string {
-    return `₹${new Intl.NumberFormat('en-IN').format(value)} crore`;
   }
 }

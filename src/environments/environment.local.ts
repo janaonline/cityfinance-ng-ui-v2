@@ -8,6 +8,7 @@ export const environment = {
     url3: 'http://localhost:8000/',
   },
   ui: { urlV1: 'http://localhost:4200', urlV2: 'http://localhost:8080' },
+  blogUrl: 'https://blog.cityfinance.in',
   environment: 'local',
   isProduction: false,
   versionCheckURL: window.location.origin + '/version.json',

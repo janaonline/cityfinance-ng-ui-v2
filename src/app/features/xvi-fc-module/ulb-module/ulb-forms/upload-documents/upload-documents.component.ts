@@ -11,17 +11,18 @@ import {
   signal,
 } from '@angular/core';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
+import { UtilityService } from '../../../../../core/services/utility.service';
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EMPTY, Subscription, firstValueFrom, interval, switchMap } from 'rxjs';
+import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
@@ -94,9 +95,12 @@ export interface UploadDocument extends UploadDocumentDef {
   latestDecision: BackendDecision | null;
   // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
-  // Client-side only — true once this doc's OCR has failed and the ULB has retried at least
-  // once this session. Gates the "Request Manual Review" button; resets on reload.
-  hasRetried: boolean;
+  // How many times the ULB has retried OCR on this exact uploaded file — persisted server-side,
+  // so it survives a reload. Gates the "Request Manual Review" button (retried at least once).
+  retryValidationCount: number;
+  // When the most recent retry was kicked off — null if never retried. Used (falling back to
+  // uploadedAt) as the reference point for the stuck-processing poll timeout.
+  retryValidationAt: Date | null;
   isManualReviewRequested: boolean;
   manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
@@ -142,6 +146,10 @@ interface BackendStatusDoc {
     ocrInfo: BackendOcrInfo;
     userInfo: { userId: string; role: string } | null;
     uploadedAt: string;
+    /** How many times the ULB has retried OCR on this exact uploaded file — persisted server-side. */
+    retryValidationCount: number;
+    /** When the most recent retry was kicked off — null if never retried. */
+    retryValidationAt: string | null;
   } | null;
   // STATE's current decision on this document, or null if undecided/undone.
   stateDecision: BackendDecision | null;
@@ -206,6 +214,16 @@ interface UploadResponse {
 
 const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
+/** Universal upper bound on PDF length for any document on this page (audited or unaudited/provisional). */
+const MAX_PDF_PAGES = 1000;
+
+/** Pure so it's directly unit-testable without going through pdf.js/checkPdfHasContent. */
+export function getMaxPageCountError(pageCount: number | null, maxPages = MAX_PDF_PAGES): string | null {
+  return pageCount !== null && pageCount > maxPages ? `This document exceeds the maximum of ${maxPages} pages.` : null;
+}
+/** Stop polling a document that's been stuck PROCESSING this long — the backend's cron fallback
+ *  will eventually settle it, and a full page reload will pick up the final status. */
+const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
 // The dev backend may return bare objects instead of { success, data } wrappers.
 // This helper extracts the payload from either shape.
@@ -237,7 +255,8 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     validationError: null,
     latestDecision: null,
     manualReviewDecision: null,
-    hasRetried: false,
+    retryValidationCount: 0,
+    retryValidationAt: null,
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
@@ -260,13 +279,13 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   styleUrl: './upload-documents.component.scss',
 })
 export class UploadDocumentsComponent implements OnInit, OnDestroy {
-  private readonly router = inject(Router);
   private readonly http = inject(HttpClient);
   private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly permissions = inject(AuthPermissionService);
   private readonly uploadDocumentsService = inject(UploadDocumentsService);
+  private readonly utilityService = inject(UtilityService);
   private readonly fileService = inject(FileService);
 
   readonly canUpload = () => this.permissions.canUploadDocuments();
@@ -327,6 +346,26 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.latestDecision?.status === 'APPROVED';
   }
 
+  /** True while a manual-review request is outstanding and ADMIN hasn't decided yet — mirrors the
+   *  backend's isAwaitingManualReviewDecision guard, which blocks re-upload/retry until then. */
+  isAwaitingManualReview(doc: UploadDocument): boolean {
+    return doc.isManualReviewRequested && !doc.manualReviewDecision;
+  }
+
+  /** True once a PROCESSING document has been stuck long enough that polling it further is
+   *  pointless — the backend's cron fallback will settle it eventually. Measured from the most
+   *  recent retry if there's been one, since a retry restarts the OCR attempt from scratch —
+   *  otherwise a retry on an old upload would look timed-out the instant it's kicked off. */
+  private isProcessingTimedOut(doc: UploadDocument): boolean {
+    const referenceTime = doc.retryValidationAt ?? doc.uploadedAt;
+    return !!referenceTime && Date.now() - referenceTime.getTime() > PROCESSING_POLL_TIMEOUT_MS;
+  }
+
+  /** Docs that should keep the polling loop alive — PROCESSING and not yet timed out. */
+  private hasActivePolling(docs: readonly UploadDocument[]): boolean {
+    return docs.some((d) => d.status === 'processing' && !this.isProcessingTimedOut(d));
+  }
+
   /** Runtime facts the shared action-row component needs to resolve which button(s) to show. */
   toRuntimeState(doc: UploadDocument): DocumentRuntimeState {
     const processingStatusMap: Record<UploadDocument['status'], DocumentRuntimeState['processingStatus']> = {
@@ -345,12 +384,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       latestDecision: doc.latestDecision ? { status: doc.latestDecision.status } : null,
       isStale: doc.isStale,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
+      isAwaitingManualReview: this.isAwaitingManualReview(doc),
     };
   }
 
   /** Routes the shared action-row component's click event to the existing handlers — the
    *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    const doc = this.documents().find((d) => d.id === event.docKey);
+    if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+
     switch (event.action) {
       case 'upload':
       case 'reupload':
@@ -391,7 +434,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.documents().some((d) => d.status === 'processing' || d.status === 'uploading'),
   );
 
-  private static readonly SUPPORT_EMAIL = '16fcgrant@cityfinance.in';
+  private static readonly SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
   readonly supportMailto = computed(() => {
     const details = this.ulbDetails();
@@ -488,6 +531,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     const docId = this.pendingDocId;
     this.pendingDocId = null;
+    const existingDoc = this.documents().find((d) => d.id === docId);
+    if (existingDoc && this.isAwaitingManualReview(existingDoc)) return;
     const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
     const validationMsg = await this.checkFileValidity(file, docDef);
@@ -589,6 +634,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   async retryUpload(docId: string): Promise<void> {
     const doc = this.documents().find((d) => d.id === docId);
     if (!doc?.uploadId || !this.annualAccountId()) return;
+    if (this.isAwaitingManualReview(doc)) return;
 
     this.documents.update((docs) =>
       docs.map((d) =>
@@ -600,7 +646,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               validationStatus: null,
               validationDetails: null,
               failedChecks: [],
-              hasRetried: true,
+              retryValidationCount: d.retryValidationCount + 1,
+              retryValidationAt: new Date(),
               isManualReviewRequested: false,
               manualReviewError: null,
               isStale: false,
@@ -629,7 +676,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       title: 'Request manual review?',
       icon: { name: 'support_agent', color: '#1976d2' },
       description:
-        'This document has failed automated verification. Our team will manually review it instead — this can take longer than the automated checks. You will not be able to request this again for this document until you retry or re-upload it.',
+        "Our team will verify this document manually and get back to you. Please expect a reply within 48 hours (weekends excluded). You'll receive an email notification too.",
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
         { label: 'Request Manual Review', result: 'request', variant: 'flat' },
@@ -714,6 +761,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         );
       } catch (err) {
         console.error('[remove] failed to delete document from server', err);
+        this.utilityService.triggerSnackbar('Unable to remove the document. Please try again.', 'snackbar-danger');
+        return;
       }
     }
 
@@ -765,7 +814,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       await firstValueFrom(
         this.http.post(`${API}xvi-fc/annual-account/${accountId}/submit`, { section, selfDeclared: true }),
       );
-      this.router.navigate(['../ulb-forms'], { relativeTo: this.route });
+      // Stay on this page — refresh the section's status/lock state in place instead of
+      // navigating back to the conditions overview.
+      await this.loadExistingData();
     } catch (err) {
       console.error('[submit] failed to submit section', err);
     }
@@ -897,6 +948,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             validationDetails: cu.ocrInfo.validationDetails ?? null,
             failedChecks: cu.ocrInfo.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo.isManualReviewRequested ?? false,
+            retryValidationCount: cu.retryValidationCount ?? 0,
+            retryValidationAt: cu.retryValidationAt ? new Date(cu.retryValidationAt) : null,
             isStale: saved.isStale,
             latestDecision,
             manualReviewDecision,
@@ -904,8 +957,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         }),
       );
 
-      // Start polling if any doc is still processing
-      if (this.documents().some((d) => d.status === 'processing')) {
+      // Start polling if any doc is still processing (and hasn't already timed out)
+      if (this.hasActivePolling(this.documents())) {
         this.startPolling();
       }
     } catch (err: unknown) {
@@ -927,11 +980,23 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
     this.pollingSub = interval(POLL_INTERVAL_MS)
       .pipe(
-        switchMap(() =>
-          this.documents().some((d) => d.status === 'processing')
-            ? this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`)
-            : EMPTY,
-        ),
+        switchMap(() => {
+          if (!this.hasActivePolling(this.documents())) {
+            // Nothing left worth polling for (either resolved, or timed out) — tear the
+            // interval down instead of ticking forever with nothing to do.
+            this.stopPolling();
+            return EMPTY;
+          }
+          return this.http.get<unknown>(`${API}xvi-fc/annual-account/${accountId}/status?section=${section}`).pipe(
+            // A transient failure here must not kill the outer interval subscription — swallow
+            // it and let the next tick retry, rather than leaving documents stuck "processing"
+            // until something else happens to call startPolling() again.
+            catchError((err) => {
+              console.error('[poll] status check failed', err);
+              return EMPTY;
+            }),
+          );
+        }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -961,12 +1026,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 validationDetails: remote.currentUpload.ocrInfo.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo.isManualReviewRequested ?? false,
+                retryValidationCount: remote.currentUpload.retryValidationCount ?? 0,
+                retryValidationAt: remote.currentUpload.retryValidationAt
+                  ? new Date(remote.currentUpload.retryValidationAt)
+                  : null,
                 isStale: remote.isStale,
               };
             }),
           );
 
-          if (!this.documents().some((d) => d.status === 'processing')) {
+          if (!this.hasActivePolling(this.documents())) {
             this.stopPolling();
           }
         },
@@ -999,6 +1068,17 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       const isPdfMime = file.type === 'application/pdf';
       const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
       if (!isPdfMime && !isPdfExt) return 'Please upload a PDF file only.';
+    } else {
+      // No PDF-specific (magic-byte/content) validation exists for other configured types — at
+      // minimum, reject anything whose extension isn't in the allow-list, rather than accepting
+      // any file at all. An empty allow-list means nothing is configured as acceptable here.
+      const ext = file.name.toLowerCase().split('.').pop() ?? '';
+      const allowed = doc.allowedFileTypes.map((t) => t.toLowerCase());
+      if (allowed.length === 0 || !allowed.includes(ext)) {
+        return doc.allowedFileTypes.length
+          ? `Please upload a file of type: ${doc.allowedFileTypes.join(', ')}.`
+          : 'No file type is configured as acceptable for this document.';
+      }
     }
 
     if (file.size === 0) return 'The selected file is empty. Please upload a valid file.';
@@ -1041,19 +1121,25 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       return `This document must contain at least ${doc.minPages} page${doc.minPages > 1 ? 's' : ''}.`;
     }
 
+    // Max page count — fixed universal cap, not per-document config like minPages.
+    const maxPagesError = getMaxPageCountError(result.pageCount);
+    if (maxPagesError) return maxPagesError;
+
     return null;
   }
 
+  /** Resolved from the route first (matches annual-account-review.component.ts's own
+   *  resolveDesignYearId) — localStorage is a single global value shared across tabs, so it must
+   *  never win over what the URL actually says, or a stale/cross-tab value could silently drive
+   *  this page's document loads/uploads/submissions onto the wrong year's data. */
   private resolveDesignYearId(): string | null {
-    const stored = localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
-    if (stored) return stored;
     let current: ActivatedRoute | null = this.route;
     while (current) {
       const yearId = current.snapshot.paramMap.get('yearId');
       if (yearId) return yearId;
       current = current.parent;
     }
-    return null;
+    return localStorage.getItem(XVIFC_LS_KEYS.selectedYearId);
   }
 
   private resolveUlbId(): string | null {

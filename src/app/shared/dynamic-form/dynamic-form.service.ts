@@ -15,6 +15,7 @@ import {
   digitsOnlyValidator,
   matchesFieldValidator,
 } from '../../core/validators/comparison.validator';
+import { decimalPlacesValidator } from '../../core/validators/decimal-places.validator';
 import { FieldConfig } from './field.interface';
 import { isUploadedFileMetadata, normalizeUploadedFileMetadata } from './components/file/file-metadata.types';
 import { maxDateValidator, minDateValidator } from '../../core/validators/date-range.validator';
@@ -226,6 +227,9 @@ export class DynamicFormService {
             break;
           case 'max':
             validators.push(Validators.max(row.validator));
+            break;
+          case 'decimal':
+            validators.push(decimalPlacesValidator(row.validator));
             break;
           case 'minDate': {
             hasMinDateValidation = true;

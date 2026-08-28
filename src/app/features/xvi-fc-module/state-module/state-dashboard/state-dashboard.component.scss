@@ -76,17 +76,11 @@
   gap: 1rem;
 }
 
-.dashboard-container {
-  border-radius: var(--radius-split-squared);
-  background: var(--color-primary-accent);
-  margin-inline: 0.5rem;
-}
-
 .top-accent {
   border-radius: 8px;
 }
 
-.dashboard-container .content-wrap {
+main {
   padding-inline: 2rem !important;
 }
 

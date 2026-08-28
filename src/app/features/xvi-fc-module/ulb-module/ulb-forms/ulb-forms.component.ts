@@ -299,6 +299,12 @@ export class UlbFormsComponent implements OnInit {
       return;
     }
 
+    const ulbId = this.resolveUlbId();
+    if (!ulbId) {
+      this.budgetDocError.set('ULB context is missing. Please refresh the page.');
+      return;
+    }
+
     if (file.type !== 'application/pdf') {
       this.budgetDocError.set('Only PDF files are allowed.');
       return;
@@ -319,7 +325,7 @@ export class UlbFormsComponent implements OnInit {
     }
 
     try {
-      const folder = `budgets/${doc.designYear}`;
+      const folder = `budgets/${doc.designYear}/${ulbId}`;
       const [signedUrl] = await firstValueFrom(
         this.budgetDocumentService.getSignedUrls([
           {

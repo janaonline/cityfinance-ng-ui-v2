@@ -58,6 +58,50 @@ describe('EulbRowsDialogComponent', () => {
     component = fixture.componentInstance;
   });
 
+  // ─── initialValidationStatusFilter ─────────────────────────────────────────
+  // `MAT_DIALOG_DATA` is provided by reference (`useValue`), and the component reads `this.data`
+  // in `ngOnInit()` — not yet triggered by the shared `beforeEach` above (no `detectChanges()`
+  // there) — so mutating the already-injected data object before `detectChanges()` here reaches it.
+
+  describe('initialValidationStatusFilter', () => {
+    it('pre-selects the Invalid filter and includes it in the first getRows call', () => {
+      const data = TestBed.inject(MAT_DIALOG_DATA) as EulbRowsDialogData;
+      data.initialValidationStatusFilter = 'INVALID';
+
+      fixture.detectChanges();
+
+      expect(component.filterForm.get('validationStatus')!.value).toBe('INVALID');
+      expect(service.getRows).toHaveBeenCalledWith(
+        stateId,
+        yearId,
+        jasmine.objectContaining({ validationStatus: 'INVALID' }),
+      );
+    });
+
+    it('defaults to the "All" filter when no initialValidationStatusFilter is provided', () => {
+      fixture.detectChanges();
+
+      expect(component.filterForm.get('validationStatus')!.value).toBe('');
+      expect(service.getRows).toHaveBeenCalledWith(
+        stateId,
+        yearId,
+        jasmine.objectContaining({ validationStatus: undefined }),
+      );
+    });
+  });
+
+  // ─── "Error field" filter removed (now matches Devolution Formula, which never had one) ────
+
+  it('no longer has an errorField control on the filter form', () => {
+    fixture.detectChanges();
+    expect(component.filterForm.contains('errorField')).toBeFalse();
+  });
+
+  it('no longer renders the "Error field" dropdown', () => {
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('#eulb-efield'))).toBeNull();
+  });
+
   it('saveRow calls update API with the same row edit payload shape', () => {
     component.editForm = createEditForm({
       electedBodyStatus: 'Constituted',
@@ -514,7 +558,7 @@ describe('EulbRowsDialogComponent', () => {
         formFieldType: 'select',
         options: ['Constituted', 'Not Constituted', '6th Schedule'],
       },
-      { key: 'dateOfConstitution', label: 'Date on which the elected body is in place.', formFieldType: 'date' },
+      { key: 'dateOfConstitution', label: 'Date on which the elected body is in place', formFieldType: 'date' },
       { key: 'dateOfExpiry', label: 'Date of Expiry', formFieldType: 'date' },
       { key: 'remarks', label: 'Remarks', formFieldType: 'text' },
     ];

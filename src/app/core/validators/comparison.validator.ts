@@ -64,7 +64,9 @@ export function compareFieldsValidator(controlName: string, matchingControlName:
  * as built by `DynamicFormService.toFormGroup()`) — unlike `compareFieldsValidator` above, this
  * does not navigate into a `.get('value')` sub-control, since `toFormGroup()`'s controls don't
  * have one. Sets/clears a `matchesField` error on `fieldKey`'s own control (the field that
- * declared `matchesField`, e.g. confirm-account-number), not on `targetFieldKey`.
+ * declared `matchesField`, e.g. confirm-account-number), not on `targetFieldKey`. Preserves any
+ * other errors already set on `fieldKey`'s control (e.g. `required`) rather than clobbering them,
+ * same as `actualLessThanOrEqualToTargetValidator` above.
  *
  * Reads controls via `.controls[key]` rather than `.get(key)` — `AbstractControl.get()` splits a
  * dotted string into a nested path (`'bankDetails.name'` -> `controls.bankDetails.controls.name`),
@@ -79,10 +81,13 @@ export function matchesFieldValidator(fieldKey: string, targetFieldKey: string) 
       return null;
     }
 
+    const existingErrors = control.errors;
     if (control.value !== targetControl.value) {
-      control.setErrors({ matchesField: true });
-    } else {
-      control.setErrors(null);
+      control.setErrors({ ...existingErrors, matchesField: true });
+    } else if (existingErrors?.['matchesField']) {
+      const rest = { ...existingErrors };
+      delete rest['matchesField'];
+      control.setErrors(Object.keys(rest).length ? rest : null);
     }
     return null;
   };

@@ -1,5 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
+/** Every display unit `InrFormatPipe`/`AmountDisplayModeService` know how to render. */
+export type InrFormat = 'auto' | 'cr' | 'lakh' | 'k' | 'inr' | 'raw';
+
 @Pipe({
   name: 'inrFormat',
 })
@@ -19,7 +22,7 @@ export class InrFormatPipe implements PipeTransform {
    */
   transform(
     value: unknown,
-    format: 'auto' | 'cr' | 'lakh' | 'k' | 'inr' | 'raw' = 'auto',
+    format: InrFormat = 'auto',
     options: {
       showSymbol?: boolean;
       showUnit?: boolean;

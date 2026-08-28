@@ -16,6 +16,7 @@ import { OcrValidationJobStatusResponse } from '../ocr-validation/ocr-validation
 interface OcrValidationListRow {
   jobId: string;
   batchId: string;
+  source: string;
   filename: string;
   extractionModel: string;
   validationModel: string;
@@ -75,6 +76,7 @@ export class OcrValidationListComponent implements OnInit {
   readonly displayedColumns: string[] = [
     'jobAndFile',
     'batchId',
+    'source',
     'models',
     'status',
     'expected',
@@ -159,6 +161,7 @@ export class OcrValidationListComponent implements OnInit {
     this.exporting.set(true);
 
     this.ocrService.dumpOcrValidationJobs({
+      source: this.ocrService.source,
       batch_id: batchId.trim() || undefined,
       job_id: jobId.trim() || undefined,
       filename: filename.trim() || undefined,
@@ -273,6 +276,7 @@ export class OcrValidationListComponent implements OnInit {
 
     this.ocrService
       .listOcrValidationJobs({
+        source: this.ocrService.source,
         batch_id: batchId.trim() || undefined,
         job_id: jobId.trim() || undefined,
         filename: filename.trim() || undefined,
@@ -310,6 +314,7 @@ export class OcrValidationListComponent implements OnInit {
     return {
       jobId: job.job_id || '—',
       batchId: job.batch_id || '—',
+      source: job.source || '—',
       filename: job.filename || '—',
       extractionModel: job.extraction_model || '—',
       validationModel: job.validation_model || '—',

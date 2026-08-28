@@ -34,11 +34,16 @@ export class ProfileVerificationService {
   saveUlbContacts(
     userId: string,
     contacts: UlbContacts,
+    saveToken: string,
   ): Observable<{ ok: boolean; fieldErrors?: Record<string, string> }> {
     return this.http
       .patch(`${environment.api.url2}users/${userId}/profile-contacts`, {
         ...contacts,
+        saveToken,
         isXVIFCProfileVerified: true,
+        // saveUlbContacts() is only ever called after the Nodal Officer's OTP has been verified —
+        // saveToken is the backend's actual proof of that (see issueProfileSaveToken).
+        isXviFcEmailVerified: true,
       })
       .pipe(
         map(() => ({ ok: true })),
@@ -106,6 +111,8 @@ export class ProfileVerificationService {
         designation: profile.designation,
         saveToken,
         isXVIFCProfileVerified: true,
+        // saveStateProfile() is only ever called after verifyProfileOtp() has succeeded.
+        isXviFcEmailVerified: true,
         ...extraFields,
       })
       .pipe(

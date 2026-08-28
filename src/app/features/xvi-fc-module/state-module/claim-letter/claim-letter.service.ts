@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, expand, map, reduce } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { parseContentDispositionFileName, XviFcDownloadedFile } from '../../download-file-name.util';
 import { UploadedFileMetadata } from '../../../../shared/dynamic-form/components/file/file-metadata.types';
 import {
   CLAIM_LETTER_ULB_ROWS_PAGE_SIZE,
@@ -200,9 +201,20 @@ export class ClaimLetterService {
 
   /** Server-rendered PDF of the same document `getDocumentData()` returns as JSON — rendered
    *  backend-side (not client-side `pdfmake`, which needs `'unsafe-eval'` in `script-src` and
-   *  breaks under a strict CSP) — mirrors Devolution Formula's `downloadTemplate()` blob pattern. */
-  downloadDocumentPdf(claimLetterId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}${claimLetterId}/document/pdf`, { responseType: 'blob' });
+   *  breaks under a strict CSP) — mirrors Devolution Formula's `downloadTemplate()` blob pattern.
+   *  `observe: 'response'` lets the caller read the backend's complete `Content-Disposition`
+   *  filename via `download-file-name.util.ts`'s `parseContentDispositionFileName` — the component
+   *  saves it verbatim (falling back to a literal derived from `getDocumentData()`'s `refNo` if
+   *  that header is missing/unparseable), rather than reconstructing it client-side. */
+  downloadDocumentPdf(claimLetterId: string): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${claimLetterId}/document/pdf`, { responseType: 'blob', observe: 'response' })
+      .pipe(
+        map((response) => ({
+          blob: response.body as Blob,
+          fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
+        })),
+      );
   }
 
   /**
