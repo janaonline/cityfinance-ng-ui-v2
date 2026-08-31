@@ -247,6 +247,13 @@ describe('EulbPostUpdateComponent', () => {
     expect(component.isLoadingRows()).toBeFalse();
   });
 
+  it('breadcrumb reads Elected Body Status > Update Elected Body Status, linking back to the form', () => {
+    expect(component.breadcrumbLinks()).toEqual([
+      { label: 'Elected Body Status', routerLink: ['/xvifc', yearId, 'elected-body-status'] },
+      { label: 'Update Elected Body Status' },
+    ]);
+  });
+
   it('shows not-available state and does not call rows endpoint when canUpdate is false', () => {
     service.getPostSubmissionUpdateMetadata.and.returnValue(
       of(
