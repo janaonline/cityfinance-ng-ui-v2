@@ -28,6 +28,7 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     pageCount: null,
     mimeType: null,
     versionLabel: null,
+    version: null,
     uploadedAt: null,
     uploaderUserId: null,
     uploaderRole: null,
