@@ -233,7 +233,7 @@
                             Manual review requested — our team will review this document within 48 hours.
                           </div>
                         } @else if (canDelete() && !sectionLocked()) {
-                          @if (doc.retryValidationCount > 0) {
+                          @if (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1) {
                             <div class="d-flex mt-2">
                               <button
                                 mat-stroked-button
