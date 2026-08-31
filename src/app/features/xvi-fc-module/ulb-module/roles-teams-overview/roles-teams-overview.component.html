@@ -452,8 +452,12 @@
                                   <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                                   Sending…
                                 } @else if (resendCooldown() > 0) {
-                                  <mat-icon style="font-size: 0.9rem; width: 0.9rem; height: 0.9rem">schedule</mat-icon>
-                                  Resend in {{ resendCooldown() }}s
+                                  <span class="d-inline-flex align-items-center gap-1">
+                                    <mat-icon style="font-size: 0.9rem; width: 0.9rem; height: 0.9rem"
+                                      >schedule</mat-icon
+                                    >
+                                    Resend in {{ resendCooldown() }}s
+                                  </span>
                                 } @else {
                                   Resend OTP
                                 }
