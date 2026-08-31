@@ -82,6 +82,10 @@ export interface UploadDocument extends UploadDocumentDef {
   pageCount: number | null;
   mimeType: string | null;
   versionLabel: string | null;
+  /** 1 for the first upload, 2+ once the ULB has re-uploaded — a re-upload that still fails
+   *  should offer manual review immediately, same as a failed retry, so this feeds that gate
+   *  alongside retryValidationCount instead of being purely cosmetic. */
+  version: number | null;
   uploadedAt: Date | null;
   uploaderUserId: string | null;
   uploaderRole: string | null;
@@ -96,7 +100,9 @@ export interface UploadDocument extends UploadDocumentDef {
   // ADMIN's verdict on a manual-review request for this document — null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
   // How many times the ULB has retried OCR on this exact uploaded file — persisted server-side,
-  // so it survives a reload. Gates the "Request Manual Review" button (retried at least once).
+  // so it survives a reload. Resets to 0 on every re-upload (a fresh currentUpload). Two failed
+  // retries on the same file (not just one) offers "Request Manual Review" — see `version` below
+  // for the separate, one-re-upload-is-enough threshold that covers the re-upload case.
   retryValidationCount: number;
   // When the most recent retry was kicked off — null if never retried. Used (falling back to
   // uploadedAt) as the reference point for the stuck-processing poll timeout.
@@ -244,6 +250,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     pageCount: null,
     mimeType: null,
     versionLabel: null,
+    version: null,
     uploadedAt: null,
     uploaderUserId: null,
     uploaderRole: null,
@@ -612,6 +619,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             localPreviewUrl,
             mimeType: file.type,
             versionLabel: upload.versionLabel,
+            version: upload.version,
             uploadId: upload.uploadId,
             uploadedAt: new Date(upload.uploadedAt),
             uploaderUserId: this.getLoggedInUserId(),
@@ -939,6 +947,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             pageCount: cu.file.pageCount,
             mimeType: cu.file.mimeType,
             versionLabel: cu.versionLabel,
+            version: cu.version,
             uploadedAt: new Date(cu.uploadedAt),
             uploaderUserId: cu.userInfo?.userId ?? null,
             uploaderRole: cu.userInfo?.role ?? null,
