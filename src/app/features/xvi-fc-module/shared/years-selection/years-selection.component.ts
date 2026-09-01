@@ -92,6 +92,15 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // TEMP — the v2 years-selection screen isn't launched for production yet.
+    // Prod users get bounced to the legacy v1 home page instead. Remove once v2 goes live in prod.
+    // if (environment.isProduction) {
+    //   // replace (not href) so this route isn't left in history — otherwise
+    //   // Back from v1 lands here and immediately re-redirects forward, looping
+    //   window.location.replace(`${environment.ui.urlV1.replace(/\/$/, '')}/fc-home-page`);
+    //   return;
+    // }
+
     // Block back navigation — years selection is the entry point; only logout exits
     history.pushState(null, '', window.location.href);
     this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
@@ -100,9 +109,7 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
 
     this.http.get<any>(`${environment.api.url2}xvi-fc/years`).subscribe({
       next: (response) => {
-        const items: YearItem[] = Array.isArray(response)
-          ? response
-          : (response?.data ?? []);
+        const items: YearItem[] = Array.isArray(response) ? response : (response?.data ?? []);
         if (items.length > 0) {
           this.yearItems = items;
           const [first, ...rest] = items;

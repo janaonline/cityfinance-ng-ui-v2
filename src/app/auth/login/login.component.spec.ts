@@ -216,6 +216,6 @@ describe('LoginComponent', () => {
   it('should navigate to forgot password with the current type', () => {
     component['onForgotPassword']();
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/forgot-password', '16thFC']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/reset-password', '16thFC']);
   });
 });

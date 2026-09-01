@@ -29,7 +29,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
         number: 2,
         question: 'I forgot my password. What should I do?',
         answer:
-          '<p>Use the <strong>Forgot Password</strong> option on the login screen. You will receive an OTP on your registered email address to reset your password.</p>',
+          '<p>Use the <strong>Reset Password</strong> option on the login screen. You will receive an OTP on your registered email address to reset your password.</p>',
       },
     ],
   },
