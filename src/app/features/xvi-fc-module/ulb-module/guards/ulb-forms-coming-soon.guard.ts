@@ -6,6 +6,9 @@ import { inject } from '@angular/core';
 // Added 2026-08-26. Meant to live only a few days, until ULB forms actually launch.
 // To remove: delete this file, remove its import/usage from xvi-fc-module.routes.ts,
 // and delete shared/ulb-forms-coming-soon/ (component) + its route in app.routes.ts.
+//
+// STILL ACTIVE as of the 2026-09-01 login/nav production cutover — kept deliberately;
+// ULB forms were not yet confirmed ready. Remove per the instructions above once they are.
 // ============================================================================
 
 const COMING_SOON_PATH = ['/xvifc-forms-coming-soon'];
