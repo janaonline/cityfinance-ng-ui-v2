@@ -1,7 +1,7 @@
 const baseUrl = window.location.origin;
 //let baseUrl = 'http://localhost:8080';
 let GoogleTagID = 'G-803HPPLFMM';
-let isProduction: boolean = false;
+let isProduction: boolean = true;
 let STORAGE_BASEURL = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
 let env = 'dev';
 // let url3 = baseUrl + '/api/v3/';

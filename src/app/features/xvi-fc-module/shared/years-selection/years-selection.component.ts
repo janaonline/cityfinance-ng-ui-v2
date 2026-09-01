@@ -92,6 +92,13 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // TEMP — the v2 years-selection screen isn't launched for production yet.
+    // Prod users get bounced to the legacy v1 home page instead. Remove once v2 goes live in prod.
+    if (environment.isProduction) {
+      window.location.href = `${environment.ui.urlV1.replace(/\/$/, '')}/fc-home-page`;
+      return;
+    }
+
     // Block back navigation — years selection is the entry point; only logout exits
     history.pushState(null, '', window.location.href);
     this.popstateSub = fromEvent<PopStateEvent>(window, 'popstate').subscribe(() => {
