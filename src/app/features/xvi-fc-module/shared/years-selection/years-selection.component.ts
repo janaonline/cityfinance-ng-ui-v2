@@ -95,7 +95,9 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
     // TEMP — the v2 years-selection screen isn't launched for production yet.
     // Prod users get bounced to the legacy v1 home page instead. Remove once v2 goes live in prod.
     if (environment.isProduction) {
-      window.location.href = `${environment.ui.urlV1.replace(/\/$/, '')}/fc-home-page`;
+      // replace (not href) so this route isn't left in history — otherwise
+      // Back from v1 lands here and immediately re-redirects forward, looping
+      window.location.replace(`${environment.ui.urlV1.replace(/\/$/, '')}/fc-home-page`);
       return;
     }
 
