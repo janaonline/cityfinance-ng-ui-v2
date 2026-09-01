@@ -17,12 +17,12 @@ export const AUTH_ROUTES: Routes = [
     canActivate: [noAuthGuard, loginTypeAvailabilityGuard],
   },
   {
-    path: 'forgot-password',
+    path: 'reset-password',
     loadComponent: () =>
       import('./forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
   },
   {
-    path: 'forgot-password/:type',
+    path: 'reset-password/:type',
     loadComponent: () =>
       import('./forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
   },
