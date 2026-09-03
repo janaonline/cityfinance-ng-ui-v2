@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { noAuthGuard } from '../core/guards/no-auth.guard';
-import { loginTypeAvailabilityGuard } from '../core/guards/login-type-availability.guard';
 
 export const AUTH_ROUTES: Routes = [
   {
@@ -12,17 +11,15 @@ export const AUTH_ROUTES: Routes = [
   {
     path: 'login/:type',
     loadComponent: () => import('./login/login.component').then((m) => m.LoginComponent),
-    // XVIFC_PROD_CUTOVER: if login-type-availability.guard.ts is deleted once isHiddenInProd is
-    // removed, also remove loginTypeAvailabilityGuard here (and its import above).
-    canActivate: [noAuthGuard, loginTypeAvailabilityGuard],
+    canActivate: [noAuthGuard],
   },
   {
-    path: 'forgot-password',
+    path: 'reset-password',
     loadComponent: () =>
       import('./forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
   },
   {
-    path: 'forgot-password/:type',
+    path: 'reset-password/:type',
     loadComponent: () =>
       import('./forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
   },

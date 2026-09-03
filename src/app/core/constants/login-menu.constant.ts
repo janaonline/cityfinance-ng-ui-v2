@@ -11,28 +11,14 @@ export interface IRoutePages {
     roles?: USER_TYPE[];
     isHiddenInProd?: boolean; // hidden once environment.isProduction is true; still shown in dev/staging/local
     icon?: string; // Bootstrap Icons class for this row; defaults to bi-box-arrow-in-right in the template
-    href?: string; // literal href, used as-is — for a destination that isn't V2's own auth/login/:type route,
-                    // e.g. SSR's coming-soon page below (rendered via [href], not [routerLink])
+    href?: string; // literal href, used as-is — for a destination that isn't V2's own auth/login/:type route
 }
 export const ROUTE_PAGES: IRoutePages[] = [{
-    // XVIFC_PROD_CUTOVER: delete this whole entry once the real 16th FC login is ready for
-    // production — at that point this row and the one below (isHiddenInProd) swap places.
-    type: 'xvifc-coming-soon',
-    label: 'XVI FC Grant',
-    icon: 'bi-rocket-takeoff-fill text-cfPrimary',
-    href: '/auth/login/16thfc', // SSR occupies the shared domain's root, so a relative path reaches it
-    isMenu: true,
-    isNew: true,
-}, {
     type: '16thFC',
     label: 'XVI FC Grant',
     route: '/xvifc/year',
     isMenu: true,
     isNew: true,
-    // XVIFC_PROD_CUTOVER: delete this line once the real 16th FC login is ready for production.
-    // This one flag re-enables this "XVI FC Grant" row (here and in SSR's login-menu.constant.ts)
-    // and this real login route (guarded by login-type-availability.guard.ts) at the same time.
-    isHiddenInProd: true,
     roles: [USER_TYPE.ULB, USER_TYPE.STATE, USER_TYPE.MoHUA, USER_TYPE.ADMIN]
 }, {
     type: '15thFC',

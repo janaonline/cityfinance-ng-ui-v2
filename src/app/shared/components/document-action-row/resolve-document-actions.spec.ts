@@ -62,6 +62,16 @@ describe('resolveDocumentActions', () => {
       expect(result).toEqual([]);
     });
 
+    it('shows only Re-upload (no Retry) once OCR processing has gone stale', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'PROCESSING', isStale: true }),
+      );
+      expect(result).toEqual([{ action: 'reupload', label: 'Re-upload', icon: 'bi-upload', disabled: false }]);
+    });
+
     it('shows Retry + Re-upload when OCR failed', () => {
       const result = resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'FAILED' }));
       expect(result.map((a) => a.action)).toEqual(['retry', 'reupload']);

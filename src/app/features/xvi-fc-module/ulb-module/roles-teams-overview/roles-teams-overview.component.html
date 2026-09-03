@@ -148,7 +148,10 @@
                       class="edit-icon-btn"
                       [color]="editingContact() === row.type ? undefined : 'primary'"
                       [class.is-active]="editingContact() === row.type"
-                      [disabled]="editingContact() !== null && editingContact() !== row.type"
+                      [disabled]="
+                        (editingContact() !== null && editingContact() !== row.type) ||
+                        (editingContact() === row.type && otpStep())
+                      "
                       [attr.aria-label]="(editingContact() === row.type ? 'Cancel editing ' : 'Edit ') + row.label"
                       (click)="toggleEdit(row.type)"
                     >
@@ -172,6 +175,14 @@
                 <th mat-header-cell *matHeaderCellDef class="d-none d-md-table-cell">DESIGNATION</th>
                 <td mat-cell *matCellDef="let row" class="d-none d-md-table-cell">
                   <span class="designation-badge">{{ row.label }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Email column (hidden on mobile — shown inline under the name there instead) -->
+              <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef class="d-none d-md-table-cell">EMAIL</th>
+                <td mat-cell *matCellDef="let row" class="d-none d-md-table-cell">
+                  <span class="contact-email-cell">{{ row.email || '—' }}</span>
                 </td>
               </ng-container>
 
@@ -215,7 +226,7 @@
                           class="badge rounded-pill text-bg-warning"
                           style="font-size: 10px; padding: 3px 8px; font-weight: 500"
                         >
-                          Email invalid
+                          {{ row.email ? 'Email invalid' : 'Email missing' }}
                         </span>
                       }
                       @if (row.mobileInvalid) {
@@ -247,6 +258,7 @@
                         Editing {{ row.label }}
                       </p>
 
+                      @if (!otpStep()) {
                       <form [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
                         <div class="row g-3">
                           <div class="col-12 col-md-4">
@@ -313,7 +325,7 @@
 
                           <div class="col-12 col-md-4">
                             <mat-form-field class="w-100" appearance="outline" subscriptSizing="dynamic">
-                              <mat-label>Email <span class="fw-normal text-muted">(optional)</span></mat-label>
+                              <mat-label>Email</mat-label>
                               <input
                                 matInput
                                 type="email"
@@ -325,7 +337,9 @@
                             </mat-form-field>
                             <div [id]="'email-err-' + row.type" aria-live="polite" aria-atomic="true">
                               @if (editForm.get('email')?.touched) {
-                                @if (editForm.get('email')?.hasError('email')) {
+                                @if (editForm.get('email')?.hasError('required')) {
+                                  <p class="text-danger small mt-1 mb-0">Email is required.</p>
+                                } @else if (editForm.get('email')?.hasError('email')) {
                                   <p class="text-danger small mt-1 mb-0">Enter a valid email address.</p>
                                 } @else if (editForm.get('email')?.hasError('maxlength')) {
                                   <p class="text-danger small mt-1 mb-0">Email must not exceed 254 characters.</p>
@@ -355,16 +369,28 @@
                         </div>
 
                         <div class="d-flex gap-2 justify-content-end mt-3 pt-2 border-top">
-                          <button mat-stroked-button type="button" [disabled]="isSaving()" (click)="cancelEdit()">
+                          <button
+                            mat-stroked-button
+                            type="button"
+                            [disabled]="isSaving() || sendingOtp()"
+                            (click)="cancelEdit()"
+                          >
                             Cancel
                           </button>
                           <button
                             mat-flat-button
                             color="primary"
                             type="submit"
-                            [disabled]="editForm.invalid || isSaving()"
+                            [disabled]="editForm.invalid || isSaving() || sendingOtp()"
                           >
-                            @if (isSaving()) {
+                            @if (sendingOtp()) {
+                              <span
+                                class="spinner-border spinner-border-sm me-1"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                              Sending OTP…
+                            } @else if (isSaving()) {
                               <span
                                 class="spinner-border spinner-border-sm me-1"
                                 role="status"
@@ -377,6 +403,87 @@
                           </button>
                         </div>
                       </form>
+                      }
+
+                      @if (otpStep()) {
+                        <div id="rt-otp-step" class="border rounded-3 p-3 bg-white">
+                          <p class="fw-bold mb-1">
+                            <mat-icon class="align-middle me-1" style="font-size: 1rem; width: 1rem; height: 1rem"
+                              >mail</mat-icon
+                            >
+                            Verify new email
+                          </p>
+                          <p class="text-muted small mb-3">
+                            We've sent a 4-digit code to <strong>{{ pendingEmail() }}</strong
+                            >. Enter it below to confirm this address before saving.
+                          </p>
+
+                          <div class="d-flex align-items-start gap-3 flex-wrap">
+                            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 160px">
+                              <mat-label>Enter OTP</mat-label>
+                              <input
+                                matInput
+                                type="text"
+                                inputmode="numeric"
+                                maxlength="4"
+                                [value]="otpValue()"
+                                (input)="onOtpInput($event)"
+                                autocomplete="one-time-code"
+                                aria-label="One-time password"
+                              />
+                            </mat-form-field>
+                            <div class="d-flex gap-2 flex-wrap align-items-center mt-1">
+                              <button
+                                mat-flat-button
+                                color="primary"
+                                type="button"
+                                [disabled]="!canConfirmOtp()"
+                                (click)="onConfirmOtp()"
+                              >
+                                @if (isSaving()) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                  Verifying…
+                                } @else {
+                                  Verify &amp; Save
+                                }
+                              </button>
+                              <button mat-stroked-button type="button" [disabled]="!canResend()" (click)="resendOtp()">
+                                @if (sendingOtp()) {
+                                  <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                  Sending…
+                                } @else if (resendCooldown() > 0) {
+                                  <span class="d-inline-flex align-items-center gap-1">
+                                    <mat-icon style="font-size: 0.9rem; width: 0.9rem; height: 0.9rem"
+                                      >schedule</mat-icon
+                                    >
+                                    Resend in {{ resendCooldown() }}s
+                                  </span>
+                                } @else {
+                                  Resend OTP
+                                }
+                              </button>
+                              <button mat-button type="button" [disabled]="isSaving()" (click)="cancelEdit()">
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+
+                          @if (saveError()) {
+                            <div
+                              class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0 small"
+                              role="alert"
+                            >
+                              <mat-icon
+                                class="flex-shrink-0"
+                                style="font-size: 1rem; width: 1rem; height: 1rem"
+                                aria-hidden="true"
+                                >error</mat-icon
+                              >
+                              {{ saveError() }}
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                 </td>

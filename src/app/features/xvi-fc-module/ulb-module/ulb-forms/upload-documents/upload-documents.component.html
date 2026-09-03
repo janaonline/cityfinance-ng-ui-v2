@@ -104,17 +104,23 @@
                       </div>
                     }
 
-                    <!-- PROCESSING: OCR running -->
+                    <!-- PROCESSING: OCR running (switches to the stale/error look once past the 5-minute threshold) -->
                     @if (doc.status === 'processing') {
                       <div class="uploaded-block">
                         <div
-                          class="file-chip file-chip--processing d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                          class="file-chip d-flex align-items-center gap-2 px-3 py-2 rounded-2"
+                          [class.file-chip--processing]="!doc.isStale"
+                          [class.file-chip--stale]="doc.isStale"
                         >
-                          <mat-progress-bar
-                            mode="indeterminate"
-                            class="doc-ocr-progress flex-grow-0"
-                            style="width: 60px"
-                          ></mat-progress-bar>
+                          @if (!doc.isStale) {
+                            <mat-progress-bar
+                              mode="indeterminate"
+                              class="doc-ocr-progress flex-grow-0"
+                              style="width: 60px"
+                            ></mat-progress-bar>
+                          } @else {
+                            <mat-icon class="chip-stale-icon">error_outline</mat-icon>
+                          }
                           <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{
                             doc.fileName
                           }}</span>
@@ -124,15 +130,19 @@
                           @if (doc.versionLabel) {
                             <span class="chip-meta">· {{ doc.versionLabel }}</span>
                           }
-                          <span class="processing-badge ms-1"> <span class="processing-dot">●</span> VERIFYING </span>
+                          @if (!doc.isStale) {
+                            <span class="processing-badge ms-1"> <span class="processing-dot">●</span> VERIFYING </span>
+                          } @else {
+                            <span class="stale-badge ms-1"> <span class="stale-dot">●</span> FAILED </span>
+                          }
                         </div>
-                        @if (doc.ocrProgressStep) {
+                        @if (doc.ocrProgressStep && !doc.isStale) {
                           <p class="uploader-meta body-xs text-muted mt-1 mb-0">{{ doc.ocrProgressStep }}</p>
                         }
                         @if (doc.isStale) {
-                          <div class="manual-review-note mt-2">
-                            <mat-icon class="align-middle">schedule</mat-icon>
-                            This is taking longer than expected. You can retry verification or re-upload the file.
+                          <div class="stale-processing-note mt-2">
+                            <mat-icon class="align-middle">error_outline</mat-icon>
+                            Something went wrong while verifying this document. You can re-upload the file.
                           </div>
                           <div class="d-flex gap-2 mt-2">
                             <app-document-action-row
@@ -223,7 +233,7 @@
                             Manual review requested — our team will review this document within 48 hours.
                           </div>
                         } @else if (canDelete() && !sectionLocked()) {
-                          @if (doc.retryValidationCount > 0) {
+                          @if (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1) {
                             <div class="d-flex mt-2">
                               <button
                                 mat-stroked-button
