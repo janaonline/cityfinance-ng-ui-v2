@@ -350,7 +350,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param fieldKey - The field key (e.g. `'dateOfConstitution'`).
    */
   getEditDateMin(fieldKey: string): string | null {
-    return getEulbEditDateMin(this.getRowEditFieldConfig(fieldKey));
+    return getEulbEditDateMin(this.getRowEditFieldConfig(fieldKey), (key) => this.editForm.get(key)?.value);
   }
 
   /**
@@ -360,7 +360,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param fieldKey - The field key (e.g. `'dateOfExpiry'`).
    */
   getEditDateMax(fieldKey: string): string | null {
-    return getEulbEditDateMax(this.getRowEditFieldConfig(fieldKey));
+    return getEulbEditDateMax(this.getRowEditFieldConfig(fieldKey), (key) => this.editForm.get(key)?.value);
   }
 
   /**
