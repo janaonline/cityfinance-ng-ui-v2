@@ -81,6 +81,29 @@ describe('EULB row edit helpers', () => {
     expect(getEulbEditDateMax(undefined)).toBeNull();
   });
 
+  it('resolves a FIELD:<key> maxDate against the sibling value from fieldValueLookup', () => {
+    const field: ConditionalFieldConfig = {
+      key: 'dateOfExpiry',
+      label: 'Date of Expiry',
+      formFieldType: 'date',
+      validations: [{ name: 'maxDate', validator: 'FIELD:dateOfConstitution+5Y', message: 'Too late' }],
+    };
+    const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
+
+    expect(getEulbEditDateMax(field, lookup)).toBe('2029-06-01');
+  });
+
+  it('returns null for a FIELD:<key> maxDate when no fieldValueLookup is supplied', () => {
+    const field: ConditionalFieldConfig = {
+      key: 'dateOfExpiry',
+      label: 'Date of Expiry',
+      formFieldType: 'date',
+      validations: [{ name: 'maxDate', validator: 'FIELD:dateOfConstitution+5Y', message: 'Too late' }],
+    };
+
+    expect(getEulbEditDateMax(field)).toBeNull();
+  });
+
   it('builds cell error view models with joined tooltip text', () => {
     const vm = buildEulbRowCellErrorViewModel([
       { field: 'remarks', message: 'Remarks are required.' },
