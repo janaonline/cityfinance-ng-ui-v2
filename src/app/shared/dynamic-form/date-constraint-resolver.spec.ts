@@ -38,6 +38,56 @@ describe('resolveDateConstraint', () => {
     });
   });
 
+  describe('FIELD: relative expressions', () => {
+    it('resolves FIELD:<key> to the sibling field value with no offset', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
+      expect(resolveDateConstraint('FIELD:dateOfConstitution', BASE, lookup)?.getTime()).toBe(
+        dateOnly(2024, 6, 1).getTime(),
+      );
+    });
+
+    it('resolves FIELD:<key>+5Y to five years after the sibling field value', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE, lookup)?.getTime()).toBe(
+        dateOnly(2029, 6, 1).getTime(),
+      );
+    });
+
+    it('resolves FIELD:<key>-30D to thirty days before the sibling field value', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
+      expect(resolveDateConstraint('FIELD:dateOfConstitution-30D', BASE, lookup)?.getTime()).toBe(
+        dateOnly(2024, 5, 2).getTime(),
+      );
+    });
+
+    it('accepts any normalizeDateValue-supported shape for the sibling value (e.g. a Date object)', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? new Date(2024, 5, 1, 9, 30) : undefined);
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE, lookup)?.getTime()).toBe(
+        dateOnly(2029, 6, 1).getTime(),
+      );
+    });
+
+    it('returns null when no fieldValueLookup is supplied', () => {
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE)).toBeNull();
+    });
+
+    it('returns null when the referenced field has no value', () => {
+      const lookup = () => undefined;
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE, lookup)).toBeNull();
+    });
+
+    it('returns null when the referenced field value is unparseable', () => {
+      const lookup = () => 'not-a-date';
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE, lookup)).toBeNull();
+    });
+
+    it('ignores baseDate — the sibling field value is always the base, not baseDate', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
+      const resolved = resolveDateConstraint('FIELD:dateOfConstitution+5Y', dateOnly(1999, 1, 1), lookup);
+      expect(resolved?.getTime()).toBe(dateOnly(2029, 6, 1).getTime());
+    });
+  });
+
   describe('fixed date strings', () => {
     it('resolves an ISO YYYY-MM-DD string', () => {
       expect(resolveDateConstraint('2027-04-01')?.getTime()).toBe(dateOnly(2027, 4, 1).getTime());
