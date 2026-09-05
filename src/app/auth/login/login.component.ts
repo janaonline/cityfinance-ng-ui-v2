@@ -145,7 +145,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       types: ['16thFC'],
     },
     {
-      title: 'XVI Operational Guidelines',
+      title: 'XVI FC Operational Guidelines',
       file: this.EXTERNAL_LINKS.og_ssr,
       types: ['16thFC'],
     },
