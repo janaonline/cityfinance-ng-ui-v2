@@ -6,7 +6,34 @@
     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
         <h1 class="page-title mb-0">Review ULB Submissions</h1>
         <span class="badge rounded-pill fy-badge">{{ yearLabel() }}</span>
-        <span class="badge rounded-pill form-wise-badge ms-auto ms-md-0">Form-wise Review</span>
+        <span class="badge rounded-pill form-wise-badge">Form-wise Review</span>
+        <button type="button" class="system-checks-trigger btn btn-link ms-auto" (click)="toggleSystemChecks()"
+            [attr.aria-expanded]="showSystemChecks()">
+            <i class="bi bi-info-circle"></i>
+            <span>What the system checked</span>
+            <i class="bi bi-chevron-down system-checks-chevron" [class.system-checks-chevron--open]="showSystemChecks()"></i>
+        </button>
+    </div>
+
+    <div class="system-checks-wrapper" [@expandCollapse]="showSystemChecks() ? 'expanded' : 'collapsed'">
+        <div class="system-checks-panel mb-3">
+            <p class="system-checks-caption">Runs on every document in the {{ yearLabel() }} batch.</p>
+
+            <p class="system-checks-heading">Checked automatically</p>
+            <ul class="system-checks-list system-checks-list--pass">
+                <li><i class="bi bi-check-circle-fill"></i> The file opens, is legible, and contains a table</li>
+                <li><i class="bi bi-check-circle-fill"></i> The document type, ULB name and financial year all match</li>
+                <li><i class="bi bi-check-circle-fill"></i> The expected header or title is present</li>
+                <li><i class="bi bi-check-circle-fill"></i> Auditor's Report: letterhead, seal and signatures are present</li>
+            </ul>
+
+            <p class="system-checks-heading">Not checked</p>
+            <ul class="system-checks-list system-checks-list--skip">
+                <li><i class="bi bi-dash-circle"></i> The figures inside. No arithmetic, no year-on-year check, no external record.</li>
+            </ul>
+
+            <p class="system-checks-disclaimer">Checks are AI-assisted and can be wrong. A passed check is not an approval.</p>
+        </div>
     </div>
 
     <p class="page-subtitle text-secondary mb-4">
@@ -101,9 +128,12 @@
                     </ng-container>
 
                     <ng-container matColumnDef="daysPending">
-                        <th mat-header-cell *matHeaderCellDef>Days Pending</th>
+                        <th mat-header-cell *matHeaderCellDef
+                            matTooltip="Days since this form was submitted to the state for review. Only shown while a form is Under Review."
+                            matTooltipPosition="above">Pending Since</th>
                         <td mat-cell *matCellDef="let row">
-                            @if (daysPending(row.lastUpdatedAt); as days) {
+                            @let days = daysPending(row);
+                            @if (days !== null) {
                             <span class="badge rounded-pill days-pending-badge">{{ days }} days</span>
                             } @else {
                             <span class="text-secondary">&mdash;</span>

@@ -276,10 +276,22 @@
   white-space: nowrap;
   flex-shrink: 0;
 
-  &--queued    { background: #f1f5f9; color: #475569; }
-  &--processing { background: #dbeafe; color: #1d4ed8; }
-  &--completed  { background: #dcfce7; color: #166534; }
-  &--failed     { background: #fee2e2; color: #b91c1c; }
+  &--queued {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  &--processing {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+  &--completed {
+    background: #dcfce7;
+    color: #166534;
+  }
+  &--failed {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
 }
 
 /* Spinner */
@@ -295,7 +307,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Assessment banner */
@@ -303,19 +317,51 @@
 .assessment-banner {
   border-left: 4px solid currentColor;
 
-  &.assessment--pass              { background: #f0fdf4; color: #166534;  border-color: #22c55e; }
-  &.assessment--warning           { background: #fffbeb; color: #92400e;  border-color: #f59e0b; }
-  &.assessment--fail              { background: #fff1f2; color: #9f1239;  border-color: #f43f5e; }
-  &.assessment--extraction-fail   { background: #fff7ed; color: #9a3412;  border-color: #f97316; }
-  &.assessment--skipped           { background: #f8fafc; color: #475569;  border-color: #94a3b8; }
+  &.assessment--pass {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #22c55e;
+  }
+  &.assessment--warning {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #f59e0b;
+  }
+  &.assessment--fail {
+    background: #fff1f2;
+    color: #9f1239;
+    border-color: #f43f5e;
+  }
+  &.assessment--extraction-fail {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #f97316;
+  }
+  &.assessment--skipped {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #94a3b8;
+  }
 }
 
 /* Check-status badge variants */
 
-.check-status--pass    { background: #dcfce7 !important; color: #166534 !important; }
-.check-status--warning { background: #fef9c3 !important; color: #92400e !important; }
-.check-status--fail    { background: #fee2e2 !important; color: #b91c1c !important; }
-.check-status--unknown { background: #f1f5f9 !important; color: #475569 !important; }
+.check-status--pass {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+.check-status--warning {
+  background: #fef9c3 !important;
+  color: #92400e !important;
+}
+.check-status--fail {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+.check-status--unknown {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
 
 /* Confidence chip: small % pill shown next to an extracted field's value */
 
@@ -327,10 +373,22 @@
   font-weight: 700;
 }
 
-.confidence-chip.text-success { background: #dcfce7; color: #166534 !important; }
-.confidence-chip.text-warning { background: #fef9c3; color: #92400e !important; }
-.confidence-chip.text-danger  { background: #fee2e2; color: #b91c1c !important; }
-.confidence-chip.text-secondary { background: #f1f5f9; color: #475569 !important; }
+.confidence-chip.text-success {
+  background: #dcfce7;
+  color: #166534 !important;
+}
+.confidence-chip.text-warning {
+  background: #fef9c3;
+  color: #92400e !important;
+}
+.confidence-chip.text-danger {
+  background: #fee2e2;
+  color: #b91c1c !important;
+}
+.confidence-chip.text-secondary {
+  background: #f1f5f9;
+  color: #475569 !important;
+}
 
 /* Usage metadata */
 
@@ -506,6 +564,47 @@
 .failure-text {
   margin: 0;
   line-height: 1.5;
+}
+
+/* Per-page readability modal */
+
+.prq-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.prq-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px;
+  max-height: min(80vh, 620px);
+  overflow: hidden;
+  background: #fff;
+}
+
+.prq-modal-header {
+  flex: 0 0 auto;
+}
+
+.prq-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 576px) {
+  .prq-modal {
+    max-width: 100%;
+    max-height: 85vh;
+  }
 }
 
 /* Responsive */

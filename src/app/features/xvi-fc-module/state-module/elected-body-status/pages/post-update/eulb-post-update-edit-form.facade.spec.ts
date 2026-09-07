@@ -1,6 +1,8 @@
-import { ValidatorFn } from '@angular/forms';
+import { ValidatorFn, Validators } from '@angular/forms';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../../dynamic-form-visibility.service';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { resolveDateConstraint } from '../../../../../../shared/dynamic-form/date-constraint-resolver';
+import { maxDateValidator, minDateValidator } from '../../../../../../core/validators/date-range.validator';
 import { EulbPostSubmissionUpdateRow, EulbPostSubmissionUpdateValidateRowPayload } from '../../eulb-status.models';
 import { EulbPostUpdateEditFormFacade } from './eulb-post-update-edit-form.facade';
 
@@ -45,6 +47,36 @@ describe('EulbPostUpdateEditFormFacade', () => {
       dynamicService: new DynamicFormStub(),
       visibilityService: new VisibilityStub(),
       markForCheck,
+    });
+  }
+
+  /** Unlike DynamicFormStub (a no-op), this resolves minDate/maxDate for real — including
+   *  FIELD:<key> tokens via the fieldValueLookup callback — so tests can assert on actual control
+   *  validity, proving `applyEnabledWhen` threads the lookup through end-to-end. */
+  class DateAwareDynamicFormStub implements Pick<DynamicFormService, 'bindValidations'> {
+    bindValidations(
+      validations: ConditionalFieldConfig['validations'] | false | undefined,
+      _field?: unknown,
+      fieldValueLookup?: (key: string) => unknown,
+    ): ValidatorFn | null {
+      const validators: ValidatorFn[] = [];
+      for (const v of validations || []) {
+        if (v.name === 'minDate') {
+          validators.push(minDateValidator(resolveDateConstraint(v.validator, undefined, fieldValueLookup)));
+        }
+        if (v.name === 'maxDate') {
+          validators.push(maxDateValidator(resolveDateConstraint(v.validator, undefined, fieldValueLookup)));
+        }
+      }
+      return validators.length ? Validators.compose(validators) : null;
+    }
+  }
+
+  function createFacadeWithDateAwareValidation(): EulbPostUpdateEditFormFacade {
+    return new EulbPostUpdateEditFormFacade({
+      dynamicService: new DateAwareDynamicFormStub(),
+      visibilityService: new VisibilityStub(),
+      markForCheck: () => undefined,
     });
   }
 
@@ -267,5 +299,64 @@ describe('EulbPostUpdateEditFormFacade', () => {
     facade.form.controls.remarks.setValue('Change after reset');
 
     expect(changeCount).toBe(0);
+  });
+
+  describe('dateOfExpiry FIELD-relative maxDate (dateOfConstitution + N years)', () => {
+    function createFieldsWithRelativeExpiry(): ConditionalFieldConfig[] {
+      return createFields().map((field) =>
+        field.key === 'dateOfExpiry'
+          ? {
+              ...field,
+              validations: [
+                {
+                  name: 'maxDate',
+                  validator: 'FIELD:dateOfConstitution+5Y',
+                  message: 'Date of Expiry cannot be more than 5 years after the date on which the elected body is in place.',
+                },
+              ],
+            }
+          : field,
+      );
+    }
+
+    it('flags dateOfExpiry as invalid when it is more than 5 years after dateOfConstitution', () => {
+      const facade = createFacadeWithDateAwareValidation();
+      facade.startEdit({
+        payload: createPayload({ dateOfConstitution: '2024-06-01', dateOfExpiry: '2029-06-02' }),
+        fields: createFieldsWithRelativeExpiry(),
+        canEdit: true,
+        onChange: () => undefined,
+      });
+
+      expect(facade.form.controls.dateOfExpiry.hasError('maxDate')).toBeTrue();
+    });
+
+    it('accepts dateOfExpiry exactly at dateOfConstitution + 5 years', () => {
+      const facade = createFacadeWithDateAwareValidation();
+      facade.startEdit({
+        payload: createPayload({ dateOfConstitution: '2024-06-01', dateOfExpiry: '2029-06-01' }),
+        fields: createFieldsWithRelativeExpiry(),
+        canEdit: true,
+        onChange: () => undefined,
+      });
+
+      expect(facade.form.controls.dateOfExpiry.hasError('maxDate')).toBeFalse();
+    });
+
+    it('recomputes dateOfExpiry validity when dateOfConstitution changes, without reloading the form', () => {
+      const facade = createFacadeWithDateAwareValidation();
+      facade.startEdit({
+        payload: createPayload({ dateOfConstitution: '2024-06-01', dateOfExpiry: '2029-06-02' }),
+        fields: createFieldsWithRelativeExpiry(),
+        canEdit: true,
+        onChange: () => undefined,
+      });
+      expect(facade.form.controls.dateOfExpiry.hasError('maxDate')).toBeTrue();
+
+      // Pushing dateOfConstitution a month later moves the +5Y bound past dateOfExpiry's value.
+      facade.form.controls.dateOfConstitution.setValue('2024-07-01');
+
+      expect(facade.form.controls.dateOfExpiry.hasError('maxDate')).toBeFalse();
+    });
   });
 });

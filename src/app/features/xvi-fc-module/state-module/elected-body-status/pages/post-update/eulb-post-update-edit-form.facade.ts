@@ -113,11 +113,11 @@ export class EulbPostUpdateEditFormFacade {
   }
 
   getEditDateMin(fieldKey: string): string | null {
-    return getEulbEditDateMin(this.getFieldConfig(fieldKey));
+    return getEulbEditDateMin(this.getFieldConfig(fieldKey), (key) => this.form.get(key)?.value);
   }
 
   getEditDateMax(fieldKey: string): string | null {
-    return getEulbEditDateMax(this.getFieldConfig(fieldKey));
+    return getEulbEditDateMax(this.getFieldConfig(fieldKey), (key) => this.form.get(key)?.value);
   }
 
   isFieldEnabled(fieldKey: string): boolean {
@@ -178,7 +178,9 @@ export class EulbPostUpdateEditFormFacade {
         if (canEdit) {
           control.enable({ emitEvent: false });
         }
-        const validators = this.dynamicService.bindValidations(field.validations, field);
+        const validators = this.dynamicService.bindValidations(field.validations, field, (key) =>
+          this.form.get(key)?.value,
+        );
         control.setValidators(validators);
         control.updateValueAndValidity({ emitEvent: false });
       } else {
@@ -217,20 +219,63 @@ export function createEulbPostUpdateEditForm(
   });
 }
 
+/** Matches the leading 'FIELD:<key>' segment of a minDate/maxDate relative expression (ignoring
+ *  any '+-N[DMY]' offset suffix) — used only to discover cross-field date-bound dependencies. */
+const FIELD_RELATIVE_KEY_PATTERN = /^FIELD:([A-Za-z0-9_]+)/;
+
+function extractFieldRelativeKey(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  return FIELD_RELATIVE_KEY_PATTERN.exec(value.trim())?.[1] ?? null;
+}
+
+/** Sibling field keys a field's minDate/maxDate (top-level or in `validations[]`) references via
+ *  a `FIELD:<key>` token — e.g. dateOfExpiry's maxDate referencing dateOfConstitution. */
+function collectDateBoundControllerKeys(field: ConditionalFieldConfig): string[] {
+  const keys = new Set<string>();
+  const consider = (value: unknown) => {
+    const key = extractFieldRelativeKey(value);
+    if (key) keys.add(key);
+  };
+
+  consider(field.minDate);
+  consider(field.maxDate);
+  for (const validation of field.validations ?? []) {
+    if (validation.name === 'minDate' || validation.name === 'maxDate') {
+      consider(validation.validator);
+    }
+  }
+
+  return [...keys];
+}
+
+/**
+ * Maps a "controller" field key to the fields that depend on it — either because their
+ * `enabledWhen` references it, or because their minDate/maxDate is a `FIELD:<key>` expression
+ * bound to it (e.g. dateOfExpiry's maxDate = dateOfConstitution + 5 years). Both kinds of
+ * dependents are re-applied identically by `applyEnabledWhen` whenever the controller's
+ * `valueChanges` fires.
+ */
 function createEnabledWhenDependencyMap(
   fields: readonly ConditionalFieldConfig[],
 ): Map<string, ConditionalFieldConfig[]> {
   const deps = new Map<string, ConditionalFieldConfig[]>();
 
-  for (const field of fields) {
-    if (!field.enabledWhen?.conditions?.length || !field.key) continue;
+  const addDependent = (controllerKey: string, field: ConditionalFieldConfig) => {
+    const dependents = deps.get(controllerKey) ?? [];
+    if (!dependents.some((dependent) => dependent.key === field.key)) {
+      dependents.push(field);
+    }
+    deps.set(controllerKey, dependents);
+  };
 
-    for (const condition of field.enabledWhen.conditions) {
-      const dependents = deps.get(condition.key) ?? [];
-      if (!dependents.some((dependent) => dependent.key === field.key)) {
-        dependents.push(field);
-      }
-      deps.set(condition.key, dependents);
+  for (const field of fields) {
+    if (!field.key) continue;
+
+    for (const condition of field.enabledWhen?.conditions ?? []) {
+      addDependent(condition.key, field);
+    }
+    for (const controllerKey of collectDateBoundControllerKeys(field)) {
+      addDependent(controllerKey, field);
     }
   }
 

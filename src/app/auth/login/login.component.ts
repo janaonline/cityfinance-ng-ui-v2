@@ -67,6 +67,15 @@ interface PanelContent {
   showResourceActions: boolean;
 }
 
+interface ReferenceDocument {
+  title: string;
+  file: string;
+  /** Which login type(s) (16thFC / 15thFC / ...) this document applies to. */
+  types: readonly LoginType[];
+  /** `eg: roles: ['ULB', 'STATE']` surfaces one document to two roles. */
+  roles?: readonly LoginRole[];
+}
+
 // ─── Local validator ──────────────────────────────────────────────────────────
 
 function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
@@ -116,27 +125,65 @@ export class LoginComponent implements OnInit, OnDestroy {
   protected readonly stats = [
     { label: 'Eligible Urban Local Bodies', value: '4,485', icon: 'bi-buildings-fill' },
     { label: 'Special Grant Categories', value: '2', icon: 'bi-tags-fill' },
-    { label: 'Total Grants Allocated', value: '₹1,29,987 Cr', icon: 'bi-cash-stack' },
+    { label: 'Total Grants Allocated', value: '₹3,56,357 Cr', icon: 'bi-cash-stack' },
     { label: 'Year 1 Disbursement', value: '₹37,272 Cr', icon: 'bi-send-fill' },
   ] as const;
 
-  protected readonly documents = [
+  // Backend resourceDashboard download URL.
+  private readonly EXTERNAL_LINKS = {
+    report_api_v1: 'https://cityfinance.in/api/v1/resourceDashboard/download/698472008670dfe40327596d',
+    og_ssr: 'https://cityfinance.in/assets/docs/Operational_Guidelines_2026-31.pdf'
+
+  };
+
+  // Full catalog of reference documents, scoped by login type (15thFC, 16thFC, ...) and optionally by role. (ULB, STATE, MOHUA, ...)
+  private readonly documentCatalog: readonly ReferenceDocument[] = [
+    // 16thFC — shown to every role
+    {
+      title: 'XVI Finance Commission Report',
+      file: this.EXTERNAL_LINKS.report_api_v1,
+      types: ['16thFC'],
+    },
+    {
+      title: 'XVI FC Operational Guidelines',
+      file: this.EXTERNAL_LINKS.og_ssr,
+      types: ['16thFC'],
+    },
+    // 15thFC
     {
       title: 'ULB Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
       file: 'assets/files/ULB Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+      types: ['15thFC'],
+      roles: ['ULB'],
     },
     {
       title: 'State Nodal Officers Manual for Claiming XV FC ULB Grants for 2021-22',
       file: 'assets/files/State Nodal Officers Manual for Claiming XV FC ULB Grants Oct 2021.pdf',
+      types: ['15thFC'],
+      roles: ['STATE'],
     },
-    { title: 'XV-FC VOL I Main Report 2021-26', file: 'assets/files/XVFC VOL I Main Report 2021-26.pdf' },
-    { title: 'XV-FC VOL II Annexes', file: 'assets/files/XV-FC -VOL II Annexes.pdf' },
-    { title: 'MoHUA Marking Scheme', file: 'assets/files/XV FC Marking Scheme Guidelines.pdf' },
+    {
+      title: 'XV-FC VOL I Main Report 2021-26',
+      file: 'assets/files/XVFC VOL I Main Report 2021-26.pdf',
+      types: ['15thFC'],
+    },
+    {
+      title: 'XV-FC VOL II Annexes',
+      file: 'assets/files/XV-FC -VOL II Annexes.pdf',
+      types: ['15thFC'],
+    },
+    {
+      title: 'MoHUA Marking Scheme',
+      file: 'assets/files/XV FC Marking Scheme Guidelines.pdf',
+      types: ['15thFC'],
+      roles: ['MOHUA'],
+    },
     {
       title: 'XV-FC Operational Guidelines 2021-26',
       file: 'assets/files/FC-XV recommended Urban Local Body Final Operational Guidelines for 2021-26.pdf',
+      types: ['15thFC'],
     },
-  ] as const;
+  ];
 
   // ─── Form ─────────────────────────────────────────────────────────────────────
 
@@ -240,6 +287,21 @@ export class LoginComponent implements OnInit, OnDestroy {
     return options;
   });
 
+  // Documents visible for the current login type + selected role. Before a role is chosen
+  // (role-selection step) every document for the current type is shown; once a role is picked,
+  // it narrows to documents with no `roles` restriction plus documents whose `roles` include it.
+  protected readonly documents = computed<readonly ReferenceDocument[]>(() => {
+    const type = this.typeKey();
+    const roleId = this.selectedRole()?.id;
+
+    return this.documentCatalog.filter((doc) => {
+      if (!type || !doc.types.includes(type)) return false;
+      if (!doc.roles?.length) return true;
+      if (!roleId) return true;
+      return doc.roles.includes(roleId);
+    });
+  });
+
   protected readonly panelContent = computed<PanelContent>(() => {
     const trust = (html: string): SafeHtml => this.sanitizer.bypassSecurityTrustHtml(html);
     const cfLink = `<a href="http://cityfinance.in/" target="_blank" rel="noopener">cityfinance.in</a>`;
@@ -263,8 +325,8 @@ export class LoginComponent implements OnInit, OnDestroy {
             },
           ],
           showStats: true,
-          showDocuments: false,
-          showResourceActions: true,
+          showDocuments: true,
+          showResourceActions: false,
         };
 
       case 'ranking':
@@ -294,10 +356,6 @@ export class LoginComponent implements OnInit, OnDestroy {
               html: trust(
                 "This portal collected standardised financial data from Urban Local Bodies as part of the Sixteenth Finance Commission's report submission process.",
               ),
-            },
-            {
-              html: trust(`The next phase will go live on ${cfLink} in June 2026.`),
-              secondary: true,
             },
           ],
           showStats: false,
@@ -438,11 +496,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   }
 
   protected openReferenceDocuments(): void {
-    window.open(
-      'https://www.cityfinance.in/api/v1/resourceDashboard/download/698472008670dfe40327596d',
-      '_blank',
-      'noopener,noreferrer',
-    );
+    window.open(this.EXTERNAL_LINKS.report_api_v1, '_blank', 'noopener,noreferrer');
   }
 
   // ─── Submit ───────────────────────────────────────────────────────────────────
