@@ -357,6 +357,43 @@
   }
 }
 
+.approval-banner {
+  background: #e6f4ea;
+  border: 1px solid #b7e1c3;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.approval-banner-text {
+  color: #1e7e34;
+  font-weight: 600;
+  font-size: 0.9rem;
+
+  i {
+    margin-right: 0.4rem;
+  }
+}
+
+.approval-banner-action {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1e7e34;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: underline;
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    color: #14532b;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton-dot,
   .skeleton-bar {
