@@ -198,9 +198,15 @@ export class DynamicFormService {
     });
   }
 
+  /**
+   * @param fieldValueLookup  Resolves a sibling field's current raw value by key, for
+   *   `FIELD:<key>` minDate/maxDate expressions (e.g. `(key) => form.get(key)?.value`). Omit for
+   *   forms/fields that never use that token — every other validator is unaffected.
+   */
   bindValidations(
     validations: FieldConfig['validations'] | false | undefined,
     field?: Pick<FieldConfig, 'formFieldType' | 'minDate' | 'maxDate'>,
+    fieldValueLookup?: (key: string) => unknown,
   ) {
     const validators: ValidatorFn[] = [];
     const validationList = validations || [];
@@ -233,12 +239,16 @@ export class DynamicFormService {
             break;
           case 'minDate': {
             hasMinDateValidation = true;
-            validators.push(minDateValidator(resolveDateConstraint(row.validator ?? field?.minDate)));
+            validators.push(
+              minDateValidator(resolveDateConstraint(row.validator ?? field?.minDate, undefined, fieldValueLookup)),
+            );
             break;
           }
           case 'maxDate': {
             hasMaxDateValidation = true;
-            validators.push(maxDateValidator(resolveDateConstraint(row.validator ?? field?.maxDate)));
+            validators.push(
+              maxDateValidator(resolveDateConstraint(row.validator ?? field?.maxDate, undefined, fieldValueLookup)),
+            );
             break;
           }
           case 'minlength':

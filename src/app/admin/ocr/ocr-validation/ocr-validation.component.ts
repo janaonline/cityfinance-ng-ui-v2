@@ -1,5 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  HostListener,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -25,6 +35,7 @@ import { UtilityService } from '../../../core/services/utility.service';
 import { OcrService, SelectOption } from '../ocr.service';
 import {
   OcrFinancialSummary,
+  OcrPageReadabilityScore,
   OcrValidationJobTracker,
   OcrValidationResult,
   OcrValidationStatus,
@@ -117,6 +128,7 @@ export class OcrValidationComponent implements OnInit {
 
   constructor() {
     // this.globalLoader.hideLayout();
+    this.destroyRef.onDestroy(() => this.setBodyScrollLock(false));
   }
 
   ngOnInit(): void {
@@ -276,6 +288,41 @@ export class OcrValidationComponent implements OnInit {
 
   toggleRaw(jobId: string): void {
     this.patchJob(jobId, (j) => ({ showRaw: !j.showRaw }));
+  }
+
+  /** Number of per-page readability rows shown on the PDF Quality card before "View More". */
+  readonly pageReadabilityPreviewCount = 5;
+
+  /** jobId whose full per-page readability list is shown in the modal, or null when closed. */
+  readonly pageReadabilityModalJob = signal<string | null>(null);
+
+  pageReadabilityScores(job: OcrValidationJobTracker): OcrPageReadabilityScore[] {
+    return job.result?.basic_validation?.page_readability_scores ?? [];
+  }
+
+  openPageReadabilityModal(jobId: string): void {
+    this.pageReadabilityModalJob.set(jobId);
+    this.setBodyScrollLock(true);
+  }
+
+  closePageReadabilityModal(): void {
+    if (!this.pageReadabilityModalJob()) {
+      return;
+    }
+    this.pageReadabilityModalJob.set(null);
+    this.setBodyScrollLock(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.closePageReadabilityModal();
+  }
+
+  private setBodyScrollLock(locked: boolean): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    document.body.style.overflow = locked ? 'hidden' : '';
   }
 
   getStatusLabel(status: OcrValidationStatus): string {

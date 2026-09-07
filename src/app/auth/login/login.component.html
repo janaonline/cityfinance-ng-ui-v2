@@ -53,7 +53,7 @@
             >
               Reference Documents
             </h5>
-            @for (doc of documents; track doc.title) {
+            @for (doc of documents(); track doc.title) {
               <a
                 [href]="doc.file"
                 target="_blank"
