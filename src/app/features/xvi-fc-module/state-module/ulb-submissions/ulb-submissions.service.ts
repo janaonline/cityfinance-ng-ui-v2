@@ -56,6 +56,7 @@ interface AnnualAccountSubmissionRow {
   formStatus: ReviewStatus;
   formStatusId: number;
   lastUpdatedAt: string | null;
+  enteredReviewAt: string | null;
   annualAccountId: string | null;
 }
 
@@ -74,6 +75,7 @@ interface BankAccountSubmissionRow {
   ulbName: string;
   formStatus: number;
   lastUpdatedAt: string | null;
+  enteredReviewAt: string | null;
   bankAccountId: string | null;
 }
 
@@ -144,6 +146,7 @@ export class UlbSubmissionsService {
           formStatus: row.formStatus,
           formStatusId: row.formStatusId,
           lastUpdatedAt: row.lastUpdatedAt,
+          enteredReviewAt: row.enteredReviewAt,
           recordId: row.annualAccountId,
         }));
 
@@ -177,6 +180,7 @@ export class UlbSubmissionsService {
           formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
           formStatusId: row.formStatus,
           lastUpdatedAt: row.lastUpdatedAt,
+          enteredReviewAt: row.enteredReviewAt,
           recordId: row.bankAccountId,
         }));
         const counts = Object.fromEntries(
@@ -213,6 +217,9 @@ export class UlbSubmissionsService {
           formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
           formStatusId: row.formStatus,
           lastUpdatedAt: row.lastUpdatedAt,
+          // SLB never reaches UNDER_REVIEW_BY_STATE (deemed approved on submission — no state
+          // review workflow), so there's no equivalent timestamp to project here.
+          enteredReviewAt: null,
           recordId: row.slbFormId,
         }));
         const counts = Object.fromEntries(

@@ -26,6 +26,91 @@
   color: #0d6efd;
 }
 
+.system-checks-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary, #114551);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: none;
+    color: var(--color-primary-hover, #0c3138);
+  }
+}
+
+.system-checks-chevron {
+  transition: transform 220ms ease-in-out;
+
+  &--open {
+    transform: rotate(180deg);
+  }
+}
+
+.system-checks-wrapper {
+  overflow: hidden;
+}
+
+.system-checks-panel {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.system-checks-caption {
+  color: #6c757d;
+  margin-bottom: 0.75rem;
+}
+
+.system-checks-heading {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6c757d;
+  margin-bottom: 0.4rem;
+}
+
+.system-checks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eeeeee;
+  }
+
+  li:last-child {
+    border-bottom: none;
+  }
+}
+
+.system-checks-list--pass li i {
+  color: #198754;
+}
+
+.system-checks-list--skip li i {
+  color: #adb5bd;
+}
+
+.system-checks-disclaimer {
+  font-size: 0.75rem;
+  color: #999999;
+  margin: 0.5rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eeeeee;
+}
+
 .stat-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

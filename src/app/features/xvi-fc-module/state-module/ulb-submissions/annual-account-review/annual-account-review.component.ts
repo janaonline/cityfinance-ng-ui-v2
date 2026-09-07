@@ -33,6 +33,8 @@ interface DecisionEntry {
   status: Decision;
   note: string | null;
   decidedAt: string;
+  /** Absent on records decided before this field existed — fall back to a generic "State" label. */
+  decidedBy?: { name: string | null } | null;
 }
 
 interface SectionPermissions {

@@ -72,6 +72,7 @@ describe('UlbSubmissionsService', () => {
           formStatus: 'IN_PROGRESS',
           formStatusId: 2,
           lastUpdatedAt: null,
+          enteredReviewAt: null,
           recordId: 'slb-1',
         },
       ],
