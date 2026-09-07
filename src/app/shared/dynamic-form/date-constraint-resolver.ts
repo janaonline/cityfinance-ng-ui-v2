@@ -59,19 +59,20 @@ export function resolveDateConstraint(
       const amount = Number(match[4]) * sign;
       const unit = match[5] as 'D' | 'M' | 'Y';
 
-      switch (unit) {
-        case 'D':
-          result.setDate(result.getDate() + amount);
-          break;
-        case 'M':
-          result.setMonth(result.getMonth() + amount);
-          break;
-        case 'Y':
-          result.setFullYear(result.getFullYear() + amount);
-          break;
+      if (unit === 'D') {
+        result.setDate(result.getDate() + amount);
+        return result;
       }
 
-      return result;
+      // 'M'/'Y' match Excel's EDATE(): shift by whole months and clamp to the target month's last day.
+      // Keep this in sync with backend `applyDateOffset` and the template's dateOfExpiry formula.
+      const totalMonths = unit === 'Y' ? amount * 12 : amount;
+      const totalMonthIndex = base.getMonth() + totalMonths;
+      const targetYear = base.getFullYear() + Math.floor(totalMonthIndex / 12);
+      const targetMonth = ((totalMonthIndex % 12) + 12) % 12;
+      const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+      const targetDay = Math.min(base.getDate(), daysInTargetMonth);
+      return new Date(targetYear, targetMonth, targetDay);
     }
 
     return normalizeDateValue(trimmed);
