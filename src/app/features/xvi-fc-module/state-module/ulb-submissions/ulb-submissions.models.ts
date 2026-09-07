@@ -108,6 +108,9 @@ export interface UlbSubmissionRow {
   readonly formStatus: ReviewStatus;
   readonly formStatusId: number;
   readonly lastUpdatedAt: string | null;
+  /** When this row entered UNDER_REVIEW_BY_STATE — the precise anchor `daysPending()` uses instead
+   *  of `lastUpdatedAt` for rows in that status. Null for every other status. */
+  readonly enteredReviewAt: string | null;
   /** The selected form's own record id (annual account doc, bank account doc, ...) — null if not started. */
   readonly recordId: string | null;
 }
