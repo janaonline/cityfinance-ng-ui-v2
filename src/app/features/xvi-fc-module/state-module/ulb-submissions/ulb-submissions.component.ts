@@ -26,6 +26,7 @@ import {
   ReviewStatus,
   SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
+  SYSTEM_CHECKS_CONTENT,
   TAB_TO_FORM,
   UlbSubmissionRow,
   UlbSubmissionSortField,
@@ -144,11 +145,13 @@ export class UlbSubmissionsComponent {
 
   readonly yearLabel = signal(this.resolveYearLabel());
 
-  /** "What the system checked" info panel — same content regardless of which form is selected. */
+  /** "What the system checked" info panel — content is specific to the currently selected form. */
   readonly showSystemChecks = signal(false);
   toggleSystemChecks(): void {
     this.showSystemChecks.update((v) => !v);
   }
+  readonly systemChecksContent = computed(() => SYSTEM_CHECKS_CONTENT[this.selectedFormId()]);
+  readonly systemChecksCaption = computed(() => this.systemChecksContent().caption(this.yearLabel()));
 
   readonly page = signal(1);
   readonly sortField = signal<UlbSubmissionSortField>('ulbName');

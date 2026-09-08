@@ -7,57 +7,61 @@
         <h1 class="page-title mb-0">Review ULB Submissions</h1>
         <span class="badge rounded-pill fy-badge">{{ yearLabel() }}</span>
         <span class="badge rounded-pill form-wise-badge">Form-wise Review</span>
-        <button type="button" class="system-checks-trigger btn btn-link ms-auto" (click)="toggleSystemChecks()"
-            [attr.aria-expanded]="showSystemChecks()">
-            <i class="bi bi-info-circle"></i>
-            <span>What the system checked</span>
-            <i class="bi bi-chevron-down system-checks-chevron" [class.system-checks-chevron--open]="showSystemChecks()"></i>
-        </button>
-    </div>
-
-    <div class="system-checks-wrapper" [@expandCollapse]="showSystemChecks() ? 'expanded' : 'collapsed'">
-        <div class="system-checks-panel mb-3">
-            <p class="system-checks-caption">Runs on every document in the {{ yearLabel() }} batch.</p>
-
-            <p class="system-checks-heading">Checked automatically</p>
-            <ul class="system-checks-list system-checks-list--pass">
-                <li><i class="bi bi-check-circle-fill"></i> The file opens, is legible, and contains a table</li>
-                <li><i class="bi bi-check-circle-fill"></i> The document type, ULB name and financial year all match</li>
-                <li><i class="bi bi-check-circle-fill"></i> The expected header or title is present</li>
-                <li><i class="bi bi-check-circle-fill"></i> Auditor's Report: letterhead, seal and signatures are present</li>
-            </ul>
-
-            <p class="system-checks-heading">Not checked</p>
-            <ul class="system-checks-list system-checks-list--skip">
-                <li><i class="bi bi-dash-circle"></i> The figures inside. No arithmetic, no year-on-year check, no external record.</li>
-            </ul>
-
-            <p class="system-checks-disclaimer">Checks are AI-assisted and can be wrong. A passed check is not an approval.</p>
-        </div>
     </div>
 
     <p class="page-subtitle text-secondary mb-4">
         {{ stateName() || '—' }} &middot; {{ grandTotal() }} ULBs total &middot; Basic Grants
     </p>
 
-    <form [formGroup]="filterForm" class="d-flex flex-nowrap align-items-center gap-3 mb-4">
-        @for (item of filterSelects; track item.key) {
-        <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
-            <mat-label>{{ item.label }}</mat-label>
-            <mat-select [id]="item.id" [formControlName]="item.key" [attr.aria-label]="item.ariaLabel">
-                @for (opt of item.options; track opt.value) {
-                <mat-option [value]="opt.value" [disabled]="opt.live === false">{{ opt.label }}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
-        }
+    <form [formGroup]="filterForm" class="mb-2">
+        <div class="d-flex flex-nowrap align-items-center gap-3 mb-2">
+            @for (item of filterSelects; track item.key) {
+            <mat-form-field appearance="outline" class="filter-field" subscriptSizing="dynamic">
+                <mat-label>{{ item.label }}</mat-label>
+                <mat-select [id]="item.id" [formControlName]="item.key" [attr.aria-label]="item.ariaLabel">
+                    @for (opt of item.options; track opt.value) {
+                    <mat-option [value]="opt.value" [disabled]="opt.live === false">{{ opt.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            }
 
-        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+            <button type="button" class="system-checks-trigger btn btn-link" (click)="toggleSystemChecks()"
+                [attr.aria-expanded]="showSystemChecks()">
+                <i class="bi bi-info-circle"></i>
+                <span>What the system checked for {{ selectedFormLabel() }}</span>
+                <i class="bi bi-chevron-down system-checks-chevron" [class.system-checks-chevron--open]="showSystemChecks()"></i>
+            </button>
+        </div>
+
+        <mat-form-field appearance="outline" class="search-field search-field--full" subscriptSizing="dynamic">
             <i matPrefix class="bi bi-search mx-2 text-secondary"></i>
             <input matInput formControlName="search" placeholder="Search ULB name..."
                 aria-label="Search ULB name" />
         </mat-form-field>
     </form>
+
+    <div class="system-checks-wrapper" [@expandCollapse]="showSystemChecks() ? 'expanded' : 'collapsed'">
+        <div class="system-checks-panel mb-3">
+            <p class="system-checks-caption"><strong>{{ selectedFormLabel() }}</strong> &middot; {{ systemChecksCaption() }}</p>
+
+            <p class="system-checks-heading">Checked automatically</p>
+            <ul class="system-checks-list system-checks-list--pass">
+                @for (item of systemChecksContent().checkedAutomatically; track item) {
+                <li><i class="bi bi-check-circle-fill"></i> {{ item }}</li>
+                }
+            </ul>
+
+            <p class="system-checks-heading">Not checked</p>
+            <ul class="system-checks-list system-checks-list--skip">
+                @for (item of systemChecksContent().notChecked; track item) {
+                <li><i class="bi bi-dash-circle"></i> {{ item }}</li>
+                }
+            </ul>
+
+            <p class="system-checks-disclaimer">Checks are AI-assisted and can be wrong. A passed check is not an approval.</p>
+        </div>
+    </div>
 
     @if (isSelectedFormLive()) {
     <div class="stat-cards mb-4">
