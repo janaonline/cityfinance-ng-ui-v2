@@ -39,7 +39,14 @@
           </div>
           <div class="col-md-4">
             <div class="text-muted small">File</div>
-            <div class="fw-bold">{{ r.fileName ?? '—' }} @if (r.sizeKb) { <span>({{ r.sizeKb }} KB)</span> }</div>
+            <div class="fw-bold">
+              {{ r.fileName ?? '—' }} @if (r.sizeKb) { <span>({{ r.sizeKb }} KB)</span> }
+              @if (r.fileUrl) {
+                <a [href]="r.fileUrl" target="_blank" rel="noopener" class="ms-1" [title]="r.fileName ?? 'View file'">
+                  <i class="bi bi-file-earmark-text"></i>
+                </a>
+              }
+            </div>
           </div>
 
           <div class="col-md-4">

@@ -22,6 +22,7 @@ export interface ManualReviewHistoryRow {
   uploadId: string;
   ocrJobId: string | null;
   fileName: string | null;
+  fileUrl: string | null;
   sizeKb: number | null;
   validationStatus: string | null;
   validationDetails: string | null;

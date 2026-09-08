@@ -75,7 +75,20 @@
               <div class="text-muted small">
                 {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
               </div>
-              <div class="text-muted small">{{ row.docId }}</div>
+              <div class="text-muted small">
+                {{ row.docId }}
+                @if (row.fileUrl) {
+                  <a
+                    [href]="row.fileUrl"
+                    target="_blank"
+                    rel="noopener"
+                    class="ms-1 text-muted"
+                    [title]="row.fileName ?? 'View file'"
+                  >
+                    <i class="bi bi-file-earmark-text"></i>
+                  </a>
+                }
+              </div>
             </td>
           </ng-container>
 
