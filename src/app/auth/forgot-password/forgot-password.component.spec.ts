@@ -23,6 +23,8 @@ describe('ForgotPasswordComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
+    sessionStorage.clear(); // avoid cross-test pollution from the refresh-persistence feature
+
     authSpy = jasmine.createSpyObj('OtpAuthService', ['sendForgotPasswordOtp', 'resetPassword']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
