@@ -1,0 +1,140 @@
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { PageEvent } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { MaterialModule } from '../../../../material.module';
+import { StateService } from '../../../../core/services/state/state.service';
+import { IState } from '../../../../core/models/state/state';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { AnnualAccountSectionKey } from '../manual-review-queue/manual-review-queue.models';
+import { ManualReviewHistoryRow, ManualReviewRequestStatus } from './manual-review-history.models';
+import { ManualReviewHistoryService } from './manual-review-history.service';
+
+const ROWS_PAGE_SIZE = 20;
+
+const SECTION_LABEL: Record<AnnualAccountSectionKey, string> = {
+  auditedData: 'Audited',
+  unauditedData: 'Provisional',
+};
+
+const STATUS_LABEL: Record<ManualReviewRequestStatus, string> = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  RETURNED: 'Returned',
+};
+
+@Component({
+  selector: 'app-manual-review-history',
+  imports: [ReactiveFormsModule, MaterialModule, MatTableModule, PreLoaderComponent, DatePipe, RouterLink],
+  templateUrl: './manual-review-history.component.html',
+  styleUrl: './manual-review-history.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ManualReviewHistoryComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly service = inject(ManualReviewHistoryService);
+  private readonly stateService = inject(StateService);
+
+  readonly displayedColumns = ['serialNo', 'details', 'status', 'sla', 'requestedAt', 'decidedAt', 'actions'];
+
+  readonly rows = signal<ManualReviewHistoryRow[]>([]);
+  readonly total = signal(0);
+  readonly page = signal(1);
+  readonly pageSize = signal(ROWS_PAGE_SIZE);
+  readonly pageSizeOptions = [10, 20, 50];
+  readonly isLoading = signal(true);
+  readonly loadError = signal<string | null>(null);
+  readonly states = signal<IState[]>([]);
+
+  readonly statusOptions: Array<{ value: ManualReviewRequestStatus; label: string }> = [
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'RETURNED', label: 'Returned' },
+  ];
+
+  readonly filterForm = this.fb.group({
+    search: [''],
+    status: [''],
+    stateId: [''],
+    requestedFrom: [''],
+    requestedTo: [''],
+    breachedOnly: [false],
+  });
+
+  ngOnInit(): void {
+    this.loadRows();
+    this.stateService.getStates().subscribe((response) => this.states.set(response.data ?? []));
+
+    this.filterForm.controls.search.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.applyFilters());
+
+    ['status', 'stateId', 'requestedFrom', 'requestedTo', 'breachedOnly'].forEach((controlName) => {
+      this.filterForm.get(controlName)?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.applyFilters());
+    });
+  }
+
+  private applyFilters(): void {
+    this.page.set(1);
+    this.loadRows();
+  }
+
+  srNo(index: number): number {
+    return (this.page() - 1) * this.pageSize() + index + 1;
+  }
+
+  sectionLabel(section: AnnualAccountSectionKey): string {
+    return SECTION_LABEL[section];
+  }
+
+  statusLabel(status: ManualReviewRequestStatus): string {
+    return STATUS_LABEL[status];
+  }
+
+  loadRows(): void {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+
+    const raw = this.filterForm.getRawValue();
+
+    this.service
+      .getHistory({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        search: raw.search?.trim() || undefined,
+        status: (raw.status as ManualReviewRequestStatus) || undefined,
+        stateId: raw.stateId || undefined,
+        requestedFrom: raw.requestedFrom || undefined,
+        requestedTo: raw.requestedTo || undefined,
+        breachedOnly: raw.breachedOnly || undefined,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => {
+          if (result.rows.length === 0 && this.page() > 1) {
+            this.page.update((p) => p - 1);
+            this.loadRows();
+            return;
+          }
+          this.rows.set(result.rows);
+          this.total.set(result.total);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.isLoading.set(false);
+          this.loadError.set('Unable to load the manual-review history. Please try again.');
+        },
+      });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.page.set(event.pageIndex + 1);
+    this.pageSize.set(event.pageSize);
+    this.loadRows();
+  }
+}

@@ -38,7 +38,7 @@ export class ManualReviewQueueComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly dialog = inject(MatDialog);
 
-  readonly displayedColumns = ['serialNo', 'details', 'validationIssues', 'requestedAt', 'actions'];
+  readonly displayedColumns = ['serialNo', 'details', 'validationIssues', 'requestedAt', 'sla', 'actions'];
 
   readonly rows = signal<ManualReviewQueueRow[]>([]);
   readonly total = signal(0);

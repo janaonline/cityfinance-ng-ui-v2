@@ -70,6 +70,18 @@
             <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'mediumDate' }}</td>
           </ng-container>
 
+          <ng-container matColumnDef="sla">
+            <th mat-header-cell *matHeaderCellDef>SLA</th>
+            <td mat-cell *matCellDef="let row">
+              <div>{{ row.dueAt | date: 'mediumDate' }}</div>
+              @if (row.isBreached) {
+                <span class="badge text-bg-danger">Breached</span>
+              } @else {
+                <span class="badge text-bg-success">On time</span>
+              }
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">

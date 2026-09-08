@@ -25,6 +25,8 @@ export interface ManualReviewQueueRow {
   validationDetails: string | null;
   failedChecks: string[];
   manualReviewRequestedAt: string | null;
+  dueAt: string | null;
+  isBreached: boolean;
 }
 
 export interface ManualReviewQueueQuery {

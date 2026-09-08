@@ -1,0 +1,99 @@
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between my-4">
+    <h3 class="fw-bold mb-0">Manual Review Request</h3>
+    <a class="btn btn-outline-secondary btn-sm" [routerLink]="['../manual-review-history']">
+      <i class="bi bi-arrow-left me-1"></i>Back to history
+    </a>
+  </div>
+
+  @if (isLoading()) {
+    <app-pre-loader></app-pre-loader>
+    <app-pre-loader></app-pre-loader>
+  } @else if (loadError()) {
+    <div class="alert alert-danger py-2 px-3" role="alert">{{ loadError() }}</div>
+  } @else if (row()) {
+    @let r = row()!;
+    <mat-card class="custom-mat-card mat-elevation-z1">
+      <div class="p-3">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="text-muted small">ULB</div>
+            <div class="fw-bold">{{ r.ulbName ?? '—' }} <span>{{ r.ulbCode }}</span></div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">State</div>
+            <div class="fw-bold">{{ r.stateName ?? '—' }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Design year</div>
+            <div class="fw-bold">{{ r.year ?? '—' }}</div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="text-muted small">Section</div>
+            <div class="fw-bold">{{ sectionLabel(r.section) }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Document</div>
+            <div class="fw-bold">{{ r.docId }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">File</div>
+            <div class="fw-bold">{{ r.fileName ?? '—' }} @if (r.sizeKb) { <span>({{ r.sizeKb }} KB)</span> }</div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="text-muted small">Status</div>
+            <div class="fw-bold">{{ statusLabel(r.status) }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Requested</div>
+            <div class="fw-bold">{{ r.requestedAt | date: 'medium' }}</div>
+            <div class="text-muted small">by {{ r.requestedBy.name ?? r.requestedBy.role }}</div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-muted small">Due by (SLA)</div>
+            <div class="fw-bold">
+              {{ r.dueAt | date: 'medium' }}
+              @if (r.isBreached) {
+                <span class="badge text-bg-danger">Breached</span>
+              } @else {
+                <span class="badge text-bg-success">On time</span>
+              }
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="text-muted small">Decided</div>
+            @if (r.decidedAt) {
+              <div class="fw-bold">{{ r.decidedAt | date: 'medium' }}</div>
+              <div class="text-muted small">by {{ r.decidedBy?.name ?? r.decidedBy?.role }}</div>
+            } @else {
+              <div class="fw-bold">—</div>
+            }
+          </div>
+          <div class="col-md-8">
+            <div class="text-muted small">Decision note</div>
+            <div class="fw-bold">{{ r.decisionNote ?? '—' }}</div>
+          </div>
+
+          @if (r.validationDetails || r.failedChecks.length) {
+            <div class="col-12">
+              <div class="text-muted small">OCR validation</div>
+              @if (r.validationDetails) {
+                <div>{{ r.validationDetails }}</div>
+              }
+              @if (r.failedChecks.length) {
+                <ul class="ps-3 mb-0">
+                  @for (check of r.failedChecks; track check) {
+                    <li>{{ check }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </mat-card>
+  }
+</div>
