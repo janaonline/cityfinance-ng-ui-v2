@@ -31,6 +31,7 @@ import {
   IDENTIFIER_SECURITY_VALIDATORS,
   PASSWORD_SECURITY_VALIDATORS,
   noNumericCode,
+  passwordComplexity,
 } from '../validators/auth-security.validators';
 
 type ForgotRole = 'ULB' | 'STATE' | 'MOHUA';
@@ -66,11 +67,16 @@ export class ForgotPasswordComponent implements OnInit {
   readonly resendSeconds = signal(0);
   readonly requestError = signal('');
   readonly resetError = signal('');
+  /** True while the currently-displayed error is a 429 rate-limit — styles the banner as a warning instead of danger. */
+  readonly errorIsRateLimited = signal(false);
+  /** Live countdown (seconds) until the rate-limit that produced the current error clears. */
+  readonly errorRetrySeconds = signal(0);
   readonly showNewPassword = signal(false);
   readonly showConfirmPassword = signal(false);
   readonly redirectSeconds = signal(0);
 
   private countdownSub: Subscription | null = null;
+  private errorRetrySub: Subscription | null = null;
 
   readonly identifyForm = this.fb.nonNullable.group({
     role: ['ULB' as ForgotRole, Validators.required],
@@ -81,13 +87,28 @@ export class ForgotPasswordComponent implements OnInit {
 
   readonly resetForm = this.fb.nonNullable.group(
     {
-      // FP1: pattern enforces digits-only; length validators catch too-short/long
-      otp: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(6), Validators.pattern(/^\d+$/)]],
-      newPassword: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(128), ...PASSWORD_SECURITY_VALIDATORS]],
-      confirmPassword: ['', [Validators.required, Validators.maxLength(128), ...PASSWORD_SECURITY_VALIDATORS]],
+      // FP1: pattern enforces digits-only; length validators enforce exactly 4 digits
+      otp: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(4), Validators.pattern(/^\d+$/)]],
+      newPassword: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+      ],
+      confirmPassword: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+      ],
     },
     { validators: [this.passwordMatchValidator()] },
   );
+
+  /** Formats errorRetrySeconds as "Ns" up to a minute, "Mm" / "Mm Ss" beyond it. */
+  readonly errorRetryDisplay = computed(() => {
+    const total = this.errorRetrySeconds();
+    if (total <= 60) return `${total}s`;
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  });
 
   readonly identifyTitle = computed(() => {
     const role = this.selectedRole();
@@ -159,6 +180,7 @@ export class ForgotPasswordComponent implements OnInit {
     }
 
     this.requestError.set('');
+    this.clearErrorRetryCountdown();
     this.isSubmitting.set(true);
 
     const identifier = this.getIdentifier();
@@ -184,6 +206,7 @@ export class ForgotPasswordComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.requestError.set(this.mapSendOtpError(err));
+          this.applyRetryAfterState(err);
         },
       });
   }
@@ -196,6 +219,7 @@ export class ForgotPasswordComponent implements OnInit {
     if (this.isSubmitting()) return;
 
     this.resetError.set('');
+    this.clearErrorRetryCountdown();
     this.otpResent.set(false);  // B3: dismiss resend banner before new attempt
     this.isSubmitting.set(true);
 
@@ -229,6 +253,7 @@ export class ForgotPasswordComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.resetError.set(this.mapResetPasswordError(err));
+          this.applyRetryAfterState(err);
         },
       });
   }
@@ -238,6 +263,7 @@ export class ForgotPasswordComponent implements OnInit {
 
     this.otpResent.set(false);
     this.resetError.set('');
+    this.clearErrorRetryCountdown();
     this.isSubmitting.set(true);
 
     const identifier = this.getIdentifier();
@@ -256,8 +282,18 @@ export class ForgotPasswordComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.resetError.set(this.mapSendOtpError(err));
+          this.applyRetryAfterState(err);
         },
       });
+  }
+
+  /** Strips non-digits and caps at 4 chars as the user types/pastes — validators alone don't stop typing. */
+  onOtpInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 4);
+    if (digitsOnly !== input.value) {
+      this.resetForm.controls.otp.setValue(digitsOnly);
+    }
   }
 
   onBackToIdentify(): void {
@@ -322,19 +358,68 @@ export class ForgotPasswordComponent implements OnInit {
     this.countdownSub = null;
   }
 
-  /** Maps HTTP errors for the send-OTP step. Never reveals whether the account exists. */
+  /**
+   * Maps HTTP errors for the send-OTP step. Never reveals whether the account exists — safe here
+   * because the 429 throttle (cooldown/lock/resend-ceiling) is keyed on identifier/IP, not on
+   * whether the account is real, so its message is the same either way.
+   */
   private mapSendOtpError(err: HttpErrorResponse): string {
-    if (err.status === 429) return 'Too many OTP requests. Please try again later.';
+    if (err.status === 429) return err.error?.message || 'Too many OTP requests. Please try again later.';
     return 'Unable to send OTP right now. Please try again.';
   }
 
   /**
    * Maps HTTP errors for the reset-password step.
    * Fake-account failures are intentionally indistinguishable from invalid/expired OTP.
+   * 429s are safe to show verbatim — same reasoning as mapSendOtpError above.
    */
   private mapResetPasswordError(err: HttpErrorResponse): string {
-    if (err.status === 429) return 'Too many attempts. Please try again later.';
+    if (err.status === 429) return err.error?.message || 'Too many attempts. Please try again later.';
     return 'Invalid or expired OTP.';
+  }
+
+  /**
+   * Reads the backend's exact rate-limit countdown (`data.retryAfterSeconds`, seconds until the
+   * cooldown/lock clears) off a 429 response and starts a live countdown from it — lets the error
+   * banner show precisely when the next attempt will stop being rejected, instead of a vague
+   * "try again later".
+   */
+  private applyRetryAfterState(err: HttpErrorResponse): void {
+    const seconds = this.extractRetryAfterSeconds(err);
+    this.clearErrorRetryCountdown();
+
+    if (seconds === null) {
+      this.errorIsRateLimited.set(false);
+      this.errorRetrySeconds.set(0);
+      return;
+    }
+
+    this.errorIsRateLimited.set(true);
+    this.errorRetrySeconds.set(seconds);
+    this.errorRetrySub = timer(1000, 1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        const remaining = this.errorRetrySeconds() - 1;
+        this.errorRetrySeconds.set(Math.max(remaining, 0));
+        if (remaining <= 0) {
+          this.clearErrorRetryCountdown();
+          this.errorIsRateLimited.set(false);
+          // Whichever step's banner was showing this rate-limit message — the other is already empty.
+          this.requestError.set('');
+          this.resetError.set('');
+        }
+      });
+  }
+
+  private extractRetryAfterSeconds(err: HttpErrorResponse): number | null {
+    if (err.status !== 429) return null;
+    const raw = (err.error as { data?: { retryAfterSeconds?: unknown } } | null)?.data?.retryAfterSeconds;
+    return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? Math.round(raw) : null;
+  }
+
+  private clearErrorRetryCountdown(): void {
+    this.errorRetrySub?.unsubscribe();
+    this.errorRetrySub = null;
   }
 
   private passwordMatchValidator(): ValidatorFn {
