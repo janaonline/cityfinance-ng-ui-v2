@@ -29,6 +29,8 @@
 .system-checks-trigger {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -223,6 +225,11 @@
 .search-field {
   flex: 1 1 200px;
   min-width: 0;
+}
+
+.search-field--full {
+  display: block;
+  width: 100%;
 }
 
 form button[matButton] {
