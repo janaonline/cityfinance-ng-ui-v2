@@ -27,6 +27,20 @@ const STATUS_LABEL: Record<ManualReviewRequestStatus, string> = {
   RETURNED: 'Returned',
 };
 
+/** Soft rounded-pill treatment per decision, matching the reference "Decision" chip style. */
+const STATUS_PILL_CLASS: Record<ManualReviewRequestStatus, string> = {
+  PENDING: 'badge rounded-pill bg-secondary-subtle text-secondary-emphasis',
+  APPROVED: 'badge rounded-pill bg-success-subtle text-success-emphasis',
+  RETURNED: 'badge rounded-pill bg-danger-subtle text-danger-emphasis',
+};
+
+const MS_PER_HOUR = 60 * 60 * 1000;
+
+export interface ResponseInfo {
+  label: string;
+  overSla: boolean;
+}
+
 @Component({
   selector: 'app-manual-review-history',
   imports: [ReactiveFormsModule, MaterialModule, MatTableModule, PreLoaderComponent, DatePipe, RouterLink],
@@ -40,7 +54,7 @@ export class ManualReviewHistoryComponent implements OnInit {
   private readonly service = inject(ManualReviewHistoryService);
   private readonly stateService = inject(StateService);
 
-  readonly displayedColumns = ['serialNo', 'details', 'status', 'sla', 'requestedAt', 'decidedAt', 'actions'];
+  readonly displayedColumns = ['ulbDocument', 'requestedAt', 'decision', 'message', 'reviewedBy', 'response', 'actions'];
 
   readonly rows = signal<ManualReviewHistoryRow[]>([]);
   readonly total = signal(0);
@@ -84,16 +98,35 @@ export class ManualReviewHistoryComponent implements OnInit {
     this.loadRows();
   }
 
-  srNo(index: number): number {
-    return (this.page() - 1) * this.pageSize() + index + 1;
-  }
-
   sectionLabel(section: AnnualAccountSectionKey): string {
     return SECTION_LABEL[section];
   }
 
   statusLabel(status: ManualReviewRequestStatus): string {
     return STATUS_LABEL[status];
+  }
+
+  statusPillClass(status: ManualReviewRequestStatus): string {
+    return STATUS_PILL_CLASS[status];
+  }
+
+  /**
+   * Turnaround-time readout for the Response column: elapsed time since the request while it's
+   * still within SLA (muted, informational), or how far past the 48h due date once it's blown —
+   * measured against `decidedAt` once decided, `now` while still PENDING.
+   */
+  responseInfo(row: ManualReviewHistoryRow): ResponseInfo {
+    const requestedAt = new Date(row.requestedAt).getTime();
+    const dueAt = new Date(row.dueAt).getTime();
+    const endAt = row.decidedAt ? new Date(row.decidedAt).getTime() : Date.now();
+
+    if (endAt <= dueAt) {
+      const hrs = Math.max(0, Math.round((endAt - requestedAt) / MS_PER_HOUR));
+      return { label: `${hrs} hrs`, overSla: false };
+    }
+
+    const overHrs = Math.round((endAt - dueAt) / MS_PER_HOUR);
+    return { label: `${overHrs} hrs over SLA`, overSla: true };
   }
 
   loadRows(): void {

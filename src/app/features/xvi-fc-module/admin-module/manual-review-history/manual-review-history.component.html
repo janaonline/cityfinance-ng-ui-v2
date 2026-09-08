@@ -68,58 +68,56 @@
         <p class="text-center p-2 mt-2">No manual-review requests match these filters.</p>
       } @else {
         <table mat-table [dataSource]="rows()">
-          <ng-container matColumnDef="serialNo">
-            <th mat-header-cell *matHeaderCellDef>S.No</th>
-            <td mat-cell *matCellDef="let row; let i = index">{{ srNo(i) }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="details">
-            <th mat-header-cell *matHeaderCellDef>Input</th>
+          <ng-container matColumnDef="ulbDocument">
+            <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div>
-                <span class="fw-bold">ULB:</span> {{ row.ulbName ?? '—' }} <span>{{ row.ulbCode }}</span>
+              <div class="fw-bold">{{ row.ulbName ?? '—' }}</div>
+              <div class="text-muted small">
+                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
               </div>
-              <div><span class="fw-bold">State:</span> {{ row.stateName ?? '—' }}</div>
-              <div><span class="fw-bold">Section:</span> {{ sectionLabel(row.section) }}</div>
-              <div><span class="fw-bold">Year:</span> {{ row.year }}</div>
-              <div><span class="fw-bold">Document:</span> {{ row.docId }} &middot; {{ row.fileName }}</div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let row">{{ statusLabel(row.status) }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="sla">
-            <th mat-header-cell *matHeaderCellDef>SLA</th>
-            <td mat-cell *matCellDef="let row">
-              <div>{{ row.dueAt | date: 'mediumDate' }}</div>
-              @if (row.isBreached) {
-                <span class="badge text-bg-danger">Breached</span>
-              } @else {
-                <span class="badge text-bg-success">On time</span>
-              }
+              <div class="text-muted small">{{ row.docId }}</div>
             </td>
           </ng-container>
 
           <ng-container matColumnDef="requestedAt">
-            <th mat-header-cell *matHeaderCellDef>Requested</th>
+            <th mat-header-cell *matHeaderCellDef>Requested at</th>
             <td mat-cell *matCellDef="let row">
-              <div>{{ row.requestedAt | date: 'mediumDate' }}</div>
+              <div>{{ row.requestedAt | date: 'd MMM, h:mm a' }}</div>
               <div class="text-muted small">by {{ row.requestedBy.name ?? row.requestedBy.role }}</div>
             </td>
           </ng-container>
 
-          <ng-container matColumnDef="decidedAt">
-            <th mat-header-cell *matHeaderCellDef>Decided</th>
+          <ng-container matColumnDef="decision">
+            <th mat-header-cell *matHeaderCellDef>Decision</th>
+            <td mat-cell *matCellDef="let row">
+              <span [class]="statusPillClass(row.status)">{{ statusLabel(row.status) }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="message">
+            <th mat-header-cell *matHeaderCellDef>Message sent to the ULB</th>
+            <td mat-cell *matCellDef="let row">{{ row.decisionNote ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="reviewedBy">
+            <th mat-header-cell *matHeaderCellDef>Reviewed by</th>
             <td mat-cell *matCellDef="let row">
               @if (row.decidedAt) {
-                <div>{{ row.decidedAt | date: 'mediumDate' }}</div>
-                <div class="text-muted small">by {{ row.decidedBy?.name ?? row.decidedBy?.role }}</div>
+                <div>{{ row.decidedBy?.name ?? row.decidedBy?.role }}</div>
+                <div class="text-muted small">{{ row.decidedAt | date: 'd MMM, h:mm a' }}</div>
               } @else {
-                <span>—</span>
+                <span class="text-muted">—</span>
               }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="response">
+            <th mat-header-cell *matHeaderCellDef>Response</th>
+            <td mat-cell *matCellDef="let row">
+              @let response = responseInfo(row);
+              <span [class.text-danger]="response.overSla" [class.fw-semibold]="response.overSla" [class.text-muted]="!response.overSla">
+                {{ response.label }}
+              </span>
             </td>
           </ng-container>
 
@@ -127,7 +125,7 @@
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
               <a class="btn btn-outline-secondary btn-sm" [routerLink]="['../manual-review-history', row.requestId]">
-                View
+                View Details
               </a>
             </td>
           </ng-container>
