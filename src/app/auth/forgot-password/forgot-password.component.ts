@@ -39,6 +39,24 @@ type StepType = 'REQUEST_OTP' | 'RESET_PASSWORD' | 'SUCCESS';
 
 const RESEND_SECONDS = 60;
 
+/** Persisted across a page refresh so a user mid-OTP doesn't get bounced back to Step 1. Cleared
+ *  on success or when returning to Step 1 — sessionStorage (not localStorage) since this is a
+ *  short-lived, single-attempt flow that shouldn't survive closing the tab. */
+const SESSION_KEY = 'cf_forgot_password_state';
+
+/** Matches the backend's OTP_TTL_SECONDS default (300s) — once this much time has passed, the OTP
+ *  itself is realistically dead, so a restored Step 2 would just be a dead end. Past this age the
+ *  saved state is treated as stale and the user starts fresh at Step 1 instead. */
+const SESSION_MAX_AGE_MS = 5 * 60 * 1000;
+
+interface StoredForgotPasswordState {
+  role: ForgotRole;
+  identifier: string;
+  maskedIdentifier: string;
+  requestedAt: number;
+  typeKey: LoginType | null;
+}
+
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
@@ -130,6 +148,8 @@ export class ForgotPasswordComponent implements OnInit {
         const type = params.get('type') as LoginType;
         if (LOGIN_TYPES.includes(type)) this.typeKey.set(type);
       });
+
+    this.restoreSessionState();
   }
 
   onRoleChange(role: ForgotRole): void {
@@ -142,6 +162,7 @@ export class ForgotPasswordComponent implements OnInit {
 
   onBackToLogin(): void {
     this.clearCountdown();
+    this.clearSessionState();
     const type = this.typeKey();
     void this.router.navigate(type ? ['/auth/login', type] : ['/auth/login']);
   }
@@ -202,7 +223,9 @@ export class ForgotPasswordComponent implements OnInit {
           this.maskedIdentifier.set(maskedContact);
           this.slideDirection.set('forward');
           this.currentStep.set('RESET_PASSWORD');
-          this.startResendTimer();
+          const requestedAt = Date.now();
+          this.startResendTimer(requestedAt);
+          this.saveSessionState(identifier, maskedContact, requestedAt);
         },
         error: (err: HttpErrorResponse) => {
           this.requestError.set(this.mapSendOtpError(err));
@@ -235,6 +258,7 @@ export class ForgotPasswordComponent implements OnInit {
       .subscribe({
         next: () => {
           this.clearCountdown();
+          this.clearSessionState();
           this.slideDirection.set('forward');
           this.currentStep.set('SUCCESS');
           // FP12: auto-redirect after 5 seconds
@@ -278,7 +302,9 @@ export class ForgotPasswordComponent implements OnInit {
         next: () => {
           // Same generic message — no UI difference between real and fake accounts
           this.otpResent.set(true);
-          this.startResendTimer();
+          const requestedAt = Date.now();
+          this.startResendTimer(requestedAt);
+          this.saveSessionState(identifier, this.maskedIdentifier(), requestedAt);
         },
         error: (err: HttpErrorResponse) => {
           this.resetError.set(this.mapSendOtpError(err));
@@ -298,11 +324,15 @@ export class ForgotPasswordComponent implements OnInit {
 
   onBackToIdentify(): void {
     this.clearCountdown();
+    this.clearErrorRetryCountdown();
+    this.clearSessionState();
     this.slideDirection.set('back');
     this.currentStep.set('REQUEST_OTP');
     this.resetForm.reset();
     this.otpResent.set(false);
     this.resetError.set('');
+    this.errorIsRateLimited.set(false);
+    this.errorRetrySeconds.set(0);
     this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
     this.showConfirmPassword.set(false);
   }
@@ -338,24 +368,96 @@ export class ForgotPasswordComponent implements OnInit {
     return identifier.slice(0, visible) + '*'.repeat(Math.max(identifier.length - visible, 4));
   }
 
-  private startResendTimer(): void {
+  /**
+   * Wall-clock based (not a tick counter) so it can resume correctly after a page refresh —
+   * pass the original `requestedAt` and it recomputes the true remaining time from Date.now(),
+   * which also self-corrects for a backgrounded-tab timer drift.
+   */
+  private startResendTimer(requestedAt: number = Date.now()): void {
     this.clearCountdown();
-    this.countdownSub = timer(0, 1000)
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - requestedAt) / 1000);
+      const remaining = RESEND_SECONDS - elapsed;
+      if (remaining <= 0) {
+        this.resendSeconds.set(0);
+        this.clearCountdown();
+      } else {
+        this.resendSeconds.set(remaining);
+      }
+    };
+    tick();
+    this.countdownSub = timer(1000, 1000)
       .pipe(takeUntilDestroyed(this.destroyRef))  // B1: prevent signal writes after destroy
-      .subscribe((tick) => {
-        const remaining = RESEND_SECONDS - tick;
-        if (remaining <= 0) {
-          this.resendSeconds.set(0);
-          this.clearCountdown();
-        } else {
-          this.resendSeconds.set(remaining);
-        }
-      });
+      .subscribe(tick);
   }
 
   private clearCountdown(): void {
     this.countdownSub?.unsubscribe();
     this.countdownSub = null;
+  }
+
+  /** Persists enough state to restore Step 2 after a page refresh — see restoreSessionState(). */
+  private saveSessionState(identifier: string, maskedContact: string, requestedAt: number): void {
+    const state: StoredForgotPasswordState = {
+      role: this.selectedRole(),
+      identifier,
+      maskedIdentifier: maskedContact,
+      requestedAt,
+      typeKey: this.typeKey(),
+    };
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+    } catch {
+      // Private-browsing/storage-disabled — the refresh-survival feature just won't work.
+    }
+  }
+
+  private clearSessionState(): void {
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Nothing to do if storage is unavailable.
+    }
+  }
+
+  /** Restores Step 2 (OTP + new password) after a page refresh, if a prior attempt was saved.
+   *  The OTP itself may have since expired server-side — that's fine, submitting just shows the
+   *  normal "Invalid or expired OTP" error like any other expired-OTP case. */
+  private restoreSessionState(): void {
+    let raw: string | null;
+    try {
+      raw = sessionStorage.getItem(SESSION_KEY);
+    } catch {
+      return;
+    }
+    if (!raw) return;
+
+    let state: StoredForgotPasswordState;
+    try {
+      state = JSON.parse(raw) as StoredForgotPasswordState;
+    } catch {
+      this.clearSessionState();
+      return;
+    }
+    if (!state?.identifier || !state.role || !state.requestedAt) {
+      this.clearSessionState();
+      return;
+    }
+    if (Date.now() - state.requestedAt > SESSION_MAX_AGE_MS) {
+      this.clearSessionState();
+      return;
+    }
+
+    this.selectedRole.set(state.role);
+    this.identifyForm.patchValue(
+      state.role === 'ULB'
+        ? { role: state.role, code: state.identifier, email: '' }
+        : { role: state.role, code: '', email: state.identifier },
+    );
+    this.maskedIdentifier.set(state.maskedIdentifier);
+    if (state.typeKey) this.typeKey.set(state.typeKey);
+    this.currentStep.set('RESET_PASSWORD');
+    this.startResendTimer(state.requestedAt);
   }
 
   /**
@@ -411,10 +513,22 @@ export class ForgotPasswordComponent implements OnInit {
       });
   }
 
+  /**
+   * Two shapes of 429 carry this, checked in order: the Redis-backed OTP cooldown/lock errors put
+   * it in the JSON body (`data.retryAfterSeconds`); the global per-IP ThrottlerGuard instead sets
+   * a `Retry-After` response header (delta-seconds, per HTTP spec) — the backend must explicitly
+   * CORS-expose that header or the browser hides it from JS even though it's on the wire.
+   */
   private extractRetryAfterSeconds(err: HttpErrorResponse): number | null {
     if (err.status !== 429) return null;
-    const raw = (err.error as { data?: { retryAfterSeconds?: unknown } } | null)?.data?.retryAfterSeconds;
-    return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? Math.round(raw) : null;
+
+    const bodyValue = (err.error as { data?: { retryAfterSeconds?: unknown } } | null)?.data?.retryAfterSeconds;
+    if (typeof bodyValue === 'number' && Number.isFinite(bodyValue) && bodyValue > 0) return Math.round(bodyValue);
+
+    const headerValue = Number(err.headers?.get('Retry-After'));
+    if (Number.isFinite(headerValue) && headerValue > 0) return Math.round(headerValue);
+
+    return null;
   }
 
   private clearErrorRetryCountdown(): void {
