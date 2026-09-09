@@ -62,6 +62,20 @@ export function noNullBytes(control: AbstractControl): ValidationErrors | null {
 }
 
 /**
+ * Requires at least one uppercase letter and one special character.
+ * Only wire this into flows that SET a new password (registration, reset) —
+ * never into a login-password control, where an existing account's password
+ * may predate this rule and would then be unable to log in at all.
+ */
+export function passwordComplexity(control: AbstractControl): ValidationErrors | null {
+  const value = control.value as string;
+  if (!value) return null;
+  const hasUpper = /[A-Z]/.test(value);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\/;']/.test(value);
+  return hasUpper && hasSpecial ? null : { passwordComplexity: true };
+}
+
+/**
  * Rejects email-format input in a field that expects a census/ULB code.
  * Prevents users from accidentally (or intentionally) entering an email
  * in the ULB code field.

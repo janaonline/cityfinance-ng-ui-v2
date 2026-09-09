@@ -1,10 +1,11 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { EMPTY, Observable, catchError, finalize, map, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthService as LegacyAuthService } from '../services/auth.service';
+import { SUPPRESS_ERROR_TOAST } from '../security/custom-http.interceptor';
 import {
   AuthUser,
   ForgotPasswordOtpResult,
@@ -32,11 +33,15 @@ export class OtpAuthService {
   readonly isLoggedIn = computed(() => !!this.accessToken());
   readonly user = this.currentUser.asReadonly();
 
-  sendOtp(identifier: string, purpose: OtpPurpose = 'login'): Observable<SendOtpResponse> {
+  sendOtp(
+    identifier: string,
+    purpose: OtpPurpose = 'login',
+    context?: HttpContext,
+  ): Observable<SendOtpResponse> {
     return this.http.post<SendOtpResponse>(
       `${environment.api.url2}auth/sendOtp`,
       { identifier, purpose },
-      { withCredentials: true },
+      { withCredentials: true, ...(context ? { context } : {}) },
     );
   }
 
@@ -45,18 +50,24 @@ export class OtpAuthService {
    * one based on role (ULB → maskedMobile, STATE/MoHUA → maskedEmail). For fake accounts both
    * fields are undefined — the component falls back to masking the entered identifier on the
    * frontend. Either way the UI message is identical, preventing account enumeration.
+   *
+   * Suppresses the global error snackbar — the forgot-password component already renders every
+   * error inline and would otherwise show it twice.
    */
   sendForgotPasswordOtp(identifier: string): Observable<ForgotPasswordOtpResult> {
-    return this.sendOtp(identifier, 'forgot-password').pipe(
-      map((res) => ({ maskedMobile: res.mobile, maskedEmail: res.email })),
-    );
+    return this.sendOtp(
+      identifier,
+      'forgot-password',
+      new HttpContext().set(SUPPRESS_ERROR_TOAST, true),
+    ).pipe(map((res) => ({ maskedMobile: res.mobile, maskedEmail: res.email })));
   }
 
+  /** Suppresses the global error snackbar — see sendForgotPasswordOtp above. */
   resetPassword(payload: ResetPasswordPayload): Observable<ResetPasswordResponse> {
     return this.http.post<ResetPasswordResponse>(
       `${environment.api.url2}auth/forgot-password/reset`,
       payload,
-      { withCredentials: true },
+      { withCredentials: true, context: new HttpContext().set(SUPPRESS_ERROR_TOAST, true) },
     );
   }
 
