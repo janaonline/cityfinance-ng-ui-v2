@@ -9,6 +9,8 @@ import {
   IUlbMasterListQuery,
   IUlbMasterPage,
   IUlbType,
+  IUlbYearAccess,
+  IUpdateUlbYearAccess,
 } from '../../../../core/models/ulb-master';
 import { IState } from '../../../../core/models/state/state';
 import { StateService } from '../../../../core/services/state/state.service';
@@ -51,6 +53,16 @@ export class UlbMasterService {
 
   reject(id: string, reason: string): Observable<IApiEnvelope<IUlbMaster>> {
     return this.http.patch<IApiEnvelope<IUlbMaster>>(`${this.baseUrl}/${id}/reject`, { reason });
+  }
+
+  /** xvi-fc dynamic year access (ADMIN only) — current startYear/yearAccess plus the exemptable-form list. */
+  getYearAccess(id: string): Observable<IApiEnvelope<IUlbYearAccess>> {
+    return this.http.get<IApiEnvelope<IUlbYearAccess>>(`${this.baseUrl}/${id}/year-access`);
+  }
+
+  /** Edit-anytime, never blocks Approve/Reject — see getYearAccess. */
+  updateYearAccess(id: string, dto: IUpdateUlbYearAccess): Observable<IApiEnvelope<IUlbMaster>> {
+    return this.http.patch<IApiEnvelope<IUlbMaster>>(`${this.baseUrl}/${id}/year-access`, dto);
   }
 
   getTypes(): Observable<IApiEnvelope<IUlbType[]>> {

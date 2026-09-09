@@ -230,6 +230,38 @@ describe('SlbComponent', () => {
     expect(component.form.disabled).toBeTrue();
   }));
 
+  it('shows the exemption notice and disables the form when SLB is exempted for this ULB', fakeAsync(() => {
+    getSlbFormSpy.and.returnValue(
+      of(
+        createSlbFormResponse({
+          currentFormStatus: 12,
+          currentFormStatusLabel: 'Exempted',
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+        }),
+      ),
+    );
+
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    expect(component.isExempted()).toBeTrue();
+    expect(component.form.disabled).toBeTrue();
+    const notice = (fixture.nativeElement as HTMLElement).querySelector('app-exemption-notice');
+    expect(notice).toBeTruthy();
+    expect(notice?.textContent).toContain('Dear Test ULB,');
+    expect(notice?.textContent).toContain('Exempted from Service Level Benchmarks');
+  }));
+
+  it('does not show the exemption notice for a non-exempted status', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    expect(component.isExempted()).toBeFalse();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-exemption-notice')).toBeNull();
+  }));
+
   it('shows the error state and stops loading when the initial fetch fails', fakeAsync(() => {
     getSlbFormSpy.and.returnValue(throwError(() => new Error('network error')));
 
