@@ -33,6 +33,7 @@ import {
   noNumericCode,
   passwordComplexity,
 } from '../validators/auth-security.validators';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 type ForgotRole = 'ULB' | 'STATE' | 'MOHUA';
 type StepType = 'REQUEST_OTP' | 'RESET_PASSWORD' | 'SUCCESS';
@@ -53,6 +54,7 @@ export class ForgotPasswordComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   readonly roles: ForgotRole[] = ['ULB', 'STATE', 'MOHUA'];
   readonly typeKey = signal<LoginType | null>(null);
@@ -311,16 +313,30 @@ export class ForgotPasswordComponent implements OnInit {
   }
 
   onBackToIdentify(): void {
-    this.clearCountdown();
-    this.clearErrorRetryCountdown();
-    this.slideDirection.set('back');
-    this.currentStep.set('REQUEST_OTP');
-    this.resetForm.reset();
-    this.resetError.set('');
-    this.errorIsRateLimited.set(false);
-    this.errorRetrySeconds.set(0);
-    this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
-    this.showConfirmPassword.set(false);
+    this.confirmDialogService
+      .confirm({
+        title: 'Go back?',
+        message: "Going back means you'll have to request another OTP if you return to this step.",
+        confirmText: 'Yes, go back',
+        cancelText: 'Stay here',
+        confirmButtonColor: 'warn',
+        icon: 'bi-exclamation-triangle-fill',
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+
+        this.clearCountdown();
+        this.clearErrorRetryCountdown();
+        this.slideDirection.set('back');
+        this.currentStep.set('REQUEST_OTP');
+        this.resetForm.reset();
+        this.resetError.set('');
+        this.errorIsRateLimited.set(false);
+        this.errorRetrySeconds.set(0);
+        this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
+        this.showConfirmPassword.set(false);
+      });
   }
 
   toggleNewPassword(): void {

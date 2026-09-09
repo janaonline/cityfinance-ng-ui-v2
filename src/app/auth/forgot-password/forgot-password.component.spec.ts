@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 
 import { OtpAuthService } from '../../core/auth/auth.service';
 import { ForgotPasswordComponent } from './forgot-password.component';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 const MOCK_PASSWORD = 'Test@1234';
 const MOCK_PASSWORD_ALT = 'Other@1234';
@@ -21,10 +22,15 @@ describe('ForgotPasswordComponent', () => {
   let fixture: ComponentFixture<ForgotPasswordComponent>;
   let authSpy: jasmine.SpyObj<OtpAuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let confirmDialogSpy: jasmine.SpyObj<ConfirmDialogService>;
 
   beforeEach(async () => {
     authSpy = jasmine.createSpyObj('OtpAuthService', ['sendForgotPasswordOtp', 'resetPassword']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    confirmDialogSpy = jasmine.createSpyObj('ConfirmDialogService', ['confirm']);
+    // Default: confirm immediately, so existing onBackToIdentify() call sites keep working
+    // synchronously; tests that care about the cancel path override this per-test.
+    confirmDialogSpy.confirm.and.returnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, RouterTestingModule, ForgotPasswordComponent],
@@ -33,6 +39,7 @@ describe('ForgotPasswordComponent', () => {
         { provide: MAT_DIALOG_DATA, useValue: {} },
         { provide: OtpAuthService, useValue: authSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: ConfirmDialogService, useValue: confirmDialogSpy },
         {
           provide: ActivatedRoute,
           useValue: { queryParams: of({}), paramMap: of(convertToParamMap({})) },
@@ -490,6 +497,20 @@ describe('ForgotPasswordComponent', () => {
       component.resetError.set('some error');
       component.onBackToIdentify();
       expect(component.resetError()).toBe('');
+    });
+
+    it('should ask for confirmation before going back', () => {
+      component.onBackToIdentify();
+      expect(confirmDialogSpy.confirm).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stay on RESET_PASSWORD when the user cancels the confirmation', () => {
+      confirmDialogSpy.confirm.and.returnValue(of(false));
+      component.currentStep.set('RESET_PASSWORD');
+
+      component.onBackToIdentify();
+
+      expect(component.currentStep()).toBe('RESET_PASSWORD');
     });
   });
 
