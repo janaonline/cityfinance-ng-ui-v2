@@ -30,10 +30,18 @@ import {
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
+import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
+import { FORM_STATUS, FormStatusType } from '../../../common/constants/form-status.constants';
 
 @Component({
   selector: 'app-slb',
-  imports: [SlbFormBodyComponent, PreLoaderComponent, MatButtonModule, PageErrorStateComponent],
+  imports: [
+    SlbFormBodyComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    PageErrorStateComponent,
+    ExemptionNoticeComponent,
+  ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
@@ -71,9 +79,11 @@ export class SlbComponent implements OnInit {
     canFinalSubmit: false,
   });
   readonly currentFormStatusLabel = signal('');
+  readonly currentFormStatus = signal<FormStatusType | null>(null);
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+  readonly isExempted = computed(() => this.currentFormStatus() === FORM_STATUS.EXEMPTED_ACKNOWLEDGED);
 
   /** Dev/staging-only helper: shows the "Fill test data" button so QA can exercise the form without manual data entry. */
   readonly isProduction = environment.isProduction;
@@ -120,6 +130,7 @@ export class SlbComponent implements OnInit {
         next: (data) => {
           this.permissions.set(data.permissions);
           this.currentFormStatusLabel.set(data.currentFormStatusLabel);
+          this.currentFormStatus.set(data.currentFormStatus as FormStatusType);
           this.fields.set(data.questions);
           this.ulbName.set(data.ulbName);
           this.yearLabel.set(data.designYear);
