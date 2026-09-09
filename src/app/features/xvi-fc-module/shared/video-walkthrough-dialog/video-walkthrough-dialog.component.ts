@@ -9,8 +9,15 @@ export interface VideoWalkthroughDialogData {
 }
 
 /**
- * 16th FC video walkthrough, auto-shown once per browser on the ULB overview page (see
- * overview.component.ts) and re-openable any time via the permanent hero-band link.
+ * 16th FC video walkthrough dialog — NOT currently wired up anywhere (see overview.component.ts,
+ * which uses a plain window.open() banner instead). This embeds a YouTube iframe, which only
+ * loads where the deployment's Content-Security-Policy `frame-src` allows
+ * https://www.youtube-nocookie.com — true today on dev/staging (fixed via their shared
+ * /etc/nginx/snippets/cf-csp.conf), but NOT yet on production. Kept in the codebase, unused, until
+ * production's CSP is updated too — wiring it back in before then would break the video specifically
+ * in production while working everywhere else, since the frontend build is identical across
+ * environments and has no way to know which CSP is live server-side.
+ *
  * Modeled on ImageLightboxDialogComponent — same borderless-panel/dark-backdrop MatDialog
  * pattern, see `.video-walkthrough-panel` in `material-custom.scss` (the CDK overlay renders
  * outside this component's view, so those overrides can't live in this stylesheet).

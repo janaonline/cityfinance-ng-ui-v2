@@ -1,25 +1,23 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import {
   OverviewCardComponent,
   OverviewData,
 } from '../../shared/overview-card/overview-card.component';
 import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
-import {
-  VideoWalkthroughDialogComponent,
-} from '../../shared/video-walkthrough-dialog/video-walkthrough-dialog.component';
 import { UlbNotificationService } from '../ulb-notification.service';
 import { UlbOverviewService } from './overview-card.service';
 import { DisbursementColumn, DisbursementRow } from './overview-card.models';
 
-/** youtu.be short link — used as-is for the permanent "open in new tab" link. */
+/** youtu.be short link — used both by the permanent hero-band link and the one-time banner. No
+ *  in-page embed/dialog: dev/staging's CSP frame-src doesn't allow youtube.com/youtube-nocookie.com
+ *  and that's set at the server/infra layer, outside either app's codebase. */
 const VIDEO_WATCH_URL = 'https://youtu.be/UJ9rpS1yQJs';
-const VIDEO_EMBED_URL = 'https://www.youtube-nocookie.com/embed/UJ9rpS1yQJs';
-const VIDEO_TITLE = '16th FC video walkthrough';
 
-/** Gates the auto-popup to once per browser (see VideoWalkthroughDialogComponent's doc comment) —
- *  not tied to isNewUser, so it fires the first time ANY ULB user sees this page, regardless of
- *  account age. Follows the same localStorage-flag convention as isXVIFCProfileVerified. */
+/** Gates the one-time banner to once per browser — not tied to isNewUser, so it shows the first
+ *  time ANY ULB user sees this page, regardless of account age. Follows the same localStorage-flag
+ *  convention as isXVIFCProfileVerified. Only ever set from an explicit user action (Watch now /
+ *  dismiss) — never just from rendering the banner, since it's easy to miss on first paint and a
+ *  refresh before noticing it shouldn't burn the one-time budget. */
 const HAS_SEEN_VIDEO_KEY = 'hasSeenXvifcVideoWalkthrough';
 
 @Component({
@@ -32,9 +30,9 @@ const HAS_SEEN_VIDEO_KEY = 'hasSeenXvifcVideoWalkthrough';
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(UlbOverviewService);
   private readonly ulbNotifications = inject(UlbNotificationService);
-  private readonly dialog = inject(MatDialog);
 
   readonly videoWalkthroughUrl = VIDEO_WATCH_URL;
+  readonly showVideoBanner = signal(false);
 
   get selectedYear(): string | null {
     return localStorage.getItem('xvifc_selectedYearString') ?? null;
@@ -60,34 +58,39 @@ export class OverviewComponent implements OnInit {
   ngOnInit(): void {
     this.loadOverview();
     void this.ulbNotifications.ensureLoadedForUlb(this.ulbId);
-    this.maybeShowVideoWalkthrough();
+    this.maybeShowVideoBanner();
   }
 
-  /** Auto-opens the video walkthrough once per browser — see HAS_SEEN_VIDEO_KEY above. Marks it
-   *  seen as soon as the dialog is opened, not just on close: the requirement is "show it once,"
-   *  and a user closing the tab mid-video shouldn't get it again next visit either. */
-  private maybeShowVideoWalkthrough(): void {
+  /** Shows the one-time video banner if this browser hasn't dismissed/clicked it before — see
+   *  HAS_SEEN_VIDEO_KEY above. Just renders the banner; doesn't mark it seen yet. */
+  private maybeShowVideoBanner(): void {
     let hasSeen = false;
     try {
       hasSeen = localStorage.getItem(HAS_SEEN_VIDEO_KEY) === 'true';
     } catch {
-      return; // storage unavailable — skip the auto-popup rather than risk showing it every visit
+      return; // storage unavailable — skip the banner rather than risk showing it every visit
     }
-    if (hasSeen) return;
+    if (!hasSeen) this.showVideoBanner.set(true);
+  }
 
+  /** Opening the video is a direct click, so window.open() isn't treated as an unrequested popup
+   *  (unlike calling it automatically from ngOnInit, which browsers silently block). */
+  onWatchVideoBannerClick(): void {
+    window.open(VIDEO_WATCH_URL, '_blank', 'noopener,noreferrer');
+    this.dismissVideoBanner();
+  }
+
+  onDismissVideoBanner(): void {
+    this.dismissVideoBanner();
+  }
+
+  private dismissVideoBanner(): void {
+    this.showVideoBanner.set(false);
     try {
       localStorage.setItem(HAS_SEEN_VIDEO_KEY, 'true');
     } catch {
-      return;
+      // Nothing to do if storage is unavailable — banner will just show again next visit.
     }
-
-    this.dialog.open(VideoWalkthroughDialogComponent, {
-      data: { embedUrl: VIDEO_EMBED_URL, title: VIDEO_TITLE },
-      panelClass: 'video-walkthrough-panel',
-      backdropClass: 'video-walkthrough-backdrop',
-      maxWidth: '95vw',
-      maxHeight: '95vh',
-    });
   }
 
   loadOverview(): void {
