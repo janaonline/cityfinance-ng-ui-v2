@@ -78,3 +78,36 @@ export interface IUlbMasterListQuery {
   page?: number;
   limit?: number;
 }
+
+/** xvi-fc dynamic year access — one materialized (or admin-set seed) year entry on a ULB. */
+export interface IUlbYearAccessEntry {
+  yearEnabled: boolean;
+  yearId: string;
+  disabledFormIds: number[];
+}
+
+/** A formId currently eligible for the exemption checklist — see cf-nest-api-v2's
+ *  src/master/form-json-config/CLAUDE.md for what each field means and the full formId registry. */
+export interface IExemptableForm {
+  formId: number;
+  isApplicableForExemption: boolean;
+  exemptionGraceYears: number;
+  submissionScope: 'PER_YEAR' | 'ONCE_EVER';
+  /** Backend-computed display label (falls back to "Form #<id>" server-side for an unregistered
+   *  formId) — render this directly instead of keeping a formId -> label map here. */
+  label: string;
+}
+
+/** `GET master/ulb/:id/year-access` response. */
+export interface IUlbYearAccess {
+  startYear: number | null;
+  yearAccess: Record<string, IUlbYearAccessEntry>;
+  exemptableForms: IExemptableForm[];
+}
+
+/** `PATCH master/ulb/:id/year-access` payload — both fields optional/patch-style, edit-anytime,
+ *  never blocks Approve/Reject. */
+export interface IUpdateUlbYearAccess {
+  startYear?: number | null;
+  disabledFormIds?: number[];
+}

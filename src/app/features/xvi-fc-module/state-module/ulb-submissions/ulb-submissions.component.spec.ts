@@ -56,15 +56,18 @@ describe('UlbSubmissionsComponent', () => {
     expect(component.isBucketDisabled('NOT_STARTED')).toBeFalse();
     expect(component.isBucketDisabled('IN_PROGRESS')).toBeFalse();
     expect(component.isBucketDisabled('APPROVED_BY_STATE')).toBeFalse();
+    expect(component.isBucketDisabled('EXEMPTED')).toBeFalse();
   });
 
-  it('does not disable any bucket for a live approve/return form like PFMS Bank Account', () => {
+  it('disables the review/returned/MoHUA stat-card buckets and enables Exempted for a live approve/return form like PFMS Bank Account', () => {
     component.filterForm.controls.form.setValue('PFMS_BANK_ACCOUNT');
     fixture.detectChanges();
 
     expect(component.isBucketDisabled('UNDER_STATE_REVIEW')).toBeFalse();
     expect(component.isBucketDisabled('RETURNED_BY_STATE')).toBeFalse();
     expect(component.isBucketDisabled('UNDER_REVIEW_BY_MOHUA')).toBeFalse();
+    // EXEMPTED (xvi-fc dynamic year access) only ever applies to SLB - disabled for every other form.
+    expect(component.isBucketDisabled('EXEMPTED')).toBeTrue();
   });
 
   it('selectBucket() is a no-op for a disabled bucket', () => {
