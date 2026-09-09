@@ -36,6 +36,18 @@ describe('resolveDateConstraint', () => {
     it('resolves TODAY+30D to thirty days ahead', () => {
       expect(resolveDateConstraint('TODAY+30D', BASE)?.getTime()).toBe(dateOnly(2025, 2, 14).getTime());
     });
+
+    // 2024 is a leap year; 2029 is not — Excel's EDATE(29-Feb-2024, 60) clamps to 28-Feb-2029
+    // rather than rolling over to 1-Mar-2029 the way plain setFullYear/setMonth would.
+    it('clamps TODAY+5Y from a leap day to 28 Feb (matches Excel EDATE(), not JS rollover)', () => {
+      const leapDayBase = dateOnly(2024, 2, 29);
+      expect(resolveDateConstraint('TODAY+5Y', leapDayBase)?.getTime()).toBe(dateOnly(2029, 2, 28).getTime());
+    });
+
+    it('clamps TODAY+1M from the 31st to the shorter target month\'s last day', () => {
+      const endOfMonthBase = dateOnly(2025, 3, 31);
+      expect(resolveDateConstraint('TODAY+1M', endOfMonthBase)?.getTime()).toBe(dateOnly(2025, 4, 30).getTime());
+    });
   });
 
   describe('FIELD: relative expressions', () => {
@@ -85,6 +97,15 @@ describe('resolveDateConstraint', () => {
       const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-06-01' : undefined);
       const resolved = resolveDateConstraint('FIELD:dateOfConstitution+5Y', dateOnly(1999, 1, 1), lookup);
       expect(resolved?.getTime()).toBe(dateOnly(2029, 6, 1).getTime());
+    });
+
+    // Same leap-day clamping as the TODAY grammar (shared offset math) — matches Excel's EDATE(),
+    // which the backend's Excel-template formula uses for this exact dateOfExpiry bound.
+    it('clamps FIELD:<key>+5Y from a leap-day sibling value to 28 Feb (matches Excel EDATE())', () => {
+      const lookup = (key: string) => (key === 'dateOfConstitution' ? '2024-02-29' : undefined);
+      expect(resolveDateConstraint('FIELD:dateOfConstitution+5Y', BASE, lookup)?.getTime()).toBe(
+        dateOnly(2029, 2, 28).getTime(),
+      );
     });
   });
 

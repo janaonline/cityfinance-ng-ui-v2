@@ -401,15 +401,14 @@
         </div>
       }
       @if (bankAccountData() && canUndoApprovalPfms()) {
-        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
-          <button
-            type="button"
-            matButton="outlined"
-            class="text-danger"
-            [disabled]="isDeciding()"
-            (click)="undoPfmsApproval()"
-          >
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Approval
+        <div class="approval-banner d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+          <span class="approval-banner-text">
+            <i class="bi bi-check-circle-fill"></i>
+            Approved by {{ bankAccountData()?.stateDecision?.decidedBy?.name || 'State' }}
+            on {{ bankAccountData()?.stateDecision?.decidedAt | date: 'MMM d, y, h:mm a' }}
+          </span>
+          <button type="button" class="approval-banner-action" [disabled]="isDeciding()" (click)="undoPfmsApproval()">
+            Reopen for correction
           </button>
         </div>
       }
@@ -449,15 +448,14 @@
         </div>
       }
       @if (canUndoApproval()) {
-        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
-          <button
-            type="button"
-            matButton="outlined"
-            class="text-danger"
-            [disabled]="isDeciding()"
-            (click)="undoSectionApproval()"
-          >
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Undo Approval
+        <div class="approval-banner d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+          <span class="approval-banner-text">
+            <i class="bi bi-check-circle-fill"></i>
+            Approved by {{ currentSection()?.stateDecision?.decidedBy?.name || 'State' }}
+            on {{ currentSection()?.stateDecision?.decidedAt | date: 'MMM d, y, h:mm a' }}
+          </span>
+          <button type="button" class="approval-banner-action" [disabled]="isDeciding()" (click)="undoSectionApproval()">
+            Reopen for correction
           </button>
         </div>
       }

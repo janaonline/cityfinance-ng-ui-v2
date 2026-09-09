@@ -13,10 +13,13 @@ export interface GrantSection {
   label: string;
   componentLabel: string;
   title: string;
-  /** A raw number (this state's actual grant total — formatted live at render time) for Basic/
-   *  Performance grants; a plain pre-formatted string for the two fixed national policy figures
-   *  (Special Infrastructure/Urbanization Premium) that aren't this state's own data and so never
-   *  respond to the amount-display override. */
+  /** A raw whole-Rupee number, formatted live at render time via `isAmountNumber`/`formatAmount` —
+   *  this state's actual grant total for Basic/Performance, or a fixed national-policy figure
+   *  (same for every state) for Special Infrastructure/Urbanization Premium. The `string` branch
+   *  exists for a future section with genuinely no numeric figure to show (mirrors
+   *  `OverviewData.totalAllocation`'s ULB-placeholder case below) — not currently used by any
+   *  `GrantSection`; do not hardcode a pre-formatted string here again, it silently stops
+   *  responding to the amount-display override (see `isAmountNumber`). */
   amount?: number | string;
   amountSuffix?: string;
   description?: string;
@@ -50,6 +53,9 @@ export class OverviewCardComponent implements OnChanges {
   @Input() initialSelectedGrantId: string | null = null;
   @Input() isLoading = false;
   @Input() selectedYear: string | null = null;
+  /** Opens in a new tab from the hero band when provided — omit to show no video link at all
+   *  (this card is shared with the STATE overview, which doesn't have one). */
+  @Input() videoWalkthroughUrl: string | null = null;
   selectedGrantId = '';
 
   /** State-wide aggregate, so this follows the same `'auto'` page default used everywhere else on

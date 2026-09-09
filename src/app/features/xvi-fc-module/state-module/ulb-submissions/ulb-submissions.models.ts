@@ -30,6 +30,54 @@ export const TAB_TO_FORM: Readonly<Record<string, ReviewFormId>> = Object.fromEn
   Object.entries(FORM_TO_TAB).map(([form, tab]) => [tab, form as ReviewFormId]),
 );
 
+export interface SystemChecksContent {
+  /** Takes the current FY label (e.g. "FY 2025-26") for the two forms whose caption cites it. */
+  readonly caption: (yearLabel: string) => string;
+  readonly checkedAutomatically: readonly string[];
+  readonly notChecked: readonly string[];
+}
+
+/** "What the system checked" info-panel content — genuinely different per form, not a shared
+ *  boilerplate list, since each form's automated OCR/validation checks are different. */
+export const SYSTEM_CHECKS_CONTENT: Readonly<Record<ReviewFormId, SystemChecksContent>> = {
+  AUDITED_STATEMENTS: {
+    caption: (year) => `Runs on every document in the ${year} batch.`,
+    checkedAutomatically: [
+      'The file opens, is legible, and contains a table',
+      'The document type, ULB name and financial year all match',
+      'The expected header or title is present',
+      "Auditor's Report: letterhead, seal and signatures are present",
+    ],
+    notChecked: ['The figures inside. No arithmetic, no year-on-year check, no external record.'],
+  },
+  PROVISIONAL_STATEMENTS: {
+    caption: (year) => `Runs on every document in the ${year} batch.`,
+    checkedAutomatically: [
+      'The file opens, is legible, and contains a table',
+      'The document type, ULB name and financial year all match',
+      'The expected header or title is present',
+    ],
+    notChecked: ['The figures inside. No arithmetic, and no match against the audited statements.'],
+  },
+  PFMS_BANK_ACCOUNT: {
+    caption: () => 'Runs when the ULB saves the form.',
+    checkedAutomatically: ['The IFSC is in the correct format', 'The account number and its re-entry match'],
+    notChecked: [
+      'Whether the account is linked to PFMS. The platform has no PFMS connection.',
+      'Whether the account belongs to the ULB.',
+    ],
+  },
+  SERVICE_LEVEL_BENCHMARKS: {
+    caption: () => '28 indicators. Deemed approved on submission — no State review.',
+    checkedAutomatically: [
+      'Every indicator has both an actual and a target',
+      'The 2026-27 target is greater than the 2025-26 actual',
+      'Both values sit inside the permitted range',
+    ],
+    notChecked: ['Whether the reported actuals are true.'],
+  },
+};
+
 /** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
 export type ReviewStatus =
   | 'NOT_STARTED'
@@ -108,6 +156,9 @@ export interface UlbSubmissionRow {
   readonly formStatus: ReviewStatus;
   readonly formStatusId: number;
   readonly lastUpdatedAt: string | null;
+  /** When this row entered UNDER_REVIEW_BY_STATE — the precise anchor `daysPending()` uses instead
+   *  of `lastUpdatedAt` for rows in that status. Null for every other status. */
+  readonly enteredReviewAt: string | null;
   /** The selected form's own record id (annual account doc, bank account doc, ...) — null if not started. */
   readonly recordId: string | null;
 }

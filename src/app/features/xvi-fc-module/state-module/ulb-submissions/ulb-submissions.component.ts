@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { animate, style, transition, trigger } from '@angular/animations';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder } from '@angular/forms';
@@ -26,6 +26,7 @@ import {
   ReviewStatus,
   SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
+  SYSTEM_CHECKS_CONTENT,
   TAB_TO_FORM,
   UlbSubmissionRow,
   UlbSubmissionSortField,
@@ -69,6 +70,15 @@ const BUCKET_SLIDE = trigger('bucketSlide', [
   ]),
 ]);
 
+/** Smooth expand/collapse for the "What the system checked" panel — animates the wrapper's
+ *  height/opacity, not the padded inner panel, so collapsing clips cleanly to 0 instead of
+ *  leaving a residual padding strip. */
+const EXPAND_COLLAPSE = trigger('expandCollapse', [
+  state('collapsed', style({ height: '0px', opacity: 0 })),
+  state('expanded', style({ height: '*', opacity: 1 })),
+  transition('collapsed <=> expanded', animate('220ms ease-in-out')),
+]);
+
 interface FilterSelectConfig {
   readonly key: 'form';
   readonly id: string;
@@ -86,7 +96,7 @@ const FILTER_SELECTS: readonly FilterSelectConfig[] = [
   imports: [MaterialModule, MatTableModule, MatSortModule],
   templateUrl: './ulb-submissions.component.html',
   styleUrl: './ulb-submissions.component.scss',
-  animations: [BUCKET_SLIDE],
+  animations: [BUCKET_SLIDE, EXPAND_COLLAPSE],
 })
 export class UlbSubmissionsComponent {
   private readonly fb = inject(FormBuilder);
@@ -135,6 +145,14 @@ export class UlbSubmissionsComponent {
 
   readonly yearLabel = signal(this.resolveYearLabel());
 
+  /** "What the system checked" info panel — content is specific to the currently selected form. */
+  readonly showSystemChecks = signal(false);
+  toggleSystemChecks(): void {
+    this.showSystemChecks.update((v) => !v);
+  }
+  readonly systemChecksContent = computed(() => SYSTEM_CHECKS_CONTENT[this.selectedFormId()]);
+  readonly systemChecksCaption = computed(() => this.systemChecksContent().caption(this.yearLabel()));
+
   readonly page = signal(1);
   readonly sortField = signal<UlbSubmissionSortField>('ulbName');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
@@ -163,10 +181,22 @@ export class UlbSubmissionsComponent {
     ['NOT_STARTED', 'IN_PROGRESS'].includes(this.selectedBucketKey()),
   );
 
+  /** "Pending Since" is exclusively an Under Review by State concept (see daysPending() in
+   *  ulb-submissions.utils.ts) — the column itself is hidden for every other bucket rather than
+   *  showing a column full of dashes. */
+  private readonly isUnderStateReviewBucket = computed(() => this.selectedBucketKey() === 'UNDER_STATE_REVIEW');
+
   readonly displayedColumns = computed(() => {
     const base = this.hasNothingToReviewYet()
       ? ['select', 'ulbName', 'censusCode', 'formStatus']
-      : ['select', 'ulbName', 'censusCode', 'daysPending', 'formStatus', 'action'];
+      : [
+          'select',
+          'ulbName',
+          'censusCode',
+          ...(this.isUnderStateReviewBucket() ? ['daysPending'] : []),
+          'formStatus',
+          'action',
+        ];
     return this.isBulkReviewable() ? base : base.filter((column) => column !== 'select');
   });
 
