@@ -23,8 +23,6 @@ describe('ForgotPasswordComponent', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    sessionStorage.clear(); // avoid cross-test pollution from the refresh-persistence feature
-
     authSpy = jasmine.createSpyObj('OtpAuthService', ['sendForgotPasswordOtp', 'resetPassword']);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -454,15 +452,13 @@ describe('ForgotPasswordComponent', () => {
       expect(authSpy.sendForgotPasswordOtp).toHaveBeenCalledWith('123456');
     }));
 
-    it('should mark otpResent true and restart timer on success', fakeAsync(() => {
+    it('should restart the resend timer on success', fakeAsync(() => {
       authSpy.sendForgotPasswordOtp.and.returnValue(of(mockSendOtpResponse));
       component.resendSeconds.set(0);
-      component.otpResent.set(false);
 
       component.onResendOtp();
       tick();
 
-      expect(component.otpResent()).toBeTrue();
       expect(component.resendSeconds()).toBeGreaterThan(0);
     }));
 
@@ -490,11 +486,9 @@ describe('ForgotPasswordComponent', () => {
       expect(component.resetForm.controls.otp.value).toBe('');
     });
 
-    it('should clear otpResent and resetError signals', () => {
-      component.otpResent.set(true);
+    it('should clear the resetError signal', () => {
       component.resetError.set('some error');
       component.onBackToIdentify();
-      expect(component.otpResent()).toBeFalse();
       expect(component.resetError()).toBe('');
     });
   });
