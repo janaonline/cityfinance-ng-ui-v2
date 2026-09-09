@@ -102,7 +102,7 @@ export class OverviewService {
           label: 'Special Infrastructure',
           componentLabel: 'Grant Component',
           title: 'Special Infrastructure Grants',
-          amount: '₹56,100 crore',
+          amount: 561_000_000_000,
           amountSuffix: 'for 22 cities',
           description: 'Grants for cities with 1–4M population to undertake wastewater management projects:',
           points: [
@@ -116,7 +116,7 @@ export class OverviewService {
           label: 'Urbanization Premium',
           componentLabel: 'Grant Component',
           title: 'Urbanization Premium Grants',
-          amount: '₹10,000 crore',
+          amount: 100_000_000_000,
           points: [
             'A one-time grant to support the integration of peri-urban villages into cities with populations above 1 lakh.',
             'Requires states to adopt a rural–urban transition policy.',

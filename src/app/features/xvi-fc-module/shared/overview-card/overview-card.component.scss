@@ -80,6 +80,59 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+.hero-band__video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  padding: 0.3rem 0.7rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+  }
+
+  i {
+    font-size: 0.8rem;
+  }
+
+  // Draws the eye to an easy-to-miss CTA: a quick shake at the start of each 3s cycle, then still
+  // for the rest — a nonstop wiggle would be exhausting, a periodic one still catches the eye.
+  animation: hero-video-link-vibrate 3s ease-in-out infinite;
+
+  &:hover,
+  &:focus-visible {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes hero-video-link-vibrate {
+  0%, 14%, 100% {
+    transform: translateX(0) rotate(0);
+  }
+  2%, 6%, 10% {
+    transform: translateX(-2px) rotate(-1.5deg);
+  }
+  4%, 8%, 12% {
+    transform: translateX(2px) rotate(1.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-band__video-link {
+    animation: none;
+  }
+}
+
 .hero-divider {
   width: 1px;
   align-self: stretch;

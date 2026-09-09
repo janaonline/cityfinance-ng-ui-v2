@@ -20,10 +20,19 @@ export function getStatusLabel(status: ReviewStatus): string {
   return STATUS_LABELS[status] ?? status;
 }
 
-/** Whole days elapsed since the row's last update — a real, derived measure, not a fabricated one. */
-export function daysPending(lastUpdatedAt: string | null): number | null {
-  if (!lastUpdatedAt) return null;
-  const elapsedMs = Date.now() - new Date(lastUpdatedAt).getTime();
+/**
+ * Whole days elapsed since this row entered state review — "Pending Since" is exclusively an
+ * Under Review by State concept, so every other status shows nothing (null), not a stale
+ * last-updated figure left over from whatever last touched the doc. `lastUpdatedAt` is used only
+ * as a fallback anchor for a review-bucket row whose `enteredReviewAt` is missing (e.g. a form
+ * that reached this status through a path other than the normal submit-for-review flow) — better
+ * than showing a blank dash on a row that's actually awaiting review right now.
+ */
+export function daysPending(row: Pick<UlbSubmissionRow, 'formStatus' | 'lastUpdatedAt' | 'enteredReviewAt'>): number | null {
+  if (row.formStatus !== 'UNDER_REVIEW_BY_STATE') return null;
+  const anchor = row.enteredReviewAt ?? row.lastUpdatedAt;
+  if (!anchor) return null;
+  const elapsedMs = Date.now() - new Date(anchor).getTime();
   return Math.max(0, Math.floor(elapsedMs / (24 * 60 * 60 * 1000)));
 }
 

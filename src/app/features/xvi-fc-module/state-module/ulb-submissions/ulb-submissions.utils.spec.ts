@@ -1,5 +1,5 @@
 import { UlbSubmissionRow } from './ulb-submissions.models';
-import { getRowActionLabel, getStatusBadgeClass, isRowReviewable } from './ulb-submissions.utils';
+import { daysPending, getRowActionLabel, getStatusBadgeClass, isRowReviewable } from './ulb-submissions.utils';
 
 function makeRow(overrides: Partial<UlbSubmissionRow>): UlbSubmissionRow {
   return {
@@ -10,6 +10,7 @@ function makeRow(overrides: Partial<UlbSubmissionRow>): UlbSubmissionRow {
     formStatus: 'UNDER_REVIEW_BY_STATE',
     formStatusId: 3,
     lastUpdatedAt: '2026-01-01',
+    enteredReviewAt: null,
     recordId: 'account-1',
     ...overrides,
   };
@@ -32,5 +33,26 @@ describe('ulb-submissions.utils', () => {
     expect(getRowActionLabel(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE' }))).toBe('Review');
     expect(getRowActionLabel(makeRow({ formStatus: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA' }))).toBe('View');
     expect(getRowActionLabel(makeRow({ formStatus: 'NOT_STARTED', recordId: null }))).toBeNull();
+  });
+
+  it('daysPending only returns a value for UNDER_REVIEW_BY_STATE rows, using enteredReviewAt', () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+
+    expect(
+      daysPending(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', enteredReviewAt: twoDaysAgo, lastUpdatedAt: fiveDaysAgo })),
+    ).toBe(2);
+    // Never shown outside the review bucket, even if lastUpdatedAt/enteredReviewAt are present.
+    expect(
+      daysPending(makeRow({ formStatus: 'APPROVED_BY_STATE', enteredReviewAt: twoDaysAgo, lastUpdatedAt: fiveDaysAgo })),
+    ).toBeNull();
+    // Falls back to lastUpdatedAt for a review-bucket row missing enteredReviewAt (e.g. it reached
+    // this status outside the normal submit-for-review flow) rather than showing a blank dash.
+    expect(
+      daysPending(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', enteredReviewAt: null, lastUpdatedAt: fiveDaysAgo })),
+    ).toBe(5);
+    expect(
+      daysPending(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', enteredReviewAt: null, lastUpdatedAt: null })),
+    ).toBeNull();
   });
 });
