@@ -107,6 +107,13 @@
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>
+                  <a
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    [href]="ocrDownloadUrl(row.jobId)"
+                    title="Download the OCR job's file"
+                  >
+                    <i class="bi bi-download"></i> Download
+                  </a>
                 }
                 <button
                   type="button"

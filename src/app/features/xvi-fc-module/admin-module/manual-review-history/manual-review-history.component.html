@@ -1,5 +1,20 @@
 <div class="container-fluid">
-  <h3 class="fw-bold my-4">Manual Review History</h3>
+  <div class="d-flex align-items-center justify-content-between my-4">
+    <h3 class="fw-bold mb-0">Manual Review History</h3>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
+      [disabled]="isExporting()"
+      (click)="exportToExcel()"
+    >
+      @if (isExporting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      } @else {
+        <i class="bi bi-file-earmark-excel"></i>
+      }
+      Download Excel
+    </button>
+  </div>
 
   <mat-card class="custom-mat-card mat-elevation-z1 mb-3">
     <div class="p-3">
@@ -76,17 +91,18 @@
                 {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
               </div>
               <div class="text-muted small">
-                {{ row.docId }}
-                @if (row.fileUrl) {
+                @if (row.ocrJobId) {
                   <a
-                    [href]="row.fileUrl"
+                    [href]="ocrDownloadUrl(row.ocrJobId)"
                     target="_blank"
                     rel="noopener"
-                    class="ms-1 text-muted"
-                    [title]="row.fileName ?? 'View file'"
+                    class="text-muted"
+                    [title]="row.fileName ?? 'Download the OCR job\'s file'"
                   >
-                    <i class="bi bi-file-earmark-text"></i>
+                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
                   </a>
+                } @else {
+                  <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
                 }
               </div>
             </td>
@@ -137,9 +153,22 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
-              <a class="btn btn-outline-secondary btn-sm" [routerLink]="['../manual-review-history', row.requestId]">
-                View Details
-              </a>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <a class="btn btn-outline-secondary btn-sm text-nowrap" [routerLink]="['../manual-review-history', row.requestId]">
+                  View Details
+                </a>
+                @if (row.ocrJobId) {
+                  <a
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    routerLink="/ocr/validation"
+                    [queryParams]="{ jobId: row.ocrJobId }"
+                    target="_blank"
+                    title="View OCR job log"
+                  >
+                    <i class="bi bi-eye"></i> Log
+                  </a>
+                }
+              </div>
             </td>
           </ng-container>
 

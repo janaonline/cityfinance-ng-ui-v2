@@ -1,14 +1,17 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, formatDate } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { saveAs } from 'file-saver';
+import { debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { environment } from '../../../../../environments/environment';
 import { StateService } from '../../../../core/services/state/state.service';
 import { IState } from '../../../../core/models/state/state';
+import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { AnnualAccountSectionKey } from '../manual-review-queue/manual-review-queue.models';
 import { ManualReviewHistoryRow, ManualReviewRequestStatus } from './manual-review-history.models';
@@ -53,6 +56,7 @@ export class ManualReviewHistoryComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly service = inject(ManualReviewHistoryService);
   private readonly stateService = inject(StateService);
+  private readonly utilityService = inject(UtilityService);
 
   readonly displayedColumns = ['ulbDocument', 'requestedAt', 'decision', 'message', 'reviewedBy', 'response', 'actions'];
 
@@ -64,6 +68,7 @@ export class ManualReviewHistoryComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly states = signal<IState[]>([]);
+  readonly isExporting = signal(false);
 
   readonly statusOptions: Array<{ value: ManualReviewRequestStatus; label: string }> = [
     { value: 'PENDING', label: 'Pending' },
@@ -129,23 +134,24 @@ export class ManualReviewHistoryComponent implements OnInit {
     return { label: `${overHrs} hrs over SLA`, overSla: true };
   }
 
+  private currentFilters() {
+    const raw = this.filterForm.getRawValue();
+    return {
+      search: raw.search?.trim() || undefined,
+      status: (raw.status as ManualReviewRequestStatus) || undefined,
+      stateId: raw.stateId || undefined,
+      requestedFrom: raw.requestedFrom || undefined,
+      requestedTo: raw.requestedTo || undefined,
+      breachedOnly: raw.breachedOnly || undefined,
+    };
+  }
+
   loadRows(): void {
     this.isLoading.set(true);
     this.loadError.set(null);
 
-    const raw = this.filterForm.getRawValue();
-
     this.service
-      .getHistory({
-        page: this.page(),
-        pageSize: this.pageSize(),
-        search: raw.search?.trim() || undefined,
-        status: (raw.status as ManualReviewRequestStatus) || undefined,
-        stateId: raw.stateId || undefined,
-        requestedFrom: raw.requestedFrom || undefined,
-        requestedTo: raw.requestedTo || undefined,
-        breachedOnly: raw.breachedOnly || undefined,
-      })
+      .getHistory({ page: this.page(), pageSize: this.pageSize(), ...this.currentFilters() })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -169,5 +175,29 @@ export class ManualReviewHistoryComponent implements OnInit {
     this.page.set(event.pageIndex + 1);
     this.pageSize.set(event.pageSize);
     this.loadRows();
+  }
+
+  /** Excel dump of every row matching the current filters, ignoring pagination. */
+  exportToExcel(): void {
+    if (this.isExporting()) return;
+    this.isExporting.set(true);
+
+    this.service
+      .downloadDump(this.currentFilters())
+      .pipe(finalize(() => this.isExporting.set(false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
+          saveAs(blob, `manual-review-history_${timestamp}.xlsx`);
+        },
+        error: () => {
+          this.utilityService.triggerSnackbar('Unable to export the manual-review history. Please try again.', 'snackbar-danger');
+        },
+      });
+  }
+
+  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed. */
+  ocrDownloadUrl(ocrJobId: string): string {
+    return `${environment.api.url3}ocr-validation/jobs/${ocrJobId}/download`;
   }
 }

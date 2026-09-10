@@ -35,4 +35,20 @@ export class ManualReviewHistoryService {
       .get<ApiResponse<ManualReviewHistoryRow>>(`${this.baseUrl}manual-review-history/${requestId}`)
       .pipe(map((response) => response.data));
   }
+
+  /** Excel export of every row matching the current filters (unpaginated) — `page`/`pageSize` are
+   *  accepted by the backend DTO but ignored by the dump endpoint, so they're omitted here. */
+  downloadDump(query: Omit<ManualReviewHistoryQuery, 'page' | 'pageSize'>): Observable<Blob> {
+    let params = new HttpParams();
+    if (query.search) params = params.set('search', query.search);
+    if (query.status) params = params.set('status', query.status);
+    if (query.stateId) params = params.set('stateId', query.stateId);
+    if (query.requestedFrom) params = params.set('requestedFrom', query.requestedFrom);
+    if (query.requestedTo) params = params.set('requestedTo', query.requestedTo);
+    if (query.decidedFrom) params = params.set('decidedFrom', query.decidedFrom);
+    if (query.decidedTo) params = params.set('decidedTo', query.decidedTo);
+    if (query.breachedOnly) params = params.set('breachedOnly', 'true');
+
+    return this.http.get(`${this.baseUrl}manual-review-history/dump`, { params, responseType: 'blob' });
+  }
 }
