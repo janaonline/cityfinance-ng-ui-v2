@@ -1,0 +1,5 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.shared-mat-table;
+}

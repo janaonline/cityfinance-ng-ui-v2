@@ -37,15 +37,26 @@
           </ng-container>
 
           <ng-container matColumnDef="details">
-            <th mat-header-cell *matHeaderCellDef>Input</th>
+            <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div>
-                <span class="fw-bold">ULB:</span> {{ row.ulbName ?? '—' }} <span>{{ row.ulbCode }}</span>
+              <div class="fw-bold">{{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span></div>
+              <div class="text-muted small">
+                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
               </div>
-              <div><span class="fw-bold">State:</span> {{ row.stateName ?? '—' }}</div>
-              <div><span class="fw-bold">Section:</span> {{ sectionLabel(row.section) }}</div>
-              <div><span class="fw-bold">Year:</span> {{ row.year }}</div>
-              <div><span class="fw-bold">Document:</span> {{ row.docId }} &middot; {{ row.fileName }}</div>
+              <div class="text-muted small">
+                {{ row.docId }}
+                @if (row.fileUrl) {
+                  <a
+                    [href]="row.fileUrl"
+                    target="_blank"
+                    rel="noopener"
+                    class="ms-1 text-muted"
+                    [title]="row.fileName ?? 'View file'"
+                  >
+                    <i class="bi bi-file-earmark-text"></i>
+                  </a>
+                }
+              </div>
             </td>
           </ng-container>
 
@@ -66,17 +77,29 @@
           </ng-container>
 
           <ng-container matColumnDef="requestedAt">
-            <th mat-header-cell *matHeaderCellDef>Requested</th>
-            <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'mediumDate' }}</td>
+            <th mat-header-cell *matHeaderCellDef>Requested at</th>
+            <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'd MMM, h:mm a' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="sla">
+            <th mat-header-cell *matHeaderCellDef>SLA</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="text-muted small">{{ row.dueAt | date: 'd MMM, h:mm a' }}</div>
+              @if (row.isBreached) {
+                <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Breached</span>
+              } @else {
+                <span class="badge rounded-pill bg-success-subtle text-success-emphasis">On time</span>
+              }
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
-              <div class="d-flex justify-content-center gap-2">
+              <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
                 @if (row.jobId) {
                   <a
-                    class="btn btn-outline-secondary btn-sm"
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
                     routerLink="/ocr/validation"
                     [queryParams]="{ jobId: row.jobId }"
                     target="_blank"
@@ -84,23 +107,32 @@
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>
+                  <a
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    [href]="ocrDownloadUrl(row.jobId)"
+                    title="Download the OCR job's file"
+                  >
+                    <i class="bi bi-download"></i> Download
+                  </a>
                 }
                 <button
                   type="button"
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-danger btn-sm text-nowrap d-inline-flex align-items-center gap-1"
                   [disabled]="isDeciding(row)"
                   (click)="onReject(row)"
                 >
-                  Reject
+                  <i class="bi bi-x-lg"></i> Reject
                 </button>
                 <button
                   type="button"
-                  class="btn btn-cfPrimary btn-sm"
+                  class="btn btn-success btn-sm text-nowrap d-inline-flex align-items-center gap-1"
                   [disabled]="isDeciding(row)"
                   (click)="onApprove(row)"
                 >
                   @if (isDeciding(row)) {
-                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  } @else {
+                    <i class="bi bi-check-lg"></i>
                   }
                   Approve
                 </button>
