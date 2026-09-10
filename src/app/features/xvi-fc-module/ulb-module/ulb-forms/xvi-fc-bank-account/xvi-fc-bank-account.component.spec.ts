@@ -238,6 +238,25 @@ describe('XviFcBankAccountComponent', () => {
       expect(service.getBankAccount).toHaveBeenCalledWith({ yearId: 'other-year-id', ulbId: 'ulb-id' });
       expect(component.existingRecord()?.designYear).toBe('other-year-id');
       expect(component.isFormLoading()).toBeFalse();
+      // Regression: the header label must follow the redirect, not stay on the year the ULB
+      // navigated away from (fixture seeds xvifc_ulb_details.selectedYear as 'FY-2026-27').
+      expect(component.ulbDetails()?.selectedYear).toBe('FY 2025-26');
+    });
+
+    it('shows the corrected year label even after the component is recreated (e.g. a hard refresh) post-redirect', async () => {
+      service.getBankAccount.and.returnValue(
+        of(record({ submissionScope: 'ONCE_EVER', designYear: 'other-year-id', designYearLabel: '2025-26' })),
+      );
+
+      createComponent();
+      await Promise.resolve(); // flush the queueMicrotask-deferred in-place reload
+
+      // Simulate a fresh component instance re-reading state from localStorage only - no live
+      // signal carried over, exactly like a hard refresh landing back on this page.
+      fixture = TestBed.createComponent(XviFcBankAccountComponent);
+      component = fixture.componentInstance;
+
+      expect(component.ulbDetails()?.selectedYear).toBe('FY 2025-26');
     });
 
     it('does not redirect when the ONCE_EVER record already belongs to the selected year', () => {
