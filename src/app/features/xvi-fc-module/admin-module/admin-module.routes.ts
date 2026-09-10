@@ -36,6 +36,20 @@ export const ADMIN_ROUTES: Routes = [
           ),
       },
       {
+        path: 'manual-review-history',
+        loadComponent: () =>
+          import('./manual-review-history/manual-review-history.component').then(
+            (m) => m.ManualReviewHistoryComponent,
+          ),
+      },
+      {
+        path: 'manual-review-history/:requestId',
+        loadComponent: () =>
+          import('./manual-review-history/manual-review-history-detail/manual-review-history-detail.component').then(
+            (m) => m.ManualReviewHistoryDetailComponent,
+          ),
+      },
+      {
         path: '**',
         redirectTo: 'overview',
       },

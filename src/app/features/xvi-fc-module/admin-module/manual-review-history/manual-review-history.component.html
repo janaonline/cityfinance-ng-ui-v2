@@ -1,0 +1,190 @@
+<div class="container-fluid">
+  <div class="d-flex align-items-center justify-content-between my-4">
+    <h3 class="fw-bold mb-0">Manual Review History</h3>
+    <button
+      type="button"
+      class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
+      [disabled]="isExporting()"
+      (click)="exportToExcel()"
+    >
+      @if (isExporting()) {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      } @else {
+        <i class="bi bi-file-earmark-excel"></i>
+      }
+      Download Excel
+    </button>
+  </div>
+
+  <mat-card class="custom-mat-card mat-elevation-z1 mb-3">
+    <div class="p-3">
+      <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end gap-3">
+        <div class="mb-2">
+          <label for="manual-review-history-search" class="form-label mb-1 d-block">Search</label>
+          <input
+            type="search"
+            class="form-control"
+            id="manual-review-history-search"
+            placeholder="ULB name or code"
+            formControlName="search"
+          />
+        </div>
+
+        <div class="mb-2">
+          <label for="manual-review-history-status" class="form-label mb-1 d-block">Status</label>
+          <select class="form-select" id="manual-review-history-status" formControlName="status">
+            <option value="">All</option>
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label for="manual-review-history-state" class="form-label mb-1 d-block">State</label>
+          <select class="form-select" id="manual-review-history-state" formControlName="stateId">
+            <option value="">All</option>
+            @for (state of states(); track state._id) {
+              <option [value]="state._id">{{ state.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label for="manual-review-history-requested-from" class="form-label mb-1 d-block">Requested from</label>
+          <input type="date" class="form-control" id="manual-review-history-requested-from" formControlName="requestedFrom" />
+        </div>
+
+        <div class="mb-2">
+          <label for="manual-review-history-requested-to" class="form-label mb-1 d-block">Requested to</label>
+          <input type="date" class="form-control" id="manual-review-history-requested-to" formControlName="requestedTo" />
+        </div>
+
+        <div class="mb-2 form-check">
+          <input type="checkbox" class="form-check-input" id="manual-review-history-breached" formControlName="breachedOnly" />
+          <label class="form-check-label" for="manual-review-history-breached">SLA breached only</label>
+        </div>
+      </form>
+    </div>
+  </mat-card>
+
+  <mat-card class="custom-mat-card mat-elevation-z1">
+    <div class="table-container mat-elevation-z8 mb-4">
+      @if (isLoading()) {
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+      } @else if (loadError()) {
+        <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
+        <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      } @else if (rows().length <= 0) {
+        <p class="text-center p-2 mt-2">No manual-review requests match these filters.</p>
+      } @else {
+        <table mat-table [dataSource]="rows()">
+          <ng-container matColumnDef="ulbDocument">
+            <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="fw-bold">{{ row.ulbName ?? '—' }}</div>
+              <div class="text-muted small">
+                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
+              </div>
+              <div class="text-muted small">
+                @if (row.ocrJobId) {
+                  <a
+                    [href]="ocrDownloadUrl(row.ocrJobId)"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-muted"
+                    [title]="row.fileName ?? 'Download the OCR job\'s file'"
+                  >
+                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
+                  </a>
+                } @else {
+                  <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="requestedAt">
+            <th mat-header-cell *matHeaderCellDef>Requested at</th>
+            <td mat-cell *matCellDef="let row">
+              <div>{{ row.requestedAt | date: 'd MMM, h:mm a' }}</div>
+              <div class="text-muted small">by {{ row.requestedBy.name ?? row.requestedBy.role }}</div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="decision">
+            <th mat-header-cell *matHeaderCellDef>Decision</th>
+            <td mat-cell *matCellDef="let row">
+              <span [class]="statusPillClass(row.status)">{{ statusLabel(row.status) }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="message">
+            <th mat-header-cell *matHeaderCellDef>Message sent to the ULB</th>
+            <td mat-cell *matCellDef="let row">{{ row.decisionNote ?? '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="reviewedBy">
+            <th mat-header-cell *matHeaderCellDef>Reviewed by</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.decidedAt) {
+                <div>{{ row.decidedBy?.name ?? row.decidedBy?.role }}</div>
+                <div class="text-muted small">{{ row.decidedAt | date: 'd MMM, h:mm a' }}</div>
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="response">
+            <th mat-header-cell *matHeaderCellDef>Response</th>
+            <td mat-cell *matCellDef="let row">
+              @let response = responseInfo(row);
+              <span [class.text-danger]="response.overSla" [class.fw-semibold]="response.overSla" [class.text-muted]="!response.overSla">
+                {{ response.label }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <a class="btn btn-outline-secondary btn-sm text-nowrap" [routerLink]="['../manual-review-history', row.requestId]">
+                  View Details
+                </a>
+                @if (row.ocrJobId) {
+                  <a
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    routerLink="/ocr/validation"
+                    [queryParams]="{ jobId: row.ocrJobId }"
+                    target="_blank"
+                    title="View OCR job log"
+                  >
+                    <i class="bi bi-eye"></i> Log
+                  </a>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      }
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="pageSize()"
+        [pageIndex]="page() - 1"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChange($event)"
+        aria-label="Select page of the manual-review history"
+      ></mat-paginator>
+    </div>
+  </mat-card>
+</div>

@@ -20,11 +20,14 @@ export interface ManualReviewQueueRow {
   uploadId: string;
   jobId: string | null;
   fileName: string | null;
+  fileUrl: string | null;
   sizeKb: number | null;
   validationStatus: string | null;
   validationDetails: string | null;
   failedChecks: string[];
   manualReviewRequestedAt: string | null;
+  dueAt: string | null;
+  isBreached: boolean;
 }
 
 export interface ManualReviewQueueQuery {
