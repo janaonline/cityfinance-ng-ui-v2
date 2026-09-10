@@ -478,7 +478,15 @@ export class XviFcBankAccountComponent {
     this.router.navigate(['/xvifc', designYearId, 'xvi-fc-bank-account'], { replaceUrl: true });
 
     const current = this.ulbDetails();
-    if (current) this.ulbDetails.set({ ...current, designYearId });
+    if (current) {
+      this.ulbDetails.set({
+        ...current,
+        designYearId,
+        // Matches overview-card.service.ts's own `raw.replace(/^FY-/, 'FY ')` display format -
+        // without this, the header keeps showing the year the ULB navigated away from.
+        ...(designYearLabel ? { selectedYear: `FY ${designYearLabel}` } : {}),
+      });
+    }
     queueMicrotask(() => this.loadFormAndRecord());
   }
 
@@ -507,10 +515,17 @@ export class XviFcBankAccountComponent {
       const userDataRaw = localStorage.getItem('userData');
       const userData = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string; state?: string }) : undefined;
 
+      // xvifc_ulb_details (the `parsed` blob) is only refreshed when the ULB visits Overview
+      // (overview-card.service.ts) - a redirectToFiledYear() cross-year correction never writes
+      // back to it, so a recreated component (e.g. a hard refresh) would otherwise re-read a
+      // stale selectedYear. Prefer the live, always-current key this page itself keeps in sync,
+      // same fallback shape already used for designYearId below.
+      const liveYear = localStorage.getItem(XVIFC_LS_KEYS.selectedYearString);
+
       return {
         ulbName: parsed.ulbName,
         stateName: parsed.stateName,
-        selectedYear: parsed.selectedYear,
+        selectedYear: liveYear ? liveYear.replace(/^FY-/, 'FY ') : parsed.selectedYear,
         designYearId: parsed.designYearId ?? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) ?? undefined,
         ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userData?.ulb ?? undefined,
         stateId: userData?.state ?? undefined,
