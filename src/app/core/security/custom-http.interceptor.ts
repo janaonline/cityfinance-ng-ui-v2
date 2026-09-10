@@ -1,4 +1,5 @@
 import {
+  HttpContextToken,
   HttpErrorResponse,
   HttpEvent,
   HttpHandlerFn,
@@ -14,6 +15,12 @@ import { AuthService } from '../services/auth.service';
 import { Login_Logout } from '../util/logout.util';
 
 const retryHeader = 'x-auth-retry';
+
+/**
+ * Set on a request's HttpContext to skip the global error snackbar — for flows (e.g.
+ * forgot-password) that already render every error inline and would otherwise show it twice.
+ */
+export const SUPPRESS_ERROR_TOAST = new HttpContextToken<boolean>(() => false);
 
 export const customHttpInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -41,14 +48,14 @@ export const customHttpInterceptor: HttpInterceptorFn = (
             ),
           ),
           catchError((refreshError) =>
-            handleError(refreshError, authService, router, snackBar, {
+            handleError(refreshError, preparedRequest, authService, router, snackBar, {
               logoutOnUnauthorized: true,
             }),
           ),
         );
       }
 
-      return handleError(error, authService, router, snackBar, {
+      return handleError(error, preparedRequest, authService, router, snackBar, {
         logoutOnUnauthorized:
           authService.isAuthRequest(preparedRequest.url) &&
           !authService.isLoginRequest(preparedRequest.url),
@@ -116,6 +123,7 @@ function markRetriedRequest(req: HttpRequest<unknown>) {
 
 function handleError(
   error: HttpErrorResponse,
+  req: HttpRequest<unknown>,
   authService: AuthService,
   router: Router,
   snackBar: MatSnackBar,
@@ -161,7 +169,7 @@ function handleError(
       }));
   }
 
-  if (shouldShowError(error, options)) {
+  if (shouldShowError(error, req, options)) {
     showError(snackBar, error.error?.message);
   }
 
@@ -172,8 +180,10 @@ const INLINE_HANDLED_CODES = new Set(['EMAIL_ALREADY_ACTIVE', 'EMAIL_PREVIOUSLY_
 
 function shouldShowError(
   error: HttpErrorResponse,
+  req: HttpRequest<unknown>,
   options: { logoutOnUnauthorized: boolean },
 ) {
+  if (req.context.get(SUPPRESS_ERROR_TOAST)) return false;
   if (INLINE_HANDLED_CODES.has(error.error?.code)) return false;
   return error.status !== 401 || !options.logoutOnUnauthorized;
 }

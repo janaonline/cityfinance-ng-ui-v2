@@ -31,7 +31,9 @@ import {
   IDENTIFIER_SECURITY_VALIDATORS,
   PASSWORD_SECURITY_VALIDATORS,
   noNumericCode,
+  passwordComplexity,
 } from '../validators/auth-security.validators';
+import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
 type ForgotRole = 'ULB' | 'STATE' | 'MOHUA';
 type StepType = 'REQUEST_OTP' | 'RESET_PASSWORD' | 'SUCCESS';
@@ -52,6 +54,7 @@ export class ForgotPasswordComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
 
   readonly roles: ForgotRole[] = ['ULB', 'STATE', 'MOHUA'];
   readonly typeKey = signal<LoginType | null>(null);
@@ -61,16 +64,19 @@ export class ForgotPasswordComponent implements OnInit {
   readonly isSubmitting = signal(false);
   /** Masked identifier computed on the frontend — never derived from backend response. */
   readonly maskedIdentifier = signal('');
-  /** True only after a Resend OTP call succeeds — drives the generic resend confirmation. */
-  readonly otpResent = signal(false);
   readonly resendSeconds = signal(0);
   readonly requestError = signal('');
   readonly resetError = signal('');
+  /** True while the currently-displayed error is a 429 rate-limit — styles the banner as a warning instead of danger. */
+  readonly errorIsRateLimited = signal(false);
+  /** Live countdown (seconds) until the rate-limit that produced the current error clears. */
+  readonly errorRetrySeconds = signal(0);
   readonly showNewPassword = signal(false);
   readonly showConfirmPassword = signal(false);
   readonly redirectSeconds = signal(0);
 
   private countdownSub: Subscription | null = null;
+  private errorRetrySub: Subscription | null = null;
 
   readonly identifyForm = this.fb.nonNullable.group({
     role: ['ULB' as ForgotRole, Validators.required],
@@ -81,13 +87,28 @@ export class ForgotPasswordComponent implements OnInit {
 
   readonly resetForm = this.fb.nonNullable.group(
     {
-      // FP1: pattern enforces digits-only; length validators catch too-short/long
-      otp: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(6), Validators.pattern(/^\d+$/)]],
-      newPassword: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(128), ...PASSWORD_SECURITY_VALIDATORS]],
-      confirmPassword: ['', [Validators.required, Validators.maxLength(128), ...PASSWORD_SECURITY_VALIDATORS]],
+      // FP1: pattern enforces digits-only; length validators enforce exactly 4 digits
+      otp: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(4), Validators.pattern(/^\d+$/)]],
+      newPassword: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+      ],
+      confirmPassword: [
+        '',
+        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+      ],
     },
     { validators: [this.passwordMatchValidator()] },
   );
+
+  /** Formats errorRetrySeconds as "Ns" up to a minute, "Mm" / "Mm Ss" beyond it. */
+  readonly errorRetryDisplay = computed(() => {
+    const total = this.errorRetrySeconds();
+    if (total <= 60) return `${total}s`;
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  });
 
   readonly identifyTitle = computed(() => {
     const role = this.selectedRole();
@@ -158,10 +179,11 @@ export class ForgotPasswordComponent implements OnInit {
       return;
     }
 
-    this.requestError.set('');
-    this.isSubmitting.set(true);
-
     const identifier = this.getIdentifier();
+
+    this.requestError.set('');
+    this.clearErrorRetryCountdown();
+    this.isSubmitting.set(true);
 
     this.authService
       .sendForgotPasswordOtp(identifier)
@@ -183,7 +205,28 @@ export class ForgotPasswordComponent implements OnInit {
           this.startResendTimer();
         },
         error: (err: HttpErrorResponse) => {
+          // OTP_COOLDOWN_ACTIVE is the one 429 that guarantees a live, still-valid OTP already
+          // exists for this identifier (the backend sets that cooldown key at the same instant as
+          // the OTP itself, with a much shorter TTL) — so it's safe to send the user on to enter
+          // it. Every other 429 (IP throttle, lock, resend ceiling) doesn't carry that guarantee —
+          // e.g. a lock means the prior OTP was already deleted — so those stay on this step.
+          const code = (err.error as { code?: string } | null)?.code;
+          if (err.status === 429 && code === 'OTP_COOLDOWN_ACTIVE') {
+            // maskedIdentifier normally still holds the real masked contact from the original
+            // successful send (nothing clears it on Back) — but fall back if it's empty, e.g. the
+            // page was refreshed since then and lost it.
+            if (!this.maskedIdentifier()) this.maskedIdentifier.set(this.maskIdentifier(identifier));
+            this.slideDirection.set('forward');
+            this.currentStep.set('RESET_PASSWORD');
+            // Seed from the backend's actual remaining cooldown, not a fresh 60s guess — otherwise
+            // this countdown and the warning banner's countdown show two different numbers.
+            this.startResendTimer(this.extractRetryAfterSeconds(err) ?? RESEND_SECONDS);
+            this.resetError.set(this.mapSendOtpError(err));
+            this.applyRetryAfterState(err);
+            return;
+          }
           this.requestError.set(this.mapSendOtpError(err));
+          this.applyRetryAfterState(err);
         },
       });
   }
@@ -196,7 +239,7 @@ export class ForgotPasswordComponent implements OnInit {
     if (this.isSubmitting()) return;
 
     this.resetError.set('');
-    this.otpResent.set(false);  // B3: dismiss resend banner before new attempt
+    this.clearErrorRetryCountdown();
     this.isSubmitting.set(true);
 
     const identifier = this.getIdentifier();
@@ -229,6 +272,7 @@ export class ForgotPasswordComponent implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.resetError.set(this.mapResetPasswordError(err));
+          this.applyRetryAfterState(err);
         },
       });
   }
@@ -236,8 +280,8 @@ export class ForgotPasswordComponent implements OnInit {
   onResendOtp(): void {
     if (this.resendSeconds() > 0 || this.isSubmitting()) return;
 
-    this.otpResent.set(false);
     this.resetError.set('');
+    this.clearErrorRetryCountdown();
     this.isSubmitting.set(true);
 
     const identifier = this.getIdentifier();
@@ -250,25 +294,49 @@ export class ForgotPasswordComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          // Same generic message — no UI difference between real and fake accounts
-          this.otpResent.set(true);
           this.startResendTimer();
         },
         error: (err: HttpErrorResponse) => {
           this.resetError.set(this.mapSendOtpError(err));
+          this.applyRetryAfterState(err);
         },
       });
   }
 
+  /** Strips non-digits and caps at 4 chars as the user types/pastes — validators alone don't stop typing. */
+  onOtpInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 4);
+    if (digitsOnly !== input.value) {
+      this.resetForm.controls.otp.setValue(digitsOnly);
+    }
+  }
+
   onBackToIdentify(): void {
-    this.clearCountdown();
-    this.slideDirection.set('back');
-    this.currentStep.set('REQUEST_OTP');
-    this.resetForm.reset();
-    this.otpResent.set(false);
-    this.resetError.set('');
-    this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
-    this.showConfirmPassword.set(false);
+    this.confirmDialogService
+      .confirm({
+        title: 'Go back?',
+        message: "Going back means you'll have to request another OTP if you return to this step.",
+        confirmText: 'Yes, go back',
+        cancelText: 'Stay here',
+        confirmButtonColor: 'warn',
+        icon: 'bi-exclamation-triangle-fill',
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+
+        this.clearCountdown();
+        this.clearErrorRetryCountdown();
+        this.slideDirection.set('back');
+        this.currentStep.set('REQUEST_OTP');
+        this.resetForm.reset();
+        this.resetError.set('');
+        this.errorIsRateLimited.set(false);
+        this.errorRetrySeconds.set(0);
+        this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
+        this.showConfirmPassword.set(false);
+      });
   }
 
   toggleNewPassword(): void {
@@ -302,19 +370,32 @@ export class ForgotPasswordComponent implements OnInit {
     return identifier.slice(0, visible) + '*'.repeat(Math.max(identifier.length - visible, 4));
   }
 
-  private startResendTimer(): void {
+  /**
+   * Wall-clock based (not a tick counter) so a backgrounded tab's timer drift self-corrects —
+   * each tick recomputes the remaining time from Date.now() rather than counting emissions.
+   *
+   * `initialRemainingSeconds` lets a caller seed this from the backend's actual remaining cooldown
+   * (e.g. OTP_COOLDOWN_ACTIVE's `retryAfterSeconds`) instead of always assuming a fresh 60s window —
+   * otherwise this "Resend in Ns" countdown and the warning banner's "Try again in Ns" (which does
+   * use the real backend value) show two different, disagreeing numbers.
+   */
+  private startResendTimer(initialRemainingSeconds: number = RESEND_SECONDS): void {
+    const startedAt = Date.now();
     this.clearCountdown();
-    this.countdownSub = timer(0, 1000)
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      const remaining = initialRemainingSeconds - elapsed;
+      if (remaining <= 0) {
+        this.resendSeconds.set(0);
+        this.clearCountdown();
+      } else {
+        this.resendSeconds.set(remaining);
+      }
+    };
+    tick();
+    this.countdownSub = timer(1000, 1000)
       .pipe(takeUntilDestroyed(this.destroyRef))  // B1: prevent signal writes after destroy
-      .subscribe((tick) => {
-        const remaining = RESEND_SECONDS - tick;
-        if (remaining <= 0) {
-          this.resendSeconds.set(0);
-          this.clearCountdown();
-        } else {
-          this.resendSeconds.set(remaining);
-        }
-      });
+      .subscribe(tick);
   }
 
   private clearCountdown(): void {
@@ -322,19 +403,80 @@ export class ForgotPasswordComponent implements OnInit {
     this.countdownSub = null;
   }
 
-  /** Maps HTTP errors for the send-OTP step. Never reveals whether the account exists. */
+  /**
+   * Maps HTTP errors for the send-OTP step. Never reveals whether the account exists — safe here
+   * because the 429 throttle (cooldown/lock/resend-ceiling) is keyed on identifier/IP, not on
+   * whether the account is real, so its message is the same either way.
+   */
   private mapSendOtpError(err: HttpErrorResponse): string {
-    if (err.status === 429) return 'Too many OTP requests. Please try again later.';
+    if (err.status === 429) return err.error?.message || 'Too many OTP requests. Please try again later.';
     return 'Unable to send OTP right now. Please try again.';
   }
 
   /**
    * Maps HTTP errors for the reset-password step.
    * Fake-account failures are intentionally indistinguishable from invalid/expired OTP.
+   * 429s are safe to show verbatim — same reasoning as mapSendOtpError above.
    */
   private mapResetPasswordError(err: HttpErrorResponse): string {
-    if (err.status === 429) return 'Too many attempts. Please try again later.';
+    if (err.status === 429) return err.error?.message || 'Too many attempts. Please try again later.';
     return 'Invalid or expired OTP.';
+  }
+
+  /**
+   * Reads the backend's exact rate-limit countdown (`data.retryAfterSeconds`, seconds until the
+   * cooldown/lock clears) off a 429 response and starts a live countdown from it — lets the error
+   * banner show precisely when the next attempt will stop being rejected, instead of a vague
+   * "try again later".
+   */
+  private applyRetryAfterState(err: HttpErrorResponse): void {
+    const seconds = this.extractRetryAfterSeconds(err);
+    this.clearErrorRetryCountdown();
+
+    if (seconds === null) {
+      this.errorIsRateLimited.set(false);
+      this.errorRetrySeconds.set(0);
+      return;
+    }
+
+    this.errorIsRateLimited.set(true);
+    this.errorRetrySeconds.set(seconds);
+    this.errorRetrySub = timer(1000, 1000)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        const remaining = this.errorRetrySeconds() - 1;
+        this.errorRetrySeconds.set(Math.max(remaining, 0));
+        if (remaining <= 0) {
+          this.clearErrorRetryCountdown();
+          this.errorIsRateLimited.set(false);
+          // Whichever step's banner was showing this rate-limit message — the other is already empty.
+          this.requestError.set('');
+          this.resetError.set('');
+        }
+      });
+  }
+
+  /**
+   * Two shapes of 429 carry this, checked in order: the Redis-backed OTP cooldown/lock errors put
+   * it in the JSON body (`data.retryAfterSeconds`); the global per-IP ThrottlerGuard instead sets
+   * a `Retry-After` response header (delta-seconds, per HTTP spec) — the backend must explicitly
+   * CORS-expose that header or the browser hides it from JS even though it's on the wire.
+   */
+  private extractRetryAfterSeconds(err: HttpErrorResponse): number | null {
+    if (err.status !== 429) return null;
+
+    const bodyValue = (err.error as { data?: { retryAfterSeconds?: unknown } } | null)?.data?.retryAfterSeconds;
+    if (typeof bodyValue === 'number' && Number.isFinite(bodyValue) && bodyValue > 0) return Math.round(bodyValue);
+
+    const headerValue = Number(err.headers?.get('Retry-After'));
+    if (Number.isFinite(headerValue) && headerValue > 0) return Math.round(headerValue);
+
+    return null;
+  }
+
+  private clearErrorRetryCountdown(): void {
+    this.errorRetrySub?.unsubscribe();
+    this.errorRetrySub = null;
   }
 
   private passwordMatchValidator(): ValidatorFn {
