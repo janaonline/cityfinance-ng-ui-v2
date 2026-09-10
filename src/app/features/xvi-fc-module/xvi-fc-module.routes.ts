@@ -1,8 +1,6 @@
 import { CanMatchFn, Routes } from '@angular/router';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { XVIFC_THEME_CLASS } from './xvi-fc-module.constants';
-// TEMP — see ulb-forms-coming-soon.guard.ts for removal instructions.
-import { ulbFormsComingSoonGuard } from './ulb-module/guards/ulb-forms-coming-soon.guard';
 
 function readUserRole(): string {
   try {
@@ -55,8 +53,7 @@ export const XVIFC_ROUTES: Routes = [
     children: [
       {
         path: ':yearId',
-        // TEMP: ulbFormsComingSoonGuard — remove this entry once ULB forms launch (see guard file).
-        canMatch: [isUlbRole, ulbFormsComingSoonGuard],
+        canMatch: [isUlbRole],
         data: { role: 'ULB' },
         loadChildren: () => import('./ulb-module/ulb-module.routes').then((m) => m.ULB_ROUTES),
       },

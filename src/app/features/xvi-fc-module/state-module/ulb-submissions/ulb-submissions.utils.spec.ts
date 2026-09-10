@@ -21,6 +21,7 @@ describe('ulb-submissions.utils', () => {
     expect(getStatusBadgeClass('SUBMISSION_ACKNOWLEDGED_BY_MOHUA')).toBe('text-bg-success');
     expect(getStatusBadgeClass('RETURNED_BY_STATE')).toBe('text-bg-danger');
     expect(getStatusBadgeClass('NOT_STARTED')).toBe('text-bg-light text-dark border');
+    expect(getStatusBadgeClass('EXEMPTED')).toBe('text-bg-primary');
   });
 
   it('isRowReviewable is true only for UNDER_REVIEW_BY_STATE rows', () => {

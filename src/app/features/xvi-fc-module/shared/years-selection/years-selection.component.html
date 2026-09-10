@@ -18,44 +18,46 @@
       } @else {
         <p class="section-label">Currently Open</p>
 
-        <label class="year-active-tile" [class.year-active-tile--selected]="selectedYear() === activeYear()">
-          <input
-            type="radio"
-            name="financialYear"
-            [value]="activeYear()"
-            [checked]="selectedYear() === activeYear()"
-            (change)="selectYear(activeYear())"
-          />
-          <div class="year-active-tile__inner">
-            <div class="year-active-tile__left">
-              <span class="year-active-tile__year">{{ activeYear() }}</span>
-              <span class="year-active-tile__sub">Financial Year</span>
-            </div>
-            <div class="year-active-tile__right">
-              <span class="badge-live">
-                <span class="badge-live__dot"></span>
-                Live
-              </span>
-              <div class="year-active-tile__radio">
-                @if (selectedYear() === activeYear()) {
-                  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="10" cy="10" r="9" fill="#1d6f73" />
-                    <path d="M6 10.5l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                } @else {
-                  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="10" cy="10" r="9" stroke="#9fc2c7" stroke-width="1.5" />
-                  </svg>
-                }
+        @for (year of enabledYears(); track year) {
+          <label class="year-active-tile" [class.year-active-tile--selected]="selectedYear() === year">
+            <input
+              type="radio"
+              name="financialYear"
+              [value]="year"
+              [checked]="selectedYear() === year"
+              (change)="selectYear(year)"
+            />
+            <div class="year-active-tile__inner">
+              <div class="year-active-tile__left">
+                <span class="year-active-tile__year">{{ year }}</span>
+                <span class="year-active-tile__sub">Financial Year</span>
+              </div>
+              <div class="year-active-tile__right">
+                <span class="badge-live">
+                  <span class="badge-live__dot"></span>
+                  Live
+                </span>
+                <div class="year-active-tile__radio">
+                  @if (selectedYear() === year) {
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="10" cy="10" r="9" fill="#1d6f73" />
+                      <path d="M6 10.5l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="10" cy="10" r="9" stroke="#9fc2c7" stroke-width="1.5" />
+                    </svg>
+                  }
+                </div>
               </div>
             </div>
-          </div>
-        </label>
+          </label>
+        }
 
         <p class="section-label section-label--upcoming">Upcoming Years</p>
 
         <div class="upcoming-grid">
-          @for (year of upcomingYears(); track year) {
+          @for (year of disabledYears(); track year) {
             <div class="year-locked-tile">
               <svg class="lock-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="3" y="7" width="10" height="8" rx="2" stroke="#b0c4c6" stroke-width="1.4"/>
