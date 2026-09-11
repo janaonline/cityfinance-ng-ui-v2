@@ -16,6 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import FileSaver from 'file-saver';
 import { environment } from '../../../../environments/environment';
 import { PdfPageCountPipe } from '../../../core/pipes/pdf-page-count.pipe';
 import { MaterialModule } from "../../../material.module";
@@ -205,6 +206,7 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   selection = new SelectionModel<RawRow>(true, []);
 
   isTableLoading: boolean = false;
+  isDownloadingReport: boolean = false;
   activeRow: any;
   // constructor(private afsService: AfsService,) { }
 
@@ -547,10 +549,20 @@ export class AfsTableComponent implements AfterViewInit, OnInit {
   }
   // download xl report for selected filters
   dumpReport() {
-    // console.log('Dump report for selected rows:', this.selection.selected);
     const filters = { ...this.filters() };
     delete filters.page;
     filters.limit = 0;
-    window.open(`${environment.api.url2}afs-digitization/dump/afs-excel?` + new URLSearchParams(filters as any).toString(), '_blank');
+    this.isDownloadingReport = true;
+    this.afsService.dumpDigitizationReport(filters).subscribe({
+      next: (blob) => {
+        FileSaver.saveAs(blob, `afs-dump-${new Date().toISOString().split('T')[0]}.xlsx`);
+        this.isDownloadingReport = false;
+      },
+      error: (err) => {
+        console.error('Failed to download AFS dump report:', err);
+        this._snackBar.open('Failed to download AFS dump report.', 'Close', { duration: 5000 });
+        this.isDownloadingReport = false;
+      },
+    });
   }
 }

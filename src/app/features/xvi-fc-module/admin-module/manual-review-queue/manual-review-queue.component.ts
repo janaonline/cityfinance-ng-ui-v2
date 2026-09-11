@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { environment } from '../../../../../environments/environment';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
@@ -38,7 +39,7 @@ export class ManualReviewQueueComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly dialog = inject(MatDialog);
 
-  readonly displayedColumns = ['serialNo', 'details', 'validationIssues', 'requestedAt', 'actions'];
+  readonly displayedColumns = ['serialNo', 'details', 'validationIssues', 'requestedAt', 'sla', 'actions'];
 
   readonly rows = signal<ManualReviewQueueRow[]>([]);
   readonly total = signal(0);
@@ -148,5 +149,10 @@ export class ManualReviewQueueComponent implements OnInit {
     const key = this.rowKey(row);
     this.rows.update((rows) => rows.filter((r) => this.rowKey(r) !== key));
     this.total.update((t) => Math.max(0, t - 1));
+  }
+
+  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed. */
+  ocrDownloadUrl(jobId: string): string {
+    return `${environment.api.url3}ocr-validation/jobs/${jobId}/download`;
   }
 }
