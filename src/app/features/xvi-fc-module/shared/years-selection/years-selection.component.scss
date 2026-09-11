@@ -105,6 +105,12 @@
     opacity: 0;
     pointer-events: none;
   }
+
+  /* Multiple enabled years render as multiple tiles — space them apart without affecting the
+     gap before the first one or after the last one (handled by section-label margins). */
+  & + & {
+    margin-top: 10px;
+  }
 }
 
 .year-active-tile__inner {

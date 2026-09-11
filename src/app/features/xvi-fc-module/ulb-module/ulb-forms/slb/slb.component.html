@@ -27,6 +27,15 @@
 
         <hr class="my-0 text-body-tertiary" />
 
+        @if (isExempted()) {
+          <app-exemption-notice
+            title="Exempted from Service Level Benchmarks"
+            [ulbName]="ulbName()"
+            message="your ULB is newly constituted and is automatically exempted from Service Level Benchmark
+              reporting. No submission is required for this form."
+          />
+        }
+
         @if (isLoading()) {
           <app-pre-loader></app-pre-loader>
           <app-pre-loader></app-pre-loader>

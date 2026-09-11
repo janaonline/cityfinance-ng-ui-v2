@@ -149,6 +149,18 @@ describe('UlbFormsComponent', () => {
     expect(row.querySelector('.preview-icon')?.textContent).toContain('visibility');
   });
 
+  it('shows Exempted (green check, no preview) for SLB when status is EXEMPTED_ACKNOWLEDGED (12)', () => {
+    createComponent(
+      baseStatus({ serviceLevelBenchmarks: { form_status: 'EXEMPTED_ACKNOWLEDGED', form_status_id: 12 } }),
+    );
+
+    const row = rowFor('Service Level Benchmarks');
+
+    expect(row.textContent).toContain('Exempted');
+    expect(row.querySelector('.condition-icon--complete')).toBeTruthy();
+    expect(row.querySelector('.preview-icon-btn')).toBeNull();
+  });
+
   it('navigates PFMS view icon to the PFMS route', () => {
     createComponent(
       baseStatus({ xviFcBankAccount: { form_status: 'UNDER_REVIEW_BY_STATE', form_status_id: 3 } }),

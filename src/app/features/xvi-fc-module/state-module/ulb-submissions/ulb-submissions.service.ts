@@ -28,6 +28,7 @@ const NUMERIC_TO_REVIEW_STATUS: Record<number, ReviewStatus> = {
   7: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA',
   8: 'APPROVED_BY_STATE',
   9: 'AWAITING_CLAIM_LETTER',
+  12: 'EXEMPTED', // FORM_STATUS.EXEMPTED_ACKNOWLEDGED - only ever set on SLB today
 };
 
 const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
@@ -40,6 +41,7 @@ const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
   APPROVED_BY_STATE: 8,
   AWAITING_CLAIM_LETTER: 9,
+  EXEMPTED: 12,
 };
 
 // The dev backend may return bare objects instead of { success, data } wrappers.
