@@ -21,7 +21,7 @@ describe('EulbPostUpdateStateAdapter', () => {
       dateOfExpiry: '2030-01-01',
       remarks: null,
       validationStatus: 'VALID',
-      errors: [],
+      validationErrors: [],
       ...overrides,
     };
   }
@@ -55,7 +55,7 @@ describe('EulbPostUpdateStateAdapter', () => {
           dateOfExpiry: '2030-01-01',
           remarks: 'Updated',
           validationStatus: 'VALID',
-          errors: [],
+          validationErrors: [],
         },
       ],
       errorRowCount: 0,
@@ -162,7 +162,7 @@ describe('EulbPostUpdateStateAdapter', () => {
             dateOfExpiry: '2030-01-01',
             remarks: 'Changed row two',
             validationStatus: 'INVALID',
-            errors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are invalid.' }],
+            validationErrors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are invalid.' }],
           },
         ],
         errorRowCount: 1,
@@ -174,7 +174,7 @@ describe('EulbPostUpdateStateAdapter', () => {
 
     expect(rows[0]).toBe(rowOne);
     expect(rows[1].validationStatus).toBe('INVALID');
-    expect(rows[1].errors).toEqual([{ field: 'remarks', code: 'invalid', message: 'Remarks are invalid.' }]);
+    expect(rows[1].validationErrors).toEqual([{ field: 'remarks', code: 'invalid', message: 'Remarks are invalid.' }]);
   });
 
   it('clears previous validation errors for rows returned as valid', () => {
@@ -197,7 +197,7 @@ describe('EulbPostUpdateStateAdapter', () => {
             dateOfExpiry: '2030-01-01',
             remarks: 'Updated',
             validationStatus: 'INVALID',
-            errors: [{ field: 'remarks', code: 'invalid', message: 'Old error.' }],
+            validationErrors: [{ field: 'remarks', code: 'invalid', message: 'Old error.' }],
           },
         ],
         errorRowCount: 1,
@@ -206,12 +206,12 @@ describe('EulbPostUpdateStateAdapter', () => {
       }),
       [loadedRow],
     );
-    expect(invalidRows[0].errors.length).toBe(1);
+    expect(invalidRows[0].validationErrors.length).toBe(1);
 
     const validRows = adapter.applyValidationData(createValidationData(), [loadedRow]);
 
     expect(validRows[0].validationStatus).toBe('VALID');
-    expect(validRows[0].errors).toEqual([]);
+    expect(validRows[0].validationErrors).toEqual([]);
   });
 
   it('builds submit payloads with only changed rows', () => {

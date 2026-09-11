@@ -687,7 +687,7 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
   startEditAtField(row: EulbPostSubmissionUpdateRow, field: string): void {
     if (!this.canEditRows()) return;
     if (this.editingRowId() !== null) return;
-    const hasError = row.errors?.some((err) => err.field === field) ?? false;
+    const hasError = row.validationErrors?.some((err) => err.field === field) ?? false;
     if (!hasError) return;
     this.startEdit(row);
     afterNextRender(
@@ -777,14 +777,14 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
       const rowNumber = rowError['rowNumber'];
       const censusCode = rowError['censusCode'];
       const ulbName = rowError['ulbName'];
-      const errors = rowError['errors'];
+      const validationErrors = rowError['validationErrors'];
 
       if (
         typeof rowId !== 'string' ||
         typeof rowNumber !== 'number' ||
         typeof censusCode !== 'string' ||
         typeof ulbName !== 'string' ||
-        !Array.isArray(errors)
+        !Array.isArray(validationErrors)
       ) {
         continue;
       }
@@ -794,14 +794,14 @@ export class EulbPostUpdateComponent implements OnInit, CanComponentDeactivate {
         rowNumber,
         censusCode,
         ulbName,
-        errors: errors.flatMap((fieldError: unknown) => this.parsePostUpdateRowError(fieldError)),
+        validationErrors: validationErrors.flatMap((fieldError: unknown) => this.parsePostUpdateRowError(fieldError)),
       });
     }
 
     return parsed;
   }
 
-  private parsePostUpdateRowError(error: unknown): EulbPostSubmissionUpdateSubmitRowError['errors'] {
+  private parsePostUpdateRowError(error: unknown): EulbPostSubmissionUpdateSubmitRowError['validationErrors'] {
     if (!isRecord(error)) return [];
     const message = error['message'];
     if (typeof message !== 'string') return [];
