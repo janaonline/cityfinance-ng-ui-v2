@@ -70,6 +70,9 @@ export class ManualReviewHistoryComponent implements OnInit {
   readonly states = signal<IState[]>([]);
   readonly isExporting = signal(false);
 
+  /** Bumped on every loadRows() call so a late-arriving stale response can be told apart from the latest one. */
+  private requestId = 0;
+
   readonly statusOptions: Array<{ value: ManualReviewRequestStatus; label: string }> = [
     { value: 'PENDING', label: 'Pending' },
     { value: 'APPROVED', label: 'Approved' },
@@ -147,6 +150,7 @@ export class ManualReviewHistoryComponent implements OnInit {
   }
 
   loadRows(): void {
+    const requestId = ++this.requestId;
     this.isLoading.set(true);
     this.loadError.set(null);
 
@@ -155,6 +159,7 @@ export class ManualReviewHistoryComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
+          if (requestId !== this.requestId) return;
           if (result.rows.length === 0 && this.page() > 1) {
             this.page.update((p) => p - 1);
             this.loadRows();
@@ -165,6 +170,7 @@ export class ManualReviewHistoryComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: () => {
+          if (requestId !== this.requestId) return;
           this.isLoading.set(false);
           this.loadError.set('Unable to load the manual-review history. Please try again.');
         },

@@ -217,7 +217,7 @@ export interface DevolutionRow {
   installment2Amount: number;
   devolutionFormula: string;
   validationStatus: DfRowValidationStatus;
-  errors: DevolutionRowError[];
+  validationErrors: DevolutionRowError[];
   datasetVersion: number;
   isActive: boolean;
   createdAt: string;
@@ -251,7 +251,7 @@ export interface DevolutionRowsDialogResult {
 export interface DevolutionRowValidationError {
   rowId: string;
   rowNumber: number;
-  errors: DevolutionRowError[];
+  validationErrors: DevolutionRowError[];
 }
 
 export interface DfRowUpdateApiError {

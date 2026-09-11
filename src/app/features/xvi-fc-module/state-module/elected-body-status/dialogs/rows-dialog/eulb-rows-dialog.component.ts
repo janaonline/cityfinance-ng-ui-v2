@@ -365,17 +365,17 @@ export class EulbRowsDialogComponent implements OnInit {
 
   /**
    * Returns all backend validation errors for a specific field on a row.
-   * @param row - The row whose `errors` array is inspected.
+   * @param row - The row whose `validationErrors` array is inspected.
    * @param field - The field key to filter by (e.g. `'electedBodyStatus'`).
    * @returns Array of matching `EulbRowError` objects, or an empty array when none exist.
    */
   getCellErrors(row: EulbRow, field: string): EulbRowError[] {
-    return row.errors?.filter((err) => err.field === field) ?? [];
+    return row.validationErrors?.filter((err) => err.field === field) ?? [];
   }
 
   /**
    * Returns `true` when the row has at least one backend error for the given field.
-   * @param row - The row whose `errors` array is inspected.
+   * @param row - The row whose `validationErrors` array is inspected.
    * @param field - The field key to check (e.g. `'dateOfConstitution'`).
    */
   hasCellError(row: EulbRow, field: string): boolean {
