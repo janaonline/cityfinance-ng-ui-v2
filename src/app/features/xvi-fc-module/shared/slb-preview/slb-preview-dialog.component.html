@@ -1,0 +1,20 @@
+<h2
+  mat-dialog-title
+  class="fs-6 fw-semibold border-bottom mb-0 py-2 d-flex align-items-center justify-content-between"
+>
+  <span><i class="bi bi-eye-fill me-2" aria-hidden="true"></i>SLB Preview</span>
+  <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-2" aria-label="Close dialog" (click)="close()">
+    <i class="bi bi-x-circle-fill fs-5"></i>
+  </button>
+</h2>
+
+<mat-dialog-content class="slb-preview-dialog-content">
+  <app-slb-preview-content
+    [form]="data.form"
+    [fields]="data.fields"
+    [ulbName]="data.ulbName"
+    [formStatusLabel]="data.formStatusLabel"
+    [actualYearLabel]="data.actualYearLabel"
+    [targetYearLabel]="data.targetYearLabel"
+  ></app-slb-preview-content>
+</mat-dialog-content>
