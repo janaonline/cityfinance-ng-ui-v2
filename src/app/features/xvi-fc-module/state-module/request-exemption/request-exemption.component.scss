@@ -1,0 +1,6 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+  @include layout.acknowledgement-layout;
+}

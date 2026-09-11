@@ -42,6 +42,12 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     canDeactivate: [unsavedChangesGuard],
   },
   {
+    path: 'request-exemption',
+    loadComponent: () =>
+      import('./request-exemption/request-exemption.component').then((m) => m.RequestExemptionComponent),
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
     path: 'elected-body-status',
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
