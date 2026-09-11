@@ -1,8 +1,20 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  Injector,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { AbstractControl, FormBuilder } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
@@ -13,6 +25,7 @@ import {
 } from '../../../dynamic-form-visibility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import {
+  resolveThemeClass,
   SAVE_AS_DRAFT_DIALOG_DEFAULTS,
   SUBMIT_CONFIRM_DIALOG_DEFAULTS,
   themedDialogConfig,
@@ -30,10 +43,19 @@ import {
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
+import { SlbPreviewContentComponent } from '../../../shared/slb-preview/slb-preview-content.component';
+import { SlbPreviewDialogComponent } from '../../../shared/slb-preview/slb-preview-dialog.component';
+import { exportElementToPdf } from '../../../pdf-export.util';
 
 @Component({
   selector: 'app-slb',
-  imports: [SlbFormBodyComponent, PreLoaderComponent, MatButtonModule, PageErrorStateComponent],
+  imports: [
+    SlbFormBodyComponent,
+    SlbPreviewContentComponent,
+    PreLoaderComponent,
+    MatButtonModule,
+    PageErrorStateComponent,
+  ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
 })
@@ -48,6 +70,10 @@ export class SlbComponent implements OnInit {
   private readonly dialogConfig = themedDialogConfig();
   private slbService = inject(SlbService);
   private moduleService = inject(XvifcModuleService);
+  private dialog = inject(MatDialog);
+  private injector = inject(Injector);
+  /** Applies the feature's current theme as a panelClass for dialogs opened directly via MatDialog. */
+  private readonly themeClass = resolveThemeClass();
   public ulbName = signal('');
   /** Target FY label (e.g. "2026-27") — heads the Target Indicator column. */
   readonly yearLabel = signal('');
@@ -64,6 +90,11 @@ export class SlbComponent implements OnInit {
   readonly isSavingDraft = signal(false);
   readonly isFinalSubmitting = signal(false);
   readonly isSubmitting = computed(() => this.isSavingDraft() || this.isFinalSubmitting());
+
+  readonly isGeneratingPdf = signal(false);
+  /** Off-screen host for `app-slb-preview-content`, mounted only while `isGeneratingPdf()` is true
+   *  and captured via html2canvas — see `downloadPdf()`. */
+  private readonly pdfSource = viewChild<ElementRef<HTMLElement>>('pdfSource');
 
   readonly permissions = signal<SlbPermissions>({
     canView: true,
@@ -495,5 +526,63 @@ export class SlbComponent implements OnInit {
         if (!confirmed) return;
         this.utilityService.triggerSnackbar('Form submission cancelled.', 'snackbar-danger');
       });
+  }
+
+  openPreview(): void {
+    const panelClass = this.themeClass ? [this.themeClass] : undefined;
+
+    this.dialog.open(SlbPreviewDialogComponent, {
+      data: {
+        form: this.form,
+        fields: this.visibleFields(),
+        ulbName: this.ulbName(),
+        formStatusLabel: this.currentFormStatusLabel(),
+        actualYearLabel: this.actualYearLabel(),
+        targetYearLabel: this.yearLabel(),
+      },
+      panelClass,
+      width: '960px',
+      maxWidth: '96vw',
+      height: '85vh',
+      maxHeight: '85vh',
+      autoFocus: false,
+    });
+  }
+
+  /**
+   * Captures the off-screen `app-slb-preview-content` host (mounted only while this runs, see
+   * `pdfSource`) via html2canvas and saves it as a paginated PDF — see `exportElementToPdf`.
+   */
+  downloadPdf(): void {
+    if (this.isLoading() || this.hasLoadError() || this.isGeneratingPdf()) return;
+
+    this.isGeneratingPdf.set(true);
+
+    afterNextRender(
+      () => {
+        const element = this.pdfSource()?.nativeElement;
+        if (!element) {
+          this.isGeneratingPdf.set(false);
+          return;
+        }
+
+        // afterNextRender guarantees Angular has updated the DOM, not that the browser has
+        // painted it yet — wait two animation frames so the off-screen tree (header, full
+        // indicator table, self-declaration section) has actually been laid out and painted
+        // before html2canvas rasterizes it.
+        new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+          .then(() => exportElementToPdf(element, this.buildPdfFilename()))
+          .catch((err: unknown) => {
+            console.error('Failed to generate SLB PDF', err);
+            this.utilityService.triggerSnackbar('Unable to generate PDF. Please try again.', 'snackbar-danger');
+          })
+          .finally(() => this.isGeneratingPdf.set(false));
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private buildPdfFilename(): string {
+    return `SLB_${this.ulbName()}_${this.yearLabel()}.pdf`.replace(/[^\w.-]+/g, '_');
   }
 }

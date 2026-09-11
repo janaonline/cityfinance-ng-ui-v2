@@ -4,25 +4,58 @@
 
     <section class="p-3 p-md-4">
       <div class="content-stack d-flex flex-column gap-4">
-        <div>
-          <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
-            16th Finance Commission
-            @if (ulbName()) {
-              &nbsp;&middot;&nbsp; {{ ulbName() }}
-            }
+        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+          <div>
+            <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+              16th Finance Commission
+              @if (ulbName()) {
+                &nbsp;&middot;&nbsp; {{ ulbName() }}
+              }
+            </div>
+
+            <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+              <h1 class="page-title mb-2">Service Level Benchmarks</h1>
+              @if (currentFormStatusLabel()) {
+                <span class="status-pill small fw-semibold">{{ currentFormStatusLabel() }}</span>
+              }
+            </div>
+
+            <p class="page-subtitle text-secondary mb-0">
+              Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid
+              waste, and storm water indicators.
+            </p>
           </div>
 
-          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
-            <h1 class="page-title mb-2">Service Level Benchmarks</h1>
-            @if (currentFormStatusLabel()) {
-              <span class="status-pill small fw-semibold">{{ currentFormStatusLabel() }}</span>
-            }
-          </div>
+          <div class="d-flex gap-2 flex-shrink-0 ms-auto">
+            <button
+              type="button"
+              matButton="outlined"
+              color="primary"
+              (click)="openPreview()"
+              [disabled]="isLoading() || hasLoadError() || !visibleFields().length"
+              data-cy="slb-preview-test"
+            >
+              <i class="bi bi-eye-fill me-1"></i>
+              <span class="d-none d-md-inline">Preview</span>
+            </button>
 
-          <p class="page-subtitle text-secondary mb-0">
-            Report your ULB's actual performance and target for FY 2026-27 across water supply, sanitation, solid waste,
-            and storm water indicators.
-          </p>
+            <button
+              type="button"
+              matButton="outlined"
+              class="download-btn-tertiary"
+              (click)="downloadPdf()"
+              [disabled]="isLoading() || hasLoadError() || isGeneratingPdf() || !visibleFields().length"
+              data-cy="slb-download-test"
+            >
+              @if (isGeneratingPdf()) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span class="d-none d-md-inline">Generating...</span>
+              } @else {
+                <i class="bi bi-download me-1"></i>
+                <span class="d-none d-md-inline">Download</span>
+              }
+            </button>
+          </div>
         </div>
 
         <hr class="my-0 text-body-tertiary" />
@@ -115,6 +148,23 @@
             </button>
           }
         </div>
+      </div>
+    }
+
+    @if (isGeneratingPdf()) {
+      <div
+        #pdfSource
+        class="pdf-capture-host"
+        style="position: fixed; top: 0; left: 0; width: 800px; background: #fff; z-index: -1;"
+      >
+        <app-slb-preview-content
+          [form]="form"
+          [fields]="visibleFields()"
+          [ulbName]="ulbName()"
+          [formStatusLabel]="currentFormStatusLabel()"
+          [actualYearLabel]="actualYearLabel()"
+          [targetYearLabel]="yearLabel()"
+        ></app-slb-preview-content>
       </div>
     }
   <!-- </div>

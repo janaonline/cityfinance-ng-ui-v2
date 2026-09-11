@@ -1,11 +1,12 @@
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
+import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../dynamic-form-visibility.service';
@@ -15,6 +16,7 @@ import { SlbService } from './slb.service';
 import { SlbFormData } from './slb.models';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
+import { SlbPreviewDialogComponent } from '../../../shared/slb-preview/slb-preview-dialog.component';
 
 @Component({ selector: 'app-dynamic-form', standalone: true, template: '' })
 class MockDynamicFormComponent {
@@ -83,6 +85,7 @@ describe('SlbComponent', () => {
   let utilityService: jasmine.SpyObj<UtilityService>;
   let confirmDialogService: jasmine.SpyObj<ConfirmDialogService>;
   let moduleService: jasmine.SpyObj<XvifcModuleService>;
+  let matDialog: jasmine.SpyObj<MatDialog>;
   let getSlbFormSpy: jasmine.Spy;
   let saveSlbDraftSpy: jasmine.Spy;
 
@@ -94,12 +97,14 @@ describe('SlbComponent', () => {
     confirmDialogService.confirm.and.returnValue(of(true));
     moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
     moduleService.yearId.and.returnValue('year-test-id');
+    matDialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
 
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, RouterTestingModule, SlbComponent],
       providers: [
         { provide: MatDialogRef, useValue: { close: () => undefined } },
         { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: MatDialog, useValue: matDialog },
         DynamicFormService,
         DynamicFormVisibilityService,
         { provide: UtilityService, useValue: utilityService },
@@ -108,7 +113,7 @@ describe('SlbComponent', () => {
       ],
     })
       .overrideComponent(SlbComponent, {
-        remove: { imports: [HttpClientTestingModule, RouterTestingModule] },
+        remove: { imports: [HttpClientTestingModule, RouterTestingModule, PreLoaderComponent] },
         add: { imports: [HttpClientTestingModule, RouterTestingModule, MockPreLoaderComponent] },
       })
       .overrideComponent(SlbFormBodyComponent, {
@@ -312,5 +317,49 @@ describe('SlbComponent', () => {
       'Please correct the errors in the form before submitting.',
       'snackbar-danger',
     );
+  }));
+
+  it('opens the SLB preview dialog with the current form, fields, and labels', fakeAsync(() => {
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+
+    component.openPreview();
+
+    expect(matDialog.open).toHaveBeenCalledTimes(1);
+    const [dialogComponent, config] = matDialog.open.calls.mostRecent().args;
+    expect(dialogComponent).toBe(SlbPreviewDialogComponent);
+    expect(config?.data).toEqual(
+      jasmine.objectContaining({
+        form: component.form,
+        ulbName: 'Test ULB',
+        formStatusLabel: 'Not Started',
+        actualYearLabel: '2025-26',
+        targetYearLabel: '2026-27',
+      }),
+    );
+  }));
+
+  it('disables Preview and Download while the form is loading', fakeAsync(() => {
+    const formSubject = new Subject<ReturnType<typeof createSlbFormResponse>>();
+    getSlbFormSpy.and.returnValue(formSubject.asObservable());
+
+    createComponent();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const previewButton = element.querySelector<HTMLButtonElement>('[data-cy="slb-preview-test"]');
+    const downloadButton = element.querySelector<HTMLButtonElement>('[data-cy="slb-download-test"]');
+
+    expect(previewButton?.disabled).toBeTrue();
+    expect(downloadButton?.disabled).toBeTrue();
+
+    formSubject.next(createSlbFormResponse());
+    formSubject.complete();
+    tick(1);
+    fixture.detectChanges();
+
+    expect(previewButton?.disabled).toBeFalse();
+    expect(downloadButton?.disabled).toBeFalse();
   }));
 });
