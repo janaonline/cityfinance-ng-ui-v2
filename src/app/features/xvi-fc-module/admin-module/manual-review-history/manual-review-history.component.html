@@ -16,6 +16,79 @@
     </button>
   </div>
 
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div class="text-uppercase text-muted small fw-semibold">Requested</div>
+    <div class="btn-group" role="group" aria-label="Stats time range">
+      @for (r of statsRanges; track r.value) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="statsRange() === r.value"
+          [class.btn-outline-secondary]="statsRange() !== r.value"
+          (click)="setStatsRange(r.value)"
+        >
+          {{ r.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <mat-card class="custom-mat-card mat-elevation-z1 mb-3">
+    <div class="p-3">
+      @if (stats(); as s) {
+        <div class="row g-0 stats-row">
+          <div class="col-6 col-md-3 stat-cell">
+            <div class="stat-label"><span class="stat-dot stat-dot-received"></span>Received</div>
+            <div class="stat-value">{{ s.received }}</div>
+            <div class="stat-sub">Flagged for a human</div>
+          </div>
+          <div class="col-6 col-md-3 stat-cell">
+            <div class="stat-label"><span class="stat-dot stat-dot-pending"></span>Pending</div>
+            <div class="stat-value">{{ s.pending }}</div>
+            <div class="stat-sub">Waiting on a decision</div>
+          </div>
+          <div class="col-6 col-md-3 stat-cell stat-cell-highlight">
+            <div class="stat-label"><span class="stat-dot stat-dot-approved"></span>Approved</div>
+            <div class="stat-value">{{ s.approved }}</div>
+            <div class="stat-sub">Flag did not stand</div>
+          </div>
+          <div class="col-6 col-md-3 stat-cell">
+            <div class="stat-label"><span class="stat-dot stat-dot-rejected"></span>Rejected</div>
+            <div class="stat-value">{{ s.rejected }}</div>
+            <div class="stat-sub">Flag stood</div>
+          </div>
+        </div>
+        <div class="row g-0 stats-row stats-row-secondary">
+          <div class="col-12 col-md-4 stat-cell">
+            <div class="stat-label">Average response</div>
+            <div class="stat-value">{{ s.avgResponseHours !== null ? (s.avgResponseHours + ' hrs') : '—' }}</div>
+            <div class="stat-sub">Mean time from request to decision</div>
+          </div>
+          <div class="col-12 col-md-4 stat-cell">
+            <div class="stat-label">Over 48 hours</div>
+            <div class="stat-value">{{ s.over48hCount }}</div>
+            <div class="stat-sub">SLA breached, pending or decided late</div>
+          </div>
+          <div class="col-12 col-md-4 stat-cell">
+            <div class="stat-label">Overturn rate</div>
+            <div class="stat-value">{{ s.overturnRatePercent !== null ? (s.overturnRatePercent + '%') : '—' }}</div>
+            <div class="stat-sub">{{ s.approved }} of {{ s.approved + s.rejected }} flags overturned by a reviewer</div>
+          </div>
+        </div>
+        @if (s.overturnRateWarning) {
+          <div class="alert alert-warning d-flex align-items-start gap-2 mt-3 mb-0" role="alert">
+            <i class="bi bi-exclamation-circle mt-1"></i>
+            <div>Above 50%, the check is flagging valid documents more often than not. The rule needs re-tuning, not the ULBs.</div>
+          </div>
+        }
+      } @else if (isStatsLoading()) {
+        <app-pre-loader></app-pre-loader>
+      } @else {
+        <p class="text-muted small mb-0">{{ statsError() ?? 'No manual-review requests in this range.' }}</p>
+      }
+    </div>
+  </mat-card>
+
   <mat-card class="custom-mat-card mat-elevation-z1 mb-3">
     <div class="p-3">
       <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end gap-3">
