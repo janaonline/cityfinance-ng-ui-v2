@@ -9,6 +9,13 @@
           placeholder="Search by ULB name or code" formControlName="search" />
       </div>
     </form>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="text-muted small">Total records: {{ total() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" title="Reload"
+        (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
   </div>
 
   <mat-card class="custom-mat-card mat-elevation-z1">
