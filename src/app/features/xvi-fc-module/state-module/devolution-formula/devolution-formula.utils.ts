@@ -202,11 +202,13 @@ export interface DfRowViewModel<TRow> {
 }
 
 export function buildDfRowViewModel<
-  TRow extends { readonly errors?: ReadonlyArray<{ readonly field?: string; readonly message: string }> },
+  TRow extends {
+    readonly validationErrors?: ReadonlyArray<{ readonly field?: string; readonly message: string }>;
+  },
 >(row: TRow): DfRowViewModel<TRow> {
   const cellHasError: Record<string, boolean> = {};
   const cellErrorText: Record<string, string> = {};
-  for (const error of row.errors ?? []) {
+  for (const error of row.validationErrors ?? []) {
     if (!error.field) continue;
     cellHasError[error.field] = true;
     cellErrorText[error.field] = cellErrorText[error.field]
