@@ -160,7 +160,7 @@ describe('EulbRowsDialogComponent', () => {
   it('censusCode and ulbName cells show an error icon when the row has those errors', () => {
     const errorRow: EulbRow = {
       ...row,
-      errors: [
+      validationErrors: [
         { field: 'censusCode', code: 'invalid', message: 'Census code not found.' },
         { field: 'ulbName', code: 'invalid', message: 'ULB name is required.' },
       ],
@@ -180,7 +180,7 @@ describe('EulbRowsDialogComponent', () => {
   it('renders one tooltip source for an invalid electedBodyStatus dialog cell', () => {
     const errorRow: EulbRow = {
       ...row,
-      errors: [
+      validationErrors: [
         {
           field: 'electedBodyStatus',
           code: 'required',
@@ -204,7 +204,7 @@ describe('EulbRowsDialogComponent', () => {
   it('renders one tooltip source for an invalid date dialog cell', () => {
     const errorRow: EulbRow = {
       ...row,
-      errors: [
+      validationErrors: [
         {
           field: 'dateOfConstitution',
           code: 'required',
@@ -230,7 +230,7 @@ describe('EulbRowsDialogComponent', () => {
   it('clicking an errored dialog cell enters edit mode and preserves the focus selector', fakeAsync(() => {
     const errorRow: EulbRow = {
       ...row,
-      errors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are required.' }],
+      validationErrors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are required.' }],
     };
     service.getRows.and.returnValue(of({ data: { rows: [errorRow], total: 1, page: 1, limit: 20 } }));
     component.rowEditFields.set(createRowEditFields());
@@ -323,7 +323,7 @@ describe('EulbRowsDialogComponent', () => {
     it('sets cellHasError and cellErrorText for rows with errors', () => {
       const errorRow: EulbRow = {
         ...row,
-        errors: [
+        validationErrors: [
           { field: 'electedBodyStatus', code: 'invalid', message: 'Status is required.' },
           { field: 'dateOfConstitution', code: 'invalid', message: 'Invalid date.' },
         ],
@@ -342,7 +342,7 @@ describe('EulbRowsDialogComponent', () => {
     it('joins multiple errors for the same field with newlines', () => {
       const multiErrorRow: EulbRow = {
         ...row,
-        errors: [
+        validationErrors: [
           { field: 'electedBodyStatus', code: 'a', message: 'Error one.' },
           { field: 'electedBodyStatus', code: 'b', message: 'Error two.' },
         ],
@@ -354,7 +354,7 @@ describe('EulbRowsDialogComponent', () => {
     });
 
     it('produces no cellHasError entries for rows without errors', () => {
-      const cleanRow: EulbRow = { ...row, errors: [] };
+      const cleanRow: EulbRow = { ...row, validationErrors: [] };
       component.rows.set([cleanRow]);
 
       const vm = component.rowViewModels()[0];
@@ -575,7 +575,7 @@ describe('EulbRowsDialogComponent', () => {
       dateOfExpiry: '',
       remarks: '',
       validationStatus: 'INVALID',
-      errors: [],
+      validationErrors: [],
     };
   }
 
@@ -644,7 +644,7 @@ describe('EulbRowsDialogComponent buildEditForm', () => {
     dateOfExpiry: '',
     remarks: '',
     validationStatus: 'VALID',
-    errors: [],
+    validationErrors: [],
   };
 
   it('never creates censusCode or ulbName form controls — identity fields are not portal-editable', () => {
@@ -669,7 +669,7 @@ describe('EulbRowsDialogComponent edit-form subscription teardown', () => {
     dateOfExpiry: '',
     remarks: '',
     validationStatus: 'INVALID',
-    errors: [],
+    validationErrors: [],
   };
 
   let fixture: ComponentFixture<EulbRowsDialogComponent>;
