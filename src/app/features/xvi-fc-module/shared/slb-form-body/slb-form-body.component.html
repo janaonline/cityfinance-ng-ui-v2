@@ -48,7 +48,7 @@
                     </div>
                     @for (validation of item.validations; track validation.name) {
                       @if (hasIndicatorError(item.key, 'actual', validation.name)) {
-                        <div class="text-danger small mt-1">{{ validation.message }}</div>
+                        <div class="text-danger small mt-1 slb-indicator-error">{{ validation.message }}</div>
                       }
                     }
                   } @else {
@@ -77,7 +77,7 @@
                     </div>
                     @for (validation of item.validations; track validation.name) {
                       @if (hasIndicatorError(item.key, 'target', validation.name)) {
-                        <div class="text-danger small mt-1">{{ validation.message }}</div>
+                        <div class="text-danger small mt-1 slb-indicator-error">{{ validation.message }}</div>
                       }
                     }
                   } @else {

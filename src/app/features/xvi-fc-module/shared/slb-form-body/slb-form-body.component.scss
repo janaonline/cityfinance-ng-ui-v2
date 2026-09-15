@@ -18,9 +18,13 @@
     border-bottom-width: 1px;
   }
 
+  // top-aligned rather than middle: a cross-field error (e.g. actualLessThanOrEqualToTarget /
+  // targetLessThanOrEqualToActual) adds an extra error line under only one of the actual/target
+  // cells, growing that cell's height — vertical-align: middle would then re-center the shorter
+  // cell's input in the taller row, visibly dropping it out of line with its sibling input.
   td,
   th {
-    vertical-align: middle;
+    vertical-align: top;
     padding: 0.75rem 0.9rem;
   }
 
@@ -61,4 +65,12 @@
     opacity: 0.6;
     font-style: italic;
   }
+}
+
+// Cap the error message to the input's own width and let it wrap: an unconstrained block would
+// take its "no-wrap" width as the column's preferred width, widening that column (and every
+// sibling row's input in it) to fit the longest error message instead of just this cell.
+.slb-indicator-error {
+  max-width: 170px;
+  word-wrap: break-word;
 }
