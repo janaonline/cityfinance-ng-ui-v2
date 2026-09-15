@@ -7,8 +7,13 @@
   </div>
 
   <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
-    <h2 class="preview-title mb-2">Service Level Benchmarks</h2>
-    @if (formStatusLabel()) {
+    <h2 class="preview-title mb-2">
+      Service Level Benchmarks
+      @if (showFyInHeading() && targetYearLabel()) {
+        <span class="fy-heading-suffix">(FY {{ targetYearLabel() }})</span>
+      }
+    </h2>
+    @if (!hideStatusPill() && formStatusLabel()) {
       <span class="status-pill small fw-semibold">{{ formStatusLabel() }}</span>
     }
   </div>
@@ -17,7 +22,7 @@
 
   <app-slb-form-body
     [form]="form()"
-    [fields]="fields()"
+    [fields]="displayFields()"
     mode="view"
     [actualYearLabel]="actualYearLabel()"
     [targetYearLabel]="targetYearLabel()"
