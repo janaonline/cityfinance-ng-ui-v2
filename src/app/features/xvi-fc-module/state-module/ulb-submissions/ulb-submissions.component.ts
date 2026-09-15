@@ -24,6 +24,7 @@ import {
   FORM_TO_TAB,
   ReviewFormId,
   ReviewStatus,
+  SLB_ONLY_BUCKET_KEYS,
   SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
   SYSTEM_CHECKS_CONTENT,
@@ -45,6 +46,7 @@ const EMPTY_COUNTS: Record<ReviewStatus, number> = {
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 0,
   APPROVED_BY_STATE: 0,
   AWAITING_CLAIM_LETTER: 0,
+  EXEMPTED: 0,
 };
 
 const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
@@ -274,9 +276,11 @@ export class UlbSubmissionsComponent {
     if (this.isSelectedFormLive()) this.loadRows();
   }
 
-  /** SLB has no STATE approve/return workflow — the review/returned/MoHUA buckets never apply. */
+  /** SLB has no STATE approve/return workflow — the review/returned/MoHUA buckets never apply to
+   *  it. Exemption (xvi-fc dynamic year access) only ever applies to SLB — the mirror case. */
   isBucketDisabled(key: string): boolean {
-    return this.isSlbSelected() && SLB_UNAVAILABLE_BUCKET_KEYS.has(key);
+    if (this.isSlbSelected()) return SLB_UNAVAILABLE_BUCKET_KEYS.has(key);
+    return SLB_ONLY_BUCKET_KEYS.has(key);
   }
 
   isAllSelected(): boolean {

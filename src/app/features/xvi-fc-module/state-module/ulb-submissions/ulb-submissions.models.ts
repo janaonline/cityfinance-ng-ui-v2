@@ -88,7 +88,8 @@ export type ReviewStatus =
   | 'RETURNED_BY_MOHUA'
   | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
   | 'APPROVED_BY_STATE'
-  | 'AWAITING_CLAIM_LETTER';
+  | 'AWAITING_CLAIM_LETTER'
+  | 'EXEMPTED';
 
 /** One clickable stat card, grouping one or more underlying statuses into a single reviewer-facing bucket. */
 export interface StatusBucket {
@@ -106,6 +107,13 @@ export const STATUS_BUCKETS: readonly StatusBucket[] = [
     label: 'ULB In Progress',
     statuses: ['IN_PROGRESS', 'RETURNED_BY_MOHUA'],
     icon: 'hourglass-split',
+  },
+  {
+    key: 'EXEMPTED',
+    label: 'Exempted',
+    statuses: ['EXEMPTED'],
+    // Matches the claim letter's existing "Exempted" visual language (shield-check, primary color).
+    icon: 'shield-check',
   },
   { key: 'UNDER_STATE_REVIEW', label: 'Under Review by State', statuses: ['UNDER_REVIEW_BY_STATE'], icon: 'pencil-square' },
   {
@@ -136,6 +144,10 @@ export const SLB_UNAVAILABLE_BUCKET_KEYS: ReadonlySet<string> = new Set([
   'UNDER_REVIEW_BY_MOHUA',
 ]);
 
+/** EXEMPTED can only ever occur for SLB (the only exemptable form today, via xvi-fc dynamic year
+ *  access) - the mirror image of SLB_UNAVAILABLE_BUCKET_KEYS above, disabled for every other form. */
+export const SLB_ONLY_BUCKET_KEYS: ReadonlySet<string> = new Set(['EXEMPTED']);
+
 export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   NOT_STARTED: 'Not Started',
   IN_PROGRESS: 'In Progress',
@@ -146,6 +158,7 @@ export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'Approved by MoHUA',
   APPROVED_BY_STATE: 'Approved by State',
   AWAITING_CLAIM_LETTER: 'Awaiting Claim Letter',
+  EXEMPTED: 'Exempted',
 };
 
 export interface UlbSubmissionRow {

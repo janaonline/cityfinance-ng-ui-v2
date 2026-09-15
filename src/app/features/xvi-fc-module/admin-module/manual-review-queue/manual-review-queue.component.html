@@ -5,31 +5,32 @@
     <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end">
       <div class="mb-2">
         <label for="manual-review-queue-search" class="visually-hidden">Search</label>
-        <input
-          type="search"
-          class="form-control"
-          id="manual-review-queue-search"
-          placeholder="Search by ULB name or code"
-          formControlName="search"
-        />
+        <input type="search" class="form-control" id="manual-review-queue-search"
+          placeholder="Search by ULB name or code" formControlName="search" />
       </div>
     </form>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="text-muted small">Total records: {{ total() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" title="Reload"
+        (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
   </div>
 
   <mat-card class="custom-mat-card mat-elevation-z1">
     <div class="table-container mat-elevation-z8 mb-4">
       @if (isLoading()) {
-        <app-pre-loader></app-pre-loader>
-        <app-pre-loader></app-pre-loader>
-        <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
       } @else if (loadError()) {
-        <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
-        <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
-          <i class="bi bi-arrow-clockwise me-1"></i>Retry
-        </button>
-      } @else if (rows().length <= 0) {
-        <p class="text-center p-2 mt-2">Nothing awaiting manual review.</p>
-      } @else {
+      <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
+      <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Retry
+      </button>
+      } @else if (rows().length <= 0) { <p class="text-center p-2 mt-2">Nothing awaiting manual review.</p>
+        } @else {
         <table mat-table [dataSource]="rows()">
           <ng-container matColumnDef="serialNo">
             <th mat-header-cell *matHeaderCellDef>S.No</th>
@@ -37,15 +38,19 @@
           </ng-container>
 
           <ng-container matColumnDef="details">
-            <th mat-header-cell *matHeaderCellDef>Input</th>
+            <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div>
-                <span class="fw-bold">ULB:</span> {{ row.ulbName ?? '—' }} <span>{{ row.ulbCode }}</span>
+              <div class="fw-bold">{{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span></div>
+              <div class="text-muted small">
+                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }} &middot;
+                {{ row.docId }} &middot;
+                @if (row.jobId) {
+                <a [href]="ocrDownloadUrl(row.jobId)" class="ms-1 text-muted" target="_blank" rel="noopener"
+                  [title]="row.fileName ?? 'View file'">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                </a>
+                }
               </div>
-              <div><span class="fw-bold">State:</span> {{ row.stateName ?? '—' }}</div>
-              <div><span class="fw-bold">Section:</span> {{ sectionLabel(row.section) }}</div>
-              <div><span class="fw-bold">Year:</span> {{ row.year }}</div>
-              <div><span class="fw-bold">Document:</span> {{ row.docId }} &middot; {{ row.fileName }}</div>
             </td>
           </ng-container>
 
@@ -53,54 +58,56 @@
             <th mat-header-cell *matHeaderCellDef>Validation issues</th>
             <td mat-cell *matCellDef="let row">
               @if (row.validationDetails) {
-                <div>{{ row.validationDetails }}</div>
+              <div>{{ row.validationDetails }}</div>
               }
               @if (row.failedChecks.length) {
-                <ul class="ps-3 mb-0">
-                  @for (check of row.failedChecks; track check) {
-                    <li>{{ check }}</li>
-                  }
-                </ul>
+              <ul class="ps-3 mb-0">
+                @for (check of row.failedChecks; track check) {
+                <li>{{ check }}</li>
+                }
+              </ul>
               }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="requestedAt">
-            <th mat-header-cell *matHeaderCellDef>Requested</th>
-            <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'mediumDate' }}</td>
+            <th mat-header-cell *matHeaderCellDef>Requested at</th>
+            <td mat-cell *matCellDef="let row">{{ row.manualReviewRequestedAt | date: 'd MMM, h:mm a' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="sla">
+            <th mat-header-cell *matHeaderCellDef>SLA</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="text-muted small">{{ row.dueAt | date: 'd MMM, h:mm a' }}</div>
+              @if (row.isBreached) {
+              <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Breached</span>
+              } @else {
+              <span class="badge rounded-pill bg-success-subtle text-success-emphasis">On time</span>
+              }
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
-              <div class="d-flex justify-content-center gap-2">
+              <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
                 @if (row.jobId) {
-                  <a
-                    class="btn btn-outline-secondary btn-sm"
-                    routerLink="/ocr/validation"
-                    [queryParams]="{ jobId: row.jobId }"
-                    target="_blank"
-                    title="View OCR job log"
-                  >
-                    <i class="bi bi-eye"></i> Log
-                  </a>
+                <a class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  routerLink="/ocr/validation" [queryParams]="{ jobId: row.jobId }" target="_blank"
+                  title="View OCR job log">
+                  <i class="bi bi-eye"></i> Log
+                </a>
                 }
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  [disabled]="isDeciding(row)"
-                  (click)="onReject(row)"
-                >
-                  Reject
+                <button type="button" class="btn btn-danger btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  [disabled]="isDeciding(row)" (click)="onReject(row)">
+                  <i class="bi bi-x-lg"></i> Reject
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-cfPrimary btn-sm"
-                  [disabled]="isDeciding(row)"
-                  (click)="onApprove(row)"
-                >
+                <button type="button" class="btn btn-success btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  [disabled]="isDeciding(row)" (click)="onApprove(row)">
                   @if (isDeciding(row)) {
-                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  } @else {
+                  <i class="bi bi-check-lg"></i>
                   }
                   Approve
                 </button>
@@ -111,16 +118,11 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
-      }
+        }
 
-      <mat-paginator
-        [length]="total()"
-        [pageSize]="pageSize()"
-        [pageIndex]="page() - 1"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        aria-label="Select page of the manual-review queue"
-      ></mat-paginator>
+        <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="page() - 1"
+          [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)"
+          aria-label="Select page of the manual-review queue"></mat-paginator>
     </div>
   </mat-card>
 </div>

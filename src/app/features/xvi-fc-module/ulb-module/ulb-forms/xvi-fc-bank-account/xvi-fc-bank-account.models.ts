@@ -57,10 +57,18 @@ export interface XviFcBankAccountDecision {
   decidedAt: string;
 }
 
+export type SubmissionScope = 'PER_YEAR' | 'ONCE_EVER';
+
 export interface XviFcBankAccountResponse {
   _id?: string;
   ulb?: string;
   designYear?: string;
+  /** Present only when submissionScope is ONCE_EVER and designYear differs from the requested
+   *  year - the label of the year the record actually belongs to, so the caller can redirect
+   *  there and update the cached "selected year" display without a second lookup. */
+  designYearLabel?: string | null;
+  /** Drives the ONCE_EVER redirect on the frontend - never hardcode "this form is special". */
+  submissionScope?: SubmissionScope;
   ifscCode: string;
   bankDetails: XviFcBankDetails;
   accountNumberMasked?: string;

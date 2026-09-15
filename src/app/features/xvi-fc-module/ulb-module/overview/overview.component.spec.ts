@@ -11,6 +11,10 @@ describe('OverviewComponent', () => {
   let fixture: ComponentFixture<OverviewComponent>;
 
   beforeEach(async () => {
+    // Otherwise ngOnInit's one-time video-walkthrough popup would actually try to open a real
+    // MatDialog on every test in this file (the "seen" flag won't exist yet on a fresh run).
+    localStorage.setItem('hasSeenXvifcVideoWalkthrough', 'true');
+
     await TestBed.configureTestingModule({ providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }], imports: [HttpClientTestingModule, RouterTestingModule, OverviewComponent]
     })
     .compileComponents();
@@ -18,6 +22,10 @@ describe('OverviewComponent', () => {
     fixture = TestBed.createComponent(OverviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('hasSeenXvifcVideoWalkthrough');
   });
 
   it('should create', () => {

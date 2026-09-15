@@ -10,6 +10,7 @@ const STATUS_BADGE_CLASS: Readonly<Record<ReviewStatus, string>> = {
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'text-bg-success',
   APPROVED_BY_STATE: 'text-bg-success',
   AWAITING_CLAIM_LETTER: 'text-bg-info',
+  EXEMPTED: 'text-bg-primary', // same badge treatment as the claim letter's "Exempted" chip
 };
 
 export function getStatusBadgeClass(status: ReviewStatus): string {

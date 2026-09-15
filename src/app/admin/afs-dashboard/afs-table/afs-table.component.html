@@ -16,8 +16,18 @@
       >
         Remove Queue
       </button> -->
-      <button type="button" class="mx-2 btn btn-sm btn-cfPrimary" (click)="dumpReport()">
-        Download Report
+      <button
+        type="button"
+        class="mx-2 btn btn-sm btn-cfPrimary"
+        [disabled]="isDownloadingReport"
+        (click)="dumpReport()"
+      >
+        @if (isDownloadingReport) {
+          <mat-spinner diameter="16" class="d-inline-block me-1" style="vertical-align: middle"></mat-spinner>
+          Downloading...
+        } @else {
+          Download Report
+        }
       </button>
     </div>
   </div>

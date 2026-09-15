@@ -68,6 +68,8 @@ const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>>
   // SLB is auto-approved by State on submission (no review workflow) — form_status_id 8 is
   // FORM_STATUS.APPROVED_BY_STATE in the shared enum (src/common/constants/form-status.constants.ts).
   8: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
+  // Dynamic Year Access — automatic exemption for a genuinely new ULB (today: SLB only). Reuses
+  12: { iconTier: 'success', buttonLabel: 'Exempted', showPreview: false },
 };
 
 const SCENARIOS: WhatIfScenario[] = [

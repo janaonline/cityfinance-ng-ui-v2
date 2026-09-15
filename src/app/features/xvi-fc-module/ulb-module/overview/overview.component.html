@@ -1,4 +1,21 @@
 <div class="component-shell">
+  @if (showVideoBanner()) {
+    <div class="video-banner" role="status">
+      <i class="bi bi-play-circle-fill video-banner__icon" aria-hidden="true"></i>
+      <span class="video-banner__text">New: watch the 16th FC video walkthrough</span>
+      <button type="button" class="video-banner__watch" (click)="onWatchVideoBannerClick()">
+        Watch now
+      </button>
+      <button
+        type="button"
+        class="video-banner__dismiss"
+        (click)="onDismissVideoBanner()"
+        aria-label="Dismiss"
+      >
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
   <div class="form-container">
     <div class="content-wrap p-3 p-md-4">
       <div class="content-stack">
@@ -14,6 +31,7 @@
       [initialSelectedGrantId]="'basic'"
       [isLoading]="isLoading()"
       [selectedYear]="selectedYear"
+      [videoWalkthroughUrl]="videoWalkthroughUrl"
     />
   }
       </div>

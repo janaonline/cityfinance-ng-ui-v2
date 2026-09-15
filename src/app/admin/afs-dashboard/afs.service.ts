@@ -61,7 +61,7 @@ export class AfsService {
   }
 
   dumpDigitizationReport(params: any) {
-    return this.http.get<ResponseData>(`${environment.api.url2}afs-digitization/dump/afs-excel`, { params, responseType: 'blob' as 'json' });
+    return this.http.get(`${environment.api.url2}afs-digitization/dump/afs-excel`, { params, responseType: 'blob' });
   }
 
   uploadAfsFile(payload: AfsExcelFile) {

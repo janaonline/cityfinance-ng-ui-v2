@@ -53,6 +53,9 @@ export class OverviewCardComponent implements OnChanges {
   @Input() initialSelectedGrantId: string | null = null;
   @Input() isLoading = false;
   @Input() selectedYear: string | null = null;
+  /** Opens in a new tab from the hero band when provided — omit to show no video link at all
+   *  (this card is shared with the STATE overview, which doesn't have one). */
+  @Input() videoWalkthroughUrl: string | null = null;
   selectedGrantId = '';
 
   /** State-wide aggregate, so this follows the same `'auto'` page default used everywhere else on

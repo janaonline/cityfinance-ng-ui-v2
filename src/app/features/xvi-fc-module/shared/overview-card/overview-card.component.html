@@ -74,6 +74,17 @@
                 {{ data.financialYear }}&ensp;·&ensp;{{ data.subHeader2 }}
               </p>
               <p class="hero-band__sub mb-0">{{ data.totalAllocationNote }}</p>
+              @if (videoWalkthroughUrl) {
+                <a
+                  class="hero-band__video-link mt-2"
+                  [href]="videoWalkthroughUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i class="bi bi-play-circle-fill" aria-hidden="true"></i>
+                  16th FC video walkthrough
+                </a>
+              }
             </div>
 
             <div class="hero-divider" aria-hidden="true"></div>
