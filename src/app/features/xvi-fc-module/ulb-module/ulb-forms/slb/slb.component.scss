@@ -5,6 +5,17 @@
   @include layout.acknowledgement-layout;
 }
 
+// Download uses a distinct color from Preview's default `color="primary"` — the app theme only
+// defines primary/tertiary palettes (see styles.scss), so `--mat-sys-tertiary` is the reliable way
+// to get a genuinely different color on an outlined button, same token pattern as
+// `.confirm-dialog-btn--accent` in material-custom.scss.
+.download-btn-tertiary {
+  --mat-button-outlined-label-text-color: var(--mat-sys-tertiary, #7d5260);
+  --mat-button-outlined-outline-color: var(--mat-sys-tertiary, #7d5260);
+  --mat-button-outlined-state-layer-color: var(--mat-sys-tertiary, #7d5260);
+  --mat-button-outlined-ripple-color: color-mix(in srgb, var(--mat-sys-tertiary, #7d5260) 12%, transparent);
+}
+
 .status-pill {
   color: #0f5132;
   background: #d1e7dd;
@@ -15,3 +26,18 @@
 }
 
 // Indicator-table/declaration-card styling lives in the shared app-slb-form-body component now.
+
+// html2canvas can't reliably rasterize Angular Material's ligature icon font, and — confirmed via
+// live diagnostics against a real production build — a CSS `background-image: url(data:...)`
+// fallback is ALSO unreliable there even with every computed style verified correct. Icon
+// replacement now happens in JS (see `replaceIconsWithRealImages` in `pdf-export.util.ts`), which
+// inserts a real `<img>` element and waits for it to decode before capture — html2canvas's
+// best-supported case. This defensive rule stays as cheap insurance that "Certified"-style labels
+// next to those icons always render in a normal, visible dark color within the capture host.
+:host ::ng-deep .pdf-capture-host .fw-medium {
+  color: #212529 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}

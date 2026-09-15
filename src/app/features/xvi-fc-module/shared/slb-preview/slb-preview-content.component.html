@@ -1,0 +1,25 @@
+<div class="slb-preview-content">
+  <div class="text-secondary text-uppercase fw-semibold mb-2 custom-font-size-7">
+    16th Finance Commission
+    @if (ulbName()) {
+      &nbsp;&middot;&nbsp; {{ ulbName() }}
+    }
+  </div>
+
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-1">
+    <h2 class="preview-title mb-2">Service Level Benchmarks</h2>
+    @if (formStatusLabel()) {
+      <span class="status-pill small fw-semibold">{{ formStatusLabel() }}</span>
+    }
+  </div>
+
+  <hr class="my-3 text-body-tertiary" />
+
+  <app-slb-form-body
+    [form]="form()"
+    [fields]="fields()"
+    mode="view"
+    [actualYearLabel]="actualYearLabel()"
+    [targetYearLabel]="targetYearLabel()"
+  ></app-slb-form-body>
+</div>
