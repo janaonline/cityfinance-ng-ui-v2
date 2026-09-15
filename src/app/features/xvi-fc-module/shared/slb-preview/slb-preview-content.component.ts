@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
 import { SlbFormBodyComponent } from '../slb-form-body/slb-form-body.component';
@@ -22,4 +22,14 @@ export class SlbPreviewContentComponent {
   readonly formStatusLabel = input('');
   readonly actualYearLabel = input<string | null>(null);
   readonly targetYearLabel = input<string | null>(null);
+  /** PDF export only: omit the Supporting Document row from the Self Declaration section. */
+  readonly hideSupportingDocument = input(false);
+  /** PDF export only: omit the form-status pill (e.g. "Approved by State") from the header. */
+  readonly hideStatusPill = input(false);
+  /** PDF export only: append "(FY <targetYearLabel>)" after the "Service Level Benchmarks" heading. */
+  readonly showFyInHeading = input(false);
+
+  readonly displayFields = computed(() =>
+    this.hideSupportingDocument() ? this.fields().filter((f) => f.formFieldType !== 'file') : this.fields(),
+  );
 }
