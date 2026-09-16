@@ -104,6 +104,25 @@ describe('DynamicFormService', () => {
       control.get('actual')?.setValue(80);
       expect(control.get('target')?.hasError('actualLessThanOrEqualToTarget')).toBeFalse();
     });
+
+    it('attaches the targetLessThanOrEqualToActual group validator when declared in validations', () => {
+      const fieldWithRule = {
+        ...field,
+        validations: [
+          ...field.validations!,
+          { name: 'targetLessThanOrEqualToActual', validator: null, message: 'Target must be less than or equal to actual.' },
+        ],
+      } as FieldConfig;
+      const control = service.createContorl(fieldWithRule, false) as FormGroup;
+
+      control.get('actual')?.setValue(30);
+      control.get('target')?.setValue(40);
+
+      expect(control.get('target')?.hasError('targetLessThanOrEqualToActual')).toBeTrue();
+
+      control.get('target')?.setValue(20);
+      expect(control.get('target')?.hasError('targetLessThanOrEqualToActual')).toBeFalse();
+    });
   });
 
   it('normalizes an empty standalone file value to null so required validation starts invalid', () => {

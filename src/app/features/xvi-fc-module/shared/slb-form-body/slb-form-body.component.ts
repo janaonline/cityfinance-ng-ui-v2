@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormMode } from '../../../../shared/dynamic-form/field.interface';
@@ -16,6 +16,10 @@ export interface SlbIndicatorGroup {
  * narrow, locally-scoped type instead of widening that shared interface.
  */
 type FieldWithMeta = ConditionalFieldConfig & { meta?: Record<string, unknown> };
+
+/** `supportingDocumentType` radio option ids. */
+const HAS_SOURCE_DOCUMENT = 'HAS_SOURCE_DOCUMENT';
+const NO_SOURCE_DOCUMENT = 'NO_SOURCE_DOCUMENT';
 
 /**
  * Shared, presentational SLB "form body": the indicator table (grouped by sector) plus the
@@ -73,6 +77,23 @@ export class SlbFormBodyComponent {
     this.declarationFields().filter((f) => f.formFieldType !== 'text'),
   );
 
+  /** The "I have a source document" / "I don't have a source document" radio, if configured. */
+  readonly supportingDocumentTypeField = computed(() =>
+    this.declarationOtherFields().find((f) => f.key === 'supportingDocumentType'),
+  );
+  /** The supporting-document upload, common to both radio branches. */
+  readonly supportingDocumentFileField = computed(() =>
+    this.declarationOtherFields().find((f) => f.formFieldType === 'file'),
+  );
+  readonly remainingDeclarationFields = computed(() =>
+    this.declarationOtherFields().filter(
+      (f) => f.key !== 'supportingDocumentType' && f.formFieldType !== 'file',
+    ),
+  );
+
+  /** Emits when the ULB clicks "Generate & Download SLB Statement" in the no-source-document branch. */
+  readonly generateSlbStatement = output<void>();
+
   /** Checks a named validation error on an indicator's `actual`/`target` sub-control, only after it's been touched. */
   hasIndicatorError(key: string, sub: 'actual' | 'target', name: string): boolean {
     const control = this.form().get(`${key}.${sub}`);
@@ -81,5 +102,17 @@ export class SlbFormBodyComponent {
 
   indicatorValue(key: string, sub: 'actual' | 'target'): unknown {
     return this.form().get(`${key}.${sub}`)?.value;
+  }
+
+  /** Re-evaluated on every change-detection tick (incl. the radio's own change event) so the
+   *  3-step "no source document" layout toggles live as the ULB picks an option. */
+  hasNoSourceDocument(): boolean {
+    return this.form().get('supportingDocumentType')?.value === NO_SOURCE_DOCUMENT;
+  }
+
+  /** True once the ULB has explicitly chosen "I have a source document" — the upload stays
+   *  hidden until either radio option is picked, rather than showing a default. */
+  hasSourceDocument(): boolean {
+    return this.form().get('supportingDocumentType')?.value === HAS_SOURCE_DOCUMENT;
   }
 }
