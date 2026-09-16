@@ -54,10 +54,15 @@ export function resolveDocumentActions(
   sectionStatusId: number,
   gates: readonly ActionGate[],
   doc: DocumentRuntimeState,
+  blocked = false,
 ): ResolvedDocumentAction[] {
   const gated = (action: DocumentAction) => isGated(gates, role, action, doc.docKey, sectionStatusId);
 
   if (role === 'ULB') {
+    // Exemptions don't change the section's actual status.
+    // So the normal status check may allow these actions by mistake.
+    // This check handles the exemption separately.
+    if (blocked) return [];
     if (!doc.hasFile) {
       return gated('upload') ? [build('upload', false)] : [];
     }

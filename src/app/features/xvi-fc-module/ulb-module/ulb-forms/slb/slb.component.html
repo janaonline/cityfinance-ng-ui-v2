@@ -122,13 +122,24 @@
 </div>
 }
 
-@if (isGeneratingPdf()) {
-<div #pdfSource class="pdf-capture-host"
-  style="position: fixed; top: 0; left: 0; width: 800px; background: #fff; z-index: -1;">
-  <app-slb-preview-content [form]="form" [fields]="visibleFields()" [ulbName]="ulbName()"
-    [formStatusLabel]="currentFormStatusLabel()" [actualYearLabel]="actualYearLabel()" [targetYearLabel]="yearLabel()"
-    [hideSupportingDocument]="true" [hideStatusPill]="true" [showFyInHeading]="true"></app-slb-preview-content>
-</div>
-}
-<!-- </div>
+    @if (isGeneratingPdf()) {
+      <div
+        #pdfSource
+        class="pdf-capture-host"
+        style="position: fixed; top: 0; left: 0; width: 800px; background: #fff; z-index: -1;"
+      >
+        <app-slb-preview-content
+          [form]="form"
+          [fields]="visibleFields()"
+          [ulbName]="ulbName()"
+          [formStatusLabel]="currentFormStatusLabel()"
+          [actualYearLabel]="actualYearLabel()"
+          [targetYearLabel]="yearLabel()"
+          [hideSupportingDocument]="true"
+          [hideStatusPill]="true"
+          [showFyInHeading]="true"
+        ></app-slb-preview-content>
+      </div>
+    }
+  <!-- </div>
 </div> -->

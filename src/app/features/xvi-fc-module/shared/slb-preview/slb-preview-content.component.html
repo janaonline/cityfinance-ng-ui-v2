@@ -10,16 +10,21 @@
     <h2 class="preview-title mb-2">
       Service Level Benchmarks
       @if (showFyInHeading() && targetYearLabel()) {
-      <span class="fy-heading-suffix">(FY {{ targetYearLabel() }})</span>
+        <span class="fy-heading-suffix">(FY {{ targetYearLabel() }})</span>
       }
     </h2>
     @if (!hideStatusPill() && formStatusLabel()) {
-    <span class="status-pill small fw-semibold">{{ formStatusLabel() }}</span>
+      <span class="status-pill small fw-semibold">{{ formStatusLabel() }}</span>
     }
   </div>
 
   <hr class="my-3 text-body-tertiary" />
 
-  <app-slb-form-body [form]="form()" [fields]="displayFields()" mode="view" [actualYearLabel]="actualYearLabel()"
-    [targetYearLabel]="targetYearLabel()"></app-slb-form-body>
+  <app-slb-form-body
+    [form]="form()"
+    [fields]="displayFields()"
+    mode="view"
+    [actualYearLabel]="actualYearLabel()"
+    [targetYearLabel]="targetYearLabel()"
+  ></app-slb-form-body>
 </div>

@@ -24,7 +24,8 @@ import {
   FORM_TO_TAB,
   ReviewFormId,
   ReviewStatus,
-  SLB_ONLY_BUCKET_KEYS,
+  EXEMPTED_BUCKET_STATUSES_BY_FORM,
+  EXEMPTION_UNAVAILABLE_FOR_FORMS,
   SLB_UNAVAILABLE_BUCKET_KEYS,
   STATUS_BUCKETS,
   SYSTEM_CHECKS_CONTENT,
@@ -47,6 +48,10 @@ const EMPTY_COUNTS: Record<ReviewStatus, number> = {
   APPROVED_BY_STATE: 0,
   AWAITING_CLAIM_LETTER: 0,
   EXEMPTED: 0,
+  EXEMPTION_PENDING: 0,
+  EXEMPTION_REJECTED: 0,
+  EXEMPTION_APPROVED: 0,
+  AUTO_EXEMPTED: 0,
 };
 
 const BULK_APPROVE_CONFIRM: ConfirmDialogData = {
@@ -178,9 +183,11 @@ export class UlbSubmissionsComponent {
     });
   });
 
-  /** NOT_STARTED and IN_PROGRESS ULBs have nothing for the state to review yet — no pending duration, no action, no bulk approve. */
+  /** NOT_STARTED/IN_PROGRESS ULBs, and the Exemption Status bucket (Pending/Approved/Rejected/
+   *  Auto-Exempted/Exempted alike), have nothing for the state to review yet — no pending duration,
+   *  no action, no bulk approve. */
   readonly hasNothingToReviewYet = computed(() =>
-    ['NOT_STARTED', 'IN_PROGRESS'].includes(this.selectedBucketKey()),
+    ['NOT_STARTED', 'IN_PROGRESS', 'EXEMPTED'].includes(this.selectedBucketKey()),
   );
 
   /** "Pending Since" is exclusively an Under Review by State concept (see daysPending() in
@@ -277,10 +284,12 @@ export class UlbSubmissionsComponent {
   }
 
   /** SLB has no STATE approve/return workflow — the review/returned/MoHUA buckets never apply to
-   *  it. Exemption (xvi-fc dynamic year access) only ever applies to SLB — the mirror case. */
+   *  it. The Exemption Status card is disabled per-form via EXEMPTION_UNAVAILABLE_FOR_FORMS
+   *  (currently just PFMS Bank Account — SLB and Audited/Provisional Statements both have it). */
   isBucketDisabled(key: string): boolean {
     if (this.isSlbSelected()) return SLB_UNAVAILABLE_BUCKET_KEYS.has(key);
-    return SLB_ONLY_BUCKET_KEYS.has(key);
+    if (key === 'EXEMPTED') return EXEMPTION_UNAVAILABLE_FOR_FORMS.has(this.selectedFormId());
+    return false;
   }
 
   isAllSelected(): boolean {
@@ -382,11 +391,17 @@ export class UlbSubmissionsComponent {
   private buildQuery(): UlbSubmissionsQuery {
     const value = this.filterForm.getRawValue();
     const bucket = STATUS_BUCKETS.find((b) => b.key === this.selectedBucketKey());
+    // The EXEMPTED bucket's own `statuses` spans two forms' disjoint vocabularies (see
+    // EXEMPTED_BUCKET_STATUSES_BY_FORM's own doc-comment) - sending it whole as a filter 400s
+    // against whichever backend doesn't recognize the other form's values. Every other bucket's
+    // statuses are already valid for any form that can select it.
+    const status =
+      bucket?.key === 'EXEMPTED' ? (EXEMPTED_BUCKET_STATUSES_BY_FORM[value.form] ?? null) : (bucket?.statuses ?? null);
     return {
       designYearId: this.resolveDesignYearId(),
       form: value.form,
       search: value.search,
-      status: bucket?.statuses ?? null,
+      status,
       page: this.page(),
       pageSize: this.pageSize(),
       sortField: this.sortField(),

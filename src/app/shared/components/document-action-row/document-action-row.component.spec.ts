@@ -34,12 +34,14 @@ describe('DocumentActionRowComponent', () => {
     gates: ActionGate[],
     doc: DocumentRuntimeState,
     readOnly = false,
+    locked = false,
   ) {
     fixture.componentRef.setInput('role', role);
     fixture.componentRef.setInput('sectionStatusId', sectionStatusId);
     fixture.componentRef.setInput('gates', gates);
     fixture.componentRef.setInput('doc', doc);
     fixture.componentRef.setInput('readOnly', readOnly);
+    fixture.componentRef.setInput('locked', locked);
     fixture.detectChanges();
   }
 
@@ -98,5 +100,11 @@ describe('DocumentActionRowComponent', () => {
 
     const button: HTMLButtonElement = fixture.nativeElement.querySelector('button.doc-action-btn--upload');
     expect(button.disabled).toBe(true);
+  });
+
+  it('renders no buttons at all when locked is true, even for a status/gate/doc-state combination that would otherwise show one - distinct from readOnly, which would only disable it', () => {
+    setInputs('ULB', 2, ulbGates, pendingDoc, false, true);
+
+    expect(fixture.nativeElement.querySelectorAll('button.doc-action-btn').length).toBe(0);
   });
 });

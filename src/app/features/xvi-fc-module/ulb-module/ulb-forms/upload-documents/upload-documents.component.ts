@@ -26,6 +26,7 @@ import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } 
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
 import type {
   ActionGate,
@@ -172,7 +173,13 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_MOHUA'
   | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
   | 'APPROVED_BY_STATE'
-  | 'AWAITING_CLAIM_LETTER';
+  | 'AWAITING_CLAIM_LETTER'
+  | 'EXEMPTION_PENDING'
+  | 'EXEMPTION_REJECTED'
+  | 'EXEMPTED_ACKNOWLEDGED';
+
+/** When state requests a form for exemption, below are the possible statuses*/
+type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -189,6 +196,9 @@ const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, st
     'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
+  EXEMPTED_ACKNOWLEDGED: 'Your ULB has been exempted from this requirement. No submission is needed.',
+  EXEMPTION_PENDING: 'Your state has filed a discretionary exemption request for this section, pending MoHUA review. No submission is needed until it is decided.',
+  EXEMPTION_REJECTED: "Your state's discretionary exemption request for this section was rejected by MoHUA.",
 };
 
 interface BackendStatusSection {
@@ -204,6 +214,8 @@ interface BackendStatusSection {
 interface BackendStatusResponse {
   annualAccountId: string;
   data: BackendStatusSection | null;
+  exemptionStatus: DiscretionaryExemptionStatus;
+  exemptionMohuaRemarks: string | null;
 }
 
 // Shape returned by POST /confirm-upload
@@ -281,6 +293,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     MatTooltipModule,
     PageErrorStateComponent,
     DocumentActionRowComponent,
+    ExemptionNoticeComponent,
   ],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
@@ -320,19 +333,45 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   // Numeric form_status_id — what the document-action-row gate is actually keyed on.
   readonly sectionStatusId = signal<number | null>(null);
 
+  // A discretionary Request Exemption entry against this section, if any — see
+  // DiscretionaryExemptionStatus's own doc-comment.
+  readonly exemptionStatus = signal<DiscretionaryExemptionStatus>(null);
+  readonly exemptionMohuaRemarks = signal<string | null>(null);
+
   /** Action-row gates fetched alongside the upload config — a UI-visibility hint only. */
   readonly actionGates = computed<readonly ActionGate[]>(() => this.config()?.actionGates ?? []);
 
-  // True whenever the section is in any non-editable status (under review or fully acknowledged) —
-  // locks all edits for all roles, not just while under state review.
+  // True whenever the section is in any non-editable status (under review or fully acknowledged),
+  // When state requests for exemption (PENDING/ APPROVED)
   readonly sectionLocked = computed(() => {
+    const exemption = this.exemptionStatus();
+    if (exemption === 'PENDING' || exemption === 'APPROVED') return true;
     const status = this.sectionStatus();
     return status !== null && !ULB_EDITABLE_STATUSES.has(status);
   });
 
   readonly lockedBannerMessage = computed(() => {
+    if (this.exemptionStatus() === 'PENDING') {
+      return LOCKED_BANNER_MESSAGE['EXEMPTION_PENDING'];
+    }
     const status = this.sectionStatus();
     return (status && LOCKED_BANNER_MESSAGE[status]) ?? 'This section is currently locked for review.';
+  });
+
+  /** Non-blocking — shown only when a exemption request is REJECTED.
+   *  Rejection never locks the section;
+   * The exemption document stays REJECTED until a new state-filed request replaces it.
+   * Show "Exemption Rejected" only when the section is untouched (null) or NOT_STARTED.
+   * IN_PROGRESS and later mean the ULB has resumed work, so show the live status instead.
+   */
+  readonly exemptionRejectedNotice = computed(() => {
+    if (this.exemptionStatus() !== 'REJECTED') return null;
+    const status = this.sectionStatus();
+    if (status !== null && status !== 'NOT_STARTED') return null;
+    const remarks = this.exemptionMohuaRemarks();
+    return remarks
+      ? LOCKED_BANNER_MESSAGE['EXEMPTION_REJECTED'] + ` ${remarks}`
+      : LOCKED_BANNER_MESSAGE['EXEMPTION_REJECTED'];
   });
 
   // Note attached to the state/MoHUA decision that most recently returned this section, if any.
@@ -347,6 +386,23 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const note = this.sectionReturnNote();
     return note ? `Returned by ${actor}: ${note}` : `This section was returned by ${actor} for correction.`;
   });
+
+  /** True once exempted — either auto (real status EXEMPTED_ACKNOWLEDGED) or via
+   *  MoHUA-approved discretionary request (display overlay only; doesn't write to
+   *  this section's status, so `data`/real status may still be null/NOT_STARTED).
+   *  exemptionStatus() distinguishes the two for the message below. */
+  readonly isExempted = computed(
+    () => this.sectionStatus() === 'EXEMPTED_ACKNOWLEDGED' || this.exemptionStatus() === 'APPROVED',
+  );
+
+  readonly exemptionNoticeTitle = computed(() =>
+    this.exemptionStatus() === 'APPROVED' ? 'Exempted — Discretionary Approval' : 'Exempted',
+  );
+  readonly exemptionNoticeMessage = computed(() =>
+    this.exemptionStatus() === 'APPROVED'
+      ? "your state's discretionary exemption request for this section was approved by MoHUA. No submission is required for this section."
+      : 'your ULB is newly constituted and is automatically exempted from this requirement. No submission is required for this section.',
+  );
 
   /** An individually state-approved document stays locked from re-upload even while the rest of the section is open. */
   isDocLocked(doc: UploadDocument): boolean {
@@ -398,6 +454,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   /** Routes the shared action-row component's click event to the existing handlers — the
    *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    // Safety net: action row already hides all actions while locked (sectionLocked())
+    // this guards against a stale render dispatching one anyway.
+    if (this.sectionLocked()) return;
     const doc = this.documents().find((d) => d.id === event.docKey);
     if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
 
@@ -883,8 +942,21 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
       if (!statusData) {
-        // No annual-account document exists yet for this ULB/year — same as the
-        // backend's own default for a section with no data (NOT_STARTED).
+        // No annual-account doc yet and no discretionary exemption to report —
+        // same as backend's default for a section with no data (NOT_STARTED).
+        this.sectionStatusId.set(1);
+        return;
+      }
+
+      this.exemptionStatus.set(statusData.exemptionStatus);
+      this.exemptionMohuaRemarks.set(statusData.exemptionMohuaRemarks);
+
+      // No section document yet, but there's a discretionary exemption to report — PENDING,
+      // REJECTED, or APPROVED (MoHUA-approve is a display overlay only; see isExempted()).
+      // Same NOT_STARTED default as above — safe because isExempted()/sectionLocked() key
+      // off exemptionStatus() directly, not this default, for the APPROVED case.
+      if (!statusData.data) {
+        this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
         this.sectionStatusId.set(1);
         return;
       }

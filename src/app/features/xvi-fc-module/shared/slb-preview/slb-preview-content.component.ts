@@ -30,8 +30,6 @@ export class SlbPreviewContentComponent {
   readonly showFyInHeading = input(false);
 
   readonly displayFields = computed(() =>
-    this.hideSupportingDocument()
-      ? this.fields().filter((f) => f.formFieldType !== 'file' && f.key !== 'supportingDocumentType')
-      : this.fields(),
+    this.hideSupportingDocument() ? this.fields().filter((f) => f.formFieldType !== 'file') : this.fields(),
   );
 }

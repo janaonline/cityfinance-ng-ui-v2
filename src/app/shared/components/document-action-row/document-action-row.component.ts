@@ -33,6 +33,8 @@ export class DocumentActionRowComponent {
   /** When true, every resolved action renders disabled — the page's own permission check
    *  (e.g. canUpload()/canDelete()), independent of the gate/doc-state logic below. */
   readonly readOnly = input(false);
+  /** When true, no actions are shown. Used for cases like a Pending/Approved exemption that the status check can't detect. Unlike readOnly, this hides actions instead of disabling them. */
+  readonly locked = input(false);
 
   readonly actionClicked = output<{ action: ResolvedDocumentAction['action']; docKey: string }>();
 
@@ -41,7 +43,7 @@ export class DocumentActionRowComponent {
   }
 
   readonly actions = computed<ResolvedDocumentAction[]>(() => {
-    const resolved = resolveDocumentActions(this.role(), this.sectionStatusId(), this.gates(), this.doc());
+    const resolved = resolveDocumentActions(this.role(), this.sectionStatusId(), this.gates(), this.doc(), this.locked());
     return this.readOnly() ? resolved.map((a) => ({ ...a, disabled: true })) : resolved;
   });
 
