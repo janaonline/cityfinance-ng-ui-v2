@@ -44,7 +44,12 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   {
     path: 'request-exemption',
     loadComponent: () =>
-      import('./request-exemption/request-exemption.component').then((m) => m.RequestExemptionComponent),
+      import('./request-exemption/request-exemption-list.component').then((m) => m.RequestExemptionListComponent),
+  },
+  {
+    path: 'request-exemption/new',
+    loadComponent: () =>
+      import('./request-exemption/new/request-exemption.component').then((m) => m.RequestExemptionComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {

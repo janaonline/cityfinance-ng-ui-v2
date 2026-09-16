@@ -1,0 +1,109 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+      <div>
+        <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+          <span class="text-secondary">16th Finance Commission</span>
+          @if (stateName()) {
+            &nbsp;&middot;&nbsp; {{ stateName() }}
+          }
+        </div>
+
+        <h1 class="page-title mb-2">Exemption Status</h1>
+
+        <p class="page-subtitle text-secondary mb-0">
+          Requests your state has sent asking MoHUA to exempt a ULB, with their reason, date, and current status.
+        </p>
+      </div>
+
+      @if (!isLoading() && !loadError()) {
+        <button
+          type="button"
+          matButton="filled"
+          [disabled]="!canCreate()"
+          (click)="createNewRequest()"
+          data-cy="request-exemption-new-button"
+        >
+          <i class="bi bi-plus-lg me-1"></i>Request Exemption
+        </button>
+      }
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else if (loadError()) {
+      <div class="d-flex flex-column align-items-start gap-2 py-3">
+        <p class="text-secondary mb-0">We couldn't load Exemption Status.</p>
+        <button type="button" matButton="outlined" (click)="loadFirstPage()" data-cy="request-exemption-list-retry">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      </div>
+    } @else {
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title class="small fw-semibold">Exemption Status</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content class="p-2">
+          <div class="table-responsive overflow-y-hidden rounded-3 border">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light border-bottom">
+                <tr>
+                  <th scope="col" class="ps-3 small fw-semibold">ULB</th>
+                  <th scope="col" class="small fw-semibold">Reason for Exemption</th>
+                  <th scope="col" class="text-center small fw-semibold">Submitted</th>
+                  <th scope="col" class="small fw-semibold pe-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of items(); track item._id) {
+                  <tr data-cy="request-exemption-row">
+                    <td class="ps-3 small">{{ item.ulb?.name || '-' }}</td>
+                    <td class="small">{{ item.reasonForExemptionLabel || '-' }}</td>
+                    <td class="small text-center">
+                      {{ item.submittedAt ? (item.submittedAt | date: 'mediumDate') : '-' }}
+                    </td>
+                    <td class="small pe-3">{{ item.currentFormStatusLabel }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      @if (totalPages() > 1) {
+        <div class="d-flex align-items-center justify-content-end gap-2 small">
+          @if (isPageLoading()) {
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+          }
+          <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasPrev() || isPageLoading()"
+            (click)="goToPage(page() - 1)"
+            aria-label="Previous page"
+          >
+            &lsaquo; Prev
+          </button>
+          <button
+            type="button"
+            class="btn btn-link btn-sm p-0 text-decoration-none"
+            [disabled]="!hasNext() || isPageLoading()"
+            (click)="goToPage(page() + 1)"
+            aria-label="Next page"
+          >
+            Next &rsaquo;
+          </button>
+        </div>
+      }
+    }
+  </div>
+</section>

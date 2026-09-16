@@ -3,7 +3,8 @@
 <section class="p-3 p-md-4">
   <div class="content-stack d-flex flex-column gap-4">
     <div>
-      <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+      <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+      <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
         <span class="text-secondary">16th Finance Commission</span>
         @if (stateName()) {
           &nbsp;&middot;&nbsp; {{ stateName() }}
@@ -48,6 +49,17 @@
 
 @if (canEdit() || canFinalSubmit()) {
   <div class="acknowledgement">
+    @if (submitError(); as message) {
+      <div
+        class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-2"
+        role="alert"
+        data-cy="request-exemption-submit-error-alert"
+      >
+        <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
+        <span class="small">{{ message }}</span>
+      </div>
+    }
+
     <div class="acknowledgement-inner">
       <button
         type="button"
@@ -60,36 +72,20 @@
         <span class="d-none d-md-inline">Cancel</span>
       </button>
 
-      <button
-        type="submit"
-        matButton="filled"
-        [disabled]="!canEdit() || isSubmitting() || isLoading() || !visibleFields().length"
-        (click)="onSubmit('saveAsDraft')"
-        data-cy="request-exemption-submit-test"
-      >
-        @if (isSavingDraft()) {
-          <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-          <span class="d-none d-md-inline">Saving...</span>
-        } @else {
-          <i class="bi bi-bookmark-check-fill d-md-none"></i>
-          <span class="d-none d-md-inline">Save</span>
-        }
-      </button>
-
       @if (canFinalSubmit()) {
         <button
-          type="button"
+          type="submit"
           matButton="filled"
           [disabled]="!canFinalSubmit() || isSubmitting() || isLoading() || !visibleFields().length"
-          (click)="onSubmit('finalSubmit')"
-          data-cy="request-exemption-final-submit-test"
+          (click)="onSubmit()"
+          data-cy="request-exemption-submit-test"
         >
           @if (isFinalSubmitting()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
             <span class="d-none d-md-inline">Submitting...</span>
           } @else {
             <i class="bi bi-send-check-fill d-md-none"></i>
-            <span class="d-none d-md-inline">Final Submit</span>
+            <span class="d-none d-md-inline">Submit</span>
           }
         </button>
       }

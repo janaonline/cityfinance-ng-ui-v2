@@ -78,7 +78,10 @@ export const SYSTEM_CHECKS_CONTENT: Readonly<Record<ReviewFormId, SystemChecksCo
   },
 };
 
-/** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
+/** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum.
+ * The last four are a display-layer overlay, not real form_status values
+ * Computed from the discretionary Request Exemption flow (state/request-exemption)
+ */
 export type ReviewStatus =
   | 'NOT_STARTED'
   | 'IN_PROGRESS'
@@ -89,7 +92,11 @@ export type ReviewStatus =
   | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
   | 'APPROVED_BY_STATE'
   | 'AWAITING_CLAIM_LETTER'
-  | 'EXEMPTED';
+  | 'EXEMPTED'
+  | 'EXEMPTION_PENDING'
+  | 'EXEMPTION_REJECTED'
+  | 'EXEMPTION_APPROVED'
+  | 'AUTO_EXEMPTED';
 
 /** One clickable stat card, grouping one or more underlying statuses into a single reviewer-facing bucket. */
 export interface StatusBucket {
@@ -110,8 +117,8 @@ export const STATUS_BUCKETS: readonly StatusBucket[] = [
   },
   {
     key: 'EXEMPTED',
-    label: 'Exempted',
-    statuses: ['EXEMPTED'],
+    label: 'Exemption Status',
+    statuses: ['EXEMPTED', 'EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
     // Matches the claim letter's existing "Exempted" visual language (shield-check, primary color).
     icon: 'shield-check',
   },
@@ -144,9 +151,24 @@ export const SLB_UNAVAILABLE_BUCKET_KEYS: ReadonlySet<string> = new Set([
   'UNDER_REVIEW_BY_MOHUA',
 ]);
 
-/** EXEMPTED can only ever occur for SLB (the only exemptable form today, via xvi-fc dynamic year
- *  access) - the mirror image of SLB_UNAVAILABLE_BUCKET_KEYS above, disabled for every other form. */
-export const SLB_ONLY_BUCKET_KEYS: ReadonlySet<string> = new Set(['EXEMPTED']);
+/** Forms with no exemption mechanism wired at all - the Exemption Status card/column is disabled
+ *  for these regardless of which stat-card view is active. SLB (automatic only) and Audited/
+ *  Provisional Statements (automatic + discretionary, see ReviewStatus's own doc-comment) both
+ *  have real exemption data; PFMS Bank Account does not. */
+export const EXEMPTION_UNAVAILABLE_FOR_FORMS: ReadonlySet<ReviewFormId> = new Set(['PFMS_BANK_ACCOUNT']);
+
+/** The EXEMPTED stat-card bucket spans two disjoint status vocabularies - SLB's own backend only
+ *  ever understands the plain `EXEMPTED` value (numeric 12), while Annual Accounts only ever
+ *  understands the four discretionary-overlay values (its DTO's allow-list doesn't include
+ *  `EXEMPTED` at all). The bucket's own `statuses` (all five, for the stat-card's aggregate count -
+ *  see ulb-submissions.utils.ts) can't be sent to either backend as-is as a status *filter*; this
+ *  is the subset actually valid for the currently selected form. Forms with no key here never
+ *  reach this lookup - the EXEMPTED bucket is disabled for them (EXEMPTION_UNAVAILABLE_FOR_FORMS). */
+export const EXEMPTED_BUCKET_STATUSES_BY_FORM: Readonly<Partial<Record<ReviewFormId, readonly ReviewStatus[]>>> = {
+  SERVICE_LEVEL_BENCHMARKS: ['EXEMPTED'],
+  AUDITED_STATEMENTS: ['EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
+  PROVISIONAL_STATEMENTS: ['EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
+};
 
 export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   NOT_STARTED: 'Not Started',
@@ -159,6 +181,10 @@ export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   APPROVED_BY_STATE: 'Approved by State',
   AWAITING_CLAIM_LETTER: 'Awaiting Claim Letter',
   EXEMPTED: 'Exempted',
+  EXEMPTION_PENDING: 'Exemption Pending',
+  EXEMPTION_REJECTED: 'Exemption Rejected',
+  EXEMPTION_APPROVED: 'Exemption Approved',
+  AUTO_EXEMPTED: 'Auto-Exempted',
 };
 
 export interface UlbSubmissionRow {
