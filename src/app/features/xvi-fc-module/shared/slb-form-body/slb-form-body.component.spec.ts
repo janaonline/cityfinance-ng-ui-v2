@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { SlbFormBodyComponent } from './slb-form-body.component';
@@ -123,5 +123,109 @@ describe('SlbFormBodyComponent', () => {
     fixture.detectChanges();
 
     expect(component.hasIndicatorError('ind1', 'actual', 'required')).toBeTrue();
+  });
+
+  describe('supporting document radio toggle', () => {
+    function declarationFieldList(): ConditionalFieldConfig[] {
+      return [
+        {
+          key: 'supportingDocumentType',
+          label: 'Supporting Document',
+          formFieldType: 'radio',
+          options: [
+            { label: 'I have a source document for these figures', id: 'HAS_SOURCE_DOCUMENT' },
+            { label: "I don't have a source document", id: 'NO_SOURCE_DOCUMENT' },
+          ],
+        },
+        {
+          key: 'supportingDocumentFile',
+          label: 'Supporting Document',
+          formFieldType: 'file',
+          value: null,
+        },
+        {
+          key: 'checkboxConfirmation',
+          label: 'I certify...',
+          formFieldType: 'checkbox',
+          value: false,
+        },
+      ] as ConditionalFieldConfig[];
+    }
+
+    function buildDeclarationForm(choice: string | null): FormGroup {
+      return new FormGroup({
+        supportingDocumentType: new FormControl(choice),
+        supportingDocumentFile: new FormControl(null),
+        checkboxConfirmation: new FormControl(false),
+      });
+    }
+
+    it('hides the upload entirely until the ULB picks a radio option', () => {
+      const fieldList = declarationFieldList();
+      fixture.componentRef.setInput('form', buildDeclarationForm(null));
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'edit');
+      fixture.detectChanges();
+
+      expect(component.hasNoSourceDocument()).toBeFalse();
+      expect(component.hasSourceDocument()).toBeFalse();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-steps')).toBeNull();
+      // Only the radio + checkbox render — no upload for either branch.
+      expect(el.querySelectorAll('app-dynamic-form').length).toBe(2);
+    });
+
+    it('shows the plain upload when a source document is available', () => {
+      const fieldList = declarationFieldList();
+      fixture.componentRef.setInput('form', buildDeclarationForm('HAS_SOURCE_DOCUMENT'));
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'edit');
+      fixture.detectChanges();
+
+      expect(component.hasNoSourceDocument()).toBeFalse();
+      expect(component.hasSourceDocument()).toBeTrue();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-steps')).toBeNull();
+      expect(el.querySelectorAll('app-dynamic-form').length).toBe(3);
+    });
+
+    it('shows the 3-step generate/sign/upload flow when no source document is available', () => {
+      const fieldList = declarationFieldList();
+      fixture.componentRef.setInput('form', buildDeclarationForm('NO_SOURCE_DOCUMENT'));
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'edit');
+      fixture.detectChanges();
+
+      expect(component.hasNoSourceDocument()).toBeTrue();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-steps')).not.toBeNull();
+    });
+
+    it('emits generateSlbStatement when the download step button is clicked', () => {
+      const fieldList = declarationFieldList();
+      fixture.componentRef.setInput('form', buildDeclarationForm('NO_SOURCE_DOCUMENT'));
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'edit');
+      fixture.detectChanges();
+
+      let emitted = false;
+      component.generateSlbStatement.subscribe(() => (emitted = true));
+
+      const el = fixture.nativeElement as HTMLElement;
+      (el.querySelector('.slb-statement-step button') as HTMLButtonElement).click();
+
+      expect(emitted).toBeTrue();
+    });
+
+    it('does not render the download button in view mode', () => {
+      const fieldList = declarationFieldList();
+      fixture.componentRef.setInput('form', buildDeclarationForm('NO_SOURCE_DOCUMENT'));
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-step button')).toBeNull();
+    });
   });
 });

@@ -12,6 +12,9 @@ import { FieldConfig } from '../../field.interface';
         <legend class="radio-field__label fw-semibold custom-font-size-6">
           {{ field.position ? field.position + '. ' : '' }}{{ field.label }}
         </legend>
+        @if (field.hintText) {
+          <div class="radio-field__hint text-body-secondary small mb-2">{{ field.hintText }}</div>
+        }
       }
 
       <mat-radio-group
