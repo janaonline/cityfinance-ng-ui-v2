@@ -46,6 +46,8 @@ import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-bod
 import { SlbPreviewContentComponent } from '../../../shared/slb-preview/slb-preview-content.component';
 import { SlbPreviewDialogComponent } from '../../../shared/slb-preview/slb-preview-dialog.component';
 import { exportElementToPdf } from '../../../pdf-export.util';
+import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
+import { FORM_STATUS, FormStatusType } from '../../../common/constants/form-status.constants';
 
 @Component({
   selector: 'app-slb',
@@ -55,6 +57,7 @@ import { exportElementToPdf } from '../../../pdf-export.util';
     PreLoaderComponent,
     MatButtonModule,
     PageErrorStateComponent,
+    ExemptionNoticeComponent,
   ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
