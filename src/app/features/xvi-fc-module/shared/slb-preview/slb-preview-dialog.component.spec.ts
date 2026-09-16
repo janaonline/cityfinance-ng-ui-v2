@@ -14,6 +14,7 @@ class MockSlbPreviewContentComponent {
   @Input() formStatusLabel: unknown;
   @Input() actualYearLabel: unknown;
   @Input() targetYearLabel: unknown;
+  @Input() showFyInHeading: unknown;
 }
 
 describe('SlbPreviewDialogComponent', () => {

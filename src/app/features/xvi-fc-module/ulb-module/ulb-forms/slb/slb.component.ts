@@ -46,8 +46,6 @@ import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-bod
 import { SlbPreviewContentComponent } from '../../../shared/slb-preview/slb-preview-content.component';
 import { SlbPreviewDialogComponent } from '../../../shared/slb-preview/slb-preview-dialog.component';
 import { exportElementToPdf } from '../../../pdf-export.util';
-import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
-import { FORM_STATUS, FormStatusType } from '../../../common/constants/form-status.constants';
 
 @Component({
   selector: 'app-slb',
@@ -57,7 +55,6 @@ import { FORM_STATUS, FormStatusType } from '../../../common/constants/form-stat
     PreLoaderComponent,
     MatButtonModule,
     PageErrorStateComponent,
-    ExemptionNoticeComponent,
   ],
   templateUrl: './slb.component.html',
   styleUrl: './slb.component.scss',
@@ -492,13 +489,20 @@ export class SlbComponent implements OnInit {
 
       switch (field.formFieldType) {
         case 'actualTarget': {
-          // Actual/target must satisfy actualLessThanOrEqualToTarget (see comparison.validator.ts),
-          // so pick two distinct points within range rather than the same midpoint for both.
+          // Actual/target must satisfy actualLessThanOrEqualToTarget or, for a few
+          // lower-is-better indicators, the reversed targetLessThanOrEqualToActual (see
+          // comparison.validator.ts) — so pick two distinct points within range rather than
+          // the same midpoint for both, ordered per whichever rule the field declares.
           const min = Number(field.validations?.find((v) => v.name === 'min')?.validator ?? 0);
           const max = Number(field.validations?.find((v) => v.name === 'max')?.validator ?? 100);
-          const actualValue = Math.round(min + (max - min) * 0.4);
-          const targetValue = Math.min(max, Math.max(actualValue + 1, Math.round(min + (max - min) * 0.6)));
-          control.setValue({ actual: actualValue, target: targetValue });
+          const isTargetLteActual = field.validations?.some((v) => v.name === 'targetLessThanOrEqualToActual');
+          const lowerValue = Math.round(min + (max - min) * 0.4);
+          const higherValue = Math.min(max, Math.max(lowerValue + 1, Math.round(min + (max - min) * 0.6)));
+          control.setValue(
+            isTargetLteActual
+              ? { actual: higherValue, target: lowerValue }
+              : { actual: lowerValue, target: higherValue },
+          );
           break;
         }
         case 'text':

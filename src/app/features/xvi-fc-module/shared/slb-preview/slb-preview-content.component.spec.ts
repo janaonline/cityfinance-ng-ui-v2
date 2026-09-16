@@ -48,4 +48,37 @@ describe('SlbPreviewContentComponent', () => {
     expect(formBody).toBeTruthy();
     expect((formBody.componentInstance as MockSlbFormBodyComponent).mode).toBe('view');
   });
+
+  it('omits both the supporting-document radio and file fields when hideSupportingDocument is set (PDF export)', () => {
+    const fields = [
+      { key: 'supportingDocumentType', formFieldType: 'radio', label: 'Supporting Document' },
+      { key: 'supportingDocumentFile', formFieldType: 'file', label: 'Supporting Document' },
+      { key: 'checkboxConfirmation', formFieldType: 'checkbox', label: 'I certify...' },
+    ] as ConditionalFieldConfig[];
+    fixture.componentRef.setInput('fields', fields);
+    fixture.componentRef.setInput('hideSupportingDocument', true);
+    fixture.detectChanges();
+
+    const formBody = fixture.debugElement.query(By.directive(MockSlbFormBodyComponent));
+    const passedFields = (formBody.componentInstance as MockSlbFormBodyComponent).fields as ConditionalFieldConfig[];
+    expect(passedFields.map((f) => f.key)).toEqual(['checkboxConfirmation']);
+  });
+
+  it('keeps the supporting-document fields when hideSupportingDocument is not set', () => {
+    const fields = [
+      { key: 'supportingDocumentType', formFieldType: 'radio', label: 'Supporting Document' },
+      { key: 'supportingDocumentFile', formFieldType: 'file', label: 'Supporting Document' },
+      { key: 'checkboxConfirmation', formFieldType: 'checkbox', label: 'I certify...' },
+    ] as ConditionalFieldConfig[];
+    fixture.componentRef.setInput('fields', fields);
+    fixture.detectChanges();
+
+    const formBody = fixture.debugElement.query(By.directive(MockSlbFormBodyComponent));
+    const passedFields = (formBody.componentInstance as MockSlbFormBodyComponent).fields as ConditionalFieldConfig[];
+    expect(passedFields.map((f) => f.key)).toEqual([
+      'supportingDocumentType',
+      'supportingDocumentFile',
+      'checkboxConfirmation',
+    ]);
+  });
 });

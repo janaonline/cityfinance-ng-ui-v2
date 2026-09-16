@@ -26,6 +26,31 @@ export function actualLessThanOrEqualToTargetValidator(group: AbstractControl): 
   return null;
 }
 
+/**
+ * Group-level validator for an `{ actual, target }` FormGroup, mirrored from
+ * `actualLessThanOrEqualToTargetValidator` above but reversed: for indicators where a lower value
+ * is better (e.g. non-revenue water, water logging incidence), `target` is the improvement goal to
+ * fall to, so it must be less than or equal to `actual` rather than the other way round.
+ */
+export function targetLessThanOrEqualToActualValidator(group: AbstractControl): null {
+  const actualControl = group.get('actual');
+  const targetControl = group.get('target');
+  if (!actualControl || !targetControl) return null;
+
+  const actual = actualControl.value;
+  const target = targetControl.value;
+  const fails = typeof actual === 'number' && typeof target === 'number' && target > actual;
+
+  const existingErrors = targetControl.errors;
+  if (fails) {
+    targetControl.setErrors({ ...existingErrors, targetLessThanOrEqualToActual: true });
+  } else if (existingErrors?.['targetLessThanOrEqualToActual']) {
+    const { targetLessThanOrEqualToActual: _removed, ...rest } = existingErrors;
+    targetControl.setErrors(Object.keys(rest).length ? rest : null);
+  }
+  return null;
+}
+
 export function compareFieldsValidator(controlName: string, matchingControlName: string, type: string) {
   return (group: AbstractControl) => {
     const control = group.get(controlName)?.get('value');
