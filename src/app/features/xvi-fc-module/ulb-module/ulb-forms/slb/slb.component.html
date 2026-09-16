@@ -92,6 +92,7 @@
               [mode]="canEdit() ? 'edit' : 'view'"
               [actualYearLabel]="actualYearLabel()"
               [targetYearLabel]="yearLabel()"
+              (generateSlbStatement)="downloadPdf()"
             ></app-slb-form-body>
           </form>
         }
