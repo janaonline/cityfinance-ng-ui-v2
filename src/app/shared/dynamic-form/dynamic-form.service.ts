@@ -12,6 +12,7 @@ import {
   compareArrFieldsValidator,
   compareFieldsValidator,
   actualLessThanOrEqualToTargetValidator,
+  targetLessThanOrEqualToActualValidator,
   digitsOnlyValidator,
   matchesFieldValidator,
 } from '../../core/validators/comparison.validator';
@@ -309,13 +310,19 @@ export class DynamicFormService {
     const validationList: Array<{ name?: string }> = validationsData || [];
     const validators = this.bindValidations(validationsData, field);
     const hasActualLteTargetRule = validationList.some((v) => v.name === 'actualLessThanOrEqualToTarget');
+    const hasTargetLteActualRule = validationList.some((v) => v.name === 'targetLessThanOrEqualToActual');
+    const groupValidator = hasActualLteTargetRule
+      ? actualLessThanOrEqualToTargetValidator
+      : hasTargetLteActualRule
+        ? targetLessThanOrEqualToActualValidator
+        : undefined;
 
     return new FormGroup(
       {
         actual: new FormControl({ value: pairValue.actual ?? null, disabled }, validators),
         target: new FormControl({ value: pairValue.target ?? null, disabled }, validators),
       },
-      hasActualLteTargetRule ? { validators: actualLessThanOrEqualToTargetValidator } : undefined,
+      groupValidator ? { validators: groupValidator } : undefined,
     );
   }
   tabControl(fields: any[]) {
