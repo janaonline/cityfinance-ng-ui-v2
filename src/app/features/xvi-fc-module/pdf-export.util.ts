@@ -205,21 +205,18 @@ export async function exportElementToPdf(element: HTMLElement, filename: string)
     pageCanvas.height = sliceHeightPxClamped;
     const ctx = pageCanvas.getContext('2d');
     if (!ctx) break;
-    ctx.drawImage(
-      canvas,
-      0,
-      renderedPx,
-      canvas.width,
-      sliceHeightPxClamped,
-      0,
-      0,
-      canvas.width,
-      sliceHeightPxClamped,
-    );
+    ctx.drawImage(canvas, 0, renderedPx, canvas.width, sliceHeightPxClamped, 0, 0, canvas.width, sliceHeightPxClamped);
 
     if (!isFirstPage) pdf.addPage();
     const sliceHeightMm = sliceHeightPxClamped / pxPerMm;
-    pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', PDF_MARGIN_MM, PDF_MARGIN_MM, contentWidthMm, sliceHeightMm);
+    pdf.addImage(
+      pageCanvas.toDataURL('image/jpeg', 0.92),
+      'JPEG',
+      PDF_MARGIN_MM,
+      PDF_MARGIN_MM,
+      contentWidthMm,
+      sliceHeightMm,
+    );
 
     renderedPx += sliceHeightPxClamped;
     isFirstPage = false;
