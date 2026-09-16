@@ -78,7 +78,7 @@ describe('EulbPostUpdateComponent', () => {
       dateOfExpiry: '2030-01-01',
       remarks: null,
       validationStatus: 'VALID',
-      errors: [],
+      validationErrors: [],
       ...overrides,
     };
   }
@@ -123,7 +123,7 @@ describe('EulbPostUpdateComponent', () => {
             dateOfExpiry: '2030-01-01',
             remarks: 'Updated',
             validationStatus: 'VALID',
-            errors: [],
+            validationErrors: [],
           },
         ],
         errorRowCount: 0,
@@ -333,7 +333,7 @@ describe('EulbPostUpdateComponent', () => {
 
   it('builds row view models with cell error info for rows that have backend validation errors', () => {
     const errorRow = createRow({
-      errors: [{ field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' }],
+      validationErrors: [{ field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' }],
       validationStatus: 'INVALID',
     });
     service.getPostSubmissionUpdateRows.and.returnValue(of(createRowsData({ rows: [errorRow] })));
@@ -381,7 +381,7 @@ describe('EulbPostUpdateComponent', () => {
         createRowsData({
           rows: [
             createRow({
-              errors: [
+              validationErrors: [
                 {
                   field: 'electedBodyStatus',
                   code: 'required',
@@ -412,7 +412,7 @@ describe('EulbPostUpdateComponent', () => {
         createRowsData({
           rows: [
             createRow({
-              errors: [
+              validationErrors: [
                 {
                   field: 'dateOfExpiry',
                   code: 'minDate',
@@ -443,7 +443,9 @@ describe('EulbPostUpdateComponent', () => {
         createRowsData({
           rows: [
             createRow({
-              errors: [{ field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' }],
+              validationErrors: [
+                { field: 'dateOfExpiry', code: 'minDate', message: 'Date of expiry cannot be in the past.' },
+              ],
               validationStatus: 'INVALID',
             }),
           ],
@@ -549,7 +551,7 @@ describe('EulbPostUpdateComponent', () => {
         createRowsData({
           rows: [
             createRow({
-              errors: [{ field: 'remarks', code: 'invalid', message: 'Old remarks error.' }],
+              validationErrors: [{ field: 'remarks', code: 'invalid', message: 'Old remarks error.' }],
               validationStatus: 'INVALID',
             }),
           ],
@@ -587,7 +589,7 @@ describe('EulbPostUpdateComponent', () => {
                 dateOfExpiry: '2030-01-01',
                 remarks: 'Updated',
                 validationStatus: 'INVALID',
-                errors: [
+                validationErrors: [
                   {
                     field: 'dateOfConstitution',
                     code: 'required',
@@ -636,7 +638,7 @@ describe('EulbPostUpdateComponent', () => {
                 dateOfExpiry: '2030-01-01',
                 remarks: 'Updated',
                 validationStatus: 'INVALID',
-                errors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are too long.' }],
+                validationErrors: [{ field: 'remarks', code: 'invalid', message: 'Remarks are too long.' }],
               },
             ],
             errorRowCount: 1,
@@ -699,7 +701,7 @@ describe('EulbPostUpdateComponent', () => {
               dateOfExpiry: '2030-01-01',
               remarks: 'First change',
               validationStatus: 'INVALID',
-              errors: [{ field: 'remarks', code: 'stale', message: 'Stale error.' }],
+              validationErrors: [{ field: 'remarks', code: 'stale', message: 'Stale error.' }],
             },
           ],
           errorRowCount: 1,
@@ -915,7 +917,7 @@ describe('EulbPostUpdateComponent', () => {
               rowNumber: 1,
               censusCode: '100001',
               ulbName: 'Test ULB',
-              errors: [
+              validationErrors: [
                 {
                   field: 'dateOfConstitution',
                   code: 'required',
