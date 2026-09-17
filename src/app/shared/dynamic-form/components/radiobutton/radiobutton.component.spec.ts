@@ -156,6 +156,36 @@ describe('RadiobuttonComponent', () => {
     });
   });
 
+  describe('hint text', () => {
+    it('renders optional hint text directly beneath the legend', () => {
+      const fieldWithHint: FieldConfig = {
+        ...BASIC_FIELD,
+        hintText: 'Choose the option that matches the available source document.',
+      };
+
+      const { fixture } = setup(fieldWithHint);
+      const fieldset = fixture.nativeElement.querySelector('.radio-field') as HTMLElement;
+      const legend = fieldset.querySelector('legend');
+      const hint = fieldset.querySelector('.radio-field__hint');
+
+      expect(hint?.textContent?.trim()).toBe('Choose the option that matches the available source document.');
+      expect(legend?.nextElementSibling).toBe(hint);
+    });
+
+    it('does not render hint text when the field label is hidden', () => {
+      const hiddenField: FieldConfig = {
+        ...BASIC_FIELD,
+        hideLabel: true,
+        hintText: 'This hint belongs to the hidden label.',
+      };
+
+      const { fixture } = setup(hiddenField);
+
+      expect(fixture.nativeElement.querySelector('legend')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.radio-field__hint')).toBeNull();
+    });
+  });
+
   describe('value selection', () => {
     it('renders the correct number of radio buttons', () => {
       const { fixture } = setup(BASIC_FIELD);

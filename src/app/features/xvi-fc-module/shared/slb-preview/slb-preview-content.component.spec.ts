@@ -49,6 +49,38 @@ describe('SlbPreviewContentComponent', () => {
     expect((formBody.componentInstance as MockSlbFormBodyComponent).mode).toBe('view');
   });
 
+  it('passes the actual and target financial-year labels to the form body', () => {
+    fixture.componentRef.setInput('actualYearLabel', '2025-26');
+    fixture.componentRef.setInput('targetYearLabel', '2026-27');
+    fixture.detectChanges();
+
+    const formBody = fixture.debugElement.query(By.directive(MockSlbFormBodyComponent));
+    const body = formBody.componentInstance as MockSlbFormBodyComponent;
+    expect(body.actualYearLabel).toBe('2025-26');
+    expect(body.targetYearLabel).toBe('2026-27');
+  });
+
+  it('applies the PDF-only heading and status options without affecting the ULB heading', () => {
+    fixture.componentRef.setInput('targetYearLabel', '2026-27');
+    fixture.componentRef.setInput('showFyInHeading', true);
+    fixture.componentRef.setInput('hideStatusPill', true);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.preview-title')?.textContent).toContain('Service Level Benchmarks');
+    expect(element.querySelector('.fy-heading-suffix')?.textContent?.trim()).toBe('(FY 2026-27)');
+    expect(element.querySelector('.status-pill')).toBeNull();
+    expect(element.textContent).toContain('Test ULB');
+  });
+
+  it('does not show an empty FY suffix when the target year is unavailable', () => {
+    fixture.componentRef.setInput('showFyInHeading', true);
+    fixture.componentRef.setInput('targetYearLabel', null);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.fy-heading-suffix')).toBeNull();
+  });
+
   it('omits both the supporting-document radio and file fields when hideSupportingDocument is set (PDF export)', () => {
     const fields = [
       { key: 'supportingDocumentType', formFieldType: 'radio', label: 'Supporting Document' },

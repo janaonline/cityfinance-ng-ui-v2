@@ -222,6 +222,45 @@ describe('SlbComponent', () => {
     expect(headerCells[3].textContent).toContain('2026-27');
   }));
 
+  it('fills lower-is-better indicators with a target below the actual value', fakeAsync(() => {
+    const response = createSlbFormResponse();
+    response.questions = [
+      ...response.questions,
+      {
+        key: 'ind2',
+        label: 'Extent of non-revenue water',
+        position: 2,
+        formFieldType: 'actualTarget',
+        value: null,
+        validations: [
+          { name: 'required', validator: true, message: 'This field is required.' },
+          { name: 'min', validator: 0, message: 'Minimum is 0.' },
+          { name: 'max', validator: 100, message: 'Maximum is 100.' },
+          {
+            name: 'targetLessThanOrEqualToActual',
+            validator: null,
+            message: 'Target value cannot exceed the actual value.',
+          },
+        ],
+        meta: { section: 'Water Supply' },
+      } as ConditionalFieldConfig,
+    ];
+    getSlbFormSpy.and.returnValue(of(response));
+
+    createComponent();
+    fixture.detectChanges();
+    tick(1);
+    component.fillTestData();
+
+    const standardValue = getControl('ind1')?.value as { actual: number; target: number };
+    const lowerIsBetterValue = getControl('ind2')?.value as { actual: number; target: number };
+    expect(standardValue.actual).toBeLessThan(standardValue.target);
+    expect(lowerIsBetterValue.target).toBeLessThan(lowerIsBetterValue.actual);
+    expect(getControl('ind2.target')?.hasError('targetLessThanOrEqualToActual')).toBeFalse();
+    expect(getControl('ind2')?.dirty).toBeTrue();
+    expect(getControl('ind2')?.touched).toBeTrue();
+  }));
+
   it('disables the form when the form is not editable', fakeAsync(() => {
     getSlbFormSpy.and.returnValue(
       of(createSlbFormResponse({ permissions: { canView: true, canEdit: false, canFinalSubmit: false } })),

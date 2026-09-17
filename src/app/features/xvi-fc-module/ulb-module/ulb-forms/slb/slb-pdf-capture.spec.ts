@@ -176,6 +176,9 @@ describe('SLB PDF export — certification badge is drawn natively, not rasteriz
     const { PDFDocument, PDFRawStream } = await import('pdf-lib');
     const bytes = new Uint8Array(await (savedBlob as Blob).arrayBuffer());
     const pdfDoc = await PDFDocument.load(bytes, { updateMetadata: false });
+    expect(pdfDoc.getPageCount())
+      .withContext('the full 28-indicator SLB statement should be split across multiple A4 pages')
+      .toBeGreaterThan(1);
 
     let foundCertifiedText = false;
     let foundVectorDrawing = false;
