@@ -55,21 +55,27 @@
             <table class="table table-sm table-hover align-middle mb-0">
               <thead class="table-light border-bottom">
                 <tr>
-                  <th scope="col" class="ps-3 small fw-semibold">ULB</th>
-                  <th scope="col" class="small fw-semibold">Reason for Exemption</th>
-                  <th scope="col" class="text-center small fw-semibold">Submitted</th>
-                  <th scope="col" class="small fw-semibold pe-3">Status</th>
+                  <th scope="col" class="col-ulb ps-3 small fw-semibold">ULB</th>
+                  <th scope="col" class="col-census small fw-semibold">Census Code</th>
+                  <th scope="col" class="col-reason small fw-semibold">Reason for Exemption</th>
+                  <th scope="col" class="col-submitted text-center small fw-semibold">Submitted</th>
+                  <th scope="col" class="col-status small fw-semibold pe-3">Status</th>
                 </tr>
               </thead>
               <tbody>
                 @for (item of items(); track item._id) {
                   <tr data-cy="request-exemption-row">
                     <td class="ps-3 small">{{ item.ulb?.name || '-' }}</td>
+                    <td class="small">{{ item.ulb?.censusCode || '-' }}</td>
                     <td class="small">{{ item.reasonForExemptionLabel || '-' }}</td>
                     <td class="small text-center">
                       {{ item.submittedAt ? (item.submittedAt | date: 'mediumDate') : '-' }}
                     </td>
-                    <td class="small pe-3">{{ item.currentFormStatusLabel }}</td>
+                    <td class="small pe-3">
+                      <span [class]="'badge rounded-pill status-badge ' + getStatusBadgeClass(item.currentFormStatus)">
+                        {{ item.currentFormStatusLabel }}
+                      </span>
+                    </td>
                   </tr>
                 }
               </tbody>

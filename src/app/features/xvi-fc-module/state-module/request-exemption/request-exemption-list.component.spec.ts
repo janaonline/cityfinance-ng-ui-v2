@@ -5,7 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
-import { RequestExemptionListComponent } from './request-exemption-list.component';
+import { getRequestExemptionStatusBadgeClass, RequestExemptionListComponent } from './request-exemption-list.component';
 import { RequestExemptionListItem, RequestExemptionListResponseData } from './request-exemption.models';
 import { RequestExemptionService } from './request-exemption.service';
 
@@ -13,7 +13,7 @@ const sampleItem: RequestExemptionListItem = {
   _id: 'req-1_23',
   requestId: 'req-1',
   formId: 23,
-  ulb: { _id: 'ulb-1', name: 'Agra' },
+  ulb: { _id: 'ulb-1', name: 'Agra', censusCode: 'CC-1' },
   reasonForExemptionLabel: 'Election / duly constituted ULB exemption',
   currentFormStatus: 5,
   currentFormStatusLabel: 'Under Review by MoHUA',
@@ -146,5 +146,42 @@ describe('RequestExemptionListComponent', () => {
     component.goToPage(99);
 
     expect(listSpy).not.toHaveBeenCalled();
+  });
+
+  it('renders the Census Code column, falling back to sbCode-derived value or a dash', () => {
+    listSpy.and.returnValue(
+      of(
+        buildListResponse({
+          items: [
+            { ...sampleItem, _id: 'a', ulb: { _id: 'ulb-1', name: 'Agra', censusCode: 'CC-1' } },
+            { ...sampleItem, _id: 'b', ulb: { _id: 'ulb-2', name: 'Kanpur', censusCode: null } },
+          ],
+        }),
+      ),
+    );
+
+    createComponent();
+    const cells: HTMLTableCellElement[] = Array.from(fixture.nativeElement.querySelectorAll('tbody tr td:nth-child(2)'));
+
+    expect(cells[0].textContent?.trim()).toBe('CC-1');
+    expect(cells[1].textContent?.trim()).toBe('-');
+  });
+});
+
+describe('getRequestExemptionStatusBadgeClass', () => {
+  it('maps UNDER_REVIEW_BY_MOHUA to warning', () => {
+    expect(getRequestExemptionStatusBadgeClass(5)).toBe('text-bg-warning');
+  });
+
+  it('maps RETURNED_BY_MOHUA to danger', () => {
+    expect(getRequestExemptionStatusBadgeClass(6)).toBe('text-bg-danger');
+  });
+
+  it('maps SUBMISSION_ACKNOWLEDGED_BY_MOHUA to primary', () => {
+    expect(getRequestExemptionStatusBadgeClass(7)).toBe('text-bg-primary');
+  });
+
+  it('falls back to secondary for any other status', () => {
+    expect(getRequestExemptionStatusBadgeClass(1)).toBe('text-bg-secondary');
   });
 });

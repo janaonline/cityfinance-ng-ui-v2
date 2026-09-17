@@ -56,7 +56,8 @@ export interface RequestExemptionListItem {
   _id: string;
   requestId: string;
   formId: number;
-  ulb: { _id: string; name: string } | null;
+  /** `censusCode` falls back to `sbCode` server-side when the census code isn't set. */
+  ulb: { _id: string; name: string; censusCode: string | null } | null;
   /** Server-computed display label for `formId` — no client-side formId->label map needed. */
   reasonForExemptionLabel: string;
   currentFormStatus: number;

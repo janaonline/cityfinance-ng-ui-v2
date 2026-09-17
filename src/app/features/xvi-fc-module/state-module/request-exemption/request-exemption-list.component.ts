@@ -6,11 +6,22 @@ import { MatCardModule } from '@angular/material/card';
 import { Router } from '@angular/router';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { RequestExemptionListItem } from './request-exemption.models';
 import { RequestExemptionService } from './request-exemption.service';
 
 const REQUEST_EXEMPTION_LIST_PAGE_SIZE = 10;
+
+const STATUS_BADGE_CLASS: Readonly<Record<number, string>> = {
+  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: 'text-bg-secondary',
+  [FORM_STATUS.RETURNED_BY_MOHUA]: 'text-bg-danger',
+  [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: 'text-bg-success',
+};
+
+export function getRequestExemptionStatusBadgeClass(status: number): string {
+  return STATUS_BADGE_CLASS[status] ?? 'text-bg-secondary';
+}
 
 @Component({
   selector: 'app-request-exemption-list',
@@ -32,6 +43,7 @@ export class RequestExemptionListComponent implements OnInit {
   readonly stateName = signal('');
   readonly items = signal<readonly RequestExemptionListItem[]>([]);
   readonly canCreate = signal(true);
+  readonly getStatusBadgeClass = getRequestExemptionStatusBadgeClass;
 
   readonly page = signal(1);
   readonly total = signal(0);
