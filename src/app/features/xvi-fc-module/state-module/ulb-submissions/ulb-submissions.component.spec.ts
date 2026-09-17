@@ -59,15 +59,53 @@ describe('UlbSubmissionsComponent', () => {
     expect(component.isBucketDisabled('EXEMPTED')).toBeFalse();
   });
 
-  it('disables the review/returned/MoHUA stat-card buckets and enables Exempted for a live approve/return form like PFMS Bank Account', () => {
+  it('disables the review/returned/MoHUA stat-card buckets for PFMS Bank Account, and disables the Exemption Status card too (no exemption mechanism wired for it)', () => {
     component.filterForm.controls.form.setValue('PFMS_BANK_ACCOUNT');
     fixture.detectChanges();
 
     expect(component.isBucketDisabled('UNDER_STATE_REVIEW')).toBeFalse();
     expect(component.isBucketDisabled('RETURNED_BY_STATE')).toBeFalse();
     expect(component.isBucketDisabled('UNDER_REVIEW_BY_MOHUA')).toBeFalse();
-    // EXEMPTED (xvi-fc dynamic year access) only ever applies to SLB - disabled for every other form.
     expect(component.isBucketDisabled('EXEMPTED')).toBeTrue();
+  });
+
+  it('enables the Exemption Status card for Audited/Provisional Statements (automatic + discretionary exemption both apply)', () => {
+    component.filterForm.controls.form.setValue('AUDITED_STATEMENTS');
+    fixture.detectChanges();
+    expect(component.isBucketDisabled('EXEMPTED')).toBeFalse();
+
+    component.filterForm.controls.form.setValue('PROVISIONAL_STATEMENTS');
+    fixture.detectChanges();
+    expect(component.isBucketDisabled('EXEMPTED')).toBeFalse();
+  });
+
+  it('treats the EXEMPTED bucket as nothing-to-review-yet, same as NOT_STARTED/IN_PROGRESS - no action column, regardless of recordId', () => {
+    component.filterForm.controls.form.setValue('AUDITED_STATEMENTS');
+    component.selectedBucketKey.set('EXEMPTED');
+    fixture.detectChanges();
+
+    expect(component.hasNothingToReviewYet()).toBeTrue();
+    expect(component.displayedColumns()).not.toContain('action');
+    expect(component.displayedColumns()).not.toContain('daysPending');
+    expect(component.displayedColumns()).toContain('formStatus');
+  });
+
+  it('buildQuery() sends only the discretionary-overlay statuses for the EXEMPTED bucket when Audited Statements is selected', () => {
+    component.filterForm.controls.form.setValue('AUDITED_STATEMENTS');
+    component.selectedBucketKey.set('EXEMPTED');
+
+    const query = (component as unknown as { buildQuery(): { status: readonly string[] | null } }).buildQuery();
+
+    expect(query.status).toEqual(['EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED']);
+  });
+
+  it('buildQuery() sends only EXEMPTED (not the Annual-Accounts-only statuses) for the EXEMPTED bucket when SLB is selected', () => {
+    component.filterForm.controls.form.setValue('SERVICE_LEVEL_BENCHMARKS');
+    component.selectedBucketKey.set('EXEMPTED');
+
+    const query = (component as unknown as { buildQuery(): { status: readonly string[] | null } }).buildQuery();
+
+    expect(query.status).toEqual(['EXEMPTED']);
   });
 
   it('selectBucket() is a no-op for a disabled bucket', () => {

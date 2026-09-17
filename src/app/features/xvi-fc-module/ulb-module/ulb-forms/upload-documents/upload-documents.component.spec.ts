@@ -327,6 +327,162 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     expect(doc?.latestDecision).toBeNull();
   }));
 
+  it('locks the section for a PENDING discretionary exemption request even before any document exists', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
+      success: true,
+      data: { annualAccountId: null, data: null, exemptionStatus: 'PENDING', exemptionMohuaRemarks: null },
+    });
+    tick();
+
+    expect(component.sectionLocked()).toBeTrue();
+    expect(component.lockedBannerMessage()).toContain('pending MoHUA review');
+    expect(component.isExempted()).toBeFalse();
+  }));
+
+  it('locks the section for a PENDING discretionary exemption request even while the section itself is still editable (IN_PROGRESS)', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('IN_PROGRESS');
+    (doc as { exemptionStatus?: string }).exemptionStatus = 'PENDING';
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = null;
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.sectionLocked()).toBeTrue();
+  }));
+
+  it('shows the discretionary-approval exemption notice for an APPROVED request even when no section document exists yet (data: null) - approve never creates one', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
+      success: true,
+      data: { annualAccountId: null, data: null, exemptionStatus: 'APPROVED', exemptionMohuaRemarks: null },
+    });
+    tick();
+
+    expect(component.isExempted()).toBeTrue();
+    expect(component.sectionLocked()).toBeTrue();
+    expect(component.exemptionNoticeTitle()).toContain('Discretionary Approval');
+  }));
+
+  it('hides the per-document Upload button while a discretionary exemption request is Pending, even though the real section status (IN_PROGRESS) and gate would otherwise show it', fakeAsync(() => {
+    const originalGates = config.actionGates;
+    config.actionGates = [{ docKey: null, scope: 'document', role: 'ULB', action: 'upload', statusIds: [1, 2, 4, 6] }];
+    try {
+      // fixture.detectChanges() (not the manual component.ngOnInit() the rest of this file uses)
+      // so Angular's own lifecycle runs ngOnInit exactly once here - calling both would fire two
+      // config loads and leave a second, unflushed HTTP request for httpMock.verify() to trip on.
+      fixture.detectChanges();
+      tick();
+      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
+        success: true,
+        data: {
+          annualAccountId: 'account-1',
+          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
+          exemptionStatus: 'PENDING',
+          exemptionMohuaRemarks: null,
+        },
+      });
+      tick();
+      fixture.detectChanges();
+
+      expect(component.sectionLocked()).toBeTrue();
+      expect(fixture.nativeElement.querySelectorAll('button.doc-action-btn').length).toBe(0);
+    } finally {
+      config.actionGates = originalGates;
+    }
+  }));
+
+  it('shows the per-document Upload button for the same IN_PROGRESS/gate setup when there is no exemption request at all - confirms the previous test is a real regression check, not a fixture artifact', fakeAsync(() => {
+    const originalGates = config.actionGates;
+    config.actionGates = [{ docKey: null, scope: 'document', role: 'ULB', action: 'upload', statusIds: [1, 2, 4, 6] }];
+    try {
+      fixture.detectChanges();
+      tick();
+      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
+        success: true,
+        data: {
+          annualAccountId: 'account-1',
+          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
+          exemptionStatus: null,
+          exemptionMohuaRemarks: null,
+        },
+      });
+      tick();
+      fixture.detectChanges();
+
+      expect(component.sectionLocked()).toBeFalse();
+      expect(fixture.nativeElement.querySelectorAll('button.doc-action-btn').length).toBeGreaterThan(0);
+    } finally {
+      config.actionGates = originalGates;
+    }
+  }));
+
+  it('shows the discretionary-approval exemption notice when a MoHUA-approved request coincides with EXEMPTED_ACKNOWLEDGED', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('EXEMPTED_ACKNOWLEDGED');
+    (doc as { exemptionStatus?: string }).exemptionStatus = 'APPROVED';
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = null;
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.isExempted()).toBeTrue();
+    expect(component.exemptionNoticeTitle()).toContain('Discretionary Approval');
+  }));
+
+  it('shows the plain (automatic) exemption notice when EXEMPTED_ACKNOWLEDGED has no discretionary entry at all', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('EXEMPTED_ACKNOWLEDGED');
+    (doc as { exemptionStatus?: string | null }).exemptionStatus = null;
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = null;
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.isExempted()).toBeTrue();
+    expect(component.exemptionNoticeTitle()).toBe('Exempted');
+  }));
+
+  it('shows a non-blocking rejection notice and leaves the section unlocked when a discretionary request was REJECTED and the section is still genuinely untouched (NOT_STARTED)', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('NOT_STARTED');
+    (doc as { exemptionStatus?: string }).exemptionStatus = 'REJECTED';
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = 'Missing signature.';
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.sectionLocked()).toBeFalse();
+    expect(component.exemptionRejectedNotice()).toContain('Missing signature.');
+  }));
+
+  it('stops showing the rejection notice the moment the ULB starts filling the form again (IN_PROGRESS) - real progress means it is no longer "still rejected", it belongs under its own real status', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('IN_PROGRESS');
+    (doc as { exemptionStatus?: string }).exemptionStatus = 'REJECTED';
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = 'Missing signature.';
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.exemptionRejectedNotice()).toBeNull();
+  }));
+
+  it('stops showing the rejection notice once the ULB has actually submitted for real (UNDER_REVIEW_BY_STATE) - the exemption document stays REJECTED forever, but the banner should not outlive real progress', fakeAsync(() => {
+    component.ngOnInit();
+    tick();
+    const doc = backendDoc('UNDER_REVIEW_BY_STATE');
+    (doc as { exemptionStatus?: string }).exemptionStatus = 'REJECTED';
+    (doc as { exemptionMohuaRemarks?: string | null }).exemptionMohuaRemarks = 'Missing signature.';
+    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({ success: true, data: doc });
+    tick();
+
+    expect(component.exemptionRejectedNotice()).toBeNull();
+  }));
+
   it('reveals the RETURNED decision once the section is finalized (RETURNED_BY_STATE)', fakeAsync(() => {
     component.ngOnInit();
     tick();

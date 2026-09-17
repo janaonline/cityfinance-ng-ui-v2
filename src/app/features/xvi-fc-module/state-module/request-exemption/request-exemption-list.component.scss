@@ -1,0 +1,48 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
+// Forces the table to a sensible floor width so the .table-responsive wrapper's horizontal scroll
+// actually engages on narrow viewports instead of columns silently compressing.
+table {
+  min-width: 740px;
+}
+
+.col-ulb {
+  min-width: 160px;
+}
+
+.col-census {
+  min-width: 120px;
+}
+
+.col-reason {
+  min-width: 220px;
+}
+
+.col-submitted {
+  min-width: 110px;
+}
+
+.col-status {
+  min-width: 130px;
+}
+
+.status-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.4em 0.8em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.filter-search {
+  min-width: 220px;
+}
+
+.filter-select {
+  min-width: 200px;
+  max-width: 260px;
+}

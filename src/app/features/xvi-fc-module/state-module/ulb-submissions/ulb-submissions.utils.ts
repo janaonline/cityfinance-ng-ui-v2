@@ -11,6 +11,10 @@ const STATUS_BADGE_CLASS: Readonly<Record<ReviewStatus, string>> = {
   APPROVED_BY_STATE: 'text-bg-success',
   AWAITING_CLAIM_LETTER: 'text-bg-info',
   EXEMPTED: 'text-bg-primary', // same badge treatment as the claim letter's "Exempted" chip
+  EXEMPTION_PENDING: 'text-bg-warning',
+  EXEMPTION_REJECTED: 'text-bg-danger',
+  EXEMPTION_APPROVED: 'text-bg-primary',
+  AUTO_EXEMPTED: 'text-bg-primary',
 };
 
 export function getStatusBadgeClass(status: ReviewStatus): string {
