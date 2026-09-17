@@ -48,7 +48,7 @@
                     </div>
                     @for (validation of item.validations; track validation.name) {
                       @if (hasIndicatorError(item.key, 'actual', validation.name)) {
-                        <div class="text-danger small mt-1">{{ validation.message }}</div>
+                        <div class="text-danger small mt-1 slb-indicator-error">{{ validation.message }}</div>
                       }
                     }
                   } @else {
@@ -77,7 +77,7 @@
                     </div>
                     @for (validation of item.validations; track validation.name) {
                       @if (hasIndicatorError(item.key, 'target', validation.name)) {
-                        <div class="text-danger small mt-1">{{ validation.message }}</div>
+                        <div class="text-danger small mt-1 slb-indicator-error">{{ validation.message }}</div>
                       }
                     }
                   } @else {
@@ -111,7 +111,60 @@
           </div>
         }
 
-        @for (item of declarationOtherFields(); track item.key) {
+        @if (supportingDocumentTypeField(); as radioItem) {
+          <div class="mt-2">
+            <app-dynamic-form class="d-block" [field]="radioItem" [group]="form()" [mode]="mode()"></app-dynamic-form>
+          </div>
+        }
+
+        @if (supportingDocumentFileField(); as fileItem) {
+          @if (hasNoSourceDocument()) {
+            <div class="mt-2 slb-statement-steps">
+              <div class="slb-statement-step d-flex align-items-start gap-3 p-3 rounded-3 mb-2">
+                <span class="slb-statement-step__badge">1</span>
+                <div>
+                  <div class="fw-semibold">Generate &amp; download the SLB Statement</div>
+                  <div class="text-body-secondary small">
+                    Fills a statement from the indicator values entered above.
+                  </div>
+                  @if (mode() === 'edit') {
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm mt-2"
+                      (click)="generateSlbStatement.emit()"
+                    >
+                      Download SLB Statement
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <div class="slb-statement-step slb-statement-step--muted d-flex align-items-start gap-3 p-3 rounded-3 mb-2">
+                <span class="slb-statement-step__badge slb-statement-step__badge--muted">2</span>
+                <div>
+                  <div class="fw-semibold">Get it signed by the Commissioner</div>
+                  <div class="text-body-secondary small">
+                    The Commissioner (or authorised signatory) signs the downloaded statement.
+                  </div>
+                </div>
+              </div>
+
+              <div class="slb-statement-step slb-statement-step--muted d-flex align-items-start gap-3 p-3 rounded-3">
+                <span class="slb-statement-step__badge slb-statement-step__badge--muted">3</span>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold mb-2">Upload the signed statement</div>
+                  <app-dynamic-form class="d-block" [field]="fileItem" [group]="form()" [mode]="mode()"></app-dynamic-form>
+                </div>
+              </div>
+            </div>
+          } @else if (hasSourceDocument()) {
+            <div class="mt-2">
+              <app-dynamic-form class="d-block" [field]="fileItem" [group]="form()" [mode]="mode()"></app-dynamic-form>
+            </div>
+          }
+        }
+
+        @for (item of remainingDeclarationFields(); track item.key) {
           <div class="mt-2">
             <app-dynamic-form class="d-block" [field]="item" [group]="form()" [mode]="mode()"></app-dynamic-form>
           </div>
