@@ -1,13 +1,19 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { getRequestExemptionStatusBadgeClass, RequestExemptionListComponent } from './request-exemption-list.component';
-import { RequestExemptionListItem, RequestExemptionListResponseData } from './request-exemption.models';
+import { RequestExemptionListItem, RequestExemptionListResponseData, RequestExemptionReasonOption } from './request-exemption.models';
 import { RequestExemptionService } from './request-exemption.service';
+
+const sampleReasonOptions: RequestExemptionReasonOption[] = [
+  { id: 23, label: 'Election / duly constituted ULB exemption' },
+  { id: 30, label: 'Audited Financial Statement' },
+  { id: 31, label: 'Provisional Financial Statement' },
+];
 
 const sampleItem: RequestExemptionListItem = {
   _id: 'req-1_23',
@@ -43,6 +49,7 @@ describe('RequestExemptionListComponent', () => {
   let utilityService: jasmine.SpyObj<UtilityService>;
   let router: Router;
   let listSpy: jasmine.Spy;
+  let reasonOptionsSpy: jasmine.Spy;
 
   beforeEach(async () => {
     localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
@@ -64,6 +71,7 @@ describe('RequestExemptionListComponent', () => {
     spyOn(router, 'navigate');
 
     listSpy = spyOn(requestExemptionService, 'list').and.returnValue(of(buildListResponse()));
+    reasonOptionsSpy = spyOn(requestExemptionService, 'getReasonOptions').and.returnValue(of(sampleReasonOptions));
   });
 
   afterEach(() => {
@@ -79,7 +87,13 @@ describe('RequestExemptionListComponent', () => {
   it('loads the first page and shows the table when there are existing requests', () => {
     createComponent();
 
-    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', { page: 1, limit: 10 });
+    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+      page: 1,
+      limit: 10,
+      search: '',
+      reasonForExemption: null,
+      status: null,
+    });
     expect(component.stateName()).toBe('Test State');
     expect(component.items()).toEqual([sampleItem]);
     expect(component.isLoading()).toBeFalse();
@@ -134,7 +148,13 @@ describe('RequestExemptionListComponent', () => {
     listSpy.and.returnValue(of(buildListResponse({ page: 2, total: 25, pages: 3 })));
     component.goToPage(2);
 
-    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', { page: 2, limit: 10 });
+    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+      page: 2,
+      limit: 10,
+      search: '',
+      reasonForExemption: null,
+      status: null,
+    });
     expect(component.page()).toBe(2);
   });
 
@@ -166,19 +186,134 @@ describe('RequestExemptionListComponent', () => {
     expect(cells[0].textContent?.trim()).toBe('CC-1');
     expect(cells[1].textContent?.trim()).toBe('-');
   });
+
+  it("fetches the Reason dropdown's options from the backend, not a hardcoded list", () => {
+    createComponent();
+
+    expect(reasonOptionsSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id');
+    expect(component.reasonFilterOptions()).toEqual(sampleReasonOptions);
+
+    const reasonOptionEls: HTMLOptionElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-cy="request-exemption-reason-filter"] option'),
+    );
+    expect(reasonOptionEls.map((el) => el.textContent?.trim())).toEqual([
+      'All Reasons',
+      ...sampleReasonOptions.map((o) => o.label),
+    ]);
+  });
+
+  it('leaves the Reason dropdown at "All Reasons" only when the reason-options request fails', () => {
+    reasonOptionsSpy.and.returnValue(throwError(() => new Error('network error')));
+
+    createComponent();
+
+    expect(component.reasonFilterOptions()).toEqual([]);
+    expect(component.loadError()).toBeFalse();
+    const reasonOptionEls: HTMLOptionElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-cy="request-exemption-reason-filter"] option'),
+    );
+    expect(reasonOptionEls.map((el) => el.textContent?.trim())).toEqual(['All Reasons']);
+  });
+
+  it('debounces search input and refetches from page 1', fakeAsync(() => {
+    createComponent();
+    listSpy.calls.reset();
+
+    component.filterForm.controls.search.setValue('agra');
+    tick(299);
+    expect(listSpy).not.toHaveBeenCalled();
+    tick(1);
+
+    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+      page: 1,
+      limit: 10,
+      search: 'agra',
+      reasonForExemption: null,
+      status: null,
+    });
+  }));
+
+  it('refetches from page 1 when a dropdown filter changes', fakeAsync(() => {
+    createComponent();
+    listSpy.calls.reset();
+
+    component.filterForm.controls.reasonForExemption.setValue(30);
+    tick(300);
+
+    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+      page: 1,
+      limit: 10,
+      search: '',
+      reasonForExemption: 30,
+      status: null,
+    });
+  }));
+
+  it('does not redirect to the new-request form when a filter produces zero results', fakeAsync(() => {
+    createComponent();
+    listSpy.and.returnValue(of(buildListResponse({ items: [], total: 0, pages: 0 })));
+    (router.navigate as jasmine.Spy).calls.reset();
+
+    component.filterForm.controls.search.setValue('no-such-ulb');
+    tick(300);
+
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component.items()).toEqual([]);
+  }));
+
+  it('resetFilters clears the form and refetches unfiltered', fakeAsync(() => {
+    createComponent();
+    component.filterForm.controls.reasonForExemption.setValue(30);
+    tick(300);
+    listSpy.calls.reset();
+
+    component.resetFilters();
+    tick(300);
+
+    expect(component.hasActiveFilters()).toBeFalse();
+    expect(listSpy).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+      page: 1,
+      limit: 10,
+      search: '',
+      reasonForExemption: null,
+      status: null,
+    });
+  }));
+
+  it('resetFilters is a no-op when nothing is active', fakeAsync(() => {
+    createComponent();
+    listSpy.calls.reset();
+
+    component.resetFilters();
+    tick(300);
+
+    expect(listSpy).not.toHaveBeenCalled();
+  }));
+
+  it('shows the empty-state row when a filter matches nothing', fakeAsync(() => {
+    createComponent();
+    listSpy.and.returnValue(of(buildListResponse({ items: [], total: 0, pages: 0 })));
+
+    component.filterForm.controls.search.setValue('no-such-ulb');
+    tick(300);
+    fixture.detectChanges();
+
+    const emptyRow: HTMLElement = fixture.nativeElement.querySelector('[data-cy="request-exemption-empty-row"]');
+    expect(emptyRow?.textContent?.trim()).toBe('No matching requests found.');
+  }));
 });
 
 describe('getRequestExemptionStatusBadgeClass', () => {
-  it('maps UNDER_REVIEW_BY_MOHUA to warning', () => {
-    expect(getRequestExemptionStatusBadgeClass(5)).toBe('text-bg-warning');
+  it('maps UNDER_REVIEW_BY_MOHUA to secondary', () => {
+    expect(getRequestExemptionStatusBadgeClass(5)).toBe('text-bg-secondary');
   });
 
   it('maps RETURNED_BY_MOHUA to danger', () => {
     expect(getRequestExemptionStatusBadgeClass(6)).toBe('text-bg-danger');
   });
 
-  it('maps SUBMISSION_ACKNOWLEDGED_BY_MOHUA to primary', () => {
-    expect(getRequestExemptionStatusBadgeClass(7)).toBe('text-bg-primary');
+  it('maps SUBMISSION_ACKNOWLEDGED_BY_MOHUA to success', () => {
+    expect(getRequestExemptionStatusBadgeClass(7)).toBe('text-bg-success');
   });
 
   it('falls back to secondary for any other status', () => {

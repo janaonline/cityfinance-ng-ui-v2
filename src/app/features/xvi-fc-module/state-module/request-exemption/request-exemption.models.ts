@@ -39,11 +39,23 @@ export interface RequestExemptionSaveResponseData {
   currentFormStatusLabel: string;
 }
 
+/** One `reasonForExemption` formId + its display label, sourced per-year from the backend's
+ *  `GET :stateId/:yearId/reason-options` — mirrors the backend's own `RequestExemptionReasonOption`.
+ *  Never hardcode this list on the frontend: next year's offered reasons are `formjsons` data, not
+ *  compiled-in code. */
+export interface RequestExemptionReasonOption {
+  id: number;
+  label: string;
+}
+
 /** Query params for the "Exemption Status" list — mirrors the backend's
  *  `GetRequestExemptionListQueryDto`. */
 export interface RequestExemptionListQuery {
   page?: number;
   limit?: number;
+  search?: string;
+  reasonForExemption?: number | null;
+  status?: number | null;
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   RequestExemptionData,
   RequestExemptionListQuery,
   RequestExemptionListResponseData,
+  RequestExemptionReasonOption,
   RequestExemptionSavePayload,
   RequestExemptionSaveResponseData,
 } from './request-exemption.models';
@@ -42,12 +43,27 @@ export class RequestExemptionService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as RequestExemptionSaveResponseData));
   }
 
-  /** Paginated list of this state's own requests for the year - backs the "Exemption Status" table. */
+  /** Paginated, filterable list of this state's own requests for the year - backs the "Exemption
+   *  Status" table. `search`/`reasonForExemption`/`status` are all optional and applied server-side. */
   list(stateId: string, yearId: string, query: RequestExemptionListQuery): Observable<RequestExemptionListResponseData> {
     return this.http
       .get<RequestExemptionApiResponse<RequestExemptionListResponseData>>(`${this.baseUrl}${stateId}/${yearId}/list`, {
-        params: { ...(query.page != null && { page: query.page }), ...(query.limit != null && { limit: query.limit }) },
+        params: {
+          ...(query.page != null && { page: query.page }),
+          ...(query.limit != null && { limit: query.limit }),
+          ...(query.search?.trim() && { search: query.search.trim() }),
+          ...(query.reasonForExemption != null && { reasonForExemption: query.reasonForExemption }),
+          ...(query.status != null && { status: query.status }),
+        },
       })
       .pipe(map((response) => ensureSuccessfulResponse(response).data as RequestExemptionListResponseData));
+  }
+
+  /** This year's Reason for Exemption options - sourced from `formjsons` server-side (not
+   *  hardcoded here), backs the "Exemption Status" list's Reason filter dropdown. */
+  getReasonOptions(stateId: string, yearId: string): Observable<RequestExemptionReasonOption[]> {
+    return this.http
+      .get<RequestExemptionApiResponse<RequestExemptionReasonOption[]>>(`${this.baseUrl}${stateId}/${yearId}/reason-options`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as RequestExemptionReasonOption[]));
   }
 }
