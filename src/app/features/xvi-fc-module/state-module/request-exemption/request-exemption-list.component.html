@@ -51,25 +51,83 @@
         </mat-card-header>
 
         <mat-card-content class="p-2">
+          <form [formGroup]="filterForm" class="d-flex flex-wrap gap-2 mb-3 filter-bar">
+            <div class="flex-grow-1 filter-search">
+              <input
+                type="search"
+                class="form-control form-control-sm"
+                formControlName="search"
+                placeholder="Search by ULB name or census code"
+                aria-label="Search by ULB name or census code"
+                data-cy="request-exemption-search"
+              />
+            </div>
+            <select
+              class="form-select form-select-sm filter-select"
+              formControlName="reasonForExemption"
+              aria-label="Filter by Reason for Exemption"
+              data-cy="request-exemption-reason-filter"
+            >
+              <option [ngValue]="null">All Reasons</option>
+              @for (option of reasonFilterOptions(); track option.id) {
+                <option [ngValue]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <select
+              class="form-select form-select-sm filter-select"
+              formControlName="status"
+              aria-label="Filter by Status"
+              data-cy="request-exemption-status-filter"
+            >
+              <option [ngValue]="null">All Statuses</option>
+              @for (option of statusFilterOptions; track option.id) {
+                <option [ngValue]="option.id">{{ option.label }}</option>
+              }
+            </select>
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-sm"
+              [disabled]="!hasActiveFilters()"
+              (click)="resetFilters()"
+              aria-label="Reset filters"
+              title="Reset filters"
+              data-cy="request-exemption-reset-filters"
+            >
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </form>
+
           <div class="table-responsive overflow-y-hidden rounded-3 border">
             <table class="table table-sm table-hover align-middle mb-0">
               <thead class="table-light border-bottom">
                 <tr>
-                  <th scope="col" class="ps-3 small fw-semibold">ULB</th>
-                  <th scope="col" class="small fw-semibold">Reason for Exemption</th>
-                  <th scope="col" class="text-center small fw-semibold">Submitted</th>
-                  <th scope="col" class="small fw-semibold pe-3">Status</th>
+                  <th scope="col" class="col-ulb ps-3 small fw-semibold">ULB</th>
+                  <th scope="col" class="col-census small fw-semibold">Census Code</th>
+                  <th scope="col" class="col-reason small fw-semibold">Reason for Exemption</th>
+                  <th scope="col" class="col-submitted text-center small fw-semibold">Submitted</th>
+                  <th scope="col" class="col-status small fw-semibold pe-3">Status</th>
                 </tr>
               </thead>
               <tbody>
                 @for (item of items(); track item._id) {
                   <tr data-cy="request-exemption-row">
                     <td class="ps-3 small">{{ item.ulb?.name || '-' }}</td>
+                    <td class="small">{{ item.ulb?.censusCode || '-' }}</td>
                     <td class="small">{{ item.reasonForExemptionLabel || '-' }}</td>
                     <td class="small text-center">
                       {{ item.submittedAt ? (item.submittedAt | date: 'mediumDate') : '-' }}
                     </td>
-                    <td class="small pe-3">{{ item.currentFormStatusLabel }}</td>
+                    <td class="small pe-3">
+                      <span [class]="'badge rounded-pill status-badge ' + getStatusBadgeClass(item.currentFormStatus)">
+                        {{ item.currentFormStatusLabel }}
+                      </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center text-muted small py-4" data-cy="request-exemption-empty-row">
+                      No matching requests found.
+                    </td>
                   </tr>
                 }
               </tbody>

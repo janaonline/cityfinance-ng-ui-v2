@@ -39,11 +39,23 @@ export interface RequestExemptionSaveResponseData {
   currentFormStatusLabel: string;
 }
 
+/** One `reasonForExemption` formId + its display label, sourced per-year from the backend's
+ *  `GET :stateId/:yearId/reason-options` — mirrors the backend's own `RequestExemptionReasonOption`.
+ *  Never hardcode this list on the frontend: next year's offered reasons are `formjsons` data, not
+ *  compiled-in code. */
+export interface RequestExemptionReasonOption {
+  id: number;
+  label: string;
+}
+
 /** Query params for the "Exemption Status" list — mirrors the backend's
  *  `GetRequestExemptionListQueryDto`. */
 export interface RequestExemptionListQuery {
   page?: number;
   limit?: number;
+  search?: string;
+  reasonForExemption?: number | null;
+  status?: number | null;
 }
 
 /**
@@ -56,7 +68,8 @@ export interface RequestExemptionListItem {
   _id: string;
   requestId: string;
   formId: number;
-  ulb: { _id: string; name: string } | null;
+  /** `censusCode` falls back to `sbCode` server-side when the census code isn't set. */
+  ulb: { _id: string; name: string; censusCode: string | null } | null;
   /** Server-computed display label for `formId` — no client-side formId->label map needed. */
   reasonForExemptionLabel: string;
   currentFormStatus: number;
