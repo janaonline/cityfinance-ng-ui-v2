@@ -201,6 +201,27 @@ describe('SlbFormBodyComponent', () => {
       expect(el.querySelector('.slb-statement-steps')).not.toBeNull();
     });
 
+    it('switches live between the generated-statement flow and the plain upload', () => {
+      const fieldList = declarationFieldList();
+      const form = buildDeclarationForm(null);
+      fixture.componentRef.setInput('form', form);
+      fixture.componentRef.setInput('fields', fieldList);
+      fixture.componentRef.setInput('mode', 'edit');
+      fixture.detectChanges();
+
+      form.get('supportingDocumentType')?.setValue('NO_SOURCE_DOCUMENT');
+      fixture.detectChanges();
+      let el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-steps')).not.toBeNull();
+      expect(el.querySelector('.slb-statement-step button')).not.toBeNull();
+
+      form.get('supportingDocumentType')?.setValue('HAS_SOURCE_DOCUMENT');
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.slb-statement-steps')).toBeNull();
+      expect(el.querySelectorAll('app-dynamic-form').length).toBe(3);
+    });
+
     it('emits generateSlbStatement when the download step button is clicked', () => {
       const fieldList = declarationFieldList();
       fixture.componentRef.setInput('form', buildDeclarationForm('NO_SOURCE_DOCUMENT'));

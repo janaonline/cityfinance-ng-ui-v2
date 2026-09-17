@@ -68,7 +68,12 @@ describe('SlbPreviewDialogComponent', () => {
     const preview = fixture.debugElement.query(By.directive(MockSlbPreviewContentComponent))
       .componentInstance as MockSlbPreviewContentComponent;
 
+    expect(preview.form).toBe(dialogData.form);
+    expect(preview.fields).toBe(dialogData.fields);
     expect(preview.ulbName).toBe('Test ULB');
     expect(preview.formStatusLabel).toBe('Not Started');
+    expect(preview.actualYearLabel).toBe('2025-26');
+    expect(preview.targetYearLabel).toBe('2026-27');
+    expect(preview.showFyInHeading).toBeTrue();
   });
 });
