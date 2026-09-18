@@ -98,4 +98,26 @@ describe('UlbSubmissionsService', () => {
     expect(req.request.method).toBe('GET');
     req.flush({ success: true, data: { total: 0, page: 1, pageSize: 20, rows: [], counts: {} } });
   });
+
+  describe('exportAllForms()', () => {
+    it('requests the combined state/ulb-submissions/export endpoint with just the design year', () => {
+      let result: unknown;
+      service.exportAllForms('year-1').subscribe((value) => (result = value));
+
+      const req = httpMock.expectOne((r) => r.url === `${BASE_URL}xvi-fc/state/ulb-submissions/export`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.responseType).toBe('blob');
+      expect(req.request.params.get('designYearId')).toBe('year-1');
+
+      req.flush(new Blob(['xlsx']), {
+        headers: {
+          'Content-Disposition': 'attachment; filename="andhra_pradesh_all_ulb_submissions_01_01_2026.xlsx"',
+        },
+      });
+      expect(result).toEqual({
+        blob: jasmine.any(Blob),
+        fileName: 'andhra_pradesh_all_ulb_submissions_01_01_2026.xlsx',
+      });
+    });
+  });
 });
