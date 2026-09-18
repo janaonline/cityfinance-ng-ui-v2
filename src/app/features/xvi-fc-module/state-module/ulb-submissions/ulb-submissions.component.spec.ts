@@ -1,6 +1,6 @@
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -126,5 +126,22 @@ describe('UlbSubmissionsComponent', () => {
     fixture.detectChanges();
 
     expect(component.selectedBucketKey()).toBe('NOT_STARTED');
+  });
+
+  describe('export', () => {
+    let httpMock: HttpTestingController;
+
+    beforeEach(() => {
+      httpMock = TestBed.inject(HttpTestingController);
+    });
+
+    it('exportData() requests the combined all-forms export with just the design year', () => {
+      component.exportData();
+
+      const req = httpMock.expectOne((r) => r.url.endsWith('xvi-fc/state/ulb-submissions/export'));
+      expect(req.request.params.has('form')).toBeFalse();
+      expect(req.request.params.has('status')).toBeFalse();
+      req.flush(new Blob(['csv']));
+    });
   });
 });
