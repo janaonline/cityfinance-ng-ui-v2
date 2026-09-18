@@ -293,6 +293,13 @@
                             <i class="bi" [ngClass]="[getMatchIcon(job.result.checks.signature_present), getMatchClass(job.result.checks.signature_present)]"></i>
                           </td>
                         </tr>
+                        <tr>
+                          <td class="text-secondary ps-0">Seal Present</td>
+                          <td class="fw-medium">Required</td>
+                          <td class="text-center">
+                            <i class="bi" [ngClass]="[getMatchIcon(job.result.checks.seal_present), getMatchClass(job.result.checks.seal_present)]"></i>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                     <div class="d-flex align-items-center gap-2 pt-2 border-top">

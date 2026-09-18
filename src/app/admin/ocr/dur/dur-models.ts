@@ -28,6 +28,7 @@ export interface DurChecks {
   financial_year_match: boolean | null;
   format_valid: boolean | null;
   signature_present: boolean | null;
+  seal_present: boolean | null;
   overall_valid: boolean;
 }
 
