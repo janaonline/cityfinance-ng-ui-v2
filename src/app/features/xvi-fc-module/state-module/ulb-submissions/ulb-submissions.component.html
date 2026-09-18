@@ -7,6 +7,11 @@
         <h1 class="page-title mb-0">Review ULB Submissions</h1>
         <span class="badge rounded-pill fy-badge">{{ yearLabel() }}</span>
         <span class="badge rounded-pill form-wise-badge">Form-wise Review</span>
+
+        <button type="button" matButton="outlined" class="ms-auto export-data-btn" [disabled]="isExporting()"
+            (click)="exportData()" matTooltip="Download all ULB submissions" matTooltipPosition="below">
+            <i class="bi bi-download me-1"></i>Export Data
+        </button>
     </div>
 
     <p class="page-subtitle text-secondary mb-4">
