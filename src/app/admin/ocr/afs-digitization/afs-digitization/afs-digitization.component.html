@@ -104,6 +104,27 @@
                     {{ getStatusLabel(job.status) }}
                   </span>
                   <span class="job-filename">{{ job.filename }}</span>
+                  <span class="job-id-chip">
+                    Job ID: {{ job.jobId }}
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      [attr.aria-label]="isCopied('Job ID', job.jobId) ? 'Copied' : 'Copy job ID'"
+                      [attr.title]="isCopied('Job ID', job.jobId) ? 'Copied' : 'Copy job ID'"
+                      (click)="copyValue('Job ID', job.jobId)"
+                    >
+                      <mat-icon>{{ isCopied('Job ID', job.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      [attr.aria-label]="isCopied('Job Link', getJobLink(job.jobId)) ? 'Copied' : 'Copy link to this job'"
+                      [attr.title]="isCopied('Job Link', getJobLink(job.jobId)) ? 'Copied' : 'Copy link to this job'"
+                      (click)="copyValue('Job Link', getJobLink(job.jobId))"
+                    >
+                      <mat-icon>{{ isCopied('Job Link', getJobLink(job.jobId)) ? 'check' : 'link' }}</mat-icon>
+                    </button>
+                  </span>
                 </div>
                 <div class="job-header__actions">
                   @if (job.excelS3Key) {

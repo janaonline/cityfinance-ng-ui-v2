@@ -59,6 +59,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly copiedKey = signal<string | null>(null);
 
   ngOnInit(): void {
     const jobId = this.route.snapshot.queryParamMap.get('jobId');
@@ -251,6 +252,37 @@ export class AfsDigitizationComponent implements OnInit {
           this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
         },
       });
+  }
+
+  copyValue(label: string, value: string): void {
+    if (!value) return;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        const copyKey = `${label}:${value}`;
+        this.copiedKey.set(copyKey);
+        window.setTimeout(() => {
+          if (this.copiedKey() === copyKey) {
+            this.copiedKey.set(null);
+          }
+        }, 1500);
+      })
+      .catch(() => {
+        this.utilityService.swalPopup(
+          'Copy failed',
+          `Unable to copy ${label.toLowerCase()}. Please try again.`,
+          'error',
+        );
+      });
+  }
+
+  isCopied(label: string, value: string): boolean {
+    return this.copiedKey() === `${label}:${value}`;
+  }
+
+  getJobLink(jobId: string): string {
+    return `${window.location.origin}/ocr/afs-digitization/upload?jobId=${jobId}`;
   }
 
   private addJob(job: DigitizationJobTracker): void {
