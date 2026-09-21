@@ -31,7 +31,7 @@ const NUMERIC_TO_REVIEW_STATUS: Record<number, ReviewStatus> = {
   12: 'EXEMPTED', // FORM_STATUS.EXEMPTED_ACKNOWLEDGED - only ever set on SLB today
 };
 
-const REVIEW_STATUS_TO_NUMERIC: Record<ReviewStatus, number> = {
+const REVIEW_STATUS_TO_NUMERIC: Partial<Record<ReviewStatus, number>> = {
   NOT_STARTED: 1,
   IN_PROGRESS: 2,
   UNDER_REVIEW_BY_STATE: 3,
@@ -167,8 +167,10 @@ export class UlbSubmissionsService {
 
     if (query.search.trim()) params = params.set('search', query.search.trim());
     if (query.status?.length) {
-      const numericStatuses = query.status.map((status) => REVIEW_STATUS_TO_NUMERIC[status]);
-      params = params.set('status', numericStatuses.join(','));
+      const numericStatuses = query.status
+        .map((status) => REVIEW_STATUS_TO_NUMERIC[status])
+        .filter((n): n is number => n !== undefined);
+      if (numericStatuses.length) params = params.set('status', numericStatuses.join(','));
     }
 
     return this.http.get<unknown>(`${BANK_ACCOUNT_API}state/ulb-submissions`, { params }).pipe(
@@ -204,8 +206,10 @@ export class UlbSubmissionsService {
 
     if (query.search.trim()) params = params.set('search', query.search.trim());
     if (query.status?.length) {
-      const numericStatuses = query.status.map((status) => REVIEW_STATUS_TO_NUMERIC[status]);
-      params = params.set('status', numericStatuses.join(','));
+      const numericStatuses = query.status
+        .map((status) => REVIEW_STATUS_TO_NUMERIC[status])
+        .filter((n): n is number => n !== undefined);
+      if (numericStatuses.length) params = params.set('status', numericStatuses.join(','));
     }
 
     return this.http.get<unknown>(`${SLB_API}state/ulb-submissions`, { params }).pipe(

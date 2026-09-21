@@ -14,10 +14,24 @@
     </p>
   }
 
-  @if (sectionLocked()) {
+  @if (isExempted()) {
+    <app-exemption-notice
+      class="mb-3"
+      [ulbName]="ulbDetails()?.ulbName ?? ''"
+      [title]="exemptionNoticeTitle()"
+      [message]="exemptionNoticeMessage()"
+    />
+  } @else if (sectionLocked()) {
     <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
       <mat-icon class="locked-banner-icon">lock</mat-icon>
       <span class="body-sm">{{ lockedBannerMessage() }}</span>
+    </div>
+  }
+
+  @if (exemptionRejectedNotice(); as notice) {
+    <div class="section-returned-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+      <mat-icon class="returned-banner-icon">error_outline</mat-icon>
+      <span class="body-sm">{{ notice }}</span>
     </div>
   }
 
@@ -151,6 +165,7 @@
                               [gates]="actionGates()"
                               [doc]="toRuntimeState(doc)"
                               [readOnly]="!canUpload()"
+                              [locked]="sectionLocked()"
                               (actionClicked)="onDocAction($event)"
                             />
                           </div>
@@ -195,6 +210,7 @@
                             [gates]="actionGates()"
                             [doc]="toRuntimeState(doc)"
                             [readOnly]="!canDelete() && !canUpload()"
+                            [locked]="sectionLocked()"
                             (actionClicked)="onDocAction($event)"
                           />
                         </div>
@@ -256,6 +272,7 @@
                             [gates]="actionGates()"
                             [doc]="toRuntimeState(doc)"
                             [readOnly]="!canUpload()"
+                            [locked]="sectionLocked()"
                             (actionClicked)="onDocAction($event)"
                           />
                         </div>
@@ -278,6 +295,7 @@
                         [gates]="actionGates()"
                         [doc]="toRuntimeState(doc)"
                         [readOnly]="!canUpload()"
+                        [locked]="sectionLocked()"
                         (actionClicked)="onDocAction($event)"
                       />
                     }
@@ -290,6 +308,7 @@
                         [gates]="actionGates()"
                         [doc]="toRuntimeState(doc)"
                         [readOnly]="!canUpload()"
+                        [locked]="sectionLocked()"
                         (actionClicked)="onDocAction($event)"
                       />
                     }

@@ -10,6 +10,12 @@ import {
   OcrValidationJobResult,
   OcrValidationJobsListResponse,
 } from './ocr-validation/ocr-validation-models';
+import {
+  DurJobSubmitResponse,
+  DurJobStatusResponse,
+  DurJobResultResponse,
+  DurJobListResponse,
+} from './dur/dur-models';
 
 export interface SelectOption<T = string> {
   value: T;
@@ -708,6 +714,57 @@ export class OcrService {
     return this.http.get<AuditorReportRecord>(
       environment.api.url3 + `auditor-report/extractions/${docId}`,
     );
+  }
+
+  // ─── DUR (Utilisation Report) Validation API ─────────────────────────────────
+
+  submitDurValidationJob(
+    file: File,
+    ulb?: IULB | string | null,
+    financialYear?: string | null,
+    model?: string | null,
+  ) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const ulbName = this.getulb(ulb);
+    if (ulbName) formData.append('ulb_name', ulbName);
+    if (financialYear) formData.append('financial_year', financialYear);
+    if (model) formData.append('model', model);
+    return this.http.post<DurJobSubmitResponse>(environment.api.url3 + 'dur-validation/jobs', formData);
+  }
+
+  getDurJobStatus(jobId: string) {
+    return this.http.get<DurJobStatusResponse>(environment.api.url3 + `dur-validation/jobs/${jobId}/status`);
+  }
+
+  getDurJobResult(jobId: string) {
+    return this.http.get<DurJobResultResponse>(environment.api.url3 + `dur-validation/jobs/${jobId}/result`);
+  }
+
+  listDurValidationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+    skip?: number;
+    limit?: number;
+  }) {
+    const queryParams: Record<string, string | number> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    if (params?.skip !== undefined) queryParams['skip'] = params.skip;
+    if (params?.limit !== undefined) queryParams['limit'] = params.limit;
+    return this.http.get<DurJobListResponse>(environment.api.url3 + 'dur-validation/jobs', {
+      params: queryParams,
+    });
   }
 
   getOcrTasks(params: {

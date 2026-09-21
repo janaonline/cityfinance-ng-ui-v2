@@ -112,6 +112,19 @@ describe('resolveDocumentActions', () => {
       const result = resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }));
       expect(result).toEqual([{ action: 'delete', label: 'Delete', icon: 'bi-trash', disabled: false }]);
     });
+
+    it('shows nothing when blocked, regardless of doc state or an otherwise-permissive gate/status - a discretionary exemption request Pending/Approved never changes the real status, so the gate above would otherwise still allow these through', () => {
+      expect(resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: false }), true)).toEqual([]);
+      expect(resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }), true)).toEqual([]);
+      expect(
+        resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'FAILED' }), true),
+      ).toEqual([]);
+    });
+
+    it('defaults blocked to false when omitted, preserving existing behavior', () => {
+      const result = resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: false }));
+      expect(result).toEqual([{ action: 'upload', label: 'Upload', icon: 'bi-upload', disabled: false }]);
+    });
   });
 
   describe('STATE', () => {
@@ -155,6 +168,17 @@ describe('resolveDocumentActions', () => {
     it('shows nothing outside the gated status, even for an undecided passed document', () => {
       const result = resolveDocumentActions('STATE', 5, STATE_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }));
       expect(result).toEqual([]);
+    });
+
+    it('is unaffected by blocked - the exemption overlay only ever locks the ULB, never STATE review', () => {
+      const result = resolveDocumentActions(
+        'STATE',
+        3,
+        STATE_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'PASSED' }),
+        true,
+      );
+      expect(result.map((a) => a.action)).toEqual(['approve', 'return']);
     });
   });
 

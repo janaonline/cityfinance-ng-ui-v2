@@ -43,6 +43,9 @@ import {
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { SlbFormBodyComponent } from '../../../shared/slb-form-body/slb-form-body.component';
+import { SlbPreviewContentComponent } from '../../../shared/slb-preview/slb-preview-content.component';
+import { SlbPreviewDialogComponent } from '../../../shared/slb-preview/slb-preview-dialog.component';
+import { exportElementToPdf } from '../../../pdf-export.util';
 import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 import { FORM_STATUS, FormStatusType } from '../../../common/constants/form-status.constants';
 import { SlbPreviewContentComponent } from '../../../shared/slb-preview/slb-preview-content.component';
@@ -53,6 +56,7 @@ import { exportElementToPdf } from '../../../pdf-export.util';
   selector: 'app-slb',
   imports: [
     SlbFormBodyComponent,
+    SlbPreviewContentComponent,
     PreLoaderComponent,
     MatButtonModule,
     PageErrorStateComponent,
