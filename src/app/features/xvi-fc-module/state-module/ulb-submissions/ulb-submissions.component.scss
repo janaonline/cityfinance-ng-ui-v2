@@ -238,6 +238,11 @@ form button[matButton] {
   flex: none;
 }
 
+.export-data-btn {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .bulk-actions button[matButton] {
   --mat-button-outlined-label-text-size: 0.75rem;
   --mat-button-outlined-horizontal-padding: 12px;
