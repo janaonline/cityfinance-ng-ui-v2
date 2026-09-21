@@ -42,6 +42,11 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     canDeactivate: [unsavedChangesGuard],
   },
   {
+    path: 'gtc',
+    loadComponent: () => import('./gtc/gtc.component').then((m) => m.GtcComponent),
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
     path: 'request-exemption',
     loadComponent: () =>
       import('./request-exemption/request-exemption-list.component').then((m) => m.RequestExemptionListComponent),
