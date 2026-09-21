@@ -58,4 +58,9 @@ export const OCR_ROUTES: Route[] = [
         (mod) => mod.AuditorReportListComponent,
       ),
   },
+  {
+    path: 'afs-digitization',
+    loadChildren: () =>
+      import('./afs-digitization/afs-digitization.routes').then((mod) => mod.AFS_DIGITIZATION_ROUTES),
+  },
 ];

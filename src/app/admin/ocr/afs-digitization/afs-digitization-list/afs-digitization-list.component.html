@@ -1,0 +1,230 @@
+<div class="wrapper app-wrapper">
+  <section class="digitization-list-page">
+    <!-- Hero -->
+    <div class="hero-card">
+      <h3>AFS Digitization Jobs</h3>
+      <p class="subcopy">Browse past digitization jobs, filter by status or ULB, and download the generated Excel workbooks.</p>
+    </div>
+
+    <!-- Quick nav -->
+    <div class="card-grid">
+      <article class="menu-card">
+        <div>
+          <h2>New Digitization</h2>
+          <p>Upload a scanned financial-statement PDF and start a new Textract + Gemini digitization job.</p>
+        </div>
+        <a class="btn btn-outline-primary menu-btn" routerLink="/ocr/afs-digitization/upload">New Job</a>
+      </article>
+    </div>
+
+    <!-- List section -->
+    <section class="list-section">
+      <div class="section-header">
+        <div>
+          <h2>Jobs</h2>
+          <p>Filter by status, filename, or ULB name and paginate through all jobs.</p>
+        </div>
+        <div class="section-header-right">
+          @if (loading()) {
+            <span class="results-meta">Loading...</span>
+          } @else {
+            <span class="results-meta">{{ totalItems }} result{{ totalItems === 1 ? '' : 's' }}</span>
+          }
+          <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <form [formGroup]="filterForm" class="filter-grid">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            @for (opt of statusOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filename</mat-label>
+          <input matInput formControlName="filename" placeholder="Search filename" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ULB Name</mat-label>
+          <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Financial Year</mat-label>
+          <input matInput formControlName="financialYear" placeholder="e.g. 2024-25" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Date From</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="dateFrom" />
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Date To</mat-label>
+          <input matInput [matDatepicker]="toPicker" formControlName="dateTo" />
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+
+        <div class="filter-actions">
+          <button type="button" mat-flat-button color="primary" (click)="applyFilters()">Apply</button>
+          <button type="button" mat-stroked-button (click)="resetFilters()">Reset</button>
+        </div>
+      </form>
+
+      <!-- Table -->
+      <div class="table-shell">
+        <table mat-table [dataSource]="dataSource" class="val-table">
+          <ng-container matColumnDef="jobAndFile">
+            <th mat-header-cell *matHeaderCellDef>Job / File</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="identity-cell">
+                <span class="cell-label">Job</span>
+                <span class="cell-value mono" [title]="row.jobId">{{ row.jobId }}</span>
+              </div>
+              <div class="identity-cell">
+                <span class="cell-label">File</span>
+                <span class="cell-value" [title]="row.filename">{{ row.filename }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="model">
+            <th mat-header-cell *matHeaderCellDef>Model</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="model-value">{{ row.geminiModel }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-badge" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
+              @if (row.progressStep !== '—') {
+                <p class="progress-step-chip">{{ row.progressStep }}</p>
+              }
+              @if (row.status === 'failed' && row.errorMessage !== '—') {
+                <p class="error-text" [title]="row.errorMessage">{{ row.errorMessage }}</p>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="scores">
+            <th mat-header-cell *matHeaderCellDef>Scores</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="scores-cell">
+                <div>
+                  <span class="cell-label">Confidence</span>
+                  <span class="cell-value" [ngClass]="getScoreClass(row.confidenceScore)">
+                    {{ row.confidenceScore !== null ? (row.confidenceScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="cell-label">Accuracy</span>
+                  <span class="cell-value" [ngClass]="getScoreClass(row.accuracyScore)">
+                    {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expected">
+            <th mat-header-cell *matHeaderCellDef>Expected</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell">
+                @if (row.expectedUlbName !== '—') {
+                  <div><span class="cell-label">ULB</span><span class="cell-value">{{ row.expectedUlbName }}</span></div>
+                }
+                @if (row.expectedFinancialYear !== '—') {
+                  <div><span class="cell-label">FY</span><span class="cell-value">{{ row.expectedFinancialYear }}</span></div>
+                }
+                @if (row.expectedDocType !== '—') {
+                  <div><span class="cell-label">Type</span><span class="cell-value">{{ row.expectedDocType }}</span></div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—') {
+                  <span class="dim">—</span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="dates">
+            <th mat-header-cell *matHeaderCellDef>
+              <button type="button" class="sort-header-btn" (click)="toggleSortOrder()">
+                Dates
+                <mat-icon class="sort-icon">{{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="dates-cell">
+                <div><span class="cell-label">Created</span><span class="cell-value">{{ row.createdAt }}</span></div>
+                @if (row.completedAt !== '—') {
+                  <div><span class="cell-label">Done</span><span class="cell-value">{{ row.completedAt }}</span></div>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="action-cell">
+                <a class="btn btn-sm btn-outline-primary" routerLink="/ocr/afs-digitization/upload" [queryParams]="{ jobId: row.jobId }" title="View result">
+                  View
+                </a>
+                @if (row.hasExcel) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success"
+                    [disabled]="downloadingJobId() === row.jobId"
+                    (click)="downloadExcel(row)"
+                    title="Download digitized Excel"
+                  >
+                    @if (downloadingJobId() === row.jobId) {
+                      <mat-icon class="spin-icon">hourglass_empty</mat-icon>
+                    } @else {
+                      <mat-icon>download</mat-icon>
+                    }
+                    Excel
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+              @if (loading()) {
+                Loading jobs...
+              } @else {
+                No digitization jobs found. Adjust filters or submit a new job.
+              }
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        showFirstLastButtons
+        (page)="onPageChange($event)"
+      />
+    </section>
+  </section>
+</div>

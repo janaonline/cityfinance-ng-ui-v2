@@ -1,0 +1,309 @@
+<div class="wrapper app-wrapper">
+  <section class="digitization-page">
+    <!-- Hero -->
+    <div class="hero-card">
+      <h1>AFS Digitization</h1>
+      <p class="subcopy">
+        Upload a scanned ULB financial-statement PDF. Amazon Textract extracts tables and key/value pairs into an
+        Excel workbook (<strong>confidence score</strong>), then Gemini re-reads the source PDF and cross-checks
+        every extracted value (<strong>accuracy score</strong>).
+      </p>
+    </div>
+
+    <!-- Upload form -->
+    <mat-card class="upload-card">
+      <mat-card-content>
+        <form [formGroup]="form" class="upload-form">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini cross-check model</mat-label>
+              <mat-select formControlName="geminiModel">
+                @for (m of geminiModels; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.geminiModel.invalid && form.controls.geminiModel.touched) {
+                <mat-error>Model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Document type (optional)</mat-label>
+              <mat-select formControlName="docType">
+                @for (dt of documentTypes; track dt.value) {
+                  <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Financial year (optional)</mat-label>
+              <mat-select formControlName="financialYear">
+                @for (y of financialYears; track y.value) {
+                  <mat-option [value]="y.value">{{ y.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>ULB name (optional)</mat-label>
+              <input type="text" matInput formControlName="ulbName" placeholder="For labeling only" autocomplete="off" />
+            </mat-form-field>
+          </div>
+
+          <!-- File picker -->
+          <div class="file-picker">
+            <input #fileInput class="file-input-hidden" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+
+            <button type="button" class="file-drop-box" (click)="openFilePicker()">
+              @if (selectedFile) {
+                <span class="file-box-name">{{ selectedFile.name }}</span>
+                <span class="file-box-meta">Click to replace</span>
+              } @else {
+                <span class="file-box-placeholder">Click to choose a scanned financial-statement PDF</span>
+                <span class="file-box-meta">Single file only</span>
+              }
+            </button>
+
+            <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB.</p>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="clearFile()">Clear</button>
+            <button mat-flat-button color="primary" type="button"
+              [disabled]="!selectedFile || form.invalid || isSubmitting()" (click)="submit()">
+              @if (isSubmitting()) {
+                Submitting...
+              } @else {
+                Digitize PDF
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Jobs section -->
+    @if (hasJobs()) {
+      <div class="jobs-list">
+        <div class="jobs-header">
+          <h2 class="jobs-title">Digitization Jobs</h2>
+        </div>
+
+        @for (job of jobs(); track job.jobId) {
+          <mat-card class="job-card" [class.job-card--completed]="job.status === 'completed'"
+            [class.job-card--failed]="job.status === 'failed'">
+            <mat-card-content>
+              <div class="job-header">
+                <div class="job-header__info">
+                  <span class="status-chip" [class.status-chip--queued]="job.status === 'queued'"
+                    [class.status-chip--processing]="job.status === 'processing'"
+                    [class.status-chip--completed]="job.status === 'completed'"
+                    [class.status-chip--failed]="job.status === 'failed'">
+                    {{ getStatusLabel(job.status) }}
+                  </span>
+                  <span class="job-filename">{{ job.filename }}</span>
+                </div>
+                <div class="job-header__actions">
+                  @if (job.excelS3Key) {
+                    <button mat-stroked-button type="button" [disabled]="downloadingJobId() === job.jobId"
+                      (click)="downloadExcel(job)">
+                      @if (downloadingJobId() === job.jobId) { Downloading... } @else { Download Excel }
+                    </button>
+                  }
+                  <button mat-icon-button type="button" (click)="toggleResult(job.jobId)"
+                    [attr.aria-label]="job.showResult ? 'Collapse' : 'Expand'">
+                    <mat-icon>{{ job.showResult ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <p class="job-message">
+                {{ job.message }}
+                @if (job.status === 'processing' && job.progressStep) {
+                  <span class="job-progress-step"> — {{ job.progressStep }}</span>
+                }
+              </p>
+
+              @if (job.showResult && job.result) {
+                <div class="job-result">
+                  <!-- Score cards -->
+                  <div class="score-cards">
+                    <div class="score-card">
+                      <span class="score-card__label">Confidence Score (Textract)</span>
+                      <span class="score-card__value" [ngClass]="getScoreClass(job.result.confidence_score)">
+                        {{ job.result.confidence_score !== null ? (job.result.confidence_score | number: '1.0-1') + '%' : '—' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Accuracy Score (Gemini cross-check)</span>
+                      <span class="score-card__value" [ngClass]="getScoreClass(job.result.accuracy_score)">
+                        {{ job.result.accuracy_score !== null ? (job.result.accuracy_score | number: '1.0-1') + '%' : '—' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Overall Assessment</span>
+                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.overall_assessment)">
+                        {{ job.result.overall_assessment ?? 'UNVERIFIED' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Extraction summary -->
+                  <div class="summary-grid">
+                    <div class="summary-item">
+                      <span class="summary-item__label">Pages</span>
+                      <span class="summary-item__value">{{ job.result.textract_extraction.page_count }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Tables Extracted</span>
+                      <span class="summary-item__value">{{ job.result.textract_extraction.tables.length }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Key-Value Pairs</span>
+                      <span class="summary-item__value">{{ job.result.textract_extraction.key_value_pairs.length }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Low-Confidence Blocks</span>
+                      <span class="summary-item__value">
+                        {{ job.result.textract_extraction.low_confidence_block_count }} / {{ job.result.textract_extraction.total_block_count }}
+                      </span>
+                    </div>
+                    @if (job.result.gemini_validation) {
+                      <div class="summary-item">
+                        <span class="summary-item__label">Gemini Fields Checked</span>
+                        <span class="summary-item__value">{{ job.result.gemini_validation.total_fields_checked }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-item__label">Matched / Mismatched</span>
+                        <span class="summary-item__value">
+                          {{ job.result.gemini_validation.matched_fields }} / {{ job.result.gemini_validation.mismatched_fields }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  @if (job.result.gemini_validation?.summary) {
+                    <p class="gemini-summary">{{ job.result.gemini_validation?.summary }}</p>
+                  }
+
+                  <!-- Mismatches -->
+                  @if (job.result.gemini_validation && mismatchedChecks(job.result.gemini_validation.field_checks).length > 0) {
+                    <div class="mismatches">
+                      <h5>Mismatches Found ({{ mismatchedChecks(job.result.gemini_validation.field_checks).length }})</h5>
+                      <table class="mismatch-table">
+                        <thead>
+                          <tr>
+                            <th>Location</th>
+                            <th>Extracted</th>
+                            <th>Source (PDF)</th>
+                            <th>Note</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (check of mismatchedChecks(job.result.gemini_validation.field_checks); track $index) {
+                            <tr>
+                              <td>{{ check.location }}</td>
+                              <td>{{ check.extracted_value ?? '—' }}</td>
+                              <td>{{ check.source_value ?? '—' }}</td>
+                              <td>{{ check.note ?? '—' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  @if (job.result.error_messages.length) {
+                    <div class="error-messages">
+                      <h5>Notes</h5>
+                      <ul>
+                        @for (msg of job.result.error_messages; track $index) {
+                          <li>{{ msg }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+
+                  <!-- Token usage -->
+                  @if (job.result.gemini_validation?.usage_metadata) {
+                    @let step = getUsageStep(job.result.gemini_validation!);
+                    <div class="usage-section">
+                      <h5>Token Usage</h5>
+                      <div class="usage-steps-grid">
+                        <div class="usage-step-card">
+                          <div class="usage-step-header">
+                            <div class="usage-step-title">{{ formatKey(step.name) }}</div>
+                            @if (step.model) {
+                              <div class="usage-step-model">{{ step.model }}</div>
+                            }
+                          </div>
+
+                          <div class="usage-token-row">
+                            <span class="usage-token-label">Prompt</span>
+                            <span class="usage-token-value">{{ step.promptTokens ?? '—' }}</span>
+                          </div>
+                          <div class="usage-token-row">
+                            <span class="usage-token-label">Output</span>
+                            <span class="usage-token-value">{{ step.candidatesTokens ?? '—' }}</span>
+                          </div>
+                          @if (step.thoughtsTokens) {
+                            <div class="usage-token-row">
+                              <span class="usage-token-label">Thoughts</span>
+                              <span class="usage-token-value">{{ step.thoughtsTokens }}</span>
+                            </div>
+                          }
+                          <div class="usage-token-row usage-token-row--total">
+                            <span class="usage-token-label">Total</span>
+                            <span class="usage-token-value">{{ step.totalTokens ?? '—' }}</span>
+                          </div>
+
+                          @if (step.promptDetails.length) {
+                            <div class="usage-modality-row">
+                              @for (d of step.promptDetails; track d.modality) {
+                                <span class="usage-modality-chip">{{ d.modality }}: {{ d.token_count }}</span>
+                              }
+                            </div>
+                          }
+
+                          @if (step.estimatedCostUsd !== null) {
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">Est. Cost</span>
+                              <span class="usage-cost-value">
+                                ~${{ step.estimatedCostUsd.toFixed(6) }}
+                                <span class="usage-cost-inr">(₹{{ step.estimatedCostInr!.toFixed(4) }})</span>
+                              </span>
+                            </div>
+                            <p class="usage-cost-formula">
+                              ({{ step.promptTokens ?? 0 }} × ${{ step.pricing!.inputPerM }}/M +
+                              {{ step.candidatesTokens ?? 0 }} × ${{ step.pricing!.outputPerM }}/M
+                              @if ((step.thoughtsTokens ?? 0) > 0) {
+                                + {{ step.thoughtsTokens }} × ${{ step.pricing!.thinkingPerM }}/M
+                              }
+                              ) ÷ 1,000,000
+                            </p>
+                          } @else {
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">Est. Cost</span>
+                              <span class="usage-cost-na">Pricing N/A</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <p class="job-timing">
+                    Processed in {{ job.result.processing_time_seconds | number: '1.1-1' }}s
+                    · Job ID: <span class="job-id">{{ job.jobId }}</span>
+                  </p>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
+  </section>
+</div>

@@ -347,6 +347,22 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
         path: '/ocr/eval-run-compare',
         apps: ['v2'],
       },
+      {
+        id: 'ocr.afs-digitization',
+        order: 60,
+        label: 'AFS Digitization',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/upload',
+        apps: ['v2'],
+      },
+      {
+        id: 'ocr.afs-digitization-list',
+        order: 70,
+        label: 'AFS Digitization List',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/list',
+        apps: ['v2'],
+      },
     ],
   },
 ];
