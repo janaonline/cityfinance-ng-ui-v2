@@ -243,27 +243,47 @@
                             <mat-icon class="align-middle">error_outline</mat-icon>
                             Manual review declined: {{ doc.manualReviewDecision?.note ?? 'No reason given.' }}
                           </div>
+                          @if (isUploadBlocked(doc)) {
+                            <div class="upload-blocked-note mt-2">
+                              <mat-icon class="align-middle">lock_clock</mat-icon>
+                              <span>
+                                Too many failed attempts. Uploads for this document are temporarily blocked for
+                                {{ manualReviewCooldownDays }} days. For further details, please email
+                                <a href="mailto:{{ manualReviewSupportEmail }}">{{ manualReviewSupportEmail }}</a>.
+                              </span>
+                            </div>
+                          } @else if (manualReviewAttemptsExhausted(doc)) {
+                            <p class="attempts-remaining-note mt-1 mb-0">
+                              You've used all {{ maxManualReviewAttempts }} attempts. Request another manual review to
+                              continue.
+                            </p>
+                          } @else {
+                            <p class="attempts-remaining-note mt-1 mb-0">
+                              {{ maxManualReviewAttempts - doc.postRejectionAttemptsUsed }} of
+                              {{ maxManualReviewAttempts }} attempts remaining. After that, uploads for this document
+                              will be temporarily blocked for {{ manualReviewCooldownDays }} days.
+                            </p>
+                          }
                         } @else if (doc.isManualReviewRequested) {
                           <div class="manual-review-note mt-2">
                             <mat-icon class="align-middle">support_agent</mat-icon>
                             Manual review requested — our team will review this document within 48 hours.
                           </div>
-                        } @else if (canDelete() && !sectionLocked()) {
-                          @if (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1) {
-                            <div class="d-flex mt-2">
-                              <button
-                                mat-stroked-button
-                                class="manual-review-btn flex-grow-1"
-                                type="button"
-                                (click)="requestManualReview(doc.id)"
-                              >
-                                <mat-icon>support_agent</mat-icon> Request Manual Review
-                              </button>
-                            </div>
-                          }
-                          @if (doc.manualReviewError) {
-                            <p class="manual-review-error mt-1 mb-0">{{ doc.manualReviewError }}</p>
-                          }
+                        }
+                        @if (canDelete() && !sectionLocked() && canRequestManualReview(doc)) {
+                          <div class="d-flex mt-2">
+                            <button
+                              mat-stroked-button
+                              class="manual-review-btn flex-grow-1"
+                              type="button"
+                              (click)="requestManualReview(doc.id)"
+                            >
+                              <mat-icon>support_agent</mat-icon> Request Manual Review
+                            </button>
+                          </div>
+                        }
+                        @if (doc.manualReviewError) {
+                          <p class="manual-review-error mt-1 mb-0">{{ doc.manualReviewError }}</p>
                         }
                         <div class="d-flex gap-2 mt-2">
                           <app-document-action-row
