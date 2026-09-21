@@ -161,7 +161,7 @@
           @if (job.status === 'completed' && job.result && job.result.failed_checks.length) {
           <ul class="mb-2 ps-4 text-danger small">
             @for (msg of job.result.failed_checks; track msg) {
-            <li>{{ msg }}</li>
+            <li>{{ describeFailedCheck(msg) }}</li>
             }
           </ul>
           }

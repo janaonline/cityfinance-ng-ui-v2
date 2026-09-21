@@ -110,6 +110,36 @@ describe('DurValidateComponent', () => {
       httpMock.expectNone(() => true);
     });
 
+    it('describes failed checks in plain English', () => {
+      const d = (raw: string) => component.describeFailedCheck(raw);
+
+      expect(
+        d("ulb_name_mismatch: expected 'Kochi Municipal Corporation|kochi|Cochin', extracted 'Kolkata Municipal Corporation'"),
+      ).toBe('The ULB in the document is "Kolkata Municipal Corporation", but "Kochi Municipal Corporation" was expected.');
+      expect(d("ulb_name_mismatch: expected 'Kochi Municipal Corporation', extracted 'None'")).toBe(
+        'The ULB name could not be read from the document; "Kochi Municipal Corporation" was expected.',
+      );
+      expect(d("financial_year_mismatch: expected '2025-26', extracted '2026-27'")).toBe(
+        'The financial year in the document is 2026-27, but 2025-26 was expected.',
+      );
+      expect(d("grant_type_mismatch: expected 'untied', extracted 'tied'")).toBe(
+        'The document is a tied grant DUR, but an untied grant DUR was expected.',
+      );
+      expect(d("grant_type_mismatch: expected 'tied', extracted 'None'")).toBe(
+        'The grant type (tied or untied) could not be found in the document; tied was expected.',
+      );
+      expect(d('format_invalid: missing Section B; no signature line')).toBe(
+        'The document does not follow the Annexure-VI DUR format. missing Section B; no signature line',
+      );
+      expect(d('signature_missing: no signature detected on the certification line')).toBe(
+        'No signature was found on the certification line.',
+      );
+      expect(d('seal_undetermined: could not confidently detect a seal')).toBe(
+        'The seal could not be confidently detected. Please check the scan manually.',
+      );
+      expect(d('something_new: whatever')).toBe('something_new: whatever');
+    });
+
     it('defaults the model to Gemini 3.5 Flash-Lite', () => {
       expect(component.form.controls.model.value).toBe('gemini-3.5-flash-lite');
     });
