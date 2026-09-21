@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -22,7 +22,7 @@ import { IULB } from '../../../../core/models/ulb';
 import { CommonService } from '../../../../core/services/common.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { OcrService, SelectOption } from '../../ocr.service';
-import { DurJobTracker, DurValidationResult } from '../dur-models';
+import { DurGrantType, DurJobTracker, DurValidationResult } from '../dur-models';
 
 interface GeminiPricing {
   inputPerM: number;
@@ -71,9 +71,15 @@ export class DurValidateComponent implements OnInit {
     { value: '2023-24', label: '2023-24' },
   ];
 
+  readonly grantTypes: Array<{ value: DurGrantType; label: string }> = [
+    { value: 'tied', label: 'Tied' },
+    { value: 'untied', label: 'Untied' },
+  ];
+
   readonly form = this.fb.group({
-    model: this.fb.nonNullable.control('gemini-3.1-pro-preview'),
+    model: this.fb.nonNullable.control('gemini-3.5-flash-lite'),
     financialYear: this.fb.control<string | null>(null),
+    grantType: this.fb.control<DurGrantType | null>(null, Validators.required),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
@@ -136,11 +142,11 @@ export class DurValidateComponent implements OnInit {
       return;
     }
 
-    const { model, financialYear } = this.form.getRawValue();
+    const { model, financialYear, grantType } = this.form.getRawValue();
     const file = this.selectedFile;
     this.isSubmitting.set(true);
     this.ocrService
-      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model)
+      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model, grantType)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
@@ -190,6 +196,52 @@ export class DurValidateComponent implements OnInit {
     if (matched === true) return 'bi-check-circle-fill';
     if (matched === false) return 'bi-x-circle-fill';
     return 'bi-dash-circle';
+  }
+
+  /**
+   * Turns a `failed_checks` entry from the API (`<code>: <detail>`) into a plain-English sentence.
+   * Unrecognised codes are returned unchanged.
+   */
+  describeFailedCheck(raw: string): string {
+    const sep = raw.indexOf(':');
+    const code = (sep === -1 ? raw : raw.slice(0, sep)).trim();
+    const detail = sep === -1 ? '' : raw.slice(sep + 1).trim();
+    const pair = /^expected '(.*)', extracted '(.*)'$/s.exec(detail);
+    const expected = pair?.[1] ?? '';
+    // The backend sends 'None' when nothing could be read from the document.
+    const extracted = pair && pair[2] !== 'None' && pair[2] !== '' ? pair[2] : null;
+
+    switch (code) {
+      case 'ulb_name_mismatch': {
+        // The expected ULB is sent as "name|slug|keywords"; only the name reads well in a sentence.
+        const expectedUlb = expected.split('|')[0].trim();
+        return extracted
+          ? `The ULB in the document is "${extracted}", but "${expectedUlb}" was expected.`
+          : `The ULB name could not be read from the document; "${expectedUlb}" was expected.`;
+      }
+      case 'financial_year_mismatch':
+        return extracted
+          ? `The financial year in the document is ${extracted}, but ${expected} was expected.`
+          : `The financial year could not be read from the document; ${expected} was expected.`;
+      case 'grant_type_mismatch': {
+        const withArticle = (type: string) => `${type === 'untied' ? 'an' : 'a'} ${type}`;
+        return extracted
+          ? `The document is ${withArticle(extracted)} grant DUR, but ${withArticle(expected)} grant DUR was expected.`
+          : `The grant type (tied or untied) could not be found in the document; ${expected} was expected.`;
+      }
+      case 'format_invalid':
+        return `The document does not follow the Annexure-VI DUR format. ${detail}`.trim();
+      case 'signature_missing':
+        return 'No signature was found on the certification line.';
+      case 'signature_undetermined':
+        return 'The signature could not be confidently detected. Please check the scan manually.';
+      case 'seal_missing':
+        return 'No seal or stamp was found on the certification line.';
+      case 'seal_undetermined':
+        return 'The seal could not be confidently detected. Please check the scan manually.';
+      default:
+        return raw;
+    }
   }
 
   formatDateTime(d: string | null): string {
