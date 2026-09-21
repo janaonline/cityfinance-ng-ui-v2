@@ -58,6 +58,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly jobs = signal<DigitizationJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly downloadingJobId = signal<string | null>(null);
+  readonly downloadingPdfJobId = signal<string | null>(null);
 
   ngOnInit(): void {
     const jobId = this.route.snapshot.queryParamMap.get('jobId');
@@ -228,6 +229,26 @@ export class AfsDigitizationComponent implements OnInit {
         },
         error: () => {
           this.utilityService.swalPopup('Download failed', 'Could not download the Excel file.', 'error');
+        },
+      });
+  }
+
+  downloadPdf(job: DigitizationJobTracker): void {
+    this.downloadingPdfJobId.set(job.jobId);
+    this.digitizationService
+      .downloadDigitizationPdf(job.jobId)
+      .pipe(finalize(() => this.downloadingPdfJobId.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = job.filename;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
         },
       });
   }

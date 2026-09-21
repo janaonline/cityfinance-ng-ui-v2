@@ -112,6 +112,10 @@
                       @if (downloadingJobId() === job.jobId) { Downloading... } @else { Download Excel }
                     </button>
                   }
+                  <button mat-stroked-button type="button" [disabled]="downloadingPdfJobId() === job.jobId"
+                    (click)="downloadPdf(job)">
+                    @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
+                  </button>
                   <button mat-icon-button type="button" (click)="toggleResult(job.jobId)"
                     [attr.aria-label]="job.showResult ? 'Collapse' : 'Expand'">
                     <mat-icon>{{ job.showResult ? 'expand_less' : 'expand_more' }}</mat-icon>
@@ -225,6 +229,42 @@
                       </ul>
                     </div>
                   }
+
+                  <!-- Textract usage -->
+                  <div class="usage-section">
+                    <h5>Textract Usage</h5>
+                    <div class="usage-steps-grid">
+                      <div class="usage-step-card">
+                        <div class="usage-step-header">
+                          <div class="usage-step-title">textract_extraction</div>
+                          <div class="usage-step-model">{{ job.result.textract_extraction.feature_types.join(' + ') }}</div>
+                        </div>
+
+                        <div class="usage-token-row">
+                          <span class="usage-token-label">Pages Billed</span>
+                          <span class="usage-token-value">{{ job.result.textract_extraction.page_count }}</span>
+                        </div>
+
+                        @if (job.result.textract_extraction.cost_usd !== null) {
+                          <div class="usage-cost-row">
+                            <span class="usage-cost-label">Est. Cost</span>
+                            <span class="usage-cost-value">
+                              ~${{ job.result.textract_extraction.cost_usd.toFixed(4) }}
+                              <span class="usage-cost-inr">(₹{{ job.result.textract_extraction.price_inr!.toFixed(2) }})</span>
+                            </span>
+                          </div>
+                          <p class="usage-cost-formula">
+                            {{ job.result.textract_extraction.page_count }} pages × ${{ (job.result.textract_extraction.cost_usd / job.result.textract_extraction.page_count).toFixed(4) }}/page
+                          </p>
+                        } @else {
+                          <div class="usage-cost-row">
+                            <span class="usage-cost-label">Est. Cost</span>
+                            <span class="usage-cost-na">Pricing N/A</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- Token usage -->
                   @if (job.result.gemini_validation?.usage_metadata) {

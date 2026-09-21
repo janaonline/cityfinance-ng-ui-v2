@@ -21,6 +21,7 @@ interface DigitizationListRow {
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
+  textractPriceInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
@@ -57,6 +58,7 @@ export class AfsDigitizationListComponent implements OnInit {
     'model',
     'status',
     'scores',
+    'cost',
     'expected',
     'dates',
     'action',
@@ -83,6 +85,7 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly dataSource = new MatTableDataSource<DigitizationListRow>([]);
   readonly loading = signal(false);
   readonly downloadingJobId = signal<string | null>(null);
+  readonly downloadingPdfJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -163,6 +166,26 @@ export class AfsDigitizationListComponent implements OnInit {
       });
   }
 
+  downloadPdf(row: DigitizationListRow): void {
+    this.downloadingPdfJobId.set(row.jobId);
+    this.digitizationService
+      .downloadDigitizationPdf(row.jobId)
+      .pipe(finalize(() => this.downloadingPdfJobId.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = row.filename !== '—' ? row.filename : `${row.jobId}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
+        },
+      });
+  }
+
   private loadJobs(): void {
     const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
@@ -207,6 +230,7 @@ export class AfsDigitizationListComponent implements OnInit {
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
+      textractPriceInr: job.textract_price_inr,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',

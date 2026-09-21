@@ -22,6 +22,8 @@ export interface DigitizationJobStatusResponse {
   error_message: string | null;
   confidence_score: number | null;
   accuracy_score: number | null;
+  textract_cost_usd: number | null;
+  textract_price_inr: number | null;
   excel_s3_key: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -65,6 +67,9 @@ export interface TextractExtraction {
   low_confidence_block_count: number;
   total_block_count: number;
   extraction_seconds: number | null;
+  feature_types: string[];
+  cost_usd: number | null;
+  price_inr: number | null;
 }
 
 export interface GeminiFieldCheck {

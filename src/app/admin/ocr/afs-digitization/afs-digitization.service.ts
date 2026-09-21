@@ -111,6 +111,12 @@ export class AfsDigitizationService {
     });
   }
 
+  downloadDigitizationPdf(jobId: string) {
+    return this.http.get(environment.api.url3 + `afs-digitization/jobs/${jobId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
   listDigitizationJobs(params?: {
     status?: string;
     filename?: string;
