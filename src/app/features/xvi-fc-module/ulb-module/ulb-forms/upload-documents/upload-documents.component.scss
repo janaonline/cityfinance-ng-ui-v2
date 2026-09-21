@@ -478,6 +478,35 @@
   }
 }
 
+.attempts-remaining-note {
+  font-size: 0.72rem;
+  color: #8a6d00;
+}
+
+.upload-blocked-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #7a1519;
+  background: #fdecea;
+
+  mat-icon {
+    font-size: 0.9rem;
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+}
+
 // ── validation results panel ──────────────────────────────────────────────────
 .validation-panel {
   background: #fff8f8;

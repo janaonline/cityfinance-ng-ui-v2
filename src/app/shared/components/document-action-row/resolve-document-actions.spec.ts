@@ -88,6 +88,51 @@ describe('resolveDocumentActions', () => {
       expect(result).toEqual([{ action: 'reupload', label: 'Re-upload', icon: 'bi-upload', disabled: false }]);
     });
 
+    it('hides both Retry and Re-upload once eligible for manual review but not yet requested — Request Manual Review is the only path', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', isEligibleForManualReview: true }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('shows Retry + Re-upload for an early failure, even if it happens to be manualReviewReturned=false and not yet eligible', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', isEligibleForManualReview: false }),
+      );
+      expect(result.map((a) => a.action)).toEqual(['retry', 'reupload']);
+    });
+
+    it('hides Re-upload once all 3 post-rejection attempts are used, leaving only Request Manual Review (rendered separately)', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({
+          hasFile: true,
+          processingStatus: 'FAILED',
+          manualReviewReturned: true,
+          manualReviewAttemptsExhausted: true,
+        }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('hides everything (even Re-upload) while a document is blocked in its post-rejection cooldown', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', manualReviewReturned: true, isUploadBlocked: true }),
+      );
+      expect(result).toEqual([]);
+    });
+
     it('shows nothing once a document is APPROVED — locked', () => {
       const result = resolveDocumentActions(
         'ULB',
