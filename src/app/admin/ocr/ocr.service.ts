@@ -11,6 +11,7 @@ import {
   OcrValidationJobsListResponse,
 } from './ocr-validation/ocr-validation-models';
 import {
+  DurGrantType,
   DurJobSubmitResponse,
   DurJobStatusResponse,
   DurJobResultResponse,
@@ -723,12 +724,14 @@ export class OcrService {
     ulb?: IULB | string | null,
     financialYear?: string | null,
     model?: string | null,
+    grantType?: DurGrantType | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
     const ulbName = this.getulb(ulb);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
+    if (grantType) formData.append('grant_type', grantType);
     if (model) formData.append('model', model);
     return this.http.post<DurJobSubmitResponse>(environment.api.url3 + 'dur-validation/jobs', formData);
   }
@@ -746,6 +749,7 @@ export class OcrService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    grant_type?: DurGrantType;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
@@ -757,6 +761,7 @@ export class OcrService {
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.grant_type) queryParams['grant_type'] = params.grant_type;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
     if (params?.sort_order) queryParams['sort_order'] = params.sort_order;

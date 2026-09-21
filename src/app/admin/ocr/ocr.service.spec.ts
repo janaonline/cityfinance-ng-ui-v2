@@ -46,7 +46,7 @@ describe('OcrService — DUR validation API', () => {
       const file = new File(['%PDF-1.4'], 'dur.pdf', { type: 'application/pdf' });
       const ulb = makeUlb({ slug: 'karad-mc', keywords: 'karad municipal' });
 
-      service.submitDurValidationJob(file, ulb, '2026-27', 'gemini-3.1-pro-preview').subscribe();
+      service.submitDurValidationJob(file, ulb, '2026-27', 'gemini-3.1-pro-preview', 'tied').subscribe();
 
       const req = httpMock.expectOne(`${BASE_URL}dur-validation/jobs`);
       expect(req.request.method).toBe('POST');
@@ -54,6 +54,7 @@ describe('OcrService — DUR validation API', () => {
       expect(body.get('file')).toBe(file);
       expect(body.get('ulb_name')).toBe('Karad Municipal Council|karad-mc|karad municipal');
       expect(body.get('financial_year')).toBe('2026-27');
+      expect(body.get('grant_type')).toBe('tied');
       expect(body.get('model')).toBe('gemini-3.1-pro-preview');
       req.flush({ job_id: 'job-1', status: 'queued', message: 'queued' });
     });
@@ -67,6 +68,7 @@ describe('OcrService — DUR validation API', () => {
       const body = req.request.body as FormData;
       expect(body.has('ulb_name')).toBeFalse();
       expect(body.has('financial_year')).toBeFalse();
+      expect(body.has('grant_type')).toBeFalse();
       expect(body.has('model')).toBeFalse();
       req.flush({ job_id: 'job-1', status: 'queued', message: 'queued' });
     });

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -22,7 +22,7 @@ import { IULB } from '../../../../core/models/ulb';
 import { CommonService } from '../../../../core/services/common.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { OcrService, SelectOption } from '../../ocr.service';
-import { DurJobTracker, DurValidationResult } from '../dur-models';
+import { DurGrantType, DurJobTracker, DurValidationResult } from '../dur-models';
 
 interface GeminiPricing {
   inputPerM: number;
@@ -71,9 +71,15 @@ export class DurValidateComponent implements OnInit {
     { value: '2023-24', label: '2023-24' },
   ];
 
+  readonly grantTypes: Array<{ value: DurGrantType; label: string }> = [
+    { value: 'tied', label: 'Tied' },
+    { value: 'untied', label: 'Untied' },
+  ];
+
   readonly form = this.fb.group({
-    model: this.fb.nonNullable.control('gemini-3.1-pro-preview'),
+    model: this.fb.nonNullable.control('gemini-3.5-flash-lite'),
     financialYear: this.fb.control<string | null>(null),
+    grantType: this.fb.control<DurGrantType | null>(null, Validators.required),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
@@ -136,11 +142,11 @@ export class DurValidateComponent implements OnInit {
       return;
     }
 
-    const { model, financialYear } = this.form.getRawValue();
+    const { model, financialYear, grantType } = this.form.getRawValue();
     const file = this.selectedFile;
     this.isSubmitting.set(true);
     this.ocrService
-      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model)
+      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model, grantType)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {

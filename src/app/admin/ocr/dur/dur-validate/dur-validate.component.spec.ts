@@ -100,13 +100,33 @@ describe('DurValidateComponent', () => {
       httpMock.expectNone(() => true);
     });
 
+    it('requires a grant type and makes no request when it is not selected', () => {
+      selectFile(component, makePdfFile('dur.pdf'));
+
+      component.submit();
+
+      expect(component.form.controls.grantType.hasError('required')).toBeTrue();
+      expect(component.form.controls.grantType.touched).toBeTrue();
+      httpMock.expectNone(() => true);
+    });
+
+    it('defaults the model to Gemini 3.5 Flash-Lite', () => {
+      expect(component.form.controls.model.value).toBe('gemini-3.5-flash-lite');
+    });
+
+    it('offers only Tied and Untied as grant type options', () => {
+      expect(component.grantTypes.map((g) => g.value)).toEqual(['tied', 'untied']);
+    });
+
     it('submits the job, polls status, and fetches the result once completed', fakeAsync(() => {
       selectFile(component, makePdfFile('dur.pdf'));
+      component.form.patchValue({ grantType: 'untied' });
 
       component.submit();
 
       const submitReq = httpMock.expectOne(`${BASE_URL}dur-validation/jobs`);
       expect(submitReq.request.method).toBe('POST');
+      expect((submitReq.request.body as FormData).get('grant_type')).toBe('untied');
       submitReq.flush({ job_id: 'job-1', status: 'queued', message: 'DUR validation job has been queued.' });
 
       expect(component.jobs().length).toBe(1);
@@ -176,13 +196,14 @@ describe('DurValidateComponent', () => {
             ulb_name: 'Karad Municipal Council',
             financial_year: '2026-27',
             grant_financial_year: '2025-26',
+            grant_type: 'tied',
             is_dur_format: true,
             format_issues: [],
             signature_present: true,
             seal_present: true,
             extraction_notes: null,
           },
-          checks: { ulb_name_match: null, financial_year_match: null, format_valid: true, signature_present: true, overall_valid: true },
+          checks: { ulb_name_match: null, financial_year_match: null, grant_type_match: null, format_valid: true, signature_present: true, seal_present: true, overall_valid: true },
           failed_checks: [],
           usage_metadata: null,
           total_tokens: null,
@@ -227,7 +248,7 @@ describe('DurValidateComponent', () => {
           processing_time_seconds: 1,
           expected: null,
           extraction: {} as any,
-          checks: { ulb_name_match: null, financial_year_match: null, format_valid: null, signature_present: null, overall_valid: false },
+          checks: { ulb_name_match: null, financial_year_match: null, grant_type_match: null, format_valid: null, signature_present: null, seal_present: null, overall_valid: false },
           failed_checks: [],
           usage_metadata: null,
           total_tokens: null,
@@ -243,7 +264,7 @@ describe('DurValidateComponent', () => {
         processing_time_seconds: 1,
         expected: null,
         extraction: {} as any,
-        checks: { ulb_name_match: null, financial_year_match: null, format_valid: null, signature_present: null, overall_valid: false },
+        checks: { ulb_name_match: null, financial_year_match: null, grant_type_match: null, format_valid: null, signature_present: null, seal_present: null, overall_valid: false },
         failed_checks: [],
         usage_metadata: { prompt_token_count: 1000, candidates_token_count: 500, total_token_count: 1500 },
         total_tokens: 1500,
