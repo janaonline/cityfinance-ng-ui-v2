@@ -20,6 +20,12 @@
 
   <mat-card class="custom-mat-card mat-elevation-z1">
     <div class="table-container mat-elevation-z8 mb-4">
+      @if (!isLoading() && !loadError() && failedSources().length > 0) {
+        <div class="alert alert-warning py-2 px-3 m-3" role="alert">
+          {{ failedSourcesLabel() }} could not be loaded right now — the list below may be incomplete.
+          <button type="button" class="btn btn-link btn-sm p-0 ms-1" (click)="loadRows()">Retry</button>
+        </div>
+      }
       @if (isLoading()) {
       <app-pre-loader></app-pre-loader>
       <app-pre-loader></app-pre-loader>
@@ -40,9 +46,12 @@
           <ng-container matColumnDef="details">
             <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div class="fw-bold">{{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span></div>
+              <div class="fw-bold">
+                {{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">{{ formLabel(row) }}</span>
+              </div>
               <div class="text-muted small">
-                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }} &middot;
+                {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }} &middot;
                 {{ row.docId }} &middot;
                 @if (row.jobId) {
                 <a [href]="ocrDownloadUrl(row.jobId)" class="ms-1 text-muted" target="_blank" rel="noopener"
@@ -91,7 +100,7 @@
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
               <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
-                @if (row.jobId) {
+                @if (row.jobId && row.formType === 'ANNUAL_ACCOUNT') {
                 <a class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
                   routerLink="/ocr/validation" [queryParams]="{ jobId: row.jobId }" target="_blank"
                   title="View OCR job log">
