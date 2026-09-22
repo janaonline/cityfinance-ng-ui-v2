@@ -104,7 +104,12 @@
             <td mat-cell *matCellDef="let row">
               <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
                 @if (row.jobId && row.formType === 'ANNUAL_ACCOUNT') {
-                <a <a class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                <a class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  routerLink="/ocr/validation" [queryParams]="{ jobId: row.jobId }" target="_blank"
+                  title="View OCR job log">
+                  <i class="bi bi-eye"></i> Log
+                </a>
+                <a class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
                   [href]="ocrDownloadUrl(row.jobId)" title="Download the OCR job's file">
                   <i class="bi bi-download"></i> Download
                 </a>
