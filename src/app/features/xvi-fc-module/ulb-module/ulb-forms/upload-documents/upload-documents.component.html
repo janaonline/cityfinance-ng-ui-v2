@@ -247,9 +247,11 @@
                             <div class="upload-blocked-note mt-2">
                               <mat-icon class="align-middle">lock_clock</mat-icon>
                               <span>
-                                Too many failed attempts. Uploads for this document are temporarily blocked for
-                                {{ manualReviewCooldownDays }} days. For further details, please email
-                                <a href="mailto:{{ manualReviewSupportEmail }}">{{ manualReviewSupportEmail }}</a>.
+                                This document has failed too many times. You can't re-upload this document for
+                                {{ manualReviewCooldownDays }} days until
+                                {{ doc.uploadBlockedUntil | date: 'd MMM y, h:mm a' }} IST. Email
+                                <a href="mailto:{{ manualReviewSupportEmail }}">{{ manualReviewSupportEmail }}</a>
+                                for help.
                               </span>
                             </div>
                           } @else if (manualReviewAttemptsExhausted(doc)) {

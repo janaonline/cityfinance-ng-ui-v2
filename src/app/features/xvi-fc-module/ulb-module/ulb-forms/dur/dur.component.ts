@@ -10,6 +10,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
@@ -169,6 +170,7 @@ interface UlbDetails {
   selector: 'app-dur',
   standalone: true,
   imports: [
+    DatePipe,
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
@@ -202,6 +204,8 @@ export class DurComponent implements OnInit, OnDestroy {
   readonly durId = signal<string | null>(null);
   readonly currentFormStatusId = signal<number>(1);
   readonly currentFormStatusLabel = signal<string>('Not Started');
+  readonly stateDecision = signal<{ status: 'APPROVED' | 'RETURNED'; note: string | null } | null>(null);
+  readonly mohuaDecision = signal<{ status: 'APPROVED' | 'RETURNED'; note: string | null } | null>(null);
   readonly ulbDetails = signal<UlbDetails | null>(this.loadUlbDetails());
 
   readonly actionGates = signal<readonly ActionGate[]>([]);
@@ -221,6 +225,17 @@ export class DurComponent implements OnInit, OnDestroy {
   readonly lockedBannerMessage = computed(
     () => LOCKED_BANNER_MESSAGE[this.currentFormStatusId()] ?? 'This form is currently locked for review.',
   );
+
+  // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6) — explains
+  // why, even though the form itself is editable again at that point. Mirrors
+  // xvi-fc-bank-account.component.ts's returnNotice exactly.
+  readonly returnNotice = computed(() => {
+    const status = this.currentFormStatusId();
+    if (status !== 4 && status !== 6) return null;
+    const actor = status === 4 ? 'the state' : 'MoHUA';
+    const note = (status === 4 ? this.stateDecision() : this.mohuaDecision())?.note ?? null;
+    return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;
+  });
 
   isAwaitingManualReview(doc: DurDocument): boolean {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
@@ -634,6 +649,8 @@ export class DurComponent implements OnInit, OnDestroy {
         id: string;
         currentFormStatus: number;
         currentFormStatusLabel: string;
+        stateDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
+        mohuaDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
         documents: Array<{
           docId: DurDocId;
           processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
@@ -662,6 +679,8 @@ export class DurComponent implements OnInit, OnDestroy {
       this.durId.set(status.id);
       this.currentFormStatusId.set(status.currentFormStatus);
       this.currentFormStatusLabel.set(status.currentFormStatusLabel);
+      this.stateDecision.set(status.stateDecision);
+      this.mohuaDecision.set(status.mohuaDecision);
 
       this.documents.update((docs) =>
         docs.map((doc) => {
