@@ -1,13 +1,19 @@
 /** One of the XVI-FC forms a state reviews, one at a time, across all its ULBs. */
-export type ReviewFormId = 'AUDITED_STATEMENTS' | 'PROVISIONAL_STATEMENTS' | 'PFMS_BANK_ACCOUNT' | 'SERVICE_LEVEL_BENCHMARKS';
+export type ReviewFormId =
+  | 'AUDITED_STATEMENTS'
+  | 'PROVISIONAL_STATEMENTS'
+  | 'PFMS_BANK_ACCOUNT'
+  | 'SERVICE_LEVEL_BENCHMARKS'
+  | 'DUR';
 
 /** "Select Form" dropdown options. Every option maps to a real backend today — SLB is read-only
- *  (deemed approved on submission, no STATE approve/return workflow), unlike the other three. */
+ *  (deemed approved on submission, no STATE approve/return workflow), unlike the other four. */
 export const FORM_OPTIONS: ReadonlyArray<{ readonly value: ReviewFormId; readonly label: string; readonly live: boolean }> = [
   { value: 'AUDITED_STATEMENTS', label: 'Audited Statements', live: true },
   { value: 'PROVISIONAL_STATEMENTS', label: 'Provisional Statements', live: true },
   { value: 'PFMS_BANK_ACCOUNT', label: 'PFMS Bank Account', live: true },
   { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks', live: true },
+  { value: 'DUR', label: 'Detailed Utilisation Report', live: true },
 ];
 
 /** Maps a live `ReviewFormId` to the Annual Account section the backend understands. */
@@ -22,6 +28,7 @@ export const FORM_TO_TAB: Partial<Record<ReviewFormId, string>> = {
   PROVISIONAL_STATEMENTS: 'unauditedData',
   PFMS_BANK_ACCOUNT: 'PFMS',
   SERVICE_LEVEL_BENCHMARKS: 'SLB',
+  DUR: 'DUR',
 };
 
 /** Reverse of `FORM_TO_TAB` — lets the submissions list restore its "Select Form" dropdown from
@@ -75,6 +82,16 @@ export const SYSTEM_CHECKS_CONTENT: Readonly<Record<ReviewFormId, SystemChecksCo
       'Both values sit inside the permitted range',
     ],
     notChecked: ['Whether the reported actuals are true.'],
+  },
+  DUR: {
+    caption: () => 'Runs when the ULB uploads each document.',
+    checkedAutomatically: [
+      'The file opens, is legible, and is in the prescribed format',
+      'The ULB name and financial year (2025-26) match',
+      'The correct grant type (tied/untied) matches the document uploaded',
+      'A signature and seal are present',
+    ],
+    notChecked: ['The figures inside. No arithmetic, no external record.'],
   },
 };
 
