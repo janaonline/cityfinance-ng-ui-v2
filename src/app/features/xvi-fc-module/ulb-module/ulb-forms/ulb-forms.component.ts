@@ -46,7 +46,7 @@ interface ConditionGroup {
 }
 
 /** Condition ids whose display is driven live by the numeric form_status_id (1–7) rather than the static config above. */
-const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account', 'slb']);
+const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account', 'slb', 'dur']);
 
 type ConditionIconTier = 'pending-neutral' | 'pending-active' | 'success' | 'warning';
 
@@ -167,6 +167,14 @@ const CONDITION_GROUPS: ConditionGroup[] = [
         status: 'pending',
         actionLabel: 'Open',
         route: 'slb',
+      },
+      {
+        id: 'dur',
+        title: 'Detailed Utilisation Report',
+        subtitle: 'Report FY 2025-26 tied and untied grant utilisation, project-by-project',
+        status: 'pending',
+        actionLabel: 'Open',
+        route: 'dur',
       },
     ],
   },
@@ -411,6 +419,7 @@ export class UlbFormsComponent implements OnInit {
     if (condition.id === 'provisional-statement') return status.unauditedData.form_status_id;
     if (condition.id === 'xvi-fc-bank-account') return status.xviFcBankAccount?.form_status_id ?? null;
     if (condition.id === 'slb') return status.serviceLevelBenchmarks?.form_status_id ?? null;
+    if (condition.id === 'dur') return status.detailedUtilisationReport?.form_status_id ?? null;
     return null;
   }
 
