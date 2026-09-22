@@ -9,6 +9,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import FileSaver from 'file-saver';
 import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import {
@@ -149,6 +150,7 @@ export class UlbSubmissionsComponent {
 
   readonly isLoading = signal(false);
   readonly isBulkActionPending = signal(false);
+  readonly isExporting = signal(false);
 
   readonly yearLabel = signal(this.resolveYearLabel());
 
@@ -338,6 +340,28 @@ export class UlbSubmissionsComponent {
       relativeTo: this.route,
       queryParams: section ? { section } : {},
     });
+  }
+
+  /** Exports every ULB's status across every form (Audited, Provisional, PFMS Bank Account, SLB) —
+   *  form-agnostic, always the full unfiltered list regardless of the page's own "Select Form" /
+   *  stat-card / search state. */
+  exportData(): void {
+    if (this.isExporting()) return;
+    this.isExporting.set(true);
+
+    this.ulbSubmissionsService
+      .exportAllForms(this.resolveDesignYearId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ blob, fileName }) => {
+          FileSaver.saveAs(blob, fileName ?? 'ULB-Submissions.xlsx');
+          this.isExporting.set(false);
+        },
+        error: () => {
+          this.isExporting.set(false);
+          this.utilityService.triggerSnackbar('Failed to export ULB submissions.', 'snackbar-danger');
+        },
+      });
   }
 
   private submitBulkReview(action: BulkReviewAction, reason?: string): void {

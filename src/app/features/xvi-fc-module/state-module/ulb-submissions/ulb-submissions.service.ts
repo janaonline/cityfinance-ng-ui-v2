@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { parseContentDispositionFileName, XviFcDownloadedFile } from '../../download-file-name.util';
 import {
   BulkReviewPayload,
   BulkReviewResult,
@@ -15,6 +16,7 @@ import {
 const ANNUAL_ACCOUNT_API = `${environment.api.url2}xvi-fc/annual-account/`;
 const BANK_ACCOUNT_API = `${environment.api.url2}xvi-fc/bank-account/`;
 const SLB_API = `${environment.api.url2}xvi-fc/ulb/slb/`;
+const STATE_API = `${environment.api.url2}xvi-fc/state/`;
 
 // The bank-account module's FORM_STATUS constant uses this exact 1-7 numbering,
 // matching the Annual Account module's form_status_id — one shared status vocabulary.
@@ -120,6 +122,18 @@ export class UlbSubmissionsService {
   bulkReview(payload: BulkReviewPayload): Observable<BulkReviewResult> {
     if (payload.form === 'PFMS_BANK_ACCOUNT') return this.bulkReviewBankAccounts(payload);
     return this.bulkReviewAnnualAccounts(payload);
+  }
+
+  /** Combined "every ULB × every form" CSV for the single "Export Data" button — always the full
+   *  unfiltered ULB list for the design year, independent of the page's own form/bucket/search state. */
+  exportAllForms(designYearId: string): Observable<XviFcDownloadedFile> {
+    const params = new HttpParams().set('designYearId', designYearId);
+    return this.http.get(`${STATE_API}ulb-submissions/export`, { params, responseType: 'blob', observe: 'response' }).pipe(
+      map((response) => ({
+        blob: response.body as Blob,
+        fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
+      })),
+    );
   }
 
   private listAnnualAccounts(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
