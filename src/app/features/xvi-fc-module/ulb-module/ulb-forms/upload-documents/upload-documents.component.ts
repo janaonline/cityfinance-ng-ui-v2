@@ -10,12 +10,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { SUPPRESS_ERROR_TOAST } from '../../../../../core/security/custom-http.interceptor';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -112,6 +114,17 @@ export interface UploadDocument extends UploadDocumentDef {
   manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
   isStale: boolean;
+  // Failed re-upload attempts since ADMIN last returned a manual-review request — survives across
+  // re-uploads (unlike retryValidationCount), capped at 3. The 3rd failure sets uploadBlockedUntil
+  // directly (no need to re-request and get rejected a second time); reset to 0 once this document
+  // passes or is rejected again (starting a fresh 3-attempt window).
+  postRejectionAttemptsUsed: number;
+  // Total times ADMIN has returned a manual-review request on this document — audit/stats only,
+  // no longer gates the cooldown (see postRejectionAttemptsUsed).
+  manualReviewRejectionCount: number;
+  // Set once postRejectionAttemptsUsed reaches maxManualReviewAttempts — both Re-upload and Request
+  // Manual Review are blocked until this passes. Null the rest of the time.
+  uploadBlockedUntil: Date | null;
 }
 
 interface UlbDetails {
@@ -162,6 +175,12 @@ interface BackendStatusDoc {
   stateDecision: BackendDecision | null;
   // ADMIN's verdict on a manual-review request for this document, or null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
+  // Failed re-upload attempts since ADMIN last returned a manual-review request for this document.
+  postRejectionAttemptsUsed: number;
+  // Total times ADMIN has returned a manual-review request on this document.
+  manualReviewRejectionCount: number;
+  // Set after a second manual-review rejection — null the rest of the time.
+  uploadBlockedUntil: string | null;
 }
 
 type AnnualAccountFormStatus =
@@ -234,6 +253,12 @@ const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
 /** Universal upper bound on PDF length for any document on this page (audited or unaudited/provisional). */
 const MAX_PDF_PAGES = 1000;
+/** Mirrors the backend's MAX_POST_REJECTION_ATTEMPTS (annual-account-status-access.util.ts). */
+const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
+/** Mirrors the backend's POST_REJECTION_COOLDOWN_DAYS (annual-account-status-access.util.ts). */
+const MANUAL_REVIEW_COOLDOWN_DAYS = 7;
+/** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
+const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
 /** Pure so it's directly unit-testable without going through pdf.js/checkPdfHasContent. */
 export function getMaxPageCountError(pageCount: number | null, maxPages = MAX_PDF_PAGES): string | null {
@@ -279,6 +304,9 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
+    postRejectionAttemptsUsed: 0,
+    manualReviewRejectionCount: 0,
+    uploadBlockedUntil: null,
   };
 }
 
@@ -286,6 +314,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   selector: 'app-upload-documents',
   standalone: true,
   imports: [
+    DatePipe,
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
@@ -415,6 +444,43 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
+  /** True once this document has failed enough times to offer "Request Manual Review" — a retry
+   *  on the same file, or any re-upload, both count (a re-upload that still fails deserves the
+   *  same offer as a second failed retry). */
+  isEligibleForManualReview(doc: UploadDocument): boolean {
+    return doc.retryValidationCount > 1 || (doc.version ?? 1) > 1;
+  }
+
+  /** True while this document is in its post-rejection cooldown — mirrors the backend's
+   *  isUploadBlocked guard, which blocks re-upload/retry/delete until this timestamp passes. */
+  isUploadBlocked(doc: UploadDocument): boolean {
+    return !!doc.uploadBlockedUntil && doc.uploadBlockedUntil.getTime() > Date.now();
+  }
+
+  /** True once all 3 self-service re-upload attempts since the last rejection are used up. The
+   *  backend sets uploadBlockedUntil in the same write that reaches this count, so in practice
+   *  isUploadBlocked(doc) is already true whenever this is — this only stays relevant as a fallback
+   *  for a document whose cooldown has since expired but hasn't been re-decided yet. */
+  manualReviewAttemptsExhausted(doc: UploadDocument): boolean {
+    return doc.postRejectionAttemptsUsed >= MAX_MANUAL_REVIEW_ATTEMPTS;
+  }
+
+  readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
+  readonly manualReviewCooldownDays = MANUAL_REVIEW_COOLDOWN_DAYS;
+  readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
+
+  /** Whether the "Request Manual Review" button itself should show — covers both the original
+   *  first-time-eligible case and the post-rejection case once self-service attempts are used up.
+   *  Never true while a request is already pending or the document is in its cooldown. */
+  canRequestManualReview(doc: UploadDocument): boolean {
+    if (doc.isManualReviewRequested) return false;
+    if (this.isUploadBlocked(doc)) return false;
+    if (doc.manualReviewDecision?.status === 'RETURNED') {
+      return this.manualReviewAttemptsExhausted(doc);
+    }
+    return this.isEligibleForManualReview(doc);
+  }
+
   /** True once a PROCESSING document has been stuck long enough that polling it further is
    *  pointless — the backend's cron fallback will settle it eventually. Measured from the most
    *  recent retry if there's been one, since a retry restarts the OCR attempt from scratch —
@@ -448,6 +514,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       isStale: doc.isStale,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
       isAwaitingManualReview: this.isAwaitingManualReview(doc),
+      isEligibleForManualReview: this.isEligibleForManualReview(doc),
+      manualReviewAttemptsExhausted: this.manualReviewAttemptsExhausted(doc),
+      isUploadBlocked: this.isUploadBlocked(doc),
     };
   }
 
@@ -459,6 +528,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (this.sectionLocked()) return;
     const doc = this.documents().find((d) => d.id === event.docKey);
     if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+    if (doc && this.isUploadBlocked(doc) && (event.action === 'reupload' || event.action === 'retry' || event.action === 'delete')) return;
 
     switch (event.action) {
       case 'upload':
@@ -599,6 +669,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.pendingDocId = null;
     const existingDoc = this.documents().find((d) => d.id === docId);
     if (existingDoc && this.isAwaitingManualReview(existingDoc)) return;
+    if (existingDoc && this.isUploadBlocked(existingDoc)) return;
     const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
     const validationMsg = await this.checkFileValidity(file, docDef);
@@ -608,7 +679,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
 
     this.documents.update((docs) =>
-      docs.map((d) => (d.id === docId ? { ...emptyDoc(docDef), status: 'uploading', fileName: file.name } : d)),
+      docs.map((d) =>
+        d.id === docId
+          ? {
+              ...emptyDoc(docDef),
+              status: 'uploading',
+              fileName: file.name,
+              // These four must survive a re-upload — they're what tracks the post-rejection
+              // cycle across attempts. emptyDoc() zeroes them out, which is right for a doc
+              // that's never been rejected, but wrong here: wiping them the instant a new file
+              // is picked (before the new OCR run even starts) made the document look like it
+              // had never been rejected, re-offering "Request Manual Review" a turn early.
+              manualReviewDecision: d.manualReviewDecision,
+              postRejectionAttemptsUsed: d.postRejectionAttemptsUsed,
+              manualReviewRejectionCount: d.manualReviewRejectionCount,
+              uploadBlockedUntil: d.uploadBlockedUntil,
+            }
+          : d,
+      ),
     );
 
     try {
@@ -702,6 +790,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const doc = this.documents().find((d) => d.id === docId);
     if (!doc?.uploadId || !this.annualAccountId()) return;
     if (this.isAwaitingManualReview(doc)) return;
+    if (this.isUploadBlocked(doc)) return;
 
     this.documents.update((docs) =>
       docs.map((d) =>
@@ -773,14 +862,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         this.http.post(
           `${API}xvi-fc/annual-account/${accountId}/documents/${docId}/manual-review?section=${section}`,
           {},
+          // Rendered inline (manual-review-error, below the button) instead — showing it a
+          // second time as the global snackbar would be redundant, and the inline copy can show
+          // the backend's actual reason (e.g. "you have 2 attempt(s) left"), not a generic one.
+          { context: new HttpContext().set(SUPPRESS_ERROR_TOAST, true) },
         ),
       );
-      this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true } : d)));
+      this.documents.update((docs) =>
+        docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true, manualReviewDecision: null } : d)),
+      );
     } catch (err) {
       console.error('[manual-review] request failed', err);
+      const message =
+        err instanceof HttpErrorResponse && typeof err.error?.message === 'string'
+          ? err.error.message
+          : 'Failed to request manual review. Please try again.';
       this.documents.update((docs) =>
         docs.map((d) =>
-          d.id === docId ? { ...d, manualReviewError: 'Failed to request manual review. Please try again.' } : d,
+          d.id === docId ? { ...d, manualReviewError: message } : d,
         ),
       );
     }
@@ -1000,13 +1099,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               ? null
               : rawLatestDecision;
 
-          // Same staleness convention for ADMIN's manual-review verdict — a re-upload after the
-          // decision supersedes it, even though the backend doesn't clear it on plain retry.
-          const manualReviewDecision =
-            saved.manualReviewDecision &&
-            new Date(cu.uploadedAt).getTime() > new Date(saved.manualReviewDecision.decidedAt).getTime()
-              ? null
-              : saved.manualReviewDecision;
+          // Unlike stateDecision, ADMIN's manual-review verdict is NOT treated as stale by a later
+          // re-upload — a RETURNED decision deliberately stays live through the whole post-rejection
+          // attempt window (see the schema's own doc comment on DocumentItem.manualReviewDecision in
+          // the backend). The backend clears it back to null itself, either on a genuinely new
+          // manual-review request or once the document passes — trust it as-is here.
+          const manualReviewDecision = saved.manualReviewDecision;
 
           return {
             ...doc,
@@ -1034,6 +1132,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             isStale: saved.isStale,
             latestDecision,
             manualReviewDecision,
+            postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
+            manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
+            uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
           };
         }),
       );
@@ -1112,6 +1213,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                   ? new Date(remote.currentUpload.retryValidationAt)
                   : null,
                 isStale: remote.isStale,
+                // Without these, a FAILED re-upload after a rejection would keep showing whatever
+                // attempt count/decision was true at the last full page load until the ULB
+                // manually refreshes — these four need to update live as OCR settles, same as
+                // everything else in this block.
+                manualReviewDecision: remote.manualReviewDecision,
+                postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
+                manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
+                uploadBlockedUntil: remote.uploadBlockedUntil ? new Date(remote.uploadBlockedUntil) : null,
               };
             }),
           );
