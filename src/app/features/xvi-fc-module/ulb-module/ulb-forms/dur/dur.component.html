@@ -98,7 +98,11 @@
 
                   <div class="dur-upload-grid">
                     @for (doc of documents(); track doc.id) {
-                      <div class="dur-upload-row">
+                      <div
+                        class="dur-upload-row"
+                        [class.dur-upload-row--needs-reupload]="needsReupload(doc)"
+                        [class.dur-upload-row--failed]="doc.status === 'failed'"
+                      >
                         <p class="dur-upload-label mb-2 d-flex align-items-center gap-2">
                           <mat-icon class="dur-upload-label-icon">description</mat-icon>
                           {{ docDef(doc.id).shortLabel }} <span class="text-danger">*</span>
@@ -157,6 +161,15 @@
                                   <mat-icon class="chip-icon">visibility</mat-icon>
                                 </button>
                               </div>
+                              <app-document-action-row
+                                role="ULB"
+                                [sectionStatusId]="currentFormStatusId()"
+                                [gates]="actionGates()"
+                                [doc]="toRuntimeState(doc)"
+                                [readOnly]="!canUpload()"
+                                [renderAs]="{ delete: 'reupload' }"
+                                (actionClicked)="onDocAction($event)"
+                              />
                             </div>
                           </div>
                         }
@@ -171,6 +184,28 @@
                               }
                               <span class="failed-badge ms-1"> <span class="failed-dot">●</span> FAILED </span>
                             </div>
+
+                            @if (doc.failedChecks.length || doc.validationDetails) {
+                              <div class="validation-panel mt-2">
+                                <div class="validation-header d-flex align-items-center gap-2 mb-2">
+                                  <mat-icon class="validation-header-icon">report_problem</mat-icon>
+                                  <span class="validation-header-label">Validation failed — issues found in this document</span>
+                                </div>
+                                @if (doc.validationDetails) {
+                                  <p class="validation-summary mb-2">{{ doc.validationDetails }}</p>
+                                }
+                                @if (doc.failedChecks.length) {
+                                  <ul class="validation-checks mb-0 ps-0">
+                                    @for (check of doc.failedChecks; track check) {
+                                      <li class="validation-check-item d-flex align-items-start gap-2">
+                                        <mat-icon class="check-x-icon flex-shrink-0">cancel</mat-icon>
+                                        <span>{{ check }}</span>
+                                      </li>
+                                    }
+                                  </ul>
+                                }
+                              </div>
+                            }
 
                             @if (doc.manualReviewDecision?.status === 'RETURNED') {
                               <div class="manual-review-returned mt-2">
@@ -227,28 +262,6 @@
                                 (actionClicked)="onDocAction($event)"
                               />
                             </div>
-
-                            @if (doc.failedChecks.length || doc.validationDetails) {
-                              <div class="validation-panel mt-2">
-                                <div class="validation-header d-flex align-items-center gap-2 mb-2">
-                                  <mat-icon class="validation-header-icon">report_problem</mat-icon>
-                                  <span class="validation-header-label">Validation failed — issues found in this document</span>
-                                </div>
-                                @if (doc.validationDetails) {
-                                  <p class="validation-summary mb-2">{{ doc.validationDetails }}</p>
-                                }
-                                @if (doc.failedChecks.length) {
-                                  <ul class="validation-checks mb-0 ps-0">
-                                    @for (check of doc.failedChecks; track check) {
-                                      <li class="validation-check-item d-flex align-items-start gap-2">
-                                        <mat-icon class="check-x-icon flex-shrink-0">cancel</mat-icon>
-                                        <span>{{ check }}</span>
-                                      </li>
-                                    }
-                                  </ul>
-                                }
-                              </div>
-                            }
                           </div>
                         }
 

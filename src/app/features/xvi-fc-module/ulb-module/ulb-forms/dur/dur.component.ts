@@ -274,6 +274,12 @@ export class DurComponent implements OnInit, OnDestroy {
     return docs.some((d) => d.status === 'processing' && !this.isProcessingTimedOut(d));
   }
 
+  /** True for a passed document sitting on a form STATE has returned — the same condition that
+   *  makes resolveDocumentActions() offer "Re-upload" instead of "Delete" (see toRuntimeState). */
+  needsReupload(doc: DurDocument): boolean {
+    return doc.status === 'passed' && this.stateDecision()?.status === 'RETURNED';
+  }
+
   toRuntimeState(doc: DurDocument): DocumentRuntimeState {
     const processingStatusMap: Record<DocumentStatus, DocumentRuntimeState['processingStatus']> = {
       pending: 'NOT_STARTED',
@@ -288,7 +294,11 @@ export class DurComponent implements OnInit, OnDestroy {
       required: true,
       hasFile: doc.fileName !== null,
       processingStatus: processingStatusMap[doc.status],
-      latestDecision: null,
+      // DUR decides the whole form at once, not per document (see stateDecision) — projecting it
+      // onto every document here is what makes the shared resolveDocumentActions() offer
+      // "Re-upload" on a RETURNED form instead of "Delete" (its per-document-undecided fallback —
+      // onDocAction() treats that "Delete" the same as "Re-upload" since DUR always needs a file).
+      latestDecision: this.stateDecision(),
       isStale: false,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
       isAwaitingManualReview: this.isAwaitingManualReview(doc),
@@ -300,12 +310,17 @@ export class DurComponent implements OnInit, OnDestroy {
 
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
     const doc = this.documents().find((d) => d.id === event.docKey);
-    if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
-    if (doc && this.isUploadBlocked(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+    const blockableActions = ['reupload', 'retry', 'delete'];
+    if (doc && this.isAwaitingManualReview(doc) && blockableActions.includes(event.action)) return;
+    if (doc && this.isUploadBlocked(doc) && blockableActions.includes(event.action)) return;
 
     switch (event.action) {
       case 'upload':
       case 'reupload':
+      // DUR has no separate "clear the file" step — the doc slot always needs a document,
+      // so "delete" a passed-but-undecided upload the same as "reupload": pick a new file,
+      // which overwrites the current one in place via confirm-upload.
+      case 'delete':
         if (!this.canUpload()) return;
         this.triggerUpload(event.docKey as DurDocId);
         return;
