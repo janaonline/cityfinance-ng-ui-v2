@@ -177,8 +177,10 @@ export class ManualReviewQueueComponent implements OnInit {
     this.total.update((t) => Math.max(0, t - 1));
   }
 
-  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed. */
-  ocrDownloadUrl(jobId: string): string {
-    return `${environment.api.url3}ocr-validation/jobs/${jobId}/download`;
+  /** Direct download link for the job's source file — a plain URL, no auth header needed. DUR jobs
+   *  live under a distinct vendor path (dur-validation vs ocr-validation — see DurValidationApiService). */
+  ocrDownloadUrl(jobId: string, formType: ManualReviewFormType): string {
+    const prefix = formType === 'DUR' ? 'dur-validation' : 'ocr-validation';
+    return `${environment.api.url3}${prefix}/jobs/${jobId}/download`;
   }
 }
