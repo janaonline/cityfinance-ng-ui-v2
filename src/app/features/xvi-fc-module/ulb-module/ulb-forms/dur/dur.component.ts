@@ -39,6 +39,7 @@ import {
 } from '../upload-documents/ulb-forms-dialog.component';
 import { checkPdfHasContent } from '../../../../../shared/dynamic-form/utils/pdf-blank-check.util';
 import { getMaxPageCountError } from '../upload-documents/upload-documents.component';
+import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 
 // ─── Model types ───────────────────────────────────────────────────────────
 
@@ -140,11 +141,12 @@ function emptyDoc(id: DurDocId): DurDocument {
 // Numeric FORM_STATUS values (src/common/constants/form-status.constants.ts on the backend) in
 // which the ULB may still edit — mirrors canUlbEditForm.
 const ULB_EDITABLE_STATUS_IDS: ReadonlySet<number> = new Set([1, 2, 4, 6]);
-const LOCKED_BANNER_MESSAGE: Readonly<Record<number, string>> = {
+export const LOCKED_BANNER_MESSAGE: Readonly<Record<number, string>> = {
   3: 'This form has been submitted to State DMA and is now locked for review.',
   8: 'This form has been approved by your State DMA and is awaiting MoHUA review.',
   5: 'This form has been approved by the state and is now under review by MoHUA.',
   7: 'This form has been acknowledged by MoHUA. No further changes are needed.',
+  12: 'Your ULB has been exempted from this requirement. No submission is needed.',
 };
 
 const API = `${environment.api.url2}`;
@@ -177,6 +179,7 @@ interface UlbDetails {
     MatProgressBarModule,
     MatTooltipModule,
     DocumentActionRowComponent,
+    ExemptionNoticeComponent,
   ],
   templateUrl: './dur.component.html',
   styleUrls: ['./dur.component.scss', '../upload-documents/upload-documents.component.scss'],
@@ -225,6 +228,10 @@ export class DurComponent implements OnInit, OnDestroy {
   readonly lockedBannerMessage = computed(
     () => LOCKED_BANNER_MESSAGE[this.currentFormStatusId()] ?? 'This form is currently locked for review.',
   );
+
+  /** True once exempted (dynamic year access) — mirrors SlbComponent's own isExempted. DUR has no
+   *  discretionary exemption path (unlike Annual Accounts), so this is the only source. */
+  readonly isExempted = computed(() => this.currentFormStatusId() === 12); // EXEMPTED_ACKNOWLEDGED
 
   // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6) — explains
   // why, even though the form itself is editable again at that point. Mirrors

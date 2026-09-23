@@ -14,14 +14,7 @@
     </p>
   }
 
-  @if (isExempted()) {
-    <app-exemption-notice
-      class="mb-3"
-      [ulbName]="ulbDetails()?.ulbName ?? ''"
-      [title]="exemptionNoticeTitle()"
-      [message]="exemptionNoticeMessage()"
-    />
-  } @else if (sectionLocked()) {
+  @if (sectionLocked() && !isExempted()) {
     <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
       <mat-icon class="locked-banner-icon">lock</mat-icon>
       <span class="body-sm">{{ lockedBannerMessage() }}</span>
@@ -47,6 +40,13 @@
       title="Failed to load document configuration"
       message="We couldn't reach the server. Please check your connection and try again."
       (retry)="retryLoadConfig()"
+    />
+  } @else if (isExempted()) {
+    <app-exemption-notice
+      class="mb-3"
+      [ulbName]="ulbDetails()?.ulbName ?? ''"
+      [title]="exemptionNoticeTitle()"
+      [message]="exemptionNoticeMessage()"
     />
   } @else {
     <p class="upload-description body-sm mb-3">{{ config()?.description }}</p>
