@@ -103,6 +103,20 @@
   border: 1px solid #e2e6ec;
   border-radius: 0.5rem;
   padding: 0.9rem;
+
+  // A passed document sitting on a form STATE has returned needs the ULB's attention even though
+  // its own chip still reads "PASSED" — the card-level highlight is what actually draws the eye.
+  &--needs-reupload {
+    background: #fffbea;
+    border-color: #f2c94c;
+  }
+
+  // Same idea for a failed document: the chip and validation panel already say "FAILED", but
+  // tinting the whole card makes it obvious at a glance that this one needs a re-upload.
+  &--failed {
+    background: #fff1f2;
+    border-color: #fecdd3;
+  }
 }
 
 .dur-upload-label {

@@ -16,6 +16,10 @@ const ACTION_META: Record<'upload' | 'reupload' | 'retry' | 'delete' | 'approve'
   undo: { label: 'Undo', icon: 'bi-arrow-counterclockwise' },
 };
 
+export function actionMeta(action: keyof typeof ACTION_META): { label: string; icon: string } {
+  return ACTION_META[action];
+}
+
 function isGated(
   gates: readonly ActionGate[],
   role: DocumentActionRole,

@@ -527,6 +527,8 @@ export class AnnualAccountReviewComponent {
         return 'passed-badge';
       case 9: // AWAITING_CLAIM_LETTER
         return 'reuploaded-badge';
+      case 12: // EXEMPTED_ACKNOWLEDGED
+        return 'exempted-badge';
       default: // NOT_STARTED, IN_PROGRESS, UNDER_REVIEW_BY_STATE, UNDER_REVIEW_BY_MOHUA
         return 'pending-badge';
     }
