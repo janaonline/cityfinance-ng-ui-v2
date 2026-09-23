@@ -3,11 +3,12 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { ManualReviewQueueService } from '../../manual-review-queue.service';
-import type { AnnualAccountSectionKey } from '../../manual-review-queue.models';
+import type { AnnualAccountSectionKey, ManualReviewFormType } from '../../manual-review-queue.models';
 
 export interface ManualReviewDecisionDialogData {
-  annualAccountId: string;
-  section: AnnualAccountSectionKey;
+  formType: ManualReviewFormType;
+  formId: string;
+  section: AnnualAccountSectionKey | null;
   docId: string;
   ulbName: string | null;
   fileName: string | null;
@@ -52,7 +53,7 @@ export class ManualReviewDecisionDialogComponent {
     this.formError.set(null);
 
     this.service
-      .decide(this.data.annualAccountId, this.data.section, this.data.docId, {
+      .decide(this.data, {
         decision: this.data.decision,
         note: value || undefined,
       })

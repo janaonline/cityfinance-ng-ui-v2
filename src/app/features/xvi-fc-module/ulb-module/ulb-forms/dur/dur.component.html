@@ -1,0 +1,306 @@
+<input #fileInput type="file" accept=".pdf" class="d-none" (change)="onFileSelected($event)" />
+
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+        <div class="upload-documents-page container">
+          <h1 class="page-heading fw-bold mb-1">Detailed Utilisation Report</h1>
+          @if (ulbDetails(); as details) {
+            <p class="page-subtitle text-muted mb-3">{{ details.ulbName }}</p>
+          }
+
+          <p class="upload-description body-sm mb-3">
+            Report the tied and untied grants your ULB received in FY 2025-26 — the final year of the 15th Finance
+            Commission award period — and how they were utilised, project-wise.
+          </p>
+          <p class="body-xs text-muted mb-4">
+            These automated checks use AI and may occasionally produce incorrect results. You can request a manual
+            review at any time.
+          </p>
+
+          @if (sectionLocked()) {
+            <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+              <mat-icon class="locked-banner-icon">lock</mat-icon>
+              <span class="body-sm">{{ lockedBannerMessage() }}</span>
+            </div>
+          }
+
+          @if (returnNotice(); as notice) {
+            <div class="doc-returned-note mb-3">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ notice }}</span>
+            </div>
+          }
+
+          @if (statusError()) {
+            <div class="dur-status-error-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
+              <mat-icon class="align-middle">error_outline</mat-icon>
+              <span class="body-sm flex-grow-1">Something went wrong. Please try again later.</span>
+              <button mat-stroked-button type="button" (click)="retryLoadStatus()">Retry</button>
+            </div>
+          }
+
+          <p class="dur-section-eyebrow mb-2">File the Detailed Utilisation Report</p>
+
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body dur-wizard">
+              <p class="body-sm text-muted mb-3">
+                The tied and untied grants must be reported on separate templates. Download both, fill them in from
+                your ULB's records (grant received, expenditure, and project-wise utilisation), get them signed, and
+                upload both completed forms below. The system checks each form as soon as you upload it.
+              </p>
+
+              <!-- ── Step 1: download templates ─────────────────────────────── -->
+              <div class="dur-step dur-step--highlight d-flex gap-3 mb-3">
+                <div class="dur-step-badge">1</div>
+                <div class="flex-grow-1">
+                  <p class="dur-step-title mb-1">Download the DUR templates for FY 2026-27</p>
+                  <p class="dur-step-body mb-2">
+                    Use only the prescribed templates. Reports on a different format will not be accepted.
+                  </p>
+                  <div class="d-flex flex-wrap gap-2">
+                    @for (docId of durDocIds; track docId) {
+                      <a
+                        mat-stroked-button
+                        class="dur-template-btn"
+                        [href]="docDef(docId).templateUrl || null"
+                        [class.disabled]="!docDef(docId).templateUrl"
+                        download
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        <mat-icon>download</mat-icon> {{ docDef(docId).templateLabel }}
+                      </a>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Step 2: fill, sign, save as PDF ─────────────────────────── -->
+              <div class="dur-step d-flex gap-3 mb-3">
+                <div class="dur-step-badge dur-step-badge--neutral">2</div>
+                <div class="flex-grow-1">
+                  <p class="dur-step-title mb-1">Fill it in, get it signed, and save as PDF</p>
+                  <p class="dur-step-body mb-0">
+                    Complete every applicable item on both templates from your ULB's records, then have them signed
+                    by the Commissioner or the appropriate Authority in the ULB. Save or scan each signed form as a
+                    PDF before you upload it — the portal accepts PDF only.
+                  </p>
+                </div>
+              </div>
+
+              <!-- ── Step 3: upload ───────────────────────────────────────────── -->
+              <div class="dur-step d-flex gap-3">
+                <div class="dur-step-badge dur-step-badge--neutral">3</div>
+                <div class="flex-grow-1">
+                  <p class="dur-step-title mb-2">Upload the completed forms <span class="text-danger">*</span></p>
+
+                  <div class="dur-upload-grid">
+                    @for (doc of documents(); track doc.id) {
+                      <div
+                        class="dur-upload-row"
+                        [class.dur-upload-row--needs-reupload]="needsReupload(doc)"
+                        [class.dur-upload-row--failed]="doc.status === 'failed'"
+                      >
+                        <p class="dur-upload-label mb-2 d-flex align-items-center gap-2">
+                          <mat-icon class="dur-upload-label-icon">description</mat-icon>
+                          {{ docDef(doc.id).shortLabel }} <span class="text-danger">*</span>
+                        </p>
+
+                        @if (doc.status === 'pending') {
+                          <app-document-action-row
+                            role="ULB"
+                            [sectionStatusId]="currentFormStatusId()"
+                            [gates]="actionGates()"
+                            [doc]="toRuntimeState(doc)"
+                            [readOnly]="!canUpload()"
+                            (actionClicked)="onDocAction($event)"
+                          />
+                        }
+
+                        @if (doc.status === 'uploading') {
+                          <div class="file-chip file-chip--uploading d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                            <mat-progress-bar mode="indeterminate" class="doc-upload-progress flex-grow-1"></mat-progress-bar>
+                            <span class="doc-filename text-muted">Uploading…</span>
+                          </div>
+                        }
+
+                        @if (doc.status === 'processing') {
+                          <div class="uploaded-block">
+                            <div class="file-chip file-chip--processing d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                              <mat-progress-bar mode="indeterminate" class="doc-ocr-progress flex-grow-0" style="width: 60px"></mat-progress-bar>
+                              <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
+                              @if (doc.sizeKb) {
+                                <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
+                              }
+                              @if (doc.versionLabel) {
+                                <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                              }
+                              <span class="processing-badge ms-1"> <span class="processing-dot">●</span> VERIFYING </span>
+                            </div>
+                            @if (doc.ocrProgressStep) {
+                              <p class="uploader-meta body-xs text-muted mt-1 mb-0">{{ doc.ocrProgressStep }}</p>
+                            }
+                          </div>
+                        }
+
+                        @if (doc.status === 'passed') {
+                          <div class="uploaded-block">
+                            <div class="d-flex align-items-center gap-2">
+                              <div class="file-chip file-chip--passed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                                <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
+                                @if (doc.sizeKb) {
+                                  <span class="chip-meta">· {{ formatFileSize(doc.sizeKb) }}</span>
+                                }
+                                @if (doc.versionLabel) {
+                                  <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                                }
+                                <span class="passed-badge ms-1"> <span class="passed-dot">●</span> PASSED </span>
+                                <button mat-icon-button class="chip-icon-btn" type="button" matTooltip="Preview document" (click)="previewFile(doc)">
+                                  <mat-icon class="chip-icon">visibility</mat-icon>
+                                </button>
+                              </div>
+                              <app-document-action-row
+                                role="ULB"
+                                [sectionStatusId]="currentFormStatusId()"
+                                [gates]="actionGates()"
+                                [doc]="toRuntimeState(doc)"
+                                [readOnly]="!canUpload()"
+                                [renderAs]="{ delete: 'reupload' }"
+                                (actionClicked)="onDocAction($event)"
+                              />
+                            </div>
+                          </div>
+                        }
+
+                        @if (doc.status === 'failed') {
+                          <div class="uploaded-block">
+                            <div class="file-chip file-chip--failed d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                              <mat-icon class="chip-fail-icon">error_outline</mat-icon>
+                              <span class="chip-filename text-truncate" [matTooltip]="doc.fileName ?? ''">{{ doc.fileName }}</span>
+                              @if (doc.versionLabel) {
+                                <span class="chip-meta">· {{ doc.versionLabel }}</span>
+                              }
+                              <span class="failed-badge ms-1"> <span class="failed-dot">●</span> FAILED </span>
+                            </div>
+
+                            @if (doc.failedChecks.length || doc.validationDetails) {
+                              <div class="validation-panel mt-2">
+                                <div class="validation-header d-flex align-items-center gap-2 mb-2">
+                                  <mat-icon class="validation-header-icon">report_problem</mat-icon>
+                                  <span class="validation-header-label">Validation failed — issues found in this document</span>
+                                </div>
+                                @if (doc.validationDetails) {
+                                  <p class="validation-summary mb-2">{{ doc.validationDetails }}</p>
+                                }
+                                @if (doc.failedChecks.length) {
+                                  <ul class="validation-checks mb-0 ps-0">
+                                    @for (check of doc.failedChecks; track check) {
+                                      <li class="validation-check-item d-flex align-items-start gap-2">
+                                        <mat-icon class="check-x-icon flex-shrink-0">cancel</mat-icon>
+                                        <span>{{ check }}</span>
+                                      </li>
+                                    }
+                                  </ul>
+                                }
+                              </div>
+                            }
+
+                            @if (doc.manualReviewDecision?.status === 'RETURNED') {
+                              <div class="manual-review-returned mt-2">
+                                <mat-icon class="align-middle">error_outline</mat-icon>
+                                Manual review declined: {{ doc.manualReviewDecision?.note ?? 'No reason given.' }}
+                              </div>
+                              @if (isUploadBlocked(doc)) {
+                                <div class="upload-blocked-note mt-2">
+                                  <mat-icon class="align-middle">lock_clock</mat-icon>
+                                  <span>
+                                    This document has failed too many times. You can't re-upload this document for
+                                    {{ manualReviewCooldownDays }} days until
+                                    {{ doc.uploadBlockedUntil | date: 'd MMM y, h:mm a' }} IST. Email
+                                    <a href="mailto:{{ manualReviewSupportEmail }}">{{ manualReviewSupportEmail }}</a>
+                                    for help.
+                                  </span>
+                                </div>
+                              } @else if (manualReviewAttemptsExhausted(doc)) {
+                                <p class="attempts-remaining-note mt-1 mb-0">
+                                  You've used all {{ maxManualReviewAttempts }} attempts. Request another manual review to continue.
+                                </p>
+                              } @else {
+                                <p class="attempts-remaining-note mt-1 mb-0">
+                                  {{ maxManualReviewAttempts - doc.postRejectionAttemptsUsed }} of {{ maxManualReviewAttempts }} attempts
+                                  remaining. After that, uploads for this document will be temporarily blocked for
+                                  {{ manualReviewCooldownDays }} days.
+                                </p>
+                              }
+                            } @else if (doc.isManualReviewRequested) {
+                              <div class="manual-review-note mt-2">
+                                <mat-icon class="align-middle">support_agent</mat-icon>
+                                Manual review requested — our team will review this document within 48 hours.
+                              </div>
+                            }
+
+                            @if (!sectionLocked() && canRequestManualReview(doc)) {
+                              <div class="d-flex mt-2">
+                                <button mat-stroked-button class="manual-review-btn flex-grow-1" type="button" (click)="requestManualReview(doc.id)">
+                                  <mat-icon>support_agent</mat-icon> Request Manual Review
+                                </button>
+                              </div>
+                            }
+                            @if (doc.manualReviewError) {
+                              <p class="manual-review-error mt-1 mb-0">{{ doc.manualReviewError }}</p>
+                            }
+
+                            <div class="d-flex gap-2 mt-2">
+                              <app-document-action-row
+                                role="ULB"
+                                [sectionStatusId]="currentFormStatusId()"
+                                [gates]="actionGates()"
+                                [doc]="toRuntimeState(doc)"
+                                [readOnly]="!canUpload()"
+                                (actionClicked)="onDocAction($event)"
+                              />
+                            </div>
+                          </div>
+                        }
+
+                        @if (doc.status === 'error') {
+                          <div class="file-chip file-chip--error d-flex align-items-center gap-2 px-3 py-2 rounded-2">
+                            <mat-icon class="doc-status-icon text-danger">{{ doc.validationError ? 'info_outline' : 'error_outline' }}</mat-icon>
+                            <span class="doc-filename text-danger">{{ doc.validationError ?? 'Upload failed. Try again.' }}</span>
+                          </div>
+                          <app-document-action-row
+                            role="ULB"
+                            [sectionStatusId]="currentFormStatusId()"
+                            [gates]="actionGates()"
+                            [doc]="toRuntimeState(doc)"
+                            [readOnly]="!canUpload()"
+                            (actionClicked)="onDocAction($event)"
+                          />
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <p class="body-xs text-muted mt-3 mb-0">Accepted format: PDF only · Max 5 MB each</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-footer d-flex justify-content-end align-items-center gap-2 border-top pt-3">
+            @if (!sectionLocked()) {
+              <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+            }
+            @if (canSubmit() && !sectionLocked()) {
+              <button mat-flat-button class="confirm-btn" type="button" [disabled]="!canConfirmSubmit()" (click)="submitToState()">
+                Submit to State DMA
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
