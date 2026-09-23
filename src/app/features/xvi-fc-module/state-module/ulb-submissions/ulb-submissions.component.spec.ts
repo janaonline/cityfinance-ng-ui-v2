@@ -108,6 +108,22 @@ describe('UlbSubmissionsComponent', () => {
     expect(query.status).toEqual(['EXEMPTED']);
   });
 
+  it('enables the Exemption Status card for DUR (automatic exemption applies, same mechanism as SLB)', () => {
+    component.filterForm.controls.form.setValue('DUR');
+    fixture.detectChanges();
+
+    expect(component.isBucketDisabled('EXEMPTED')).toBeFalse();
+  });
+
+  it('buildQuery() sends only EXEMPTED for the EXEMPTED bucket when DUR is selected', () => {
+    component.filterForm.controls.form.setValue('DUR');
+    component.selectedBucketKey.set('EXEMPTED');
+
+    const query = (component as unknown as { buildQuery(): { status: readonly string[] | null } }).buildQuery();
+
+    expect(query.status).toEqual(['EXEMPTED']);
+  });
+
   it('selectBucket() is a no-op for a disabled bucket', () => {
     component.filterForm.controls.form.setValue('SERVICE_LEVEL_BENCHMARKS');
     fixture.detectChanges();

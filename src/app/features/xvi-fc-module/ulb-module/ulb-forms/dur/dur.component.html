@@ -19,7 +19,7 @@
             review at any time.
           </p>
 
-          @if (sectionLocked()) {
+          @if (sectionLocked() && !isExempted()) {
             <div class="section-locked-banner d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-3">
               <mat-icon class="locked-banner-icon">lock</mat-icon>
               <span class="body-sm">{{ lockedBannerMessage() }}</span>
@@ -41,6 +41,15 @@
             </div>
           }
 
+          @if (isExempted()) {
+            <app-exemption-notice
+              class="mb-3"
+              [ulbName]="ulbDetails()?.ulbName ?? ''"
+              title="Exempted from Detailed Utilisation Report"
+              message="your ULB is newly constituted and is automatically exempted from the Detailed Utilisation
+                Report requirement. No submission is required for this form."
+            />
+          } @else {
           <p class="dur-section-eyebrow mb-2">File the Detailed Utilisation Report</p>
 
           <div class="card border-0 shadow-sm mb-4">
@@ -299,6 +308,7 @@
               </button>
             }
           </div>
+          }
         </div>
       </div>
     </div>
