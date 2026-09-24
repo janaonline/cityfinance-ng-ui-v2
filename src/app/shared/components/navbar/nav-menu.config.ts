@@ -347,6 +347,22 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
         path: '/ocr/eval-run-compare',
         apps: ['v2'],
       },
+      {
+        id: 'ocr.dur',
+        order: 60,
+        label: 'DUR Validation',
+        hostApp: 'v2',
+        path: '/ocr/dur',
+        apps: ['v2'],
+      },
+      {
+        id: 'ocr.dur-list',
+        order: 70,
+        label: 'DUR Validation List',
+        hostApp: 'v2',
+        path: '/ocr/dur-list',
+        apps: ['v2'],
+      },
     ],
   },
 ];

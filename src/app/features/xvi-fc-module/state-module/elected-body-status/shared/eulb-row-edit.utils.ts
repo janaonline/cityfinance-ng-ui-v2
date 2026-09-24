@@ -118,14 +118,14 @@ export function buildEulbRowCellErrorViewModel(
   return { cellHasError, cellErrorText };
 }
 
-export function buildEulbRowViewModel<TRow extends { readonly errors?: readonly EulbRowCellError[] }>(
+export function buildEulbRowViewModel<TRow extends { readonly validationErrors?: readonly EulbRowCellError[] }>(
   row: TRow,
 ): EulbRowViewModel<TRow> {
-  return { row, ...buildEulbRowCellErrorViewModel(row.errors) };
+  return { row, ...buildEulbRowCellErrorViewModel(row.validationErrors) };
 }
 
 export function buildEulbModifiedRowViewModel<
-  TRow extends { readonly _id: string; readonly errors?: readonly EulbRowCellError[] },
+  TRow extends { readonly _id: string; readonly validationErrors?: readonly EulbRowCellError[] },
 >(row: TRow, changedRows: ReadonlyMap<string, unknown>): EulbModifiedRowViewModel<TRow> {
   return { ...buildEulbRowViewModel(row), isModified: changedRows.has(row._id) };
 }

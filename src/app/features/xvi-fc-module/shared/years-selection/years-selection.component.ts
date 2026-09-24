@@ -14,6 +14,8 @@ type ProfileRole = 'state' | 'ulb' | 'mohua';
 interface YearItem {
   _id: string;
   year: string;
+  /** xvi-fc dynamic year access — backend returns all cycle years; ULB eligibility is indicated per item (e.g., years before a new ULB’s startYear are marked ineligible). */
+  isEnabled: boolean;
 }
 
 interface DocumentYearEntry {
@@ -82,8 +84,10 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
   private yearItems: YearItem[] = [];
 
   readonly isLoading = signal(true);
-  readonly activeYear = signal<string>('');
-  readonly upcomingYears = signal<string[]>([]);
+  /** Selectable tiles — every year the backend tagged `enabled: true` for this caller. */
+  readonly enabledYears = signal<string[]>([]);
+  /** Locked tiles — every year tagged `enabled: false` (e.g. before a new ULB's startYear). */
+  readonly disabledYears = signal<string[]>([]);
 
   selectedYear = signal<string>('');
 
@@ -112,10 +116,10 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
         const items: YearItem[] = Array.isArray(response) ? response : (response?.data ?? []);
         if (items.length > 0) {
           this.yearItems = items;
-          const [first, ...rest] = items;
-          this.activeYear.set(first.year);
-          this.upcomingYears.set(rest.map((y) => y.year));
-          this.selectedYear.set(first.year);
+          const enabled = items.filter((y) => y.isEnabled).map((y) => y.year);
+          this.enabledYears.set(enabled);
+          this.disabledYears.set(items.filter((y) => !y.isEnabled).map((y) => y.year));
+          if (enabled.length > 0) this.selectedYear.set(enabled[0]);
         }
         this.isLoading.set(false);
       },

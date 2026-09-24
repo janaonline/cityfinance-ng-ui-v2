@@ -26,7 +26,7 @@ import type {
 } from '../../../../../shared/components/document-action-row/document-action-row.types';
 
 type SectionKey = 'auditedData' | 'unauditedData';
-type TabKey = SectionKey | 'PFMS' | 'SLB';
+type TabKey = SectionKey | 'PFMS' | 'SLB' | 'DUR';
 type Decision = 'APPROVED' | 'RETURNED';
 
 interface DecisionEntry {
@@ -142,6 +142,62 @@ interface PfmsLogDisplayEntry extends PfmsLogEntry {
   title: string;
 }
 
+interface DurDocumentInfo {
+  docId: string;
+  label: string;
+  processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+  fileName: string | null;
+  fileUrl: string | null;
+  sizeKb: number | null;
+  uploadedAt: Date | null;
+}
+
+interface DurData {
+  id: string;
+  currentFormStatus: number;
+  currentFormStatusLabel: string;
+  declaredAt: string | null;
+  stateDecision: DecisionEntry | null;
+  mohuaDecision: DecisionEntry | null;
+  permissions: { canReview: boolean; canApprove: boolean; canUndoApproval: boolean };
+  documents: DurDocumentInfo[];
+}
+
+/** Raw shape returned by GET xvi-fc/dur/by-ulb/:ulbId/:designYearId — same endpoint the ULB's own
+ *  page uses; STATE gets the same response shape (validateViewAccess already allows STATE scope). */
+interface DurApiResponse {
+  id: string;
+  currentFormStatus: number;
+  currentFormStatusLabel: string;
+  declaredAt: string | null;
+  stateDecision: DecisionEntry | null;
+  mohuaDecision: DecisionEntry | null;
+  permissions: { canReview: boolean; canApprove: boolean; canUndoApproval: boolean };
+  documents: Array<{
+    docId: string;
+    label: string;
+    processingStatus: 'NOT_STARTED' | 'PROCESSING' | 'PASSED' | 'FAILED';
+    currentUpload: {
+      file: { originalName: string; sizeKb: number; fileUrl?: string | null };
+      uploadedAt: string;
+    } | null;
+  }>;
+}
+
+interface DurLogEntry {
+  action: 'SUBMITTED' | 'APPROVED' | 'RETURNED' | 'UNDO';
+  toStatus: number;
+  toStatusLabel: string;
+  actorStage: 'ULB' | 'STATE' | 'MOHUA';
+  actorRole: string;
+  note: string | null;
+  createdAt: string;
+}
+
+interface DurLogDisplayEntry extends DurLogEntry {
+  title: string;
+}
+
 interface AnnualLogEntry {
   section: SectionKey;
   action: 'SUBMITTED' | 'APPROVED' | 'RETURNED';
@@ -187,6 +243,7 @@ const NOT_STARTED_SECTION: StatusSection = {
 
 const API_ANNUAL = `${environment.api.url2}xvi-fc/annual-account/`;
 const API_BANK = `${environment.api.url2}xvi-fc/bank-account/`;
+const API_DUR = `${environment.api.url2}xvi-fc/dur/`;
 
 function unwrap<T>(response: unknown): T {
   const r = response as Record<string, unknown>;
@@ -247,6 +304,7 @@ export class AnnualAccountReviewComponent {
     { key: 'unauditedData', label: 'Provisional', icon: 'file-earmark-spreadsheet' },
     { key: 'PFMS', label: 'PFMS', icon: 'bank' },
     { key: 'SLB', label: 'Service Level Benchmarks', icon: 'speedometer2' },
+    { key: 'DUR', label: 'Detailed Utilisation Report', icon: 'file-earmark-check' },
   ];
 
   readonly activeSection = signal<TabKey>(this.resolveInitialSection());
@@ -280,11 +338,34 @@ export class AnnualAccountReviewComponent {
     }));
   });
 
+  readonly durData = signal<DurData | null>(null);
+  readonly durLoaded = signal(false);
+
+  readonly durLogs = signal<DurLogEntry[]>([]);
+  readonly durLogsLoaded = signal(false);
+  readonly durLogsLoading = signal(false);
+  readonly durLogsExpanded = signal(false);
+
+  // Same "earliest SUBMITTED = original, rest = resubmission" rule as the PFMS history.
+  readonly durLogsDisplay = computed<DurLogDisplayEntry[]>(() => {
+    const logs = this.durLogs();
+    const firstSubmissionIndex = logs.map((log) => log.action).lastIndexOf('SUBMITTED');
+    return logs.map((log, index) => ({
+      ...log,
+      title:
+        log.action === 'SUBMITTED'
+          ? index === firstSubmissionIndex
+            ? 'ULB SUBMITTED'
+            : 'ULB RESUBMITTED'
+          : `${log.actorStage} ${log.action}`,
+    }));
+  });
+
   readonly annualLogsBySection = signal<Partial<Record<SectionKey, SectionLogsState>>>({});
 
   readonly currentAnnualLogsState = computed<SectionLogsState>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS' || key === 'SLB') return EMPTY_SECTION_LOGS_STATE;
+    if (key === 'PFMS' || key === 'SLB' || key === 'DUR') return EMPTY_SECTION_LOGS_STATE;
     return this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
   });
 
@@ -313,7 +394,7 @@ export class AnnualAccountReviewComponent {
 
   readonly currentSection = computed(() => {
     const key = this.activeSection();
-    if (key === 'PFMS' || key === 'SLB') return null;
+    if (key === 'PFMS' || key === 'SLB' || key === 'DUR') return null;
     return this.statusData()?.[key] ?? null;
   });
   readonly ulbName = computed(() => this.statusData()?.ulbName ?? this.ulbNameFallback ?? '');
@@ -321,7 +402,7 @@ export class AnnualAccountReviewComponent {
 
   readonly rows = computed<ReviewDocRow[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS' || key === 'SLB') return [];
+    if (key === 'PFMS' || key === 'SLB' || key === 'DUR') return [];
 
     const section = this.currentSection();
     const config = this.configBySection()[key];
@@ -391,7 +472,7 @@ export class AnnualAccountReviewComponent {
   readonly sectionStatusId = computed(() => this.currentSection()?.form_status_id ?? 0);
   readonly actionGates = computed<readonly ActionGate[]>(() => {
     const key = this.activeSection();
-    if (key === 'PFMS' || key === 'SLB') return [];
+    if (key === 'PFMS' || key === 'SLB' || key === 'DUR') return [];
     return this.configBySection()[key]?.actionGates ?? [];
   });
 
@@ -431,6 +512,43 @@ export class AnnualAccountReviewComponent {
     () => !!this.bankAccountData()?.stateDecision && this.pfmsEffectiveStateDecision() === null,
   );
 
+  readonly canReviewDur = computed(() => this.durData()?.permissions.canReview ?? false);
+  readonly canApproveDur = computed(() => this.durData()?.permissions.canApprove ?? false);
+  readonly canUndoApprovalDur = computed(() => this.durData()?.permissions.canUndoApproval ?? false);
+
+  /** Status-to-badge-color for the DUR header — same numeric FORM_STATUS scheme as PFMS. */
+  readonly durStatusBadgeClass = computed(() => {
+    switch (this.durData()?.currentFormStatus) {
+      case 4: // RETURNED_BY_STATE
+      case 6: // RETURNED_BY_MOHUA
+        return 'failed-badge';
+      case 8: // APPROVED_BY_STATE
+      case 7: // SUBMISSION_ACKNOWLEDGED_BY_MOHUA
+        return 'passed-badge';
+      case 9: // AWAITING_CLAIM_LETTER
+        return 'reuploaded-badge';
+      case 12: // EXEMPTED_ACKNOWLEDGED
+        return 'exempted-badge';
+      default: // NOT_STARTED, IN_PROGRESS, UNDER_REVIEW_BY_STATE, UNDER_REVIEW_BY_MOHUA
+        return 'pending-badge';
+    }
+  });
+
+  // Same staleness rule as pfmsEffectiveStateDecision — a stateDecision only counts against the
+  // documents that existed when it was made; declaredAt moves forward on every resubmission.
+  readonly durEffectiveStateDecision = computed(() => {
+    const data = this.durData();
+    const decision = data?.stateDecision;
+    if (!decision) return null;
+    if (!data?.declaredAt) return decision;
+    const isStale = new Date(data.declaredAt).getTime() > new Date(decision.decidedAt).getTime();
+    return isStale ? null : decision;
+  });
+
+  readonly durWasReuploaded = computed(
+    () => !!this.durData()?.stateDecision && this.durEffectiveStateDecision() === null,
+  );
+
   readonly returnNoteMinLength = RETURN_NOTE_MIN_LENGTH;
   readonly returnNoteMaxLength = RETURN_NOTE_MAX_LENGTH;
   readonly historySkeletonRows = HISTORY_SKELETON_ROWS;
@@ -451,6 +569,10 @@ export class AnnualAccountReviewComponent {
     }
     if (tab === 'SLB') {
       if (!this.slbDataLoaded()) await this.loadSlbData();
+      return;
+    }
+    if (tab === 'DUR') {
+      if (!this.durLoaded()) await this.loadDur();
       return;
     }
     if (!this.configBySection()[tab]) {
@@ -654,7 +776,7 @@ export class AnnualAccountReviewComponent {
   async undoSectionApproval(): Promise<void> {
     const id = this.statusData()?.annualAccountId;
     const section = this.activeSection();
-    if (!id || section === 'PFMS') return;
+    if (!id || section === 'PFMS' || section === 'DUR') return;
 
     const confirmed = await firstValueFrom(
       this.confirmDialogService.confirm(
@@ -790,9 +912,125 @@ export class AnnualAccountReviewComponent {
     }
   }
 
+  async approveDur(): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Approve this DUR form?',
+          message: 'You can still undo this from here until you generate the claim letter.',
+          confirmText: 'Yes, approve',
+          confirmButtonColor: 'primary',
+          icon: 'bi-check-circle-fill',
+        },
+        this.dialogConfig,
+      ),
+    );
+    if (!confirmed) return;
+    await this.submitDurDecision('APPROVED', undefined);
+  }
+
+  async undoDurApproval(): Promise<void> {
+    const id = this.durData()?.id;
+    if (!id) return;
+
+    const confirmed = await firstValueFrom(
+      this.confirmDialogService.confirm(
+        {
+          title: 'Undo this approval?',
+          message: 'This will move the form back to Under Review by State, so you can re-decide it.',
+          confirmText: 'Yes, undo',
+          confirmButtonColor: 'warn',
+          icon: 'bi-arrow-counterclockwise',
+        },
+        this.dialogConfig,
+      ),
+    );
+    if (!confirmed) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_DUR}${id}/undo-approval`, {}));
+      this.utilityService.triggerSnackbar('Approval undone.');
+      await this.loadDur();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
+  }
+
+  /** Inline return-reason panel state for the DUR tab — same slide-open pattern as PFMS/per-document returns. */
+  readonly durReturning = signal(false);
+  readonly durReturnNoteDraft = signal('');
+
+  startDurReturn(): void {
+    this.durReturning.set(true);
+    this.durReturnNoteDraft.set('');
+  }
+
+  cancelDurReturn(): void {
+    this.durReturning.set(false);
+    this.durReturnNoteDraft.set('');
+  }
+
+  async confirmDurReturn(): Promise<void> {
+    const note = this.durReturnNoteDraft().trim();
+    if (!this.isReturnNoteValid(note)) return;
+    await this.submitDurDecision('RETURNED', note);
+    this.durReturning.set(false);
+    this.durReturnNoteDraft.set('');
+  }
+
+  private async submitDurDecision(decision: Decision, note: string | undefined): Promise<void> {
+    const id = this.durData()?.id;
+    if (!id) return;
+
+    this.isDeciding.set(true);
+    try {
+      await firstValueFrom(this.http.post<unknown>(`${API_DUR}${id}/decision`, { decision, note }));
+      this.utilityService.triggerSnackbar(decision === 'APPROVED' ? 'DUR form approved.' : 'DUR form returned.');
+      await this.loadDur();
+    } catch {
+      this.utilityService.triggerSnackbar('Something went wrong. Please try again.', 'snackbar-danger');
+    } finally {
+      this.isDeciding.set(false);
+    }
+  }
+
+  previewDurDocument(doc: DurDocumentInfo): void {
+    if (!doc.fileUrl) {
+      this.utilityService.triggerSnackbar('Unable to open document preview.', 'snackbar-danger');
+      return;
+    }
+    window.open(doc.fileUrl, '_blank', 'noopener');
+  }
+
+  async toggleDurHistory(): Promise<void> {
+    this.durLogsExpanded.update((v) => !v);
+    if (this.durLogsExpanded() && !this.durLogsLoaded()) {
+      await this.loadDurLogs();
+    }
+  }
+
+  private async loadDurLogs(): Promise<void> {
+    const id = this.durData()?.id;
+    if (!id) return;
+
+    this.durLogsLoading.set(true);
+    try {
+      const result = await firstValueFrom(this.http.get<unknown>(`${API_DUR}${id}/logs`));
+      this.durLogs.set(unwrap<DurLogEntry[]>(result));
+      this.durLogsLoaded.set(true);
+    } catch {
+      this.utilityService.triggerSnackbar('Failed to load DUR decision history.', 'snackbar-danger');
+    } finally {
+      this.durLogsLoading.set(false);
+    }
+  }
+
   async toggleAnnualHistory(): Promise<void> {
     const key = this.activeSection();
-    if (key === 'PFMS' || key === 'SLB') return;
+    if (key === 'PFMS' || key === 'SLB' || key === 'DUR') return;
 
     const current = this.annualLogsBySection()[key] ?? EMPTY_SECTION_LOGS_STATE;
     const expanded = !current.expanded;
@@ -923,6 +1161,7 @@ export class AnnualAccountReviewComponent {
       const key = this.activeSection();
       if (key === 'PFMS') await this.loadBankAccount();
       else if (key === 'SLB') await this.loadSlbData();
+      else if (key === 'DUR') await this.loadDur();
       else await this.loadConfigForSection(key);
     } catch {
       this.loadError.set(true);
@@ -945,6 +1184,44 @@ export class AnnualAccountReviewComponent {
       this.utilityService.triggerSnackbar('Failed to load PFMS bank account details.', 'snackbar-danger');
     } finally {
       this.bankAccountLoaded.set(true);
+    }
+  }
+
+  /** Reuses the exact same endpoint the ULB's own DUR page calls — validateViewAccess already
+   *  allows STATE scope (matching state), so no separate STATE-facing detail endpoint is needed. */
+  private async loadDur(): Promise<void> {
+    const designYearId = this.resolveDesignYearId();
+    if (!designYearId) return;
+
+    try {
+      const result = await firstValueFrom(this.http.get<unknown>(`${API_DUR}by-ulb/${this.ulbId}/${designYearId}`));
+      const raw = unwrap<DurApiResponse | null>(result);
+      this.durData.set(
+        raw
+          ? {
+              id: raw.id,
+              currentFormStatus: raw.currentFormStatus,
+              currentFormStatusLabel: raw.currentFormStatusLabel,
+              declaredAt: raw.declaredAt,
+              stateDecision: raw.stateDecision,
+              mohuaDecision: raw.mohuaDecision,
+              permissions: raw.permissions,
+              documents: raw.documents.map((d) => ({
+                docId: d.docId,
+                label: d.label,
+                processingStatus: d.processingStatus,
+                fileName: d.currentUpload?.file.originalName ?? null,
+                fileUrl: d.currentUpload?.file.fileUrl ?? null,
+                sizeKb: d.currentUpload?.file.sizeKb ?? null,
+                uploadedAt: d.currentUpload?.uploadedAt ? new Date(d.currentUpload.uploadedAt) : null,
+              })),
+            }
+          : null,
+      );
+    } catch {
+      this.utilityService.triggerSnackbar('Failed to load Detailed Utilisation Report details.', 'snackbar-danger');
+    } finally {
+      this.durLoaded.set(true);
     }
   }
 
@@ -993,7 +1270,8 @@ export class AnnualAccountReviewComponent {
 
   private resolveInitialSection(): TabKey {
     const requested = this.route.snapshot.queryParamMap.get('section');
-    if (requested === 'unauditedData' || requested === 'PFMS' || requested === 'SLB') return requested;
+    if (requested === 'unauditedData' || requested === 'PFMS' || requested === 'SLB' || requested === 'DUR')
+      return requested;
     return 'auditedData';
   }
 }

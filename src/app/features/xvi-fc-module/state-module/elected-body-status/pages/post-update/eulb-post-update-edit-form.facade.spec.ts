@@ -104,7 +104,7 @@ describe('EulbPostUpdateEditFormFacade', () => {
       dateOfExpiry: '2030-01-01',
       remarks: 'Initial remarks',
       validationStatus: 'VALID',
-      errors: [],
+      validationErrors: [],
       ...overrides,
     };
   }

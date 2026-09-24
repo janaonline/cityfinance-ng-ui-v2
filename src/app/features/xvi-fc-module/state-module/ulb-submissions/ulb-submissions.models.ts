@@ -1,13 +1,19 @@
 /** One of the XVI-FC forms a state reviews, one at a time, across all its ULBs. */
-export type ReviewFormId = 'AUDITED_STATEMENTS' | 'PROVISIONAL_STATEMENTS' | 'PFMS_BANK_ACCOUNT' | 'SERVICE_LEVEL_BENCHMARKS';
+export type ReviewFormId =
+  | 'AUDITED_STATEMENTS'
+  | 'PROVISIONAL_STATEMENTS'
+  | 'PFMS_BANK_ACCOUNT'
+  | 'SERVICE_LEVEL_BENCHMARKS'
+  | 'DUR';
 
 /** "Select Form" dropdown options. Every option maps to a real backend today — SLB is read-only
- *  (deemed approved on submission, no STATE approve/return workflow), unlike the other three. */
+ *  (deemed approved on submission, no STATE approve/return workflow), unlike the other four. */
 export const FORM_OPTIONS: ReadonlyArray<{ readonly value: ReviewFormId; readonly label: string; readonly live: boolean }> = [
   { value: 'AUDITED_STATEMENTS', label: 'Audited Statements', live: true },
   { value: 'PROVISIONAL_STATEMENTS', label: 'Provisional Statements', live: true },
   { value: 'PFMS_BANK_ACCOUNT', label: 'PFMS Bank Account', live: true },
   { value: 'SERVICE_LEVEL_BENCHMARKS', label: 'Service Level Benchmarks', live: true },
+  { value: 'DUR', label: 'Detailed Utilisation Report', live: true },
 ];
 
 /** Maps a live `ReviewFormId` to the Annual Account section the backend understands. */
@@ -22,6 +28,7 @@ export const FORM_TO_TAB: Partial<Record<ReviewFormId, string>> = {
   PROVISIONAL_STATEMENTS: 'unauditedData',
   PFMS_BANK_ACCOUNT: 'PFMS',
   SERVICE_LEVEL_BENCHMARKS: 'SLB',
+  DUR: 'DUR',
 };
 
 /** Reverse of `FORM_TO_TAB` — lets the submissions list restore its "Select Form" dropdown from
@@ -76,9 +83,22 @@ export const SYSTEM_CHECKS_CONTENT: Readonly<Record<ReviewFormId, SystemChecksCo
     ],
     notChecked: ['Whether the reported actuals are true.'],
   },
+  DUR: {
+    caption: () => 'Runs when the ULB uploads each document.',
+    checkedAutomatically: [
+      'The file opens, is legible, and is in the prescribed format',
+      'The ULB name and financial year (2025-26) match',
+      'The correct grant type (tied/untied) matches the document uploaded',
+      'A signature and seal are present',
+    ],
+    notChecked: ['The figures inside. No arithmetic, no external record.'],
+  },
 };
 
-/** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum. */
+/** The Annual Account form-status lifecycle, shared with the backend's AnnualAccountFormStatus enum.
+ * The last four are a display-layer overlay, not real form_status values
+ * Computed from the discretionary Request Exemption flow (state/request-exemption)
+ */
 export type ReviewStatus =
   | 'NOT_STARTED'
   | 'IN_PROGRESS'
@@ -88,7 +108,12 @@ export type ReviewStatus =
   | 'RETURNED_BY_MOHUA'
   | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
   | 'APPROVED_BY_STATE'
-  | 'AWAITING_CLAIM_LETTER';
+  | 'AWAITING_CLAIM_LETTER'
+  | 'EXEMPTED'
+  | 'EXEMPTION_PENDING'
+  | 'EXEMPTION_REJECTED'
+  | 'EXEMPTION_APPROVED'
+  | 'AUTO_EXEMPTED';
 
 /** One clickable stat card, grouping one or more underlying statuses into a single reviewer-facing bucket. */
 export interface StatusBucket {
@@ -106,6 +131,13 @@ export const STATUS_BUCKETS: readonly StatusBucket[] = [
     label: 'ULB In Progress',
     statuses: ['IN_PROGRESS', 'RETURNED_BY_MOHUA'],
     icon: 'hourglass-split',
+  },
+  {
+    key: 'EXEMPTED',
+    label: 'Exemption Status',
+    statuses: ['EXEMPTED', 'EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
+    // Matches the claim letter's existing "Exempted" visual language (shield-check, primary color).
+    icon: 'shield-check',
   },
   { key: 'UNDER_STATE_REVIEW', label: 'Under Review by State', statuses: ['UNDER_REVIEW_BY_STATE'], icon: 'pencil-square' },
   {
@@ -136,6 +168,26 @@ export const SLB_UNAVAILABLE_BUCKET_KEYS: ReadonlySet<string> = new Set([
   'UNDER_REVIEW_BY_MOHUA',
 ]);
 
+/** Forms with no exemption mechanism wired at all - the Exemption Status card/column is disabled
+ *  for these regardless of which stat-card view is active. SLB (automatic only) and Audited/
+ *  Provisional Statements (automatic + discretionary, see ReviewStatus's own doc-comment) both
+ *  have real exemption data; PFMS Bank Account does not. */
+export const EXEMPTION_UNAVAILABLE_FOR_FORMS: ReadonlySet<ReviewFormId> = new Set(['PFMS_BANK_ACCOUNT']);
+
+/** The EXEMPTED stat-card bucket spans two disjoint status vocabularies - SLB's own backend only
+ *  ever understands the plain `EXEMPTED` value (numeric 12), while Annual Accounts only ever
+ *  understands the four discretionary-overlay values (its DTO's allow-list doesn't include
+ *  `EXEMPTED` at all). The bucket's own `statuses` (all five, for the stat-card's aggregate count -
+ *  see ulb-submissions.utils.ts) can't be sent to either backend as-is as a status *filter*; this
+ *  is the subset actually valid for the currently selected form. Forms with no key here never
+ *  reach this lookup - the EXEMPTED bucket is disabled for them (EXEMPTION_UNAVAILABLE_FOR_FORMS). */
+export const EXEMPTED_BUCKET_STATUSES_BY_FORM: Readonly<Partial<Record<ReviewFormId, readonly ReviewStatus[]>>> = {
+  SERVICE_LEVEL_BENCHMARKS: ['EXEMPTED'],
+  AUDITED_STATEMENTS: ['EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
+  PROVISIONAL_STATEMENTS: ['EXEMPTION_PENDING', 'EXEMPTION_REJECTED', 'EXEMPTION_APPROVED', 'AUTO_EXEMPTED'],
+  DUR: ['EXEMPTED'],
+};
+
 export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   NOT_STARTED: 'Not Started',
   IN_PROGRESS: 'In Progress',
@@ -146,6 +198,11 @@ export const STATUS_LABELS: Readonly<Record<ReviewStatus, string>> = {
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'Approved by MoHUA',
   APPROVED_BY_STATE: 'Approved by State',
   AWAITING_CLAIM_LETTER: 'Awaiting Claim Letter',
+  EXEMPTED: 'Exempted',
+  EXEMPTION_PENDING: 'Exemption Pending',
+  EXEMPTION_REJECTED: 'Exemption Rejected',
+  EXEMPTION_APPROVED: 'Exemption Approved',
+  AUTO_EXEMPTED: 'Auto-Exempted',
 };
 
 export interface UlbSubmissionRow {

@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { FieldConfig } from '../../../../../shared/dynamic-form/field.interface';
@@ -112,6 +113,7 @@ describe('XviFcBankAccountComponent', () => {
   let service: jasmine.SpyObj<XviFcBankAccountService>;
   let utilityService: jasmine.SpyObj<UtilityService>;
   let dialog: jasmine.SpyObj<MatDialog>;
+  let router: jasmine.SpyObj<Router>;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -150,12 +152,16 @@ describe('XviFcBankAccountComponent', () => {
     confirmDialogRef.afterClosed.and.returnValue(of('submit'));
     dialog.open.and.returnValue(confirmDialogRef);
 
+    router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    router.navigate.and.returnValue(Promise.resolve(true));
+
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, XviFcBankAccountComponent],
       providers: [
         { provide: XviFcBankAccountService, useValue: service },
         { provide: UtilityService, useValue: utilityService },
         { provide: MatDialog, useValue: dialog },
+        { provide: Router, useValue: router },
       ],
     })
       // The component imports MatDialogModule directly, which would otherwise shadow the
@@ -212,6 +218,63 @@ describe('XviFcBankAccountComponent', () => {
     expect(service.getBankAccount).toHaveBeenCalledOnceWith({ yearId: 'year-id', ulbId: 'ulb-id' });
     expect(component.fields()).toEqual(testFields);
     expect(component.existingRecord()).toEqual(record());
+  });
+
+  describe('xvi-fc dynamic year access (ONCE_EVER redirect)', () => {
+    it('redirects to the filed year when the record belongs to a different design year', async () => {
+      service.getBankAccount.and.returnValue(
+        of(record({ submissionScope: 'ONCE_EVER', designYear: 'other-year-id', designYearLabel: '2025-26' })),
+      );
+
+      createComponent();
+      await Promise.resolve(); // flush the queueMicrotask-deferred in-place reload
+
+      expect(router.navigate).toHaveBeenCalledWith(['/xvifc', 'other-year-id', 'xvi-fc-bank-account'], {
+        replaceUrl: true,
+      });
+      expect(localStorage.getItem('xvifc_selectedYearId')).toBe('other-year-id');
+      expect(localStorage.getItem('xvifc_selectedYearString')).toBe('FY-2025-26');
+      // Re-fetched in place with the corrected year - the second call's record now matches, so it renders.
+      expect(service.getBankAccount).toHaveBeenCalledWith({ yearId: 'other-year-id', ulbId: 'ulb-id' });
+      expect(component.existingRecord()?.designYear).toBe('other-year-id');
+      expect(component.isFormLoading()).toBeFalse();
+      // Regression: the header label must follow the redirect, not stay on the year the ULB
+      // navigated away from (fixture seeds xvifc_ulb_details.selectedYear as 'FY-2026-27').
+      expect(component.ulbDetails()?.selectedYear).toBe('FY 2025-26');
+    });
+
+    it('shows the corrected year label even after the component is recreated (e.g. a hard refresh) post-redirect', async () => {
+      service.getBankAccount.and.returnValue(
+        of(record({ submissionScope: 'ONCE_EVER', designYear: 'other-year-id', designYearLabel: '2025-26' })),
+      );
+
+      createComponent();
+      await Promise.resolve(); // flush the queueMicrotask-deferred in-place reload
+
+      // Simulate a fresh component instance re-reading state from localStorage only - no live
+      // signal carried over, exactly like a hard refresh landing back on this page.
+      fixture = TestBed.createComponent(XviFcBankAccountComponent);
+      component = fixture.componentInstance;
+
+      expect(component.ulbDetails()?.selectedYear).toBe('FY 2025-26');
+    });
+
+    it('does not redirect when the ONCE_EVER record already belongs to the selected year', () => {
+      service.getBankAccount.and.returnValue(of(record({ submissionScope: 'ONCE_EVER', designYear: 'year-id' })));
+
+      createComponent();
+
+      expect(router.navigate).not.toHaveBeenCalled();
+      expect(component.existingRecord()?.designYear).toBe('year-id');
+    });
+
+    it('does not redirect for a PER_YEAR (or unconfigured) record even if the year label differs', () => {
+      service.getBankAccount.and.returnValue(of(record({ designYear: 'some-other-id' })));
+
+      createComponent();
+
+      expect(router.navigate).not.toHaveBeenCalled();
+    });
   });
 
   it('does not create a proofFile form control (proof is managed by selectedProof, not the dynamic form)', () => {
