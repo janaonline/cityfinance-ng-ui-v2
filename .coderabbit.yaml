@@ -1,0 +1,70 @@
+# CodeRabbit configuration
+# https://docs.coderabbit.ai/reference/configuration
+
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  path_filters:
+    - '!dist/**'
+    - '!coverage/**'
+    - '!node_modules/**'
+    - '!**/*.lock'
+    - '!package-lock.json'
+
+  path_instructions:
+    - path: 'src/app/features/xvi-fc-module/**'
+      instructions: >
+        16th Finance Commission data-entry area, split by role into 
+        mohua-module/state-module/ulb-module/admin sub-areas gated via
+        canMatch in xvi-fc-module.routes.ts. Check that any new route is
+        guarded by the right role/canMatch, and that eligibility-gate
+        redirects (e.g. Cantonment Board ineligibility) match the exact
+        message string the backend's ulb-eligibility module throws, since
+        the frontend matches on it verbatim to redirect instead of showing
+        an inline error.
+
+    - path: 'src/app/features/xvi-fc-module/shared/dynamic-form/**'
+      instructions: >
+        Schema-driven reactive form builder shared across all xvi-fc
+        sub-modules. Changes here affect every form in the module — check
+        for regressions across mohua/state/ulb usages, not just the one
+        being edited.
+
+    - path: 'src/app/admin/ocr/**'
+      instructions: >
+        Two-step Gemini OCR validation pipeline. Do not mix models between
+        ocr-validation/ocr-validation-models.ts (current pipeline) and
+        upload-file-ocr/ocr-response.ts (legacy comparison-table schema) —
+        they are intentionally separate.
+
+    - path: 'src/app/core/security/**'
+      instructions: >
+        JWT session auth flow (AuthService, customHttpInterceptor). Distinct
+        from the OTP flow in core/auth/ — check changes don't conflate the
+        two token stores or their interceptors.
+
+    - path: '**/*.spec.ts'
+      instructions: >
+        CFR spec files (src/app/features/cfr/**/*.spec.ts) are intentionally
+        excluded from the default Karma run — don't flag their absence from
+        CI as a gap.
+
+  tools:
+    eslint:
+      enabled: true
+
+chat:
+  auto_reply: true

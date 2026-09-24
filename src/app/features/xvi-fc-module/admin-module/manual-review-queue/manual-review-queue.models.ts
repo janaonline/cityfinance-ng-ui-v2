@@ -7,14 +7,22 @@ export interface ApiResponse<T> {
 
 export type AnnualAccountSectionKey = 'auditedData' | 'unauditedData';
 
-/** One row of GET /xvi-fc/annual-account/manual-review-queue. */
+/** Which form a queue row belongs to — decides which backend endpoint decide() calls and how
+ *  the row's document is labeled, since DUR has no audited/unaudited "section" concept. */
+export type ManualReviewFormType = 'ANNUAL_ACCOUNT' | 'DUR';
+
+/** One row, merged from GET /xvi-fc/annual-account/manual-review-queue and
+ *  GET /xvi-fc/dur/manual-review-queue — same shape, tagged by formType. `formId` is the
+ *  Annual Account or DUR document's own _id (renamed from the backends' annualAccountId/durId
+ *  at the point they're fetched, see ManualReviewQueueService). */
 export interface ManualReviewQueueRow {
-  annualAccountId: string;
+  formType: ManualReviewFormType;
+  formId: string;
   ulbId: string;
   ulbName: string | null;
   ulbCode: string | null;
   stateName: string | null;
-  section: AnnualAccountSectionKey;
+  section: AnnualAccountSectionKey | null;
   year: string;
   docId: string;
   uploadId: string;
@@ -41,6 +49,11 @@ export interface ManualReviewQueueResult {
   page: number;
   pageSize: number;
   rows: ManualReviewQueueRow[];
+  /** Form types whose rows are incomplete this call — either the backend failed outright, or it
+   *  had more matching rows than the client's page cap could fetch. Either way the missing rows
+   *  are simply absent from `rows`/`total`, not an error for the whole call (see
+   *  ManualReviewQueueService.fetchAllRows). */
+  failedSources: ManualReviewFormType[];
 }
 
 export interface ManualReviewDecisionPayload {

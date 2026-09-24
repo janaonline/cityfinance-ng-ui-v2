@@ -57,4 +57,21 @@ export interface ManualReviewHistoryResult {
   rows: ManualReviewHistoryRow[];
 }
 
+export type ManualReviewHistoryStatsRange = 'today' | 'week' | 'all';
+
+/** GET /xvi-fc/annual-account/manual-review-history/stats — summary counts for the history page's
+ *  REQUESTED time-range tabs. `overturnRateWarning` is computed server-side (needs >=5 decided
+ *  requests) so the frontend never has to duplicate that sample-size threshold. */
+export interface ManualReviewHistoryStats {
+  range: ManualReviewHistoryStatsRange;
+  received: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  over48hCount: number;
+  avgResponseHours: number | null;
+  overturnRatePercent: number | null;
+  overturnRateWarning: boolean;
+}
+
 export type { ApiResponse };

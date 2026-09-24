@@ -58,4 +58,13 @@ export const OCR_ROUTES: Route[] = [
         (mod) => mod.AuditorReportListComponent,
       ),
   },
+  {
+    path: 'dur',
+    loadComponent: () =>
+      import('./dur/dur-validate/dur-validate.component').then((mod) => mod.DurValidateComponent),
+  },
+  {
+    path: 'dur-list',
+    loadComponent: () => import('./dur/dur-list/dur-list.component').then((mod) => mod.DurListComponent),
+  },
 ];
