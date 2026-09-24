@@ -1,11 +1,11 @@
 const baseUrl = 'http://localhost:8080';
 export const environment = {
   api: {
-    url: 'http://localhost:8080/api/v1/',
-    // url: 'https://dev.cityfinance.in/api/v1/',
+    // url: 'http://localhost:8080/api/v1/',
+    url: 'https://dev.cityfinance.in/api/v1/',
     url2: 'http://localhost:3000/api/v2/',
     // url2: 'https://dev.cityfinance.in/api/v2/', // For testing purpose
-    url3: 'http://localhost:8000/',
+    url3: 'http://localhost:8001/',
   },
   ui: { urlV1: 'http://localhost:4200', urlV2: 'http://localhost:8080' },
   blogUrl: 'https://blog.cityfinance.in',
