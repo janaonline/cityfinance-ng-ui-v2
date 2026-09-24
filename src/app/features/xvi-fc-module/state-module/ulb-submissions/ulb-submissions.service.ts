@@ -16,6 +16,7 @@ import {
 const ANNUAL_ACCOUNT_API = `${environment.api.url2}xvi-fc/annual-account/`;
 const BANK_ACCOUNT_API = `${environment.api.url2}xvi-fc/bank-account/`;
 const SLB_API = `${environment.api.url2}xvi-fc/ulb/slb/`;
+const DUR_API = `${environment.api.url2}xvi-fc/dur/`;
 const STATE_API = `${environment.api.url2}xvi-fc/state/`;
 
 // The bank-account module's FORM_STATUS constant uses this exact 1-7 numbering,
@@ -91,6 +92,25 @@ interface BankAccountListResponse {
   counts: Record<number, number>;
 }
 
+interface DurSubmissionRow {
+  ulbId: string;
+  ulbCode: string;
+  censusCode: string;
+  ulbName: string;
+  formStatus: number;
+  lastUpdatedAt: string | null;
+  enteredReviewAt: string | null;
+  durId: string | null;
+}
+
+interface DurListResponse {
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: DurSubmissionRow[];
+  counts: Record<number, number>;
+}
+
 interface SlbSubmissionRow {
   ulbId: string;
   ulbCode: string;
@@ -116,11 +136,13 @@ export class UlbSubmissionsService {
   list(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
     if (query.form === 'PFMS_BANK_ACCOUNT') return this.listBankAccounts(query);
     if (query.form === 'SERVICE_LEVEL_BENCHMARKS') return this.listSlb(query);
+    if (query.form === 'DUR') return this.listDur(query);
     return this.listAnnualAccounts(query);
   }
 
   bulkReview(payload: BulkReviewPayload): Observable<BulkReviewResult> {
     if (payload.form === 'PFMS_BANK_ACCOUNT') return this.bulkReviewBankAccounts(payload);
+    if (payload.form === 'DUR') return this.bulkReviewDur(payload);
     return this.bulkReviewAnnualAccounts(payload);
   }
 
@@ -210,6 +232,43 @@ export class UlbSubmissionsService {
     );
   }
 
+  private listDur(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
+    let params = new HttpParams()
+      .set('designYearId', query.designYearId)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize)
+      .set('sortField', query.sortField)
+      .set('sortDirection', query.sortDirection);
+
+    if (query.search.trim()) params = params.set('search', query.search.trim());
+    if (query.status?.length) {
+      const numericStatuses = query.status.map((status) => REVIEW_STATUS_TO_NUMERIC[status]);
+      params = params.set('status', numericStatuses.join(','));
+    }
+
+    return this.http.get<unknown>(`${DUR_API}state/ulb-submissions`, { params }).pipe(
+      map((res) => {
+        const raw = unwrap<DurListResponse>(res);
+        const rows: UlbSubmissionRow[] = raw.rows.map((row) => ({
+          ulbId: row.ulbId,
+          ulbCode: row.ulbCode,
+          censusCode: row.censusCode,
+          ulbName: row.ulbName,
+          formStatus: NUMERIC_TO_REVIEW_STATUS[row.formStatus] ?? 'NOT_STARTED',
+          formStatusId: row.formStatus,
+          lastUpdatedAt: row.lastUpdatedAt,
+          enteredReviewAt: row.enteredReviewAt,
+          recordId: row.durId,
+        }));
+        const counts = Object.fromEntries(
+          Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
+        ) as Record<ReviewStatus, number>;
+
+        return { total: raw.total, page: raw.page, pageSize: raw.pageSize, rows, counts };
+      }),
+    );
+  }
+
   private listSlb(query: UlbSubmissionsQuery): Observable<UlbSubmissionsListResponse> {
     let params = new HttpParams()
       .set('designYearId', query.designYearId)
@@ -275,5 +334,14 @@ export class UlbSubmissionsService {
     return this.http
       .post<unknown>(`${BANK_ACCOUNT_API}bulk-decision`, body)
       .pipe(map((res) => unwrap<BulkReviewResult>(res)));
+  }
+
+  private bulkReviewDur(payload: BulkReviewPayload): Observable<BulkReviewResult> {
+    const body = {
+      decision: payload.action === 'APPROVE' ? 'APPROVED' : 'RETURNED',
+      note: payload.reason ?? null,
+      ids: payload.recordIds,
+    };
+    return this.http.post<unknown>(`${DUR_API}bulk-decision`, body).pipe(map((res) => unwrap<BulkReviewResult>(res)));
   }
 }

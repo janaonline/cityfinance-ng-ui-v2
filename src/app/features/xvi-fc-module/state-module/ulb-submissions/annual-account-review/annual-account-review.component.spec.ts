@@ -415,3 +415,63 @@ describe('AnnualAccountReviewComponent — designYearId precedence (route over l
     expect(getSlbFormSpy).toHaveBeenCalledWith('ulb-1', 'year-route');
   });
 });
+
+describe('AnnualAccountReviewComponent — DUR status badge', () => {
+  let component: AnnualAccountReviewComponent;
+  let fixture: ComponentFixture<AnnualAccountReviewComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AnnualAccountReviewComponent, HttpClientTestingModule],
+      providers: [
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: convertToParamMap({ ulbId: 'ulb-1' }),
+              queryParamMap: convertToParamMap({}),
+              data: {},
+            },
+            parent: null,
+          },
+        },
+        { provide: UtilityService, useValue: {} },
+        { provide: ConfirmDialogService, useValue: {} },
+        { provide: NoteDialogService, useValue: {} },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AnnualAccountReviewComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('renders the exempted badge for EXEMPTED_ACKNOWLEDGED (12), not the default pending badge', () => {
+    component.durData.set({
+      id: 'dur-1',
+      currentFormStatus: 12,
+      currentFormStatusLabel: 'Exempted',
+      declaredAt: null,
+      stateDecision: null,
+      mohuaDecision: null,
+      permissions: { canReview: false, canApprove: false, canUndoApproval: false },
+      documents: [],
+    });
+
+    expect(component.durStatusBadgeClass()).toBe('exempted-badge');
+  });
+
+  it('still falls back to the pending badge for the ordinary in-progress statuses', () => {
+    component.durData.set({
+      id: 'dur-1',
+      currentFormStatus: 2,
+      currentFormStatusLabel: 'In Progress',
+      declaredAt: null,
+      stateDecision: null,
+      mohuaDecision: null,
+      permissions: { canReview: false, canApprove: false, canUndoApproval: false },
+      documents: [],
+    });
+
+    expect(component.durStatusBadgeClass()).toBe('pending-badge');
+  });
+});

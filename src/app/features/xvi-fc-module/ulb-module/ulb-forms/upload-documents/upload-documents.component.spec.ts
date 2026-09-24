@@ -45,6 +45,9 @@ function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDo
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
+    postRejectionAttemptsUsed: 0,
+    manualReviewRejectionCount: 0,
+    uploadBlockedUntil: null,
   };
 }
 
