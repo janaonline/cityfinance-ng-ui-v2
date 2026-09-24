@@ -54,6 +54,24 @@
     z-index: 0;
     @include theme.grant-band-dot-pattern;
   }
+
+  // ─── Light variant (16thFC hero panel) — swaps the dark gradient + dot pattern for a pale
+  // mint grid background; the accent line and dot overlay pseudo-elements are switched off.
+  // min-height (not height) + no overflow-hidden lets the panel grow past 100vh instead of
+  // clipping the bottom action buttons when the stacked content is taller than the viewport.
+  &.login-left--light {
+    min-height: 100%;
+    background: #eaf5f3;
+    background-image:
+      linear-gradient(rgba(15, 92, 82, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 92, 82, 0.08) 1px, transparent 1px);
+    background-size: 26px 26px;
+
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
 }
 
 // ─── Brand logo (rgba colors + specific sizing) ────────────────────────────────
@@ -97,6 +115,53 @@
 
   &--dim {
     color: rgba(255, 255, 255, 0.42);
+  }
+}
+
+// ─── Light hero panel (16thFC only) — eyebrow, title, description, action buttons ─────────────
+
+.hero-eyebrow-light {
+  font-size: 15px;
+  color: #1f7273;
+}
+
+.hero-title-light {
+  font-size: clamp(24px, 2.8vw, 34px);
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+  color: #082c35;
+}
+
+.hero-desc-light {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5b7278;
+  max-width: 480px;
+}
+
+.hero-action-btn {
+  border: 1px solid #cfe3e0;
+  background: #ffffff;
+  color: #175752;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+
+  i {
+    font-size: 16px;
+    color: #1f7273;
+  }
+
+  &:hover {
+    background: #f0faf8;
+    border-color: #9fd0c8;
+    transform: translateY(-1px);
   }
 }
 
@@ -389,11 +454,225 @@
   }
 }
 
+// ─── Onboarding section ("New here?" — 16thFC only) ────────────────────────────
+
+.onboarding-section {
+  background: #ffffff;
+}
+
+.onboarding-eyebrow {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1f7273;
+}
+
+.onboarding-title {
+  font-size: clamp(22px, 2.4vw, 28px);
+  color: #082c35;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.onboarding-desc {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #5b7278;
+}
+
+.onboarding-links a {
+  color: #1d6769;
+  text-decoration: underline;
+  &:hover {
+    color: #144f50;
+  }
+}
+
+.onboarding-step {
+  padding: 18px 0;
+  border-bottom: 1px solid #e3ecee;
+
+  &:first-child {
+    padding-top: 0;
+  }
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.onboarding-step__number {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #1f7273;
+  margin-bottom: 6px;
+}
+
+.onboarding-step__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #082c35;
+  margin-bottom: 6px;
+}
+
+.onboarding-step__desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #5b7278;
+}
+
+// ─── Explore section ("Explore the XVI FC data" — 16thFC only) ────────────────
+
+.explore-section {
+  background: #ffffff;
+}
+
+.explore-subtitle {
+  font-size: 16px;
+  color: #5b7278;
+}
+
+.explore-column-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b9ba0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e3ecee;
+}
+
+.explore-item {
+  padding: 20px 0;
+  border-bottom: 1px solid #e3ecee;
+
+  &:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.explore-item__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #082c35;
+  margin-bottom: 8px;
+}
+
+.explore-item__desc {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #5b7278;
+}
+
+.explore-item__link {
+  display: inline-flex;
+  align-items: center;
+  color: #1d6769;
+  text-decoration: none;
+
+  &:hover {
+    color: #144f50;
+  }
+
+  i {
+    font-size: 13px;
+  }
+}
+
+.explore-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7b80;
+  background: #eef2f3;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+// ─── Grant envelope section ("Where the grant goes" — 16thFC only) ────────────
+
+.grant-envelope-section {
+  background: #f6f9fa;
+  border-top: 1px solid #e3ecee;
+  border-bottom: 1px solid #e3ecee;
+}
+
+.grant-envelope-total {
+  font-size: 14px;
+  color: #5b7278;
+  white-space: nowrap;
+}
+
+.grant-envelope-chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+.grant-envelope-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.grant-envelope-item__title {
+  font-size: 14.5px;
+  color: #082c35;
+}
+
+.grant-envelope-item__desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #5b7278;
+}
+
 // ─── Responsive (role-grid breakpoints only — layout handled by Bootstrap) ─────
 
 @media (max-width: 480px) {
   .role-grid--fc {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px !important;
+  }
+}
+
+// ─── Scroll reveal (New here? / Explore the XVI FC data) — fades + slides up once an element
+// enters the viewport; toggled via IntersectionObserver in the component (see setupScrollReveal).
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+
+  &--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.scroll-reveal-delay-1 {
+  transition-delay: 0.12s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

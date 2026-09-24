@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   OnDestroy,
@@ -28,9 +29,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { finalize } from 'rxjs/operators';
+import { Chart, ChartConfiguration, TooltipItem, registerables } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { XvifcModuleService } from '../../features/xvi-fc-module/xvi-fc-module.service';
 import { LoginService } from './login.service';
 import { environment } from '../../../environments/environment';
+
+Chart.register(...registerables);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +81,18 @@ interface ReferenceDocument {
   roles?: readonly LoginRole[];
 }
 
+interface ExploreItem {
+  title: string;
+  description: string;
+  /** Omit to render a "Coming soon" badge instead of a link. */
+  link?: { label: string; url: string };
+}
+
+interface ExploreColumn {
+  header: string;
+  items: readonly ExploreItem[];
+}
+
 // ─── Local validator ──────────────────────────────────────────────────────────
 
 function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
@@ -95,7 +112,7 @@ function emailOrCensusCode(control: AbstractControl): ValidationErrors | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [LoginService],
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
@@ -115,6 +132,12 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   protected readonly captchaEnabled = environment.captchaEnabled;
 
+  protected readonly showOnboardingSection = computed(() => this.typeKey() === '16thFC');
+
+  // Light hero panel (left side, 16thFC only) headline figures.
+  protected readonly heroAmount = '3,56,257';
+  protected readonly heroUlbCount = '4,485';
+
   // ─── View state ──────────────────────────────────────────────────────────────
 
   protected isPasswordVisible = false;
@@ -132,9 +155,117 @@ export class LoginComponent implements OnInit, OnDestroy {
   // Backend resourceDashboard download URL.
   private readonly EXTERNAL_LINKS = {
     report_api_v1: 'https://cityfinance.in/api/v1/resourceDashboard/download/698472008670dfe40327596d',
-    og_ssr: 'https://cityfinance.in/assets/docs/Operational_Guidelines_2026-31.pdf'
-
+    og_ssr: 'https://cityfinance.in/assets/docs/Operational_Guidelines_2026-31.pdf',
+    onboarding_walkthrough: 'https://www.youtube.com/watch?v=UJ9rpS1yQJs',
   };
+
+  // "New here?" onboarding panel — shown only on the 16thFC login screen.
+  protected readonly onboardingLinks = {
+    guidelines: this.EXTERNAL_LINKS.og_ssr,
+    walkthrough: this.EXTERNAL_LINKS.onboarding_walkthrough,
+  };
+
+  // Light hero panel "Guidelines" button — reuses the real Operational Guidelines PDF already
+  // used in the document catalog below.
+  protected readonly heroGuidelinesUrl = this.EXTERNAL_LINKS.og_ssr;
+
+  protected readonly onboardingSteps = [
+    {
+      number: '01',
+      title: 'Entitlement is fixed',
+      description: "MoHUA notifies each state's urban share for the year based on the Commission's award.",
+    },
+    {
+      number: '02',
+      title: 'ULBs prove eligibility',
+      description: 'Audited accounts, property-tax notification and service-level data are filed on the portal.',
+    },
+    {
+      number: '03',
+      title: 'States and MoHUA recommend; DoE releases',
+      description: 'Claim requests move up the chain; approved funds flow through the state treasury.',
+    },
+    {
+      number: '04',
+      title: 'The financial statements are published',
+      description: 'Parallelly, all the financial statements are opened to public view, city by city.',
+    },
+  ] as const;
+
+  // "Explore the XVI FC data" panel — shown only on the 16thFC login screen.
+  protected readonly exploreColumns: readonly ExploreColumn[] = [
+    {
+      header: 'For States and ULBs',
+      items: [
+        {
+          title: 'Status Dashboard',
+          description:
+            "See every state's SFC and Elected Bodies status, and how each ULB's claim is moving through review.",
+        },
+        {
+          title: 'Allocations and releases',
+          description:
+            'How much each State and city is allocated, and how much has actually been released, instalment by instalment.',
+        },
+      ],
+    },
+    {
+      header: 'For Citizens and Researchers',
+      items: [
+        {
+          title: 'ULB financial statements',
+          description:
+            'Annual financial statements and budgets of urban local bodies, in one place and comparable across cities.',
+        },
+        {
+          title: 'Public dashboard',
+          description:
+            'Annual financial statements and budgets of urban local bodies, in one place and comparable across cities.',
+        },
+      ],
+    },
+  ];
+
+  // "Where the grant goes" chart panel — shown only on the 16thFC login screen.
+  protected readonly grantEnvelopeTotalLabel = '₹3,56,257 Cr, FY 2026 to 2031';
+
+  protected readonly grantEnvelopeComponents = [
+    {
+      label: 'Basic grants',
+      amount: 232125,
+      amountLabel: '₹2,32,125 Cr',
+      percentLabel: '65%',
+      description: 'sanitation, waste, water, local needs',
+      color: '#0f5c52',
+    },
+    {
+      label: 'Performance grants',
+      amount: 58032,
+      amountLabel: '₹58,032 Cr',
+      percentLabel: '16%',
+      description: 'own-revenue growth and State match',
+      color: '#1f7a3d',
+    },
+    {
+      label: 'Special infrastructure',
+      amount: 56100,
+      amountLabel: '₹56,100 Cr',
+      percentLabel: '16%',
+      description: 'urban priorities, including wastewater',
+      color: '#1d5fd1',
+    },
+    {
+      label: 'Urbanisation premium',
+      amount: 10000,
+      amountLabel: '₹10,000 Cr',
+      percentLabel: '3%',
+      description: 'fast-urbanising local governments',
+      color: '#d2521a',
+    },
+  ] as const;
+
+  private grantEnvelopeChart?: Chart;
+  private scrollRevealObserver?: IntersectionObserver;
 
   // Full catalog of reference documents, scoped by login type (15thFC, 16thFC, ...) and optionally by role. (ULB, STATE, MOHUA, ...)
   private readonly documentCatalog: readonly ReferenceDocument[] = [
@@ -416,8 +547,17 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.loginService.showRecaptchaBadge();
   }
 
+  ngAfterViewInit(): void {
+    if (this.showOnboardingSection()) {
+      this.createGrantEnvelopeChart();
+      this.setupScrollReveal();
+    }
+  }
+
   ngOnDestroy(): void {
     this.loginService.hideRecaptchaBadge();
+    this.grantEnvelopeChart?.destroy();
+    this.scrollRevealObserver?.disconnect();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────
@@ -497,6 +637,86 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   protected openReferenceDocuments(): void {
     window.open(this.EXTERNAL_LINKS.report_api_v1, '_blank', 'noopener,noreferrer');
+  }
+
+  protected scrollToExplore(event: Event): void {
+    event.preventDefault();
+    document.getElementById('explore-xvifc-data')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  private createGrantEnvelopeChart(): void {
+    const components = this.grantEnvelopeComponents;
+    const lastIndex = components.length - 1;
+    const total = components.reduce((sum, component) => sum + component.amount, 0);
+
+    const datasets: ChartConfiguration<'bar'>['data']['datasets'] = components.map((component, index) => ({
+      label: component.label,
+      data: [component.amount],
+      backgroundColor: component.color,
+      stack: 'envelope',
+      borderSkipped: false,
+      borderRadius:
+        index === 0
+          ? { topLeft: 10, bottomLeft: 10, topRight: 0, bottomRight: 0 }
+          : index === lastIndex
+            ? { topLeft: 0, bottomLeft: 0, topRight: 10, bottomRight: 10 }
+            : 0,
+      datalabels: {
+        color: '#ffffff',
+        font: { weight: 'bold', size: 12 },
+        formatter: () =>
+          index === 0 ? `${component.label.split(' ')[0]} · ${component.percentLabel}` : component.percentLabel,
+      },
+    }));
+
+    const config: ChartConfiguration<'bar'> = {
+      type: 'bar',
+      data: { labels: [''], datasets },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: 0 },
+        scales: {
+          // min/max pinned to the exact total (and grace: 0) so the stacked segments fill the
+          // full bar width — otherwise Chart.js pads the axis above the data max, leaving a gap.
+          x: { stacked: true, display: false, min: 0, max: total, grace: 0 },
+          y: { stacked: true, display: false },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx: TooltipItem<'bar'>) => ` ${ctx.dataset.label}: ${ctx.formattedValue}`,
+            },
+          },
+        },
+      },
+      plugins: [ChartDataLabels],
+    };
+
+    this.grantEnvelopeChart = new Chart('grant-envelope-chart', config);
+  }
+
+  // Fades + slides up each `.scroll-reveal` block ("New here?" / "Explore the XVI FC data")
+  // the first time it enters the viewport, then stops watching it.
+  private setupScrollReveal(): void {
+    const elements = document.querySelectorAll<HTMLElement>('.scroll-reveal');
+    if (!elements.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('scroll-reveal--visible');
+          obs.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    this.scrollRevealObserver = observer;
   }
 
   // ─── Submit ───────────────────────────────────────────────────────────────────
