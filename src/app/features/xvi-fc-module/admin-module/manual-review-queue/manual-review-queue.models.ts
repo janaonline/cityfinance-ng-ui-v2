@@ -49,8 +49,10 @@ export interface ManualReviewQueueResult {
   page: number;
   pageSize: number;
   rows: ManualReviewQueueRow[];
-  /** Form types whose backend failed to load this call — rows from a failed source are simply
-   *  missing from `rows`/`total`, not an error for the whole call (see ManualReviewQueueService). */
+  /** Form types whose rows are incomplete this call — either the backend failed outright, or it
+   *  had more matching rows than the client's page cap could fetch. Either way the missing rows
+   *  are simply absent from `rows`/`total`, not an error for the whole call (see
+   *  ManualReviewQueueService.fetchAllRows). */
   failedSources: ManualReviewFormType[];
 }
 
