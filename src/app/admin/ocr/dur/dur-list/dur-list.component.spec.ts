@@ -61,12 +61,13 @@ describe('DurListComponent', () => {
           status: 'completed',
           filename: 'dur.pdf',
           model: 'gemini-3.1-pro-preview',
-          expected: { ulb_name: 'Karad Municipality', financial_year: '2026-27' },
+          expected: { ulb_name: 'Karad Municipality', financial_year: '2026-27', grant_type: 'untied' },
           progress_step: 'completed',
           error_message: null,
           checks: {
             ulb_name_match: true,
             financial_year_match: true,
+            grant_type_match: false,
             format_valid: true,
             signature_present: true,
             overall_valid: true,
@@ -90,6 +91,8 @@ describe('DurListComponent', () => {
     expect(row.jobId).toBe('job-1');
     expect(row.ulbName).toBe('Karad Municipality');
     expect(row.financialYear).toBe('2026-27');
+    expect(row.grantType).toBe('untied');
+    expect(row.grantTypeMatch).toBeFalse();
     expect(row.overallValid).toBeTrue();
   });
 
@@ -100,6 +103,7 @@ describe('DurListComponent', () => {
       filename: 'report',
       ulbName: 'Karad',
       financialYear: '2026-27',
+      grantType: 'tied',
       dateFrom: null,
       dateTo: null,
     });
@@ -112,7 +116,8 @@ describe('DurListComponent', () => {
         r.params.get('status') === 'failed' &&
         r.params.get('filename') === 'report' &&
         r.params.get('ulb_name') === 'Karad' &&
-        r.params.get('financial_year') === '2026-27',
+        r.params.get('financial_year') === '2026-27' &&
+        r.params.get('grant_type') === 'tied',
     );
     expect(component.pageIndex).toBe(0);
     req.flush(emptyResponse);

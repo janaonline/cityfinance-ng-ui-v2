@@ -10,7 +10,7 @@ import { finalize } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { OcrService } from '../../ocr.service';
-import { DurJobStatusResponse } from '../dur-models';
+import { DurGrantType, DurJobStatusResponse } from '../dur-models';
 
 interface DurListRow {
   jobId: string;
@@ -19,8 +19,10 @@ interface DurListRow {
   model: string;
   ulbName: string;
   financialYear: string;
+  grantType: string;
   ulbMatch: boolean | null;
   financialYearMatch: boolean | null;
+  grantTypeMatch: boolean | null;
   formatValid: boolean | null;
   signaturePresent: boolean | null;
   overallValid: boolean | null;
@@ -58,6 +60,7 @@ export class DurListComponent implements OnInit {
     filename: [''],
     ulbName: [''],
     financialYear: [''],
+    grantType: this.fb.nonNullable.control<DurGrantType | ''>(''),
     dateFrom: this.fb.control<Date | null>(null),
     dateTo: this.fb.control<Date | null>(null),
   });
@@ -86,6 +89,7 @@ export class DurListComponent implements OnInit {
       filename: '',
       ulbName: '',
       financialYear: '',
+      grantType: '',
       dateFrom: null,
       dateTo: null,
     });
@@ -136,7 +140,7 @@ export class DurListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, financialYear, grantType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.ocrService
@@ -145,6 +149,7 @@ export class DurListComponent implements OnInit {
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
         financial_year: financialYear || undefined,
+        grant_type: grantType || undefined,
         sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
@@ -177,8 +182,10 @@ export class DurListComponent implements OnInit {
       model: item.model || '—',
       ulbName: item.expected?.ulb_name || '—',
       financialYear: item.expected?.financial_year || '—',
+      grantType: item.expected?.grant_type || '—',
       ulbMatch: item.checks?.ulb_name_match ?? null,
       financialYearMatch: item.checks?.financial_year_match ?? null,
+      grantTypeMatch: item.checks?.grant_type_match ?? null,
       formatValid: item.checks?.format_valid ?? null,
       signaturePresent: item.checks?.signature_present ?? null,
       overallValid: item.checks?.overall_valid ?? null,
