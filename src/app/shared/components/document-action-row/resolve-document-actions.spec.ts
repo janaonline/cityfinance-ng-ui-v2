@@ -88,6 +88,51 @@ describe('resolveDocumentActions', () => {
       expect(result).toEqual([{ action: 'reupload', label: 'Re-upload', icon: 'bi-upload', disabled: false }]);
     });
 
+    it('hides both Retry and Re-upload once eligible for manual review but not yet requested — Request Manual Review is the only path', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', isEligibleForManualReview: true }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('shows Retry + Re-upload for an early failure, even if it happens to be manualReviewReturned=false and not yet eligible', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', isEligibleForManualReview: false }),
+      );
+      expect(result.map((a) => a.action)).toEqual(['retry', 'reupload']);
+    });
+
+    it('hides Re-upload once all 3 post-rejection attempts are used, leaving only Request Manual Review (rendered separately)', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({
+          hasFile: true,
+          processingStatus: 'FAILED',
+          manualReviewReturned: true,
+          manualReviewAttemptsExhausted: true,
+        }),
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('hides everything (even Re-upload) while a document is blocked in its post-rejection cooldown', () => {
+      const result = resolveDocumentActions(
+        'ULB',
+        2,
+        ULB_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'FAILED', manualReviewReturned: true, isUploadBlocked: true }),
+      );
+      expect(result).toEqual([]);
+    });
+
     it('shows nothing once a document is APPROVED — locked', () => {
       const result = resolveDocumentActions(
         'ULB',
@@ -111,6 +156,19 @@ describe('resolveDocumentActions', () => {
     it('shows Delete only for a passed, undecided document', () => {
       const result = resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }));
       expect(result).toEqual([{ action: 'delete', label: 'Delete', icon: 'bi-trash', disabled: false }]);
+    });
+
+    it('shows nothing when blocked, regardless of doc state or an otherwise-permissive gate/status - a discretionary exemption request Pending/Approved never changes the real status, so the gate above would otherwise still allow these through', () => {
+      expect(resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: false }), true)).toEqual([]);
+      expect(resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }), true)).toEqual([]);
+      expect(
+        resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: true, processingStatus: 'FAILED' }), true),
+      ).toEqual([]);
+    });
+
+    it('defaults blocked to false when omitted, preserving existing behavior', () => {
+      const result = resolveDocumentActions('ULB', 2, ULB_GATES, baseDoc({ hasFile: false }));
+      expect(result).toEqual([{ action: 'upload', label: 'Upload', icon: 'bi-upload', disabled: false }]);
     });
   });
 
@@ -155,6 +213,17 @@ describe('resolveDocumentActions', () => {
     it('shows nothing outside the gated status, even for an undecided passed document', () => {
       const result = resolveDocumentActions('STATE', 5, STATE_GATES, baseDoc({ hasFile: true, processingStatus: 'PASSED' }));
       expect(result).toEqual([]);
+    });
+
+    it('is unaffected by blocked - the exemption overlay only ever locks the ULB, never STATE review', () => {
+      const result = resolveDocumentActions(
+        'STATE',
+        3,
+        STATE_GATES,
+        baseDoc({ hasFile: true, processingStatus: 'PASSED' }),
+        true,
+      );
+      expect(result.map((a) => a.action)).toEqual(['approve', 'return']);
     });
   });
 

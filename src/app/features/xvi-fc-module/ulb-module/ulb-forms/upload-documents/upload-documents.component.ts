@@ -10,12 +10,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { UploadDocumentsService } from './upload-documents.service';
 import { FileService } from '../../../../../shared/dynamic-form/components/file/file.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { SUPPRESS_ERROR_TOAST } from '../../../../../core/security/custom-http.interceptor';
 import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -26,6 +28,7 @@ import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } 
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
+import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
 import type {
   ActionGate,
@@ -111,6 +114,17 @@ export interface UploadDocument extends UploadDocumentDef {
   manualReviewError: string | null;
   /** True once a PROCESSING document has been stuck long enough to offer Retry/Re-upload. */
   isStale: boolean;
+  // Failed re-upload attempts since ADMIN last returned a manual-review request — survives across
+  // re-uploads (unlike retryValidationCount), capped at 3. The 3rd failure sets uploadBlockedUntil
+  // directly (no need to re-request and get rejected a second time); reset to 0 once this document
+  // passes or is rejected again (starting a fresh 3-attempt window).
+  postRejectionAttemptsUsed: number;
+  // Total times ADMIN has returned a manual-review request on this document — audit/stats only,
+  // no longer gates the cooldown (see postRejectionAttemptsUsed).
+  manualReviewRejectionCount: number;
+  // Set once postRejectionAttemptsUsed reaches maxManualReviewAttempts — both Re-upload and Request
+  // Manual Review are blocked until this passes. Null the rest of the time.
+  uploadBlockedUntil: Date | null;
 }
 
 interface UlbDetails {
@@ -161,6 +175,12 @@ interface BackendStatusDoc {
   stateDecision: BackendDecision | null;
   // ADMIN's verdict on a manual-review request for this document, or null if never requested/decided.
   manualReviewDecision: BackendDecision | null;
+  // Failed re-upload attempts since ADMIN last returned a manual-review request for this document.
+  postRejectionAttemptsUsed: number;
+  // Total times ADMIN has returned a manual-review request on this document.
+  manualReviewRejectionCount: number;
+  // Set after a second manual-review rejection — null the rest of the time.
+  uploadBlockedUntil: string | null;
 }
 
 type AnnualAccountFormStatus =
@@ -172,7 +192,13 @@ type AnnualAccountFormStatus =
   | 'RETURNED_BY_MOHUA'
   | 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA'
   | 'APPROVED_BY_STATE'
-  | 'AWAITING_CLAIM_LETTER';
+  | 'AWAITING_CLAIM_LETTER'
+  | 'EXEMPTION_PENDING'
+  | 'EXEMPTION_REJECTED'
+  | 'EXEMPTED_ACKNOWLEDGED';
+
+/** When state requests a form for exemption, below are the possible statuses*/
+type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 
 // Statuses in which the ULB may still upload/edit/submit — mirrors the backend's canUlbEditForm allow-list.
 const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
@@ -189,6 +215,9 @@ const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, st
     'This section has been approved by your State DMA and is awaiting claim letter generation before moving to MoHUA.',
   UNDER_REVIEW_BY_MOHUA: 'This section has been approved by the state and is now under review by MoHUA.',
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 'This section has been approved by MoHUA. No further changes are needed.',
+  EXEMPTED_ACKNOWLEDGED: 'Your ULB has been exempted from this requirement. No submission is needed.',
+  EXEMPTION_PENDING: 'Your state has filed a discretionary exemption request for this section, pending MoHUA review. No submission is needed until it is decided.',
+  EXEMPTION_REJECTED: "Your state's discretionary exemption request for this section was rejected by MoHUA.",
 };
 
 interface BackendStatusSection {
@@ -204,6 +233,8 @@ interface BackendStatusSection {
 interface BackendStatusResponse {
   annualAccountId: string;
   data: BackendStatusSection | null;
+  exemptionStatus: DiscretionaryExemptionStatus;
+  exemptionMohuaRemarks: string | null;
 }
 
 // Shape returned by POST /confirm-upload
@@ -222,6 +253,12 @@ const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
 /** Universal upper bound on PDF length for any document on this page (audited or unaudited/provisional). */
 const MAX_PDF_PAGES = 1000;
+/** Mirrors the backend's MAX_POST_REJECTION_ATTEMPTS (annual-account-status-access.util.ts). */
+const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
+/** Mirrors the backend's POST_REJECTION_COOLDOWN_DAYS (annual-account-status-access.util.ts). */
+const MANUAL_REVIEW_COOLDOWN_DAYS = 7;
+/** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
+const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
 /** Pure so it's directly unit-testable without going through pdf.js/checkPdfHasContent. */
 export function getMaxPageCountError(pageCount: number | null, maxPages = MAX_PDF_PAGES): string | null {
@@ -267,6 +304,9 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     isManualReviewRequested: false,
     manualReviewError: null,
     isStale: false,
+    postRejectionAttemptsUsed: 0,
+    manualReviewRejectionCount: 0,
+    uploadBlockedUntil: null,
   };
 }
 
@@ -274,6 +314,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
   selector: 'app-upload-documents',
   standalone: true,
   imports: [
+    DatePipe,
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
@@ -281,6 +322,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     MatTooltipModule,
     PageErrorStateComponent,
     DocumentActionRowComponent,
+    ExemptionNoticeComponent,
   ],
   templateUrl: './upload-documents.component.html',
   styleUrl: './upload-documents.component.scss',
@@ -320,19 +362,45 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   // Numeric form_status_id — what the document-action-row gate is actually keyed on.
   readonly sectionStatusId = signal<number | null>(null);
 
+  // A discretionary Request Exemption entry against this section, if any — see
+  // DiscretionaryExemptionStatus's own doc-comment.
+  readonly exemptionStatus = signal<DiscretionaryExemptionStatus>(null);
+  readonly exemptionMohuaRemarks = signal<string | null>(null);
+
   /** Action-row gates fetched alongside the upload config — a UI-visibility hint only. */
   readonly actionGates = computed<readonly ActionGate[]>(() => this.config()?.actionGates ?? []);
 
-  // True whenever the section is in any non-editable status (under review or fully acknowledged) —
-  // locks all edits for all roles, not just while under state review.
+  // True whenever the section is in any non-editable status (under review or fully acknowledged),
+  // When state requests for exemption (PENDING/ APPROVED)
   readonly sectionLocked = computed(() => {
+    const exemption = this.exemptionStatus();
+    if (exemption === 'PENDING' || exemption === 'APPROVED') return true;
     const status = this.sectionStatus();
     return status !== null && !ULB_EDITABLE_STATUSES.has(status);
   });
 
   readonly lockedBannerMessage = computed(() => {
+    if (this.exemptionStatus() === 'PENDING') {
+      return LOCKED_BANNER_MESSAGE['EXEMPTION_PENDING'];
+    }
     const status = this.sectionStatus();
     return (status && LOCKED_BANNER_MESSAGE[status]) ?? 'This section is currently locked for review.';
+  });
+
+  /** Non-blocking — shown only when a exemption request is REJECTED.
+   *  Rejection never locks the section;
+   * The exemption document stays REJECTED until a new state-filed request replaces it.
+   * Show "Exemption Rejected" only when the section is untouched (null) or NOT_STARTED.
+   * IN_PROGRESS and later mean the ULB has resumed work, so show the live status instead.
+   */
+  readonly exemptionRejectedNotice = computed(() => {
+    if (this.exemptionStatus() !== 'REJECTED') return null;
+    const status = this.sectionStatus();
+    if (status !== null && status !== 'NOT_STARTED') return null;
+    const remarks = this.exemptionMohuaRemarks();
+    return remarks
+      ? LOCKED_BANNER_MESSAGE['EXEMPTION_REJECTED'] + ` ${remarks}`
+      : LOCKED_BANNER_MESSAGE['EXEMPTION_REJECTED'];
   });
 
   // Note attached to the state/MoHUA decision that most recently returned this section, if any.
@@ -348,6 +416,23 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return note ? `Returned by ${actor}: ${note}` : `This section was returned by ${actor} for correction.`;
   });
 
+  /** True once exempted — either auto (real status EXEMPTED_ACKNOWLEDGED) or via
+   *  MoHUA-approved discretionary request (display overlay only; doesn't write to
+   *  this section's status, so `data`/real status may still be null/NOT_STARTED).
+   *  exemptionStatus() distinguishes the two for the message below. */
+  readonly isExempted = computed(
+    () => this.sectionStatus() === 'EXEMPTED_ACKNOWLEDGED' || this.exemptionStatus() === 'APPROVED',
+  );
+
+  readonly exemptionNoticeTitle = computed(() =>
+    this.exemptionStatus() === 'APPROVED' ? 'Exempted — Discretionary Approval' : 'Exempted',
+  );
+  readonly exemptionNoticeMessage = computed(() =>
+    this.exemptionStatus() === 'APPROVED'
+      ? "your state's discretionary exemption request for this section was approved by MoHUA. No submission is required for this section."
+      : 'your ULB is newly constituted and is automatically exempted from this requirement. No submission is required for this section.',
+  );
+
   /** An individually state-approved document stays locked from re-upload even while the rest of the section is open. */
   isDocLocked(doc: UploadDocument): boolean {
     return doc.latestDecision?.status === 'APPROVED';
@@ -357,6 +442,43 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
    *  backend's isAwaitingManualReviewDecision guard, which blocks re-upload/retry until then. */
   isAwaitingManualReview(doc: UploadDocument): boolean {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
+  }
+
+  /** True once this document has failed enough times to offer "Request Manual Review" — a retry
+   *  on the same file, or any re-upload, both count (a re-upload that still fails deserves the
+   *  same offer as a second failed retry). */
+  isEligibleForManualReview(doc: UploadDocument): boolean {
+    return doc.retryValidationCount > 1 || (doc.version ?? 1) > 1;
+  }
+
+  /** True while this document is in its post-rejection cooldown — mirrors the backend's
+   *  isUploadBlocked guard, which blocks re-upload/retry/delete until this timestamp passes. */
+  isUploadBlocked(doc: UploadDocument): boolean {
+    return !!doc.uploadBlockedUntil && doc.uploadBlockedUntil.getTime() > Date.now();
+  }
+
+  /** True once all 3 self-service re-upload attempts since the last rejection are used up. The
+   *  backend sets uploadBlockedUntil in the same write that reaches this count, so in practice
+   *  isUploadBlocked(doc) is already true whenever this is — this only stays relevant as a fallback
+   *  for a document whose cooldown has since expired but hasn't been re-decided yet. */
+  manualReviewAttemptsExhausted(doc: UploadDocument): boolean {
+    return doc.postRejectionAttemptsUsed >= MAX_MANUAL_REVIEW_ATTEMPTS;
+  }
+
+  readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
+  readonly manualReviewCooldownDays = MANUAL_REVIEW_COOLDOWN_DAYS;
+  readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
+
+  /** Whether the "Request Manual Review" button itself should show — covers both the original
+   *  first-time-eligible case and the post-rejection case once self-service attempts are used up.
+   *  Never true while a request is already pending or the document is in its cooldown. */
+  canRequestManualReview(doc: UploadDocument): boolean {
+    if (doc.isManualReviewRequested) return false;
+    if (this.isUploadBlocked(doc)) return false;
+    if (doc.manualReviewDecision?.status === 'RETURNED') {
+      return this.manualReviewAttemptsExhausted(doc);
+    }
+    return this.isEligibleForManualReview(doc);
   }
 
   /** True once a PROCESSING document has been stuck long enough that polling it further is
@@ -392,14 +514,21 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       isStale: doc.isStale,
       manualReviewReturned: doc.manualReviewDecision?.status === 'RETURNED',
       isAwaitingManualReview: this.isAwaitingManualReview(doc),
+      isEligibleForManualReview: this.isEligibleForManualReview(doc),
+      manualReviewAttemptsExhausted: this.manualReviewAttemptsExhausted(doc),
+      isUploadBlocked: this.isUploadBlocked(doc),
     };
   }
 
   /** Routes the shared action-row component's click event to the existing handlers — the
    *  gate/resolver only decide what to show; permission is re-checked here at the point of action. */
   onDocAction(event: { action: ResolvedDocumentAction['action']; docKey: string }): void {
+    // Safety net: action row already hides all actions while locked (sectionLocked())
+    // this guards against a stale render dispatching one anyway.
+    if (this.sectionLocked()) return;
     const doc = this.documents().find((d) => d.id === event.docKey);
     if (doc && this.isAwaitingManualReview(doc) && (event.action === 'reupload' || event.action === 'retry')) return;
+    if (doc && this.isUploadBlocked(doc) && (event.action === 'reupload' || event.action === 'retry' || event.action === 'delete')) return;
 
     switch (event.action) {
       case 'upload':
@@ -540,6 +669,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     this.pendingDocId = null;
     const existingDoc = this.documents().find((d) => d.id === docId);
     if (existingDoc && this.isAwaitingManualReview(existingDoc)) return;
+    if (existingDoc && this.isUploadBlocked(existingDoc)) return;
     const docDef = this.config()!.documents.find((d) => d.id === docId)!;
 
     const validationMsg = await this.checkFileValidity(file, docDef);
@@ -549,7 +679,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     }
 
     this.documents.update((docs) =>
-      docs.map((d) => (d.id === docId ? { ...emptyDoc(docDef), status: 'uploading', fileName: file.name } : d)),
+      docs.map((d) =>
+        d.id === docId
+          ? {
+              ...emptyDoc(docDef),
+              status: 'uploading',
+              fileName: file.name,
+              // These four must survive a re-upload — they're what tracks the post-rejection
+              // cycle across attempts. emptyDoc() zeroes them out, which is right for a doc
+              // that's never been rejected, but wrong here: wiping them the instant a new file
+              // is picked (before the new OCR run even starts) made the document look like it
+              // had never been rejected, re-offering "Request Manual Review" a turn early.
+              manualReviewDecision: d.manualReviewDecision,
+              postRejectionAttemptsUsed: d.postRejectionAttemptsUsed,
+              manualReviewRejectionCount: d.manualReviewRejectionCount,
+              uploadBlockedUntil: d.uploadBlockedUntil,
+            }
+          : d,
+      ),
     );
 
     try {
@@ -643,6 +790,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     const doc = this.documents().find((d) => d.id === docId);
     if (!doc?.uploadId || !this.annualAccountId()) return;
     if (this.isAwaitingManualReview(doc)) return;
+    if (this.isUploadBlocked(doc)) return;
 
     this.documents.update((docs) =>
       docs.map((d) =>
@@ -714,14 +862,24 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         this.http.post(
           `${API}xvi-fc/annual-account/${accountId}/documents/${docId}/manual-review?section=${section}`,
           {},
+          // Rendered inline (manual-review-error, below the button) instead — showing it a
+          // second time as the global snackbar would be redundant, and the inline copy can show
+          // the backend's actual reason (e.g. "you have 2 attempt(s) left"), not a generic one.
+          { context: new HttpContext().set(SUPPRESS_ERROR_TOAST, true) },
         ),
       );
-      this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true } : d)));
+      this.documents.update((docs) =>
+        docs.map((d) => (d.id === docId ? { ...d, isManualReviewRequested: true, manualReviewDecision: null } : d)),
+      );
     } catch (err) {
       console.error('[manual-review] request failed', err);
+      const message =
+        err instanceof HttpErrorResponse && typeof err.error?.message === 'string'
+          ? err.error.message
+          : 'Failed to request manual review. Please try again.';
       this.documents.update((docs) =>
         docs.map((d) =>
-          d.id === docId ? { ...d, manualReviewError: 'Failed to request manual review. Please try again.' } : d,
+          d.id === docId ? { ...d, manualReviewError: message } : d,
         ),
       );
     }
@@ -883,8 +1041,21 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
 
       const statusData = unwrap<BackendStatusResponse | null>(result);
       if (!statusData) {
-        // No annual-account document exists yet for this ULB/year — same as the
-        // backend's own default for a section with no data (NOT_STARTED).
+        // No annual-account doc yet and no discretionary exemption to report —
+        // same as backend's default for a section with no data (NOT_STARTED).
+        this.sectionStatusId.set(1);
+        return;
+      }
+
+      this.exemptionStatus.set(statusData.exemptionStatus);
+      this.exemptionMohuaRemarks.set(statusData.exemptionMohuaRemarks);
+
+      // No section document yet, but there's a discretionary exemption to report — PENDING,
+      // REJECTED, or APPROVED (MoHUA-approve is a display overlay only; see isExempted()).
+      // Same NOT_STARTED default as above — safe because isExempted()/sectionLocked() key
+      // off exemptionStatus() directly, not this default, for the APPROVED case.
+      if (!statusData.data) {
+        this.annualAccountId.set(statusData.annualAccountId?.toString() ?? null);
         this.sectionStatusId.set(1);
         return;
       }
@@ -928,13 +1099,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               ? null
               : rawLatestDecision;
 
-          // Same staleness convention for ADMIN's manual-review verdict — a re-upload after the
-          // decision supersedes it, even though the backend doesn't clear it on plain retry.
-          const manualReviewDecision =
-            saved.manualReviewDecision &&
-            new Date(cu.uploadedAt).getTime() > new Date(saved.manualReviewDecision.decidedAt).getTime()
-              ? null
-              : saved.manualReviewDecision;
+          // Unlike stateDecision, ADMIN's manual-review verdict is NOT treated as stale by a later
+          // re-upload — a RETURNED decision deliberately stays live through the whole post-rejection
+          // attempt window (see the schema's own doc comment on DocumentItem.manualReviewDecision in
+          // the backend). The backend clears it back to null itself, either on a genuinely new
+          // manual-review request or once the document passes — trust it as-is here.
+          const manualReviewDecision = saved.manualReviewDecision;
 
           return {
             ...doc,
@@ -962,6 +1132,9 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             isStale: saved.isStale,
             latestDecision,
             manualReviewDecision,
+            postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
+            manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
+            uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
           };
         }),
       );
@@ -1040,6 +1213,14 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                   ? new Date(remote.currentUpload.retryValidationAt)
                   : null,
                 isStale: remote.isStale,
+                // Without these, a FAILED re-upload after a rejection would keep showing whatever
+                // attempt count/decision was true at the last full page load until the ULB
+                // manually refreshes — these four need to update live as OCR settles, same as
+                // everything else in this block.
+                manualReviewDecision: remote.manualReviewDecision,
+                postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
+                manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
+                uploadBlockedUntil: remote.uploadBlockedUntil ? new Date(remote.uploadBlockedUntil) : null,
               };
             }),
           );

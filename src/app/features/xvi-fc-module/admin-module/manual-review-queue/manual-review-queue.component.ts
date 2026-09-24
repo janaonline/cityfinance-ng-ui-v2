@@ -15,14 +15,24 @@ import {
   ManualReviewDecisionDialogComponent,
   ManualReviewDecisionDialogData,
 } from './dialogs/manual-review-decision-dialog/manual-review-decision-dialog.component';
-import { AnnualAccountSectionKey, ManualReviewQueueRow } from './manual-review-queue.models';
+import { ManualReviewFormType, ManualReviewQueueRow } from './manual-review-queue.models';
 import { ManualReviewQueueService } from './manual-review-queue.service';
 
 const ROWS_PAGE_SIZE = 20;
 
-const SECTION_LABEL: Record<AnnualAccountSectionKey, string> = {
+const SECTION_LABEL: Record<string, string> = {
   auditedData: 'Audited',
   unauditedData: 'Provisional',
+};
+
+const DUR_DOC_LABEL: Record<string, string> = {
+  tiedGrant: 'Tied Grant',
+  untiedGrant: 'Untied Grant',
+};
+
+const FORM_TYPE_LABEL: Record<ManualReviewQueueRow['formType'], string> = {
+  ANNUAL_ACCOUNT: 'Annual Account',
+  DUR: 'DUR',
 };
 
 @Component({
@@ -48,6 +58,9 @@ export class ManualReviewQueueComponent implements OnInit {
   readonly pageSizeOptions = [10, 20, 50];
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
+  /** Non-empty when one backend (Annual Account and/or DUR) failed to load this time — the rows
+   *  shown are still whatever the other backend(s) returned successfully, not a full failure. */
+  readonly failedSources = signal<ManualReviewFormType[]>([]);
 
   /** Row currently mid-decision (approve or reject in flight) — disables its own buttons only. */
   readonly decidingRowKey = signal<string | null>(null);
@@ -65,7 +78,7 @@ export class ManualReviewQueueComponent implements OnInit {
   }
 
   rowKey(row: ManualReviewQueueRow): string {
-    return `${row.annualAccountId}:${row.section}:${row.docId}`;
+    return `${row.formType}:${row.formId}:${row.section ?? ''}:${row.docId}`;
   }
 
   isDeciding(row: ManualReviewQueueRow): boolean {
@@ -76,8 +89,19 @@ export class ManualReviewQueueComponent implements OnInit {
     return (this.page() - 1) * this.pageSize() + index + 1;
   }
 
-  sectionLabel(section: AnnualAccountSectionKey): string {
-    return SECTION_LABEL[section];
+  formLabel(row: ManualReviewQueueRow): string {
+    return FORM_TYPE_LABEL[row.formType];
+  }
+
+  failedSourcesLabel(): string {
+    return this.failedSources()
+      .map((f) => FORM_TYPE_LABEL[f])
+      .join(' and ');
+  }
+
+  docLabel(row: ManualReviewQueueRow): string {
+    if (row.formType === 'DUR') return DUR_DOC_LABEL[row.docId] ?? row.docId;
+    return row.section ? SECTION_LABEL[row.section] : row.docId;
   }
 
   loadRows(): void {
@@ -98,6 +122,7 @@ export class ManualReviewQueueComponent implements OnInit {
           }
           this.rows.set(result.rows);
           this.total.set(result.total);
+          this.failedSources.set(result.failedSources);
           this.isLoading.set(false);
         },
         error: () => {
@@ -125,7 +150,8 @@ export class ManualReviewQueueComponent implements OnInit {
     if (this.decidingRowKey()) return;
 
     const dialogData: ManualReviewDecisionDialogData = {
-      annualAccountId: row.annualAccountId,
+      formType: row.formType,
+      formId: row.formId,
       section: row.section,
       docId: row.docId,
       ulbName: row.ulbName,
@@ -151,8 +177,10 @@ export class ManualReviewQueueComponent implements OnInit {
     this.total.update((t) => Math.max(0, t - 1));
   }
 
-  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed. */
-  ocrDownloadUrl(jobId: string): string {
-    return `${environment.api.url3}ocr-validation/jobs/${jobId}/download`;
+  /** Direct download link for the job's source file — a plain URL, no auth header needed. DUR jobs
+   *  live under a distinct vendor path (dur-validation vs ocr-validation — see DurValidationApiService). */
+  ocrDownloadUrl(jobId: string, formType: ManualReviewFormType): string {
+    const prefix = formType === 'DUR' ? 'dur-validation' : 'ocr-validation';
+    return `${environment.api.url3}${prefix}/jobs/${jobId}/download`;
   }
 }

@@ -783,6 +783,11 @@ export class OcrService {
     return this.http.get<DurJobResultResponse>(environment.api.url3 + `dur-validation/jobs/${jobId}/result`);
   }
 
+  /** Original uploaded PDF, straight from the vendor — for the manual-review queue's Download link. */
+  downloadDurJobFile(jobId: string) {
+    return this.http.get(environment.api.url3 + `dur-validation/jobs/${jobId}/download`, { responseType: 'blob' });
+  }
+
   listDurValidationJobs(params?: {
     status?: string;
     filename?: string;
