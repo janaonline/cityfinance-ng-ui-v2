@@ -182,6 +182,10 @@
                       <span class="summary-item__value">{{ job.result.textract_extraction.page_count }}</span>
                     </div>
                     <div class="summary-item">
+                      <span class="summary-item__label">File Size</span>
+                      <span class="summary-item__value">{{ formatFileSize(job.result.file_size_bytes) }}</span>
+                    </div>
+                    <div class="summary-item">
                       <span class="summary-item__label">Tables Extracted</span>
                       <span class="summary-item__value">{{ job.result.textract_extraction.tables.length }}</span>
                     </div>

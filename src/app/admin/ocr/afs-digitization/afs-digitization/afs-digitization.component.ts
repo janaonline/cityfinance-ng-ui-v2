@@ -223,6 +223,10 @@ export class AfsDigitizationComponent implements OnInit {
     };
   }
 
+  formatFileSize(bytes: number | null): string {
+    return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
   formatDateTime(d: string | null): string {
     if (!d) return '—';
     const normalized = /[Z+]/.test(d.slice(-6)) ? d : d + 'Z';

@@ -98,6 +98,7 @@ export interface GeminiValidation {
 export interface DigitizationResult {
   filename: string;
   doc_id: string;
+  file_size_bytes: number | null;
   processing_time_seconds: number;
   expected: DigitizationExpectedFields | null;
   textract_extraction: TextractExtraction;

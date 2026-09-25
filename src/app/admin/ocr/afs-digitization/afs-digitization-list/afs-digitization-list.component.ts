@@ -245,16 +245,7 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   private formatFileSize(bytes: number | null): string {
-    if (bytes === null || bytes < 0) return '—';
-    if (bytes < 1024) return `${bytes} B`;
-    const units = ['KB', 'MB', 'GB'];
-    let value = bytes / 1024;
-    let unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
-      unitIndex++;
-    }
-    return `${value.toFixed(1)} ${units[unitIndex]}`;
+    return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   private formatDate(value?: string | null): string {
