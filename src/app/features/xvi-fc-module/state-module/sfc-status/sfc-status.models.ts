@@ -36,6 +36,10 @@ export interface SfcStatusFormData {
   permissions: SfcStatusPermissions;
   instructions: unknown[];
   meta: SfcStatusFormMeta;
+  /** Discretionary Request Exemption status for this state+year's SFC Status, if any has ever
+   *  been filed — see DiscretionaryExemptionStatus in sfc-status.component.ts. */
+  exemptionStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  exemptionMohuaRemarks: string | null;
 }
 
 export interface SfcStatusApiResponse {

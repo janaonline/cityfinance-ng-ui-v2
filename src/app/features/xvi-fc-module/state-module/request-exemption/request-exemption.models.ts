@@ -15,8 +15,17 @@ export interface RequestExemptionData {
 }
 
 export interface RequestExemptionSaveData {
+  /** Which branch of the form this submission is — 'ULB' (a specific ULB) or 'STATE' (the whole
+   *  state, e.g. an SFC extension/compliance request). Optional on the wire (server defaults to
+   *  'ULB' when absent); the field itself is Mandatory in the actual form config, so in practice
+   *  this is always sent once the formjsons document includes the `exemptionFor` field. */
+  exemptionFor?: 'ULB' | 'STATE';
   ulb?: string | null;
   reasonForExemption?: number[];
+  /** The whole-state-branch equivalent of `reasonForExemption` — a separate field/key, not the
+   *  same one with different options (no mechanism in this dynamic-form system swaps a field's
+   *  options based on another field's value). */
+  reasonForExemptionState?: number[];
   supportingDetails?: string;
   supportingFile?: unknown;
 }
