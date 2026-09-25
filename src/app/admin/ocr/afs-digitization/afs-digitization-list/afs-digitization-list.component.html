@@ -96,6 +96,10 @@
                 <span class="cell-label">File</span>
                 <span class="cell-value" [title]="row.filename">{{ row.filename }}</span>
               </div>
+              <div class="identity-cell">
+                <span class="cell-label">Pages / Size</span>
+                <span class="cell-value">{{ row.pageCount ?? '—' }} pg · {{ row.fileSizeLabel }}</span>
+              </div>
             </td>
           </ng-container>
 

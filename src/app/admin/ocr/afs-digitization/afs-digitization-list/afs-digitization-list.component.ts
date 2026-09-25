@@ -15,12 +15,14 @@ import { DigitizationJobStatusResponse } from '../afs-digitization-models';
 interface DigitizationListRow {
   jobId: string;
   filename: string;
+  fileSizeLabel: string;
   geminiModel: string;
   status: string;
   progressStep: string;
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
+  pageCount: number | null;
   textractPriceInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
@@ -224,12 +226,14 @@ export class AfsDigitizationListComponent implements OnInit {
     return {
       jobId: job.job_id || '—',
       filename: job.filename || '—',
+      fileSizeLabel: this.formatFileSize(job.file_size_bytes),
       geminiModel: job.gemini_model || '—',
       status: job.status || '—',
       progressStep: job.progress_step || '—',
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
+      pageCount: job.page_count,
       textractPriceInr: job.textract_price_inr,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
@@ -238,6 +242,19 @@ export class AfsDigitizationListComponent implements OnInit {
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
     };
+  }
+
+  private formatFileSize(bytes: number | null): string {
+    if (bytes === null || bytes < 0) return '—';
+    if (bytes < 1024) return `${bytes} B`;
+    const units = ['KB', 'MB', 'GB'];
+    let value = bytes / 1024;
+    let unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex++;
+    }
+    return `${value.toFixed(1)} ${units[unitIndex]}`;
   }
 
   private formatDate(value?: string | null): string {

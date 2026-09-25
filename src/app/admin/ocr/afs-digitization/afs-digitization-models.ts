@@ -16,12 +16,14 @@ export interface DigitizationJobStatusResponse {
   job_id: string;
   status: DigitizationStatus;
   filename: string;
+  file_size_bytes: number | null;
   gemini_model: string;
   expected: DigitizationExpectedFields | null;
   progress_step: string | null;
   error_message: string | null;
   confidence_score: number | null;
   accuracy_score: number | null;
+  page_count: number | null;
   textract_cost_usd: number | null;
   textract_price_inr: number | null;
   excel_s3_key: string | null;
