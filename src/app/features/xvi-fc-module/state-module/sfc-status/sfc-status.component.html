@@ -25,34 +25,54 @@
       <app-pre-loader></app-pre-loader>
       <app-pre-loader></app-pre-loader>
     } @else {
-      @if (actors().length) {
+      @if (actors().length && !isExempted()) {
         <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
         <hr class="my-0 text-body-tertiary" />
       }
 
-      <form class="content-body" [formGroup]="form">
-        @for (item of visibleFields(); track item.key; let isLast = $last) {
-          <div
-            class="my-2"
-            [class.border-bottom]="!isLast"
-            [class.border-secondary]="!isLast"
-            [class.border-opacity-25]="!isLast"
-          >
-            <app-dynamic-form
-              class="p-2 d-block"
-              [field]="item"
-              [group]="form"
-              [mode]="canEdit() ? 'edit' : 'view'"
-            ></app-dynamic-form>
-          </div>
-        }
-      </form>
+      @if (formLocked() && !isExempted()) {
+        <div class="alert alert-warning mb-0" role="alert" data-cy="sfc-status-exemption-locked-banner">
+          {{ lockedBannerMessage() }}
+        </div>
+      }
+      @if (exemptionRejectedNotice(); as notice) {
+        <div class="alert alert-secondary mb-0" role="alert" data-cy="sfc-status-exemption-rejected-notice">
+          {{ notice }}
+        </div>
+      }
+
+      @if (isExempted()) {
+        <app-exemption-notice
+          title="Exempted — Discretionary Approval"
+          [ulbName]="stateName()"
+          message="your state's discretionary exemption request for SFC Status was approved by MoHUA. No submission is required."
+        ></app-exemption-notice>
+      } @else {
+        <form class="content-body" [formGroup]="form">
+          @for (item of visibleFields(); track item.key; let isLast = $last) {
+            <div
+              class="my-2"
+              [class.border-bottom]="!isLast"
+              [class.border-secondary]="!isLast"
+              [class.border-opacity-25]="!isLast"
+            >
+              <app-dynamic-form
+                class="p-2 d-block"
+                [field]="item"
+                [group]="form"
+                [mode]="canEdit() ? 'edit' : 'view'"
+              ></app-dynamic-form>
+            </div>
+          }
+        </form>
+      }
     }
   </div>
 </section>
 
-<!-- Show acknowledgement section only if edit + finalSubmit is true -->
-@if (canEdit() || canFinalSubmit()) {
+<!-- Show acknowledgement section only if edit + finalSubmit is true, and not locked by a
+     discretionary exemption (Pending or Approved) -->
+@if ((canEdit() || canFinalSubmit()) && !formLocked()) {
   <div class="acknowledgement">
     <div class="acknowledgement-inner">
       <button
