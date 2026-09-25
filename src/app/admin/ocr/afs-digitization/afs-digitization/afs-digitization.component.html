@@ -182,6 +182,10 @@
                       <span class="summary-item__value">{{ job.result.textract_extraction.page_count }}</span>
                     </div>
                     <div class="summary-item">
+                      <span class="summary-item__label">File Size</span>
+                      <span class="summary-item__value">{{ formatFileSize(job.result.file_size_bytes) }}</span>
+                    </div>
+                    <div class="summary-item">
                       <span class="summary-item__label">Tables Extracted</span>
                       <span class="summary-item__value">{{ job.result.textract_extraction.tables.length }}</span>
                     </div>
@@ -207,6 +211,21 @@
                         </span>
                       </div>
                     }
+                  </div>
+
+                  <!-- Task timings -->
+                  <div class="usage-section">
+                    <h5>Task Timings</h5>
+                    <div class="summary-grid">
+                      @for (t of getTaskTimings(job.result); track t.label) {
+                        <div class="summary-item">
+                          <span class="summary-item__label">{{ t.label }}</span>
+                          <span class="summary-item__value">
+                            {{ t.seconds !== null ? (t.seconds | number: '1.1-1') + 's' : '—' }}
+                          </span>
+                        </div>
+                      }
+                    </div>
                   </div>
 
                   @if (job.result.gemini_validation?.summary) {

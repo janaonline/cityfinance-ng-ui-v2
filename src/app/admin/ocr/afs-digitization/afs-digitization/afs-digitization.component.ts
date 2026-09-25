@@ -7,7 +7,13 @@ import { finalize, switchMap, takeWhile, tap, timer } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
-import { DigitizationJobTracker, DigitizationStatus, GeminiFieldCheck, GeminiValidation } from '../afs-digitization-models';
+import {
+  DigitizationJobTracker,
+  DigitizationResult,
+  DigitizationStatus,
+  GeminiFieldCheck,
+  GeminiValidation,
+} from '../afs-digitization-models';
 
 const USD_TO_INR = 96.28; // Example conversion rate, should be updated with real-time data in production
 
@@ -174,6 +180,25 @@ export class AfsDigitizationComponent implements OnInit {
     return checks.filter((c) => !c.matched);
   }
 
+  getTaskTimings(result: DigitizationResult): Array<{ label: string; seconds: number | null }> {
+    const extractionSeconds = result.textract_extraction.extraction_seconds;
+    const validationSeconds = result.gemini_validation?.validation_seconds ?? null;
+    const totalSeconds = result.processing_time_seconds;
+
+    let excelSeconds: number | null = null;
+    if (extractionSeconds !== null && totalSeconds !== null) {
+      const remainder = totalSeconds - extractionSeconds - (validationSeconds ?? 0);
+      excelSeconds = remainder >= 0 ? remainder : null;
+    }
+
+    return [
+      { label: 'Textract Extraction', seconds: extractionSeconds },
+      { label: 'Gemini Cross-check', seconds: validationSeconds },
+      { label: 'Excel Build & Upload', seconds: excelSeconds },
+      { label: 'Total', seconds: totalSeconds },
+    ];
+  }
+
   getUsageStep(validation: GeminiValidation): UsageStep {
     const s = (validation.usage_metadata ?? {}) as Record<string, unknown>;
     const pricing = this.geminiModels.find((m) => m.value === validation.model)?.pricing ?? null;
@@ -196,6 +221,10 @@ export class AfsDigitizationComponent implements OnInit {
       estimatedCostInr,
       pricing,
     };
+  }
+
+  formatFileSize(bytes: number | null): string {
+    return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   formatDateTime(d: string | null): string {
