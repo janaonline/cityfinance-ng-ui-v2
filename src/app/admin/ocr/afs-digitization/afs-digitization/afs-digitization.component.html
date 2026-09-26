@@ -137,6 +137,13 @@
                     (click)="downloadPdf(job)">
                     @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
                   </button>
+                  @if (job.status === 'completed') {
+                    <button mat-stroked-button type="button" [disabled]="revalidatingJobId() === job.jobId"
+                      title="Re-run Gemini validation only — the Textract extraction is reused unchanged"
+                      (click)="revalidateJob(job)">
+                      @if (revalidatingJobId() === job.jobId) { Queuing... } @else { Rerun Validation }
+                    </button>
+                  }
                   <button mat-icon-button type="button" (click)="toggleResult(job.jobId)"
                     [attr.aria-label]="job.showResult ? 'Collapse' : 'Expand'">
                     <mat-icon>{{ job.showResult ? 'expand_less' : 'expand_more' }}</mat-icon>

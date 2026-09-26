@@ -65,6 +65,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly revalidatingJobId = signal<string | null>(null);
   readonly copiedKey = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -279,6 +280,28 @@ export class AfsDigitizationComponent implements OnInit {
         },
         error: () => {
           this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
+        },
+      });
+  }
+
+  revalidateJob(job: DigitizationJobTracker): void {
+    if (this.revalidatingJobId()) return;
+    this.revalidatingJobId.set(job.jobId);
+    this.digitizationService
+      .revalidateDigitizationJob(job.jobId)
+      .pipe(finalize(() => this.revalidatingJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            status: 'processing',
+            message: response.message,
+            progressStep: 'revalidation_queued',
+            result: null,
+          });
+          this.startPolling(job.jobId);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Revalidate failed', this.parseApiError(err), 'error');
         },
       });
   }

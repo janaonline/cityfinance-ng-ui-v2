@@ -93,6 +93,15 @@ export class AfsDigitizationService {
     );
   }
 
+  revalidateDigitizationJob(jobId: string, geminiModel?: string) {
+    const formData = new FormData();
+    if (geminiModel) formData.append('gemini_model', geminiModel);
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate`,
+      formData,
+    );
+  }
+
   getDigitizationJobStatus(jobId: string) {
     return this.http.get<DigitizationJobStatusResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/status`,

@@ -230,6 +230,21 @@
                     </span>
                   }
                 </button>
+                @if (row.status === 'completed') {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning"
+                    [disabled]="revalidatingJobId() === row.jobId"
+                    (click)="revalidateJob(row)"
+                    title="Re-run Gemini validation only (Textract extraction is reused)"
+                  >
+                    @if (revalidatingJobId() === row.jobId) {
+                      <mat-icon class="spin-icon">hourglass_empty</mat-icon>
+                    } @else {
+                      <mat-icon>fact_check</mat-icon>
+                    }
+                  </button>
+                }
               </div>
             </td>
           </ng-container>

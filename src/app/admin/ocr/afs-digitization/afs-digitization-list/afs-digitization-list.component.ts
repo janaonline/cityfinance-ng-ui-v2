@@ -88,6 +88,7 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly loading = signal(false);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly revalidatingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -184,6 +185,31 @@ export class AfsDigitizationListComponent implements OnInit {
         },
         error: () => {
           this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
+        },
+      });
+  }
+
+  revalidateJob(row: DigitizationListRow): void {
+    if (this.revalidatingJobId()) return;
+    this.revalidatingJobId.set(row.jobId);
+    this.digitizationService
+      .revalidateDigitizationJob(row.jobId)
+      .pipe(finalize(() => this.revalidatingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Revalidation queued',
+            'Gemini validation is re-running for this job; the Textract extraction is reused unchanged.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Revalidate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
         },
       });
   }
