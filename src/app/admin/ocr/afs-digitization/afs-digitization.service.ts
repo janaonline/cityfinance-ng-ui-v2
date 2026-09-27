@@ -80,6 +80,7 @@ export class AfsDigitizationService {
     ulbName?: string | null,
     financialYear?: string | null,
     docType?: string | null,
+    enableValidation = true,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -87,6 +88,7 @@ export class AfsDigitizationService {
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
+    formData.append('enable_validation', String(enableValidation));
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + 'afs-digitization/jobs',
       formData,

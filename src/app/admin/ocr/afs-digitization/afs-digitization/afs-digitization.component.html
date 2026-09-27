@@ -49,6 +49,14 @@
               <mat-label>ULB name (optional)</mat-label>
               <input type="text" matInput formControlName="ulbName" placeholder="For labeling only" autocomplete="off" />
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini validation</mat-label>
+              <mat-select formControlName="enableValidation">
+                <mat-option [value]="true">Enabled — cross-check with Gemini now</mat-option>
+                <mat-option [value]="false">Disabled — Textract only (validate later)</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <!-- File picker -->

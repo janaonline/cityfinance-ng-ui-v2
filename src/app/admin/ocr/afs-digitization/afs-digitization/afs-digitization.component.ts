@@ -57,6 +57,7 @@ export class AfsDigitizationComponent implements OnInit {
     ulbName: this.fb.control<string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     docType: this.fb.control<string | null>(null),
+    enableValidation: this.fb.nonNullable.control(true, Validators.required),
   });
 
   selectedFile: File | null = null;
@@ -117,12 +118,12 @@ export class AfsDigitizationComponent implements OnInit {
       return;
     }
 
-    const { geminiModel, ulbName, financialYear, docType } = this.form.getRawValue();
+    const { geminiModel, ulbName, financialYear, docType, enableValidation } = this.form.getRawValue();
     const file = this.selectedFile;
     this.isSubmitting.set(true);
 
     this.digitizationService
-      .submitDigitizationJob(file, geminiModel, ulbName, financialYear, docType)
+      .submitDigitizationJob(file, geminiModel, ulbName, financialYear, docType, enableValidation)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {

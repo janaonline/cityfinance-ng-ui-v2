@@ -18,6 +18,7 @@ export interface DigitizationJobStatusResponse {
   filename: string;
   file_size_bytes: number | null;
   gemini_model: string;
+  enable_validation: boolean;
   expected: DigitizationExpectedFields | null;
   progress_step: string | null;
   error_message: string | null;
