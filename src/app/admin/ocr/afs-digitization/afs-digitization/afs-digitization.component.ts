@@ -67,6 +67,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
   readonly revalidatingJobId = signal<string | null>(null);
+  readonly regeneratingJobId = signal<string | null>(null);
   readonly copiedKey = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -303,6 +304,30 @@ export class AfsDigitizationComponent implements OnInit {
         },
         error: (err) => {
           this.utilityService.swalPopup('Revalidate failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
+  regenerateExcel(job: DigitizationJobTracker): void {
+    if (this.regeneratingJobId()) return;
+    this.regeneratingJobId.set(job.jobId);
+    this.digitizationService
+      .regenerateDigitizationExcel(job.jobId)
+      .pipe(finalize(() => this.regeneratingJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            result: response.result,
+            excelS3Key: response.result?.excel_s3_key ?? null,
+          });
+          this.utilityService.swalPopup(
+            'Excel regenerated',
+            'The workbook has been rebuilt from the stored extraction and re-uploaded.',
+            'success',
+          );
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Regenerate failed', this.parseApiError(err), 'error');
         },
       });
   }

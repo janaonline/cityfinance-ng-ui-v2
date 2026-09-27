@@ -151,6 +151,11 @@
                       (click)="revalidateJob(job)">
                       @if (revalidatingJobId() === job.jobId) { Queuing... } @else { Rerun Validation }
                     </button>
+                    <button mat-stroked-button type="button" [disabled]="regeneratingJobId() === job.jobId"
+                      title="Rebuild the Excel workbook from the stored result — no Textract/Gemini calls"
+                      (click)="regenerateExcel(job)">
+                      @if (regeneratingJobId() === job.jobId) { Regenerating... } @else { Regenerate Excel }
+                    </button>
                   }
                   <button mat-icon-button type="button" (click)="toggleResult(job.jobId)"
                     [attr.aria-label]="job.showResult ? 'Collapse' : 'Expand'">

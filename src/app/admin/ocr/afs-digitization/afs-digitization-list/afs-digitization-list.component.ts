@@ -89,6 +89,7 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
   readonly revalidatingJobId = signal<string | null>(null);
+  readonly regeneratingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -207,6 +208,31 @@ export class AfsDigitizationListComponent implements OnInit {
         error: (err) => {
           this.utilityService.swalPopup(
             'Revalidate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  regenerateExcel(row: DigitizationListRow): void {
+    if (this.regeneratingJobId()) return;
+    this.regeneratingJobId.set(row.jobId);
+    this.digitizationService
+      .regenerateDigitizationExcel(row.jobId)
+      .pipe(finalize(() => this.regeneratingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Excel regenerated',
+            'The workbook has been rebuilt from the stored extraction and re-uploaded.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Regenerate failed',
             err?.error?.detail || err?.error?.message || 'Please try again.',
             'error',
           );

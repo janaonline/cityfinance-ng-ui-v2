@@ -244,6 +244,19 @@
                       <mat-icon>fact_check</mat-icon>
                     }
                   </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    [disabled]="regeneratingJobId() === row.jobId"
+                    (click)="regenerateExcel(row)"
+                    title="Rebuild the Excel workbook from the stored result (no Textract/Gemini calls)"
+                  >
+                    @if (regeneratingJobId() === row.jobId) {
+                      <mat-icon class="spin-icon">hourglass_empty</mat-icon>
+                    } @else {
+                      <mat-icon>refresh</mat-icon>
+                    }
+                  </button>
                 }
               </div>
             </td>

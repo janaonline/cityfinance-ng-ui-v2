@@ -104,6 +104,17 @@ export class AfsDigitizationService {
     );
   }
 
+  regenerateDigitizationExcel(jobId: string, separateSheetPerPage?: boolean) {
+    const formData = new FormData();
+    if (separateSheetPerPage !== undefined) {
+      formData.append('separate_sheet_per_page', String(separateSheetPerPage));
+    }
+    return this.http.post<DigitizationJobResultResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/regenerate-excel`,
+      formData,
+    );
+  }
+
   getDigitizationJobStatus(jobId: string) {
     return this.http.get<DigitizationJobStatusResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/status`,
