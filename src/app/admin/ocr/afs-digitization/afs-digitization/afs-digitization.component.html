@@ -47,7 +47,26 @@
 
             <mat-form-field appearance="outline">
               <mat-label>ULB name (optional)</mat-label>
-              <input type="text" matInput formControlName="ulbName" placeholder="For labeling only" autocomplete="off" />
+              <input type="text" matInput formControlName="ulbName" placeholder="Search ULB name or code"
+                autocomplete="off" [matAutocomplete]="ulbAuto" />
+              <mat-autocomplete #ulbAuto="matAutocomplete" [displayWith]="displayUlbName"
+                (optionSelected)="onUlbSelected($event)">
+                @for (ulb of filteredUlbs(); track ulb._id) {
+                <mat-option [value]="ulb">{{ ulb.name }} ({{ ulb.code }})</mat-option>
+                }
+                @if (ulbSearchInProgress()) {
+                <mat-option disabled>Searching...</mat-option>
+                } @else if (form.controls.ulbName.value && filteredUlbs().length === 0) {
+                <mat-option disabled>No matching ULB found.</mat-option>
+                }
+              </mat-autocomplete>
+              @if (selectedUlb()) {
+              <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
+              } @else if (
+              (form.controls.ulbName.value ?? '').toString().length > 0 &&
+              (form.controls.ulbName.value ?? '').toString().length < 2 ) {
+              <mat-hint>Type at least 2 characters to search.</mat-hint>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">

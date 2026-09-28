@@ -1,10 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
-import { finalize, switchMap, takeWhile, tap, timer } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  map,
+  of,
+  startWith,
+  switchMap,
+  takeWhile,
+  tap,
+  timer,
+} from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { IUlbSummary } from '../../../../core/models/ulb-summary';
+import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
 import {
@@ -44,6 +59,7 @@ export class AfsDigitizationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly digitizationService = inject(AfsDigitizationService);
+  private readonly ulbService = inject(UlbService);
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
@@ -54,7 +70,7 @@ export class AfsDigitizationComponent implements OnInit {
 
   readonly form = this.fb.group({
     geminiModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
-    ulbName: this.fb.control<string | null>(null),
+    ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     docType: this.fb.control<string | null>(null),
     enableValidation: this.fb.nonNullable.control(true, Validators.required),
@@ -69,12 +85,55 @@ export class AfsDigitizationComponent implements OnInit {
   readonly revalidatingJobId = signal<string | null>(null);
   readonly regeneratingJobId = signal<string | null>(null);
   readonly copiedKey = signal<string | null>(null);
+  readonly filteredUlbs = signal<IUlbSummary[]>([]);
+  readonly ulbSearchInProgress = signal(false);
+  readonly selectedUlb = toSignal(
+    this.form.controls.ulbName.valueChanges.pipe(
+      startWith(this.form.controls.ulbName.value),
+      map((value) => (value && typeof value !== 'string' ? value : undefined)),
+    ),
+  );
 
   ngOnInit(): void {
+    this.setupUlbAutocomplete();
     const jobId = this.route.snapshot.queryParamMap.get('jobId');
     if (jobId) {
       this.loadJobById(jobId);
     }
+  }
+
+  onUlbSelected(event: MatAutocompleteSelectedEvent): void {
+    this.form.controls.ulbName.setValue(event.option.value as IUlbSummary);
+  }
+
+  displayUlbName(ulb: IUlbSummary | string | null): string {
+    if (!ulb) return '';
+    return typeof ulb === 'string' ? ulb : ulb.name;
+  }
+
+  private setupUlbAutocomplete(): void {
+    this.form.controls.ulbName.valueChanges
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map((value) => (typeof value === 'string' ? value : (value?.name ?? '')).trim()),
+        tap((searchText) => {
+          if (!searchText) {
+            this.filteredUlbs.set([]);
+            this.ulbSearchInProgress.set(false);
+          }
+        }),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((searchText) => {
+          if (!searchText || searchText.length < 2) return of<IUlbSummary[]>([]);
+          this.ulbSearchInProgress.set(true);
+          return this.ulbService.searchAutocomplete(searchText).pipe(
+            catchError(() => of<IUlbSummary[]>([])),
+            finalize(() => this.ulbSearchInProgress.set(false)),
+          );
+        }),
+      )
+      .subscribe((ulbs) => this.filteredUlbs.set(ulbs));
   }
 
   onFileSelected(event: Event): void {
@@ -120,11 +179,12 @@ export class AfsDigitizationComponent implements OnInit {
     }
 
     const { geminiModel, ulbName, financialYear, docType, enableValidation } = this.form.getRawValue();
+    const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const file = this.selectedFile;
     this.isSubmitting.set(true);
 
     this.digitizationService
-      .submitDigitizationJob(file, geminiModel, ulbName, financialYear, docType, enableValidation)
+      .submitDigitizationJob(file, geminiModel, ulbNameValue, financialYear, docType, enableValidation)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
