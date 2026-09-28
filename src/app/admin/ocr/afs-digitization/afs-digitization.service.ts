@@ -81,6 +81,7 @@ export class AfsDigitizationService {
     financialYear?: string | null,
     docType?: string | null,
     enableValidation = true,
+    enableArithmeticValidation = true,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -89,6 +90,7 @@ export class AfsDigitizationService {
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
     formData.append('enable_validation', String(enableValidation));
+    formData.append('enable_arithmetic_validation', String(enableArithmeticValidation));
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + 'afs-digitization/jobs',
       formData,
@@ -100,6 +102,15 @@ export class AfsDigitizationService {
     if (geminiModel) formData.append('gemini_model', geminiModel);
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate`,
+      formData,
+    );
+  }
+
+  revalidateDigitizationArithmetic(jobId: string, geminiModel?: string) {
+    const formData = new FormData();
+    if (geminiModel) formData.append('gemini_model', geminiModel);
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate-arithmetic`,
       formData,
     );
   }

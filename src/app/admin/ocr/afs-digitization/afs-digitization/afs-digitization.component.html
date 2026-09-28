@@ -6,7 +6,9 @@
       <p class="subcopy">
         Upload a scanned ULB financial-statement PDF. Amazon Textract extracts tables and key/value pairs into an
         Excel workbook (<strong>confidence score</strong>), then Gemini re-reads the source PDF and cross-checks
-        every extracted value (<strong>accuracy score</strong>).
+        every extracted value (<strong>accuracy score</strong>). Optionally, Gemini also checks the arithmetic of the
+        digitized output — totals tally, assets equal liabilities, and sign/zero/numeric rules
+        (<strong>arithmetic assessment</strong>).
       </p>
     </div>
 
@@ -74,6 +76,14 @@
               <mat-select formControlName="enableValidation">
                 <mat-option [value]="true">Enabled — cross-check with Gemini now</mat-option>
                 <mat-option [value]="false">Disabled — Textract only (validate later)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini Arithmetic Validations</mat-label>
+              <mat-select formControlName="enableArithmeticValidation">
+                <mat-option [value]="true">Enabled — check totals, balances &amp; amounts now</mat-option>
+                <mat-option [value]="false">Disabled — skip (run later)</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -170,6 +180,11 @@
                       (click)="revalidateJob(job)">
                       @if (revalidatingJobId() === job.jobId) { Queuing... } @else { Rerun Validation }
                     </button>
+                    <button mat-stroked-button type="button" [disabled]="revalidatingArithmeticJobId() === job.jobId"
+                      title="Re-run Gemini arithmetic validations only — Textract and the cross-check are reused unchanged"
+                      (click)="revalidateArithmetic(job)">
+                      @if (revalidatingArithmeticJobId() === job.jobId) { Queuing... } @else { Rerun Arithmetic }
+                    </button>
                     <button mat-stroked-button type="button" [disabled]="regeneratingJobId() === job.jobId"
                       title="Rebuild the Excel workbook from the stored result — no Textract/Gemini calls"
                       (click)="regenerateExcel(job)">
@@ -210,6 +225,12 @@
                       <span class="score-card__label">Overall Assessment</span>
                       <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.overall_assessment)">
                         {{ job.result.overall_assessment ?? 'UNVERIFIED' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Arithmetic Assessment (Gemini)</span>
+                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.arithmetic_assessment)">
+                        {{ job.result.arithmetic_assessment ?? 'NOT RUN' }}
                       </span>
                     </div>
                   </div>
@@ -298,6 +319,75 @@
                     </div>
                   }
 
+                  <!-- Arithmetic validations -->
+                  @if (job.result.arithmetic_validation; as arithmetic) {
+                    <div class="usage-section">
+                      <h5>
+                        Arithmetic Validations
+                        ({{ arithmetic.passed_checks }} passed / {{ arithmetic.failed_checks }} failed
+                        / {{ arithmetic.not_applicable_checks }} n/a
+                        @if (arithmetic.detected_doc_type) { · detected {{ arithmetic.detected_doc_type }} })
+                      </h5>
+                      @if (arithmetic.failed_checks > 0) {
+                        <p class="gemini-summary">
+                          @if (arithmetic.pdf_used) {
+                            Failures: {{ arithmetic.source_document_failures }} in the source document
+                            (figures match the PDF) · {{ arithmetic.digitization_failures }} from digitization
+                            (figures differ from the PDF).
+                          } @else {
+                            Source PDF not used — failures are not attributed to source vs digitization.
+                          }
+                        </p>
+                      }
+                      <div class="summary-grid">
+                        @for (r of ruleResultEntries(arithmetic.rule_results); track r.rule) {
+                          <div class="summary-item">
+                            <span class="summary-item__label">{{ r.label }}</span>
+                            <span class="assessment-badge" [ngClass]="getAssessmentClass(r.result)">
+                              {{ r.result.replace('_', ' ') }}
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    @if (arithmetic.summary) {
+                      <p class="gemini-summary">{{ arithmetic.summary }}</p>
+                    }
+
+                    @if (failedArithmeticChecks(arithmetic.checks).length > 0) {
+                      <div class="mismatches">
+                        <h5>Arithmetic Failures ({{ failedArithmeticChecks(arithmetic.checks).length }})</h5>
+                        <table class="mismatch-table">
+                          <thead>
+                            <tr>
+                              <th>Rule</th>
+                              <th>Location</th>
+                              <th>Reported</th>
+                              <th>Computed / Compared</th>
+                              <th>Difference</th>
+                              <th>Error Source</th>
+                              <th>Note</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (check of failedArithmeticChecks(arithmetic.checks); track $index) {
+                              <tr>
+                                <td>{{ ruleLabel(check.rule) }}</td>
+                                <td>{{ check.location || '—' }}</td>
+                                <td>{{ check.reported_value ?? check.raw_value ?? '—' }}</td>
+                                <td>{{ check.computed_value ?? '—' }}</td>
+                                <td>{{ check.difference ?? '—' }}</td>
+                                <td>{{ errorSourceLabel(check) }}</td>
+                                <td>{{ check.note ?? check.description ?? '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  }
+
                   @if (job.result.error_messages.length) {
                     <div class="error-messages">
                       <h5>Notes</h5>
@@ -311,7 +401,7 @@
 
                   <!-- Usage (Textract + Gemini) -->
                   <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-lg-4">
                     <div class="usage-section">
                       <h5>Textract Usage</h5>
                       <div class="usage-steps-grid">
@@ -348,12 +438,13 @@
                     </div>
                   </div>
 
-                  @if (job.result.gemini_validation?.usage_metadata) {
-                    @let step = getUsageStep(job.result.gemini_validation!);
-                    <div class="col-md-6">
+                  @let usageSteps = getUsageSteps(job.result);
+                  @if (usageSteps.length) {
+                    <div class="col-lg-8">
                       <div class="usage-section">
                         <h5>Token Usage</h5>
                         <div class="usage-steps-grid">
+                          @for (step of usageSteps; track step.name) {
                           <div class="usage-step-card">
                             <div class="usage-step-header">
                               <div class="usage-step-title">{{ formatKey(step.name) }}</div>
@@ -370,12 +461,10 @@
                               <span class="usage-token-label">Output</span>
                               <span class="usage-token-value">{{ step.candidatesTokens ?? '—' }}</span>
                             </div>
-                            @if (step.thoughtsTokens) {
-                              <div class="usage-token-row">
-                                <span class="usage-token-label">Thoughts</span>
-                                <span class="usage-token-value">{{ step.thoughtsTokens }}</span>
-                              </div>
-                            }
+                            <div class="usage-token-row">
+                              <span class="usage-token-label">Thoughts</span>
+                              <span class="usage-token-value">{{ step.thoughtsTokens ?? 0 }}</span>
+                            </div>
                             <div class="usage-token-row usage-token-row--total">
                               <span class="usage-token-label">Total</span>
                               <span class="usage-token-value">{{ step.totalTokens ?? '—' }}</span>
@@ -399,11 +488,11 @@
                               </div>
                               <p class="usage-cost-formula">
                                 ({{ step.promptTokens ?? 0 }} × ${{ step.pricing!.inputPerM }}/M +
-                                {{ step.candidatesTokens ?? 0 }} × ${{ step.pricing!.outputPerM }}/M
-                                @if ((step.thoughtsTokens ?? 0) > 0) {
-                                  + {{ step.thoughtsTokens }} × ${{ step.pricing!.thinkingPerM }}/M
-                                }
-                                ) ÷ 1,000,000
+                                {{ step.candidatesTokens ?? 0 }} × ${{ step.pricing!.outputPerM }}/M{{
+                                  (step.thoughtsTokens ?? 0) > 0
+                                    ? ' + ' + step.thoughtsTokens + ' × $' + step.pricing!.thinkingPerM + '/M'
+                                    : ''
+                                }}) ÷ 1,000,000
                               </p>
                             } @else {
                               <div class="usage-cost-row">
@@ -412,7 +501,33 @@
                               </div>
                             }
                           </div>
+                          }
                         </div>
+
+                        @if (usageSteps.length > 1) {
+                          @let usageTotal = getUsageTotal(usageSteps);
+                          <div class="usage-total-card">
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Thought tokens</span>
+                              <span class="usage-token-value">{{ usageTotal.thoughtsTokens }}</span>
+                            </div>
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Total tokens</span>
+                              <span class="usage-token-value">{{ usageTotal.totalTokens }}</span>
+                            </div>
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Est. cost</span>
+                              @if (usageTotal.costUsd !== null) {
+                                <span class="usage-cost-value">
+                                  ~${{ usageTotal.costUsd.toFixed(6) }}
+                                  <span class="usage-cost-inr">(₹{{ usageTotal.costInr!.toFixed(4) }})</span>
+                                </span>
+                              } @else {
+                                <span class="usage-cost-na">Pricing N/A</span>
+                              }
+                            </div>
+                          </div>
+                        }
                       </div>
                     </div>
                   }

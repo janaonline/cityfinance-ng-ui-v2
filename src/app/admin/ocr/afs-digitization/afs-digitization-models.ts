@@ -19,11 +19,13 @@ export interface DigitizationJobStatusResponse {
   file_size_bytes: number | null;
   gemini_model: string;
   enable_validation: boolean;
+  enable_arithmetic_validation: boolean;
   expected: DigitizationExpectedFields | null;
   progress_step: string | null;
   error_message: string | null;
   confidence_score: number | null;
   accuracy_score: number | null;
+  arithmetic_assessment: string | null;
   page_count: number | null;
   textract_cost_usd: number | null;
   textract_price_inr: number | null;
@@ -96,6 +98,63 @@ export interface GeminiValidation {
   validation_seconds: number | null;
 }
 
+export type ArithmeticCheckStatus = 'pass' | 'fail' | 'not_applicable';
+
+/** source_document: digitized figures match the PDF, the statement itself is off. */
+export type ArithmeticErrorSource = 'source_document' | 'digitization';
+
+export interface DigitizationMismatch {
+  table_index: number;
+  row_index: number;
+  column_index: number;
+  digitized_value: string | null;
+  pdf_value: string | null;
+}
+
+export interface ArithmeticCheck {
+  rule: string;
+  location: string;
+  description: string | null;
+  table_index: number | null;
+  row_index: number | null;
+  column_index: number | null;
+  reported_value: number | null;
+  component_values: number[] | null;
+  component_rows: number[] | null;
+  compare_value: number | null;
+  compare_row_index: number | null;
+  compare_column_index: number | null;
+  computed_value: number | null;
+  difference: number | null;
+  raw_value: string | null;
+  status: ArithmeticCheckStatus;
+  gemini_status: string | null;
+  error_source: ArithmeticErrorSource | null;
+  mismatched_cells: DigitizationMismatch[];
+  note: string | null;
+}
+
+export interface ArithmeticValidation {
+  model: string;
+  detected_doc_type: string | null;
+  total_checks: number;
+  passed_checks: number;
+  failed_checks: number;
+  not_applicable_checks: number;
+  /** Per rule: PASS / FAIL / NOT_APPLICABLE / NOT_CHECKED. */
+  rule_results: Record<string, string>;
+  checks: ArithmeticCheck[];
+  arithmetic_score: number | null;
+  assessment: string;
+  pdf_used: boolean;
+  source_document_failures: number;
+  digitization_failures: number;
+  digitization_mismatches: DigitizationMismatch[];
+  summary: string | null;
+  usage_metadata: Record<string, unknown> | null;
+  validation_seconds: number | null;
+}
+
 export interface DigitizationResult {
   filename: string;
   doc_id: string;
@@ -107,6 +166,8 @@ export interface DigitizationResult {
   confidence_score: number | null;
   accuracy_score: number | null;
   overall_assessment: string | null;
+  arithmetic_validation: ArithmeticValidation | null;
+  arithmetic_assessment: string | null;
   error_messages: string[];
   excel_s3_key: string | null;
 }
