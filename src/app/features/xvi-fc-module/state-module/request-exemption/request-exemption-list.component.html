@@ -101,7 +101,7 @@
             <table class="table table-sm table-hover align-middle mb-0">
               <thead class="table-light border-bottom">
                 <tr>
-                  <th scope="col" class="col-ulb ps-3 small fw-semibold">ULB</th>
+                  <th scope="col" class="col-ulb ps-3 small fw-semibold">Entity</th>
                   <th scope="col" class="col-census small fw-semibold">Census Code</th>
                   <th scope="col" class="col-reason small fw-semibold">Reason for Exemption</th>
                   <th scope="col" class="col-submitted text-center small fw-semibold">Submitted</th>
@@ -111,7 +111,7 @@
               <tbody>
                 @for (item of items(); track item._id) {
                   <tr data-cy="request-exemption-row">
-                    <td class="ps-3 small">{{ item.ulb?.name || '-' }}</td>
+                    <td class="ps-3 small">{{ item.ulb?.name || 'Entire State' }}</td>
                     <td class="small">{{ item.ulb?.censusCode || '-' }}</td>
                     <td class="small">{{ item.reasonForExemptionLabel || '-' }}</td>
                     <td class="small text-center">

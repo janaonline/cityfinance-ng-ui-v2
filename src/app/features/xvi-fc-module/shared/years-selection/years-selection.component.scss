@@ -19,8 +19,11 @@
 
 /* ── CARD ── */
 .year-card {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 460px;
+  max-height: 100%;
   border-radius: 20px;
   overflow: hidden;
   background: #ffffff;
@@ -32,6 +35,7 @@
 
 /* ── HEADER ── */
 .year-card__header {
+  flex: 0 0 auto;
   background: linear-gradient(135deg, #0d4545 0%, #1d6f73 60%, #247f84 100%);
   color: #ffffff;
   padding: 24px 26px 22px;
@@ -77,6 +81,10 @@
 
 /* ── BODY ── */
 .year-card__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 22px 22px 22px;
 }
 

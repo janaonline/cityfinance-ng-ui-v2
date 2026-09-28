@@ -64,6 +64,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Grant Type</mat-label>
+          <mat-select formControlName="grantType">
+            <mat-option value="">All</mat-option>
+            <mat-option value="tied">Tied</mat-option>
+            <mat-option value="untied">Untied</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Created From</mat-label>
           <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY" readonly />
           <mat-datepicker-toggle matIconSuffix [for]="pickerFrom" />
@@ -113,6 +122,10 @@
                   <span class="cell-label">FY</span>
                   <span class="cell-value">{{ row.financialYear }}</span>
                 </div>
+                <div>
+                  <span class="cell-label">Grant</span>
+                  <span class="cell-value text-capitalize">{{ row.grantType }}</span>
+                </div>
               </div>
             </td>
           </ng-container>
@@ -126,6 +139,7 @@
                   <div class="checks-breakdown">
                     <span class="checks-tag" [class.checks-tag--bad]="row.ulbMatch === false">ULB</span>
                     <span class="checks-tag" [class.checks-tag--bad]="row.financialYearMatch === false">Year</span>
+                    <span class="checks-tag" [class.checks-tag--bad]="row.grantTypeMatch === false">Grant</span>
                     <span class="checks-tag" [class.checks-tag--bad]="row.formatValid === false">Format</span>
                     <span class="checks-tag" [class.checks-tag--bad]="row.signaturePresent === false">Signature</span>
                   </div>

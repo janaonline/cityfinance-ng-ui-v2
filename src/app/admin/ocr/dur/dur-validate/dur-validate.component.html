@@ -4,9 +4,9 @@
     <div class="hero-card">
       <h1>DUR PDF Validation</h1>
       <p class="subcopy">
-        Upload a scanned DUR (Utilisation Report, Annexure-VI tied-grant statement) PDF for async Gemini
-        validation: expected ULB name, expected financial year, Annexure-VI template format, and signature
-        presence.
+        Upload a scanned DUR (Utilisation Report, Annexure-VI tied/untied-grant statement) PDF for async Gemini
+        validation: expected ULB name, expected financial year, expected grant type, Annexure-VI template
+        format, and signature and seal presence.
       </p>
     </div>
 
@@ -32,6 +32,20 @@
                 }
               </mat-select>
               <mat-hint>The FY shown in the DUR title, e.g. 2026-27.</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Expected grant type</mat-label>
+              <mat-select formControlName="grantType" required>
+                @for (g of grantTypes; track g.value) {
+                <mat-option [value]="g.value">{{ g.label }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.grantType.hasError('required') && form.controls.grantType.touched) {
+              <mat-error>Please select tied or untied.</mat-error>
+              } @else {
+              <mat-hint>Tied or untied grant.</mat-hint>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -147,7 +161,7 @@
           @if (job.status === 'completed' && job.result && job.result.failed_checks.length) {
           <ul class="mb-2 ps-4 text-danger small">
             @for (msg of job.result.failed_checks; track msg) {
-            <li>{{ msg }}</li>
+            <li>{{ describeFailedCheck(msg) }}</li>
             }
           </ul>
           }
@@ -199,6 +213,12 @@
                         <tr>
                           <td class="text-secondary fw-medium ps-0">Grant Financial Year</td>
                           <td class="fw-medium pe-0">{{ job.result.extraction.grant_financial_year }}</td>
+                        </tr>
+                        }
+                        @if (job.result.extraction.grant_type) {
+                        <tr>
+                          <td class="text-secondary fw-medium ps-0">Grant Type</td>
+                          <td class="fw-medium pe-0 text-capitalize">{{ job.result.extraction.grant_type }}</td>
                         </tr>
                         }
                         @if (job.result.extraction.is_dur_format !== null) {
@@ -279,6 +299,15 @@
                           </td>
                         </tr>
                         }
+                        @if (job.result.expected?.grant_type) {
+                        <tr>
+                          <td class="text-secondary ps-0">Grant Type</td>
+                          <td class="fw-medium text-capitalize">{{ job.result.expected?.grant_type }}</td>
+                          <td class="text-center">
+                            <i class="bi" [ngClass]="[getMatchIcon(job.result.checks.grant_type_match), getMatchClass(job.result.checks.grant_type_match)]"></i>
+                          </td>
+                        </tr>
+                        }
                         <tr>
                           <td class="text-secondary ps-0">Format Valid</td>
                           <td class="fw-medium">Annexure-VI DUR</td>
@@ -291,6 +320,13 @@
                           <td class="fw-medium">Required</td>
                           <td class="text-center">
                             <i class="bi" [ngClass]="[getMatchIcon(job.result.checks.signature_present), getMatchClass(job.result.checks.signature_present)]"></i>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-secondary ps-0">Seal Present</td>
+                          <td class="fw-medium">Required</td>
+                          <td class="text-center">
+                            <i class="bi" [ngClass]="[getMatchIcon(job.result.checks.seal_present), getMatchClass(job.result.checks.seal_present)]"></i>
                           </td>
                         </tr>
                       </tbody>
