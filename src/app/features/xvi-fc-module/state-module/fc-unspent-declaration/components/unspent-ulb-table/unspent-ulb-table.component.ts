@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -28,6 +27,7 @@ import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dia
 export interface FcUnspentUlbRowForm {
   ulbId: FormControl<string | null>;
   unspentAmount: FormControl<number | null>;
+  previousFcUnspentBalance: FormControl<number | null>;
 }
 
 export type FcUnspentUlbRowGroup = FormGroup<FcUnspentUlbRowForm>;
@@ -35,6 +35,7 @@ export type FcUnspentUlbRowGroup = FormGroup<FcUnspentUlbRowForm>;
 interface FcUnspentUlbRowValue {
   ulbId: string | null;
   unspentAmount: number | null;
+  previousFcUnspentBalance: number | null;
 }
 
 interface FcUnspentUlbRowViewModel {
@@ -66,12 +67,12 @@ function firstControlErrorText(control: AbstractControl, field: ConditionalField
 }
 
 /** The backend's GET response (`rowEditFields`) is the sole source of truth for `ulbId`/
- *  `unspentAmount` field config — no client-side fallback. A missing entry means
- *  `FC_UNSPENT_ROW_EDIT_FIELDS` doesn't define one of the two mandatory row fields, which is a
- *  backend/config bug that should surface loudly here rather than be silently papered over. */
+ *  `unspentAmount`/`previousFcUnspentBalance` field config — no client-side fallback. A missing
+ *  entry means `FC_UNSPENT_ROW_EDIT_FIELDS` doesn't define one of the mandatory row fields, which
+ *  is a backend/config bug that should surface loudly here rather than be silently papered over. */
 function requireRowFieldConfig(
   rowEditFields: readonly ConditionalFieldConfig[],
-  key: 'ulbId' | 'unspentAmount',
+  key: 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
 ): ConditionalFieldConfig {
   const field = rowEditFields.find((f) => f.key === key);
   if (!field) {
@@ -93,21 +94,32 @@ export function createFcUnspentUlbRowGroup(
   dynamicService: DynamicFormService,
   canEdit: boolean,
   rowEditFields: readonly ConditionalFieldConfig[],
-  existingRow?: { ulbId: string | null; unspentAmount: number | null },
+  existingRow?: { ulbId: string | null; unspentAmount: number | null; previousFcUnspentBalance: number | null },
 ): FcUnspentUlbRowGroup {
   const readonly = !canEdit;
 
   const ulbIdConfig = requireRowFieldConfig(rowEditFields, 'ulbId');
   const unspentAmountConfig = requireRowFieldConfig(rowEditFields, 'unspentAmount');
+  const previousFcUnspentBalanceConfig = requireRowFieldConfig(rowEditFields, 'previousFcUnspentBalance');
 
   const ulbIdField = { ...ulbIdConfig, value: existingRow?.ulbId ?? null, readonly };
   const unspentAmountField = { ...unspentAmountConfig, value: existingRow?.unspentAmount ?? null, readonly };
+  const previousFcUnspentBalanceField = {
+    ...previousFcUnspentBalanceConfig,
+    value: existingRow?.previousFcUnspentBalance ?? null,
+    readonly,
+  };
 
   const group = new FormGroup<FcUnspentUlbRowForm>({
     ulbId: dynamicService.createContorl(ulbIdField, false, ulbIdField.readonly) as FormControl<string | null>,
     unspentAmount: dynamicService.createContorl(unspentAmountField, false, unspentAmountField.readonly) as FormControl<
       number | null
     >,
+    previousFcUnspentBalance: dynamicService.createContorl(
+      previousFcUnspentBalanceField,
+      false,
+      previousFcUnspentBalanceField.readonly,
+    ) as FormControl<number | null>,
   });
 
   // Clear a server-injected `apiErrors` entry as soon as the user edits that control — mirrors
@@ -129,7 +141,6 @@ export function createFcUnspentUlbRowGroup(
   selector: 'app-unspent-ulb-table',
   imports: [
     ReactiveFormsModule,
-    DecimalPipe,
     MatButtonModule,
     MatTooltipModule,
     InfoIconComponent,
@@ -191,7 +202,11 @@ export class UnspentUlbTableComponent {
     toObservable(this.rows).pipe(
       switchMap((formArray) => formArray.valueChanges.pipe(startWith(formArray.value))),
       map((values): FcUnspentUlbRowValue[] =>
-        values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null })),
+        values.map((value) => ({
+          ulbId: value.ulbId ?? null,
+          unspentAmount: value.unspentAmount ?? null,
+          previousFcUnspentBalance: value.previousFcUnspentBalance ?? null,
+        })),
       ),
     ),
     { initialValue: [] as FcUnspentUlbRowValue[] },
@@ -252,6 +267,7 @@ export class UnspentUlbTableComponent {
           createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
             ulbId: option.ulbId,
             unspentAmount: null,
+            previousFcUnspentBalance: null,
           }),
         );
       }
@@ -268,7 +284,10 @@ export class UnspentUlbTableComponent {
    * which only touches a control when its current error actually blocks the attempted save/submit
    * (e.g. a bare `required` on an untouched draft row is never touched, so never shown here either).
    */
-  rowFieldErrorText(row: FcUnspentUlbRowGroup, field: 'ulbId' | 'unspentAmount'): string | null {
+  rowFieldErrorText(
+    row: FcUnspentUlbRowGroup,
+    field: 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
+  ): string | null {
     const control = row.controls[field];
     if (!control.touched) return null;
 

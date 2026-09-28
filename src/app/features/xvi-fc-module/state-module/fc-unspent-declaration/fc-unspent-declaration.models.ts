@@ -73,11 +73,12 @@ export interface FcUnspentUlbOptionsResult {
 }
 
 /**
- * One row of the unspent-ULB table. Only `ulbId` and `unspentAmount` are State-editable — the
- * rest, including `allocationPerc`/`eligibility`, are backend-owned. The frontend recomputes
- * `allocationPerc`/`eligibility` for preview only; the backend calculation remains authoritative.
- * `ulbName`/`censusCode`/`sbCode`/`allocationAmount` are a snapshot taken at save time — already-saved
- * rows must render from this snapshot directly, never by joining against `FcUnspentUlbOption[]`.
+ * One row of the unspent-ULB table. Only `ulbId`, `unspentAmount`, and `previousFcUnspentBalance`
+ * are State-editable — the rest, including `allocationPerc`/`eligibility`, are backend-owned. The
+ * frontend recomputes `allocationPerc`/`eligibility` for preview only; the backend calculation
+ * remains authoritative. `ulbName`/`censusCode`/`sbCode`/`allocationAmount` are a snapshot taken at
+ * save time — already-saved rows must render from this snapshot directly, never by joining against
+ * `FcUnspentUlbOption[]`.
  *
  * Row-level MoHUA review data (review state, rejection remarks, per-row editability, whether the
  * allocation changed after a Devolution resubmission, whether the row requires re-review) is
@@ -93,6 +94,7 @@ export interface FcUnspentUlbData {
   ulbName: string;
   allocationAmount: number;
   unspentAmount: number;
+  previousFcUnspentBalance: number;
   allocationPerc: number;
   eligibility: boolean;
 }
@@ -112,8 +114,8 @@ export interface FcUnspentDeclarationData {
   actors: FormActor[];
   questions: ConditionalFieldConfig[];
   /** DB-driven metadata for the unspentUlbData row-table columns (ulbId, unspentAmount,
-   *  censusCode, sbCode, ulbName, allocationAmount, allocationPerc, eligibility) — mirrors
-   *  DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
+   *  previousFcUnspentBalance, censusCode, sbCode, ulbName, allocationAmount, allocationPerc,
+   *  eligibility) — mirrors DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
   rowEditFields?: ConditionalFieldConfig[];
   unspentUlbData: FcUnspentUlbData[];
 }
@@ -135,9 +137,9 @@ export interface FcUnspentSaveData {
   /** Yes-branch only. Same shape/ownership as `fcDeclaration`, for the signed ULB-wise
    *  certification document instead of the nil-balance declaration. */
   fcUnspentDeclaration?: unknown;
-  /** Yes-branch only. Rows with an incomplete selection (no `ulbId` or no `unspentAmount`) are
-   *  dropped before sending — see buildPayload(). */
-  unspentUlbData?: { ulbId: string; unspentAmount: number }[];
+  /** Yes-branch only. Rows with an incomplete selection (no `ulbId`, no `unspentAmount`, or no
+   *  `previousFcUnspentBalance`) are dropped before sending — see buildPayload(). */
+  unspentUlbData?: { ulbId: string; unspentAmount: number; previousFcUnspentBalance: number }[];
   /** Yes-branch only. */
   checkboxConfirmation?: boolean;
 }
