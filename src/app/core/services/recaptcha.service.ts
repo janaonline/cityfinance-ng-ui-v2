@@ -40,7 +40,14 @@ export class RecaptchaService {
     return from(
       new Promise<string>((resolve, reject) => {
         grecaptcha.ready(() => {
-          grecaptcha.execute(this.siteKey, { action }).then(resolve, reject);
+          grecaptcha.execute(this.siteKey, { action }).then((token) => {
+            // grecaptcha.execute() occasionally resolves with a null/empty token (a known
+            // client-side quirk, not tied to any prior call) instead of rejecting — treating that
+            // as success would ship a blank recaptchaToken straight to the backend. Reject instead
+            // so the caller's retry (see LoginService.signInWithPassword) can ask again.
+            if (token) resolve(token);
+            else reject(new Error('reCAPTCHA verification failed. Please try again.'));
+          }, reject);
         });
       }),
     );
