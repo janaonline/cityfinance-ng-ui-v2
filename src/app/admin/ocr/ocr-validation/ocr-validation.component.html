@@ -78,6 +78,15 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>State</mat-label>
+              <mat-select formControlName="state">
+                @for (s of states; track s.value) {
+                <mat-option [value]="s.value">{{ s.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Audit type</mat-label>
               <mat-select formControlName="auditType">
                 @for (at of auditTypes; track at.value) {

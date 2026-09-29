@@ -100,7 +100,7 @@ export interface EulbValidateExcelResponse {
     validationStatus: 'VALID' | 'INVALID';
     summary: EulbValidationSummary;
     errorExcelFile?: EulbFileValue;
-    errors?: EulbRowError[];
+    validationErrors?: EulbRowError[];
   };
   message?: string;
 }
@@ -122,7 +122,7 @@ export interface EulbRow {
   dateOfExpiry?: string;
   remarks?: string;
   validationStatus: EulbRowValidationStatus;
-  errors: EulbRowError[];
+  validationErrors: EulbRowError[];
 }
 
 export interface EulbRowsQuery {
@@ -227,7 +227,7 @@ export interface EulbRevalidateExcelResponse {
   message: string;
   data: {
     validationSummary: EulbValidationSummary;
-    errors?: EulbRowError[];
+    validationErrors?: EulbRowError[];
   };
 }
 
@@ -276,7 +276,7 @@ export interface EulbPostSubmissionUpdateRow {
   dateOfExpiry: string | null;
   remarks: string | null;
   validationStatus: EulbRowValidationStatus;
-  errors: EulbPostUpdateRowError[];
+  validationErrors: EulbPostUpdateRowError[];
 }
 
 export interface EulbStatusSummary {
@@ -335,7 +335,7 @@ export interface EulbPostSubmissionUpdateValidateRow {
   dateOfExpiry: string | null;
   remarks: string;
   validationStatus: EulbRowValidationStatus;
-  errors: EulbPostUpdateRowError[];
+  validationErrors: EulbPostUpdateRowError[];
 }
 
 export interface EulbPostSubmissionUpdateValidateData {
@@ -379,5 +379,5 @@ export interface EulbPostSubmissionUpdateSubmitRowError {
   rowNumber: number;
   censusCode: string;
   ulbName: string;
-  errors: EulbPostUpdateRowError[];
+  validationErrors: EulbPostUpdateRowError[];
 }

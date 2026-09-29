@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { uploadDocumentsDeactivateGuard } from './ulb-forms/upload-documents/upload-documents-deactivate.guard';
+import { durDeactivateGuard } from './ulb-forms/dur/dur-deactivate.guard';
 
 export const ULB_ROUTES: Routes = [
   {
@@ -47,6 +48,11 @@ export const ULB_ROUTES: Routes = [
           import('./ulb-forms/upload-documents/upload-documents.component').then((m) => m.UploadDocumentsComponent),
         data: { uploadType: 'provisional' },
         canDeactivate: [uploadDocumentsDeactivateGuard],
+      },
+      {
+        path: 'dur',
+        loadComponent: () => import('./ulb-forms/dur/dur.component').then((m) => m.DurComponent),
+        canDeactivate: [durDeactivateGuard],
       },
       {
         path: 'fill-disclosure',

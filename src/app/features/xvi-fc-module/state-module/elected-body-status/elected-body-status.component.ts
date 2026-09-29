@@ -426,7 +426,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
               'Excel validation completed with errors. Please review uploaded data.',
               'snackbar-danger',
             );
-            this.notifyDuplicateCensusCodeError(res.data.errors);
+            this.notifyDuplicateCensusCodeError(res.data.validationErrors);
           }
           this.reloadForm();
         },
@@ -469,7 +469,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
       .subscribe({
         next: (res: EulbRevalidateExcelResponse) => {
           this.utilityService.triggerSnackbar(res.message);
-          this.notifyDuplicateCensusCodeError(res.data.errors);
+          this.notifyDuplicateCensusCodeError(res.data.validationErrors);
           this.reloadForm();
         },
         error: (err: unknown) => {

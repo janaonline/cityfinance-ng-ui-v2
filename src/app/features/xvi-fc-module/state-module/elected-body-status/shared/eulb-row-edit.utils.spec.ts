@@ -119,7 +119,7 @@ describe('EULB row edit helpers', () => {
   it('preserves row identity and marks modified rows', () => {
     const row = {
       _id: 'row-1',
-      errors: [{ field: 'dateOfExpiry', message: 'Invalid expiry.' }],
+      validationErrors: [{ field: 'dateOfExpiry', message: 'Invalid expiry.' }],
     };
 
     expect(buildEulbRowViewModel(row).row).toBe(row);

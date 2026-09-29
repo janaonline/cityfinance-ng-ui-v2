@@ -5,31 +5,38 @@
     <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end">
       <div class="mb-2">
         <label for="manual-review-queue-search" class="visually-hidden">Search</label>
-        <input
-          type="search"
-          class="form-control"
-          id="manual-review-queue-search"
-          placeholder="Search by ULB name or code"
-          formControlName="search"
-        />
+        <input type="search" class="form-control" id="manual-review-queue-search"
+          placeholder="Search by ULB name or code" formControlName="search" />
       </div>
     </form>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="text-muted small">Total records: {{ total() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" title="Reload"
+        (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
   </div>
 
   <mat-card class="custom-mat-card mat-elevation-z1">
     <div class="table-container mat-elevation-z8 mb-4">
+      @if (!isLoading() && !loadError() && failedSources().length > 0) {
+        <div class="alert alert-warning py-2 px-3 m-3" role="alert">
+          {{ failedSourcesLabel() }} could not be loaded right now — the list below may be incomplete.
+          <button type="button" class="btn btn-link btn-sm p-0 ms-1" (click)="loadRows()">Retry</button>
+        </div>
+      }
       @if (isLoading()) {
-        <app-pre-loader></app-pre-loader>
-        <app-pre-loader></app-pre-loader>
-        <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
       } @else if (loadError()) {
-        <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
-        <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
-          <i class="bi bi-arrow-clockwise me-1"></i>Retry
-        </button>
-      } @else if (rows().length <= 0) {
-        <p class="text-center p-2 mt-2">Nothing awaiting manual review.</p>
-      } @else {
+      <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
+      <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise me-1"></i>Retry
+      </button>
+      } @else if (rows().length <= 0) { <p class="text-center p-2 mt-2">Nothing awaiting manual review.</p>
+        } @else {
         <table mat-table [dataSource]="rows()">
           <ng-container matColumnDef="serialNo">
             <th mat-header-cell *matHeaderCellDef>S.No</th>
@@ -39,22 +46,18 @@
           <ng-container matColumnDef="details">
             <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div class="fw-bold">{{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span></div>
-              <div class="text-muted small">
-                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
+              <div class="fw-bold">
+                {{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">{{ formLabel(row) }}</span>
               </div>
               <div class="text-muted small">
-                {{ row.docId }}
-                @if (row.fileUrl) {
-                  <a
-                    [href]="row.fileUrl"
-                    target="_blank"
-                    rel="noopener"
-                    class="ms-1 text-muted"
-                    [title]="row.fileName ?? 'View file'"
-                  >
-                    <i class="bi bi-file-earmark-text"></i>
-                  </a>
+                {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }} &middot;
+                {{ row.docId }} &middot;
+                @if (row.jobId) {
+                <a [href]="ocrDownloadUrl(row.jobId, row.formType)" class="ms-1 text-muted" target="_blank" rel="noopener"
+                  [title]="row.fileName ?? 'View file'">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                </a>
                 }
               </div>
             </td>
@@ -64,14 +67,14 @@
             <th mat-header-cell *matHeaderCellDef>Validation issues</th>
             <td mat-cell *matCellDef="let row">
               @if (row.validationDetails) {
-                <div>{{ row.validationDetails }}</div>
+              <div>{{ row.validationDetails }}</div>
               }
               @if (row.failedChecks.length) {
-                <ul class="ps-3 mb-0">
-                  @for (check of row.failedChecks; track check) {
-                    <li>{{ check }}</li>
-                  }
-                </ul>
+              <ul class="ps-3 mb-0">
+                @for (check of row.failedChecks; track check) {
+                <li>{{ check }}</li>
+                }
+              </ul>
               }
             </td>
           </ng-container>
@@ -86,9 +89,9 @@
             <td mat-cell *matCellDef="let row">
               <div class="text-muted small">{{ row.dueAt | date: 'd MMM, h:mm a' }}</div>
               @if (row.isBreached) {
-                <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Breached</span>
+              <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Breached</span>
               } @else {
-                <span class="badge rounded-pill bg-success-subtle text-success-emphasis">On time</span>
+              <span class="badge rounded-pill bg-success-subtle text-success-emphasis">On time</span>
               }
             </td>
           </ng-container>
@@ -100,39 +103,31 @@
                 @if (row.jobId) {
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    routerLink="/ocr/validation"
+                    [routerLink]="row.formType === 'DUR' ? '/ocr/dur' : '/ocr/validation'"
                     [queryParams]="{ jobId: row.jobId }"
                     target="_blank"
-                    title="View OCR job log"
+                    title="View job log"
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    [href]="ocrDownloadUrl(row.jobId)"
-                    title="Download the OCR job's file"
+                    [href]="ocrDownloadUrl(row.jobId, row.formType)"
+                    title="Download the job's file"
                   >
                     <i class="bi bi-download"></i> Download
                   </a>
                 }
-                <button
-                  type="button"
-                  class="btn btn-danger btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                  [disabled]="isDeciding(row)"
-                  (click)="onReject(row)"
-                >
+                <button type="button" class="btn btn-danger btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  [disabled]="isDeciding(row)" (click)="onReject(row)">
                   <i class="bi bi-x-lg"></i> Reject
                 </button>
-                <button
-                  type="button"
-                  class="btn btn-success btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                  [disabled]="isDeciding(row)"
-                  (click)="onApprove(row)"
-                >
+                <button type="button" class="btn btn-success btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                  [disabled]="isDeciding(row)" (click)="onApprove(row)">
                   @if (isDeciding(row)) {
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                   } @else {
-                    <i class="bi bi-check-lg"></i>
+                  <i class="bi bi-check-lg"></i>
                   }
                   Approve
                 </button>
@@ -143,16 +138,11 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
-      }
+        }
 
-      <mat-paginator
-        [length]="total()"
-        [pageSize]="pageSize()"
-        [pageIndex]="page() - 1"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPageChange($event)"
-        aria-label="Select page of the manual-review queue"
-      ></mat-paginator>
+        <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="page() - 1"
+          [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)"
+          aria-label="Select page of the manual-review queue"></mat-paginator>
     </div>
   </mat-card>
 </div>

@@ -80,6 +80,37 @@ describe('UlbSubmissionsService', () => {
     });
   });
 
+  it('list() maps a numeric formStatus of 12 (EXEMPTED_ACKNOWLEDGED) to EXEMPTED for SLB', () => {
+    let result: unknown;
+    service.list(baseQuery).subscribe((value) => (result = value));
+
+    const req = httpMock.expectOne((r) => r.url === `${BASE_URL}xvi-fc/ulb/slb/state/ulb-submissions`);
+    req.flush({
+      success: true,
+      data: {
+        total: 1,
+        page: 1,
+        pageSize: 20,
+        rows: [
+          {
+            ulbId: 'ulb-1',
+            ulbCode: 'ULB1',
+            censusCode: '900001',
+            ulbName: 'Exempt ULB',
+            formStatus: 12,
+            lastUpdatedAt: null,
+            slbFormId: null,
+          },
+        ],
+        counts: { 1: 5, 12: 1 },
+      },
+    });
+
+    const rows = (result as { rows: Array<{ formStatus: string }> }).rows;
+    expect(rows[0].formStatus).toBe('EXEMPTED');
+    expect((result as { counts: Record<string, number> }).counts).toEqual({ NOT_STARTED: 5, EXEMPTED: 1 });
+  });
+
   it('list() sends the search and mapped numeric status filters for SLB', () => {
     service
       .list({ ...baseQuery, search: 'Adib', status: ['UNDER_REVIEW_BY_STATE', 'RETURNED_BY_STATE'] })

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, skip } from 'rxjs';
@@ -36,6 +36,11 @@ export class XviFcModuleComponent implements OnInit {
   readonly role = this.xvifcService.role;
   readonly yearId = this.xvifcService.yearId;
 
+  /** The scrollable content pane — `<router-outlet>` swaps children inside it without the
+   *  element itself being recreated, so its scroll position otherwise carries over between
+   *  pages (e.g. landing mid-page on a freshly navigated-to route). */
+  @ViewChild('contentEl') private readonly contentEl?: ElementRef<HTMLDivElement>;
+
   /**
    * Primes menu state from the initial route snapshot and re-synchronizes
    * after each completed navigation within the feature area.
@@ -56,6 +61,17 @@ export class XviFcModuleComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.syncMenuModel());
+
+    // Separate from the menu-sync subscription above (no skip(1) here) — every completed
+    // navigation within the feature area should land at the top of the content pane.
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        if (this.contentEl) this.contentEl.nativeElement.scrollTop = 0;
+      });
   }
 
   /**

@@ -33,6 +33,73 @@
     </div>
   }
 
+  <!-- xvi-fc dynamic year access — optional, edit-anytime, independent of Approve/Reject below.
+       Hidden for "Existing ULB" records: they predate the approval workflow and have historical
+       data by definition, so the new-ULB exemption mechanism does not apply to them.
+       See cf-nest-api-v2's src/module/xvi-fc/common/services/CLAUDE.md for the mechanism. -->
+  @if (showYearAccess) {
+  <div class="px-2 mt-3 border-top pt-3">
+    <div class="text-body-secondary small mb-1">Year Access (16th FC)</div>
+    <div class="text-body-secondary small fst-italic mb-2">
+      Independent of the Approve/Reject decision above — can be changed anytime, including after approval.
+    </div>
+    @if (yearAccessLoading) {
+      <div class="text-body-secondary small">Loading…</div>
+    } @else {
+      <div class="row g-2 align-items-end">
+        <div class="col-6">
+          <label for="startYearSelect" class="form-label small mb-0">Starting design year</label>
+          <select
+            id="startYearSelect"
+            class="form-select form-select-sm"
+            [(ngModel)]="selectedYearId"
+            name="startYearSelect"
+          >
+            @for (year of years; track year._id) {
+              <option [value]="year._id">{{ year.year }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (exemptableForms.length > 0) {
+        <div class="mt-2">
+          <div class="small text-body-secondary mb-1">Exempt this ULB from (no prior-year data):</div>
+          @for (form of exemptableForms; track form.formId) {
+            <div class="form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [id]="'exempt-' + form.formId"
+                [checked]="isExemptChecked(form.formId)"
+                (change)="toggleExempt(form.formId)"
+              />
+              <label class="form-check-label" [for]="'exempt-' + form.formId">{{ form.label }}</label>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="mt-2 d-flex align-items-center gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-cfPrimary btn-sm"
+          [disabled]="yearAccessSaving || !selectedYearId"
+          (click)="saveYearAccess()"
+        >
+          {{ yearAccessSaving ? 'Saving…' : 'Save Year Access' }}
+        </button>
+        @if (yearAccessSaved) {
+          <span class="text-success small">Saved.</span>
+        }
+        @if (yearAccessError) {
+          <span class="text-danger small">{{ yearAccessError }}</span>
+        }
+      </div>
+    }
+  </div>
+  }
+
   @if (rejecting) {
     <div class="px-2 mt-3">
       <label for="rejectReason" class="form-label">Reason for rejection</label>

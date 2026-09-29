@@ -620,7 +620,7 @@ describe('ElectedBodyStatusComponent', () => {
         data: {
           validationStatus: 'INVALID',
           summary,
-          errors: [
+          validationErrors: [
             {
               field: 'censusCode',
               code: 'duplicate',
@@ -663,7 +663,7 @@ describe('ElectedBodyStatusComponent', () => {
         message: 'Excel revalidation completed with errors.',
         data: {
           validationSummary,
-          errors: [
+          validationErrors: [
             {
               field: 'censusCode',
               code: 'duplicate',

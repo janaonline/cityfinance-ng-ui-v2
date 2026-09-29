@@ -14,7 +14,12 @@ import { IState } from '../../../../core/models/state/state';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { AnnualAccountSectionKey } from '../manual-review-queue/manual-review-queue.models';
-import { ManualReviewHistoryRow, ManualReviewRequestStatus } from './manual-review-history.models';
+import {
+  ManualReviewHistoryRow,
+  ManualReviewHistoryStats,
+  ManualReviewHistoryStatsRange,
+  ManualReviewRequestStatus,
+} from './manual-review-history.models';
 import { ManualReviewHistoryService } from './manual-review-history.service';
 
 const ROWS_PAGE_SIZE = 20;
@@ -79,6 +84,19 @@ export class ManualReviewHistoryComponent implements OnInit {
     { value: 'RETURNED', label: 'Returned' },
   ];
 
+  readonly statsRanges: Array<{ value: ManualReviewHistoryStatsRange; label: string }> = [
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This week' },
+    { value: 'all', label: 'All time' },
+  ];
+
+  /** The REQUESTED time-range tabs drive the stat cards only — they're independent of the table's
+   *  own filter form/pagination below. */
+  readonly statsRange = signal<ManualReviewHistoryStatsRange>('all');
+  readonly stats = signal<ManualReviewHistoryStats | null>(null);
+  readonly isStatsLoading = signal(true);
+  readonly statsError = signal<string | null>(null);
+
   readonly filterForm = this.fb.group({
     search: [''],
     status: [''],
@@ -90,6 +108,7 @@ export class ManualReviewHistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRows();
+    this.loadStats();
     this.stateService.getStates().subscribe((response) => this.states.set(response.data ?? []));
 
     this.filterForm.controls.search.valueChanges
@@ -104,6 +123,31 @@ export class ManualReviewHistoryComponent implements OnInit {
   private applyFilters(): void {
     this.page.set(1);
     this.loadRows();
+  }
+
+  setStatsRange(range: ManualReviewHistoryStatsRange): void {
+    if (this.statsRange() === range) return;
+    this.statsRange.set(range);
+    this.loadStats();
+  }
+
+  loadStats(): void {
+    this.isStatsLoading.set(true);
+    this.statsError.set(null);
+
+    this.service
+      .getStats(this.statsRange())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stats) => {
+          this.stats.set(stats);
+          this.isStatsLoading.set(false);
+        },
+        error: () => {
+          this.isStatsLoading.set(false);
+          this.statsError.set('Unable to load review stats.');
+        },
+      });
   }
 
   sectionLabel(section: AnnualAccountSectionKey): string {

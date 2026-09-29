@@ -1,6 +1,7 @@
 import { Component, computed, DestroyRef, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup } from '@angular/forms';
+import { Router } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
@@ -86,6 +87,7 @@ export class XviFcBankAccountComponent {
   private readonly utilityService = inject(UtilityService);
   private readonly dynamicFormService = inject(DynamicFormService);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
   @ViewChild('proofInput') private readonly proofInputRef!: ElementRef<HTMLInputElement>;
 
@@ -411,6 +413,14 @@ export class XviFcBankAccountComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ({ config, record }) => {
+          // xvi-fc dynamic year access: a ONCE_EVER form (PFMS) is submitted once and reused
+          // across every year - if this record actually belongs to a different design year than
+          // the one currently selected, redirect there instead of showing a blank/wrong-context form.
+          if (record?.submissionScope === 'ONCE_EVER' && record.designYear && record.designYear !== details.designYearId) {
+            this.redirectToFiledYear(record.designYear, record.designYearLabel ?? null);
+            return;
+          }
+
           this.fields.set(config.data);
           // proofFile is deliberately excluded: it's managed by the bespoke selectedProof
           // signal/onProofSelected() below, not a dynamic-form control — a control for it here
@@ -453,6 +463,33 @@ export class XviFcBankAccountComponent {
       });
   }
 
+  /**
+   * Corrects the URL/cached year to where the ONCE_EVER record actually lives, same convention
+   * years-selection.component.ts uses (localStorage keys + replaceUrl navigation). The route's
+   * :yearId is a parent param on the same route config, so CustomRouteReuseStrategy reuses this
+   * component instance instead of re-running its constructor - the navigation alone would not
+   * reload the data, so this also updates ulbDetails and re-runs loadFormAndRecord() in place.
+   * Deferred via queueMicrotask so the in-flight subscription's own `.add()` finalizer (which
+   * would otherwise clear isFormLoading right after this call sets it) runs first.
+   */
+  private redirectToFiledYear(designYearId: string, designYearLabel: string | null): void {
+    localStorage.setItem(XVIFC_LS_KEYS.selectedYearId, designYearId);
+    if (designYearLabel) localStorage.setItem(XVIFC_LS_KEYS.selectedYearString, `FY-${designYearLabel}`);
+    this.router.navigate(['/xvifc', designYearId, 'xvi-fc-bank-account'], { replaceUrl: true });
+
+    const current = this.ulbDetails();
+    if (current) {
+      this.ulbDetails.set({
+        ...current,
+        designYearId,
+        // Matches overview-card.service.ts's own `raw.replace(/^FY-/, 'FY ')` display format -
+        // without this, the header keeps showing the year the ULB navigated away from.
+        ...(designYearLabel ? { selectedYear: `FY ${designYearLabel}` } : {}),
+      });
+    }
+    queueMicrotask(() => this.loadFormAndRecord());
+  }
+
   /** Toggles editability for every field except those permanently backend-computed
    *  (`FieldConfig.disabled`, e.g. `bankDetails.*` — always auto-filled by the IFSC lookup, never
    *  hand-typed, regardless of the overall form's editable/locked state). */
@@ -478,10 +515,17 @@ export class XviFcBankAccountComponent {
       const userDataRaw = localStorage.getItem('userData');
       const userData = userDataRaw ? (JSON.parse(userDataRaw) as { ulb?: string; state?: string }) : undefined;
 
+      // xvifc_ulb_details (the `parsed` blob) is only refreshed when the ULB visits Overview
+      // (overview-card.service.ts) - a redirectToFiledYear() cross-year correction never writes
+      // back to it, so a recreated component (e.g. a hard refresh) would otherwise re-read a
+      // stale selectedYear. Prefer the live, always-current key this page itself keeps in sync,
+      // same fallback shape already used for designYearId below.
+      const liveYear = localStorage.getItem(XVIFC_LS_KEYS.selectedYearString);
+
       return {
         ulbName: parsed.ulbName,
         stateName: parsed.stateName,
-        selectedYear: parsed.selectedYear,
+        selectedYear: liveYear ? liveYear.replace(/^FY-/, 'FY ') : parsed.selectedYear,
         designYearId: parsed.designYearId ?? localStorage.getItem(XVIFC_LS_KEYS.selectedYearId) ?? undefined,
         ulbId: parsed.ulbId ?? parsed._id ?? parsed.ulb?._id ?? parsed.ulb?.id ?? userData?.ulb ?? undefined,
         stateId: userData?.state ?? undefined,

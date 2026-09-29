@@ -9,16 +9,10 @@ import { NoUpDownDirective } from '../../../../core/directives/no-up-down.direct
 import { DecimalLimitDirective } from '../../../../core/directives/decimal-limit.directive';
 import { TrimOnBlurDirective } from '../../../../core/directives/trim-on-blur.directive';
 import { environment } from '../../../../../environments/environment';
+import { resolveDotPath } from '../../utils/resolve-dot-path.util';
 
 const LOOKUP_DEBOUNCE_MS = 400;
 
-/** Resolves a dot-path (e.g. 'bankDetails.name') off a plain object; undefined if any segment is missing. */
-function resolveDotPath(source: unknown, path: string): unknown {
-  return path.split('.').reduce<unknown>((value, key) => {
-    if (value === null || typeof value !== 'object') return undefined;
-    return (value as Record<string, unknown>)[key];
-  }, source);
-}
 @Component({
   selector: 'app-input',
   imports: [MaterialModule, DecimalLimitDirective, NoUpDownDirective, TrimOnBlurDirective],

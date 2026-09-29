@@ -16,6 +16,10 @@ const ACTION_META: Record<'upload' | 'reupload' | 'retry' | 'delete' | 'approve'
   undo: { label: 'Undo', icon: 'bi-arrow-counterclockwise' },
 };
 
+export function actionMeta(action: keyof typeof ACTION_META): { label: string; icon: string } {
+  return ACTION_META[action];
+}
+
 function isGated(
   gates: readonly ActionGate[],
   role: DocumentActionRole,
@@ -54,10 +58,15 @@ export function resolveDocumentActions(
   sectionStatusId: number,
   gates: readonly ActionGate[],
   doc: DocumentRuntimeState,
+  blocked = false,
 ): ResolvedDocumentAction[] {
   const gated = (action: DocumentAction) => isGated(gates, role, action, doc.docKey, sectionStatusId);
 
   if (role === 'ULB') {
+    // Exemptions don't change the section's actual status.
+    // So the normal status check may allow these actions by mistake.
+    // This check handles the exemption separately.
+    if (blocked) return [];
     if (!doc.hasFile) {
       return gated('upload') ? [build('upload', false)] : [];
     }
@@ -72,10 +81,22 @@ export function resolveDocumentActions(
       // A manual-review request is pending ADMIN's decision — retrying or re-uploading now would
       // change the file out from under them (or silently cancel the request), so hide both.
       if (doc.isAwaitingManualReview) return [];
+      // Second rejection's cooling-off period — no action at all until it passes (the page shows
+      // a "blocked until" message instead).
+      if (doc.isUploadBlocked) return [];
       // Once ADMIN has declined a manual-review request, retrying OCR on the same file would
-      // just fail the same way again — only Re-upload makes sense at that point.
-      const availableActions = doc.manualReviewReturned === true ? (['reupload'] as const) : (['retry', 'reupload'] as const);
-      return availableActions.filter(gated).map((a) => build(a, false));
+      // just fail the same way again — only Re-upload makes sense at that point, and only while
+      // self-service attempts remain. Once exhausted, Request Manual Review (rendered separately)
+      // re-opens as the only path forward — self-service ends, but a human escalation always stays
+      // reachable rather than a pure time-based lockout.
+      if (doc.manualReviewReturned === true) {
+        if (doc.manualReviewAttemptsExhausted) return [];
+        return (['reupload'] as const).filter(gated).map((a) => build(a, false));
+      }
+      // Eligible for manual review but hasn't asked yet — Request Manual Review (rendered
+      // separately from this action row) is the only path forward, not one option among several.
+      if (doc.isEligibleForManualReview) return [];
+      return (['retry', 'reupload'] as const).filter(gated).map((a) => build(a, false));
     }
     if (doc.processingStatus === 'PASSED') {
       if (doc.latestDecision?.status === 'APPROVED') return [];

@@ -49,6 +49,9 @@
       @case ('dropdown') {
         <app-select [field]="fieldForRenderer" [group]="group"></app-select>
       }
+      @case ('autocomplete') {
+        <app-autocomplete [field]="fieldForRenderer" [group]="group"></app-autocomplete>
+      }
       @case ('date') {
         <app-date [field]="fieldForRenderer" [group]="group"></app-date>
       }

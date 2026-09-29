@@ -186,6 +186,152 @@
               </div>
             </div>
           }
+        } @else if (activeSection() === 'DUR') {
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <h2 class="h6 fw-bold text-uppercase mb-0">Detailed Utilisation Report</h2>
+              @if (durData(); as data) {
+                <span class="badge rounded-pill doc-status-badge" [class]="durStatusBadgeClass()">
+                  {{ data.currentFormStatusLabel }}
+                </span>
+              }
+              @if (durWasReuploaded()) {
+                <span class="badge rounded-pill doc-status-badge reuploaded-badge"
+                  matTooltip="The ULB uploaded a corrected file after your last decision">
+                  <i class="bi bi-arrow-repeat me-1"></i>Re-uploaded
+                </span>
+              }
+            </div>
+            @if (durData()) {
+              <button type="button" class="pfms-history-toggle" (click)="toggleDurHistory()">
+                <i class="bi" [class.bi-chevron-down]="!durLogsExpanded()" [class.bi-chevron-up]="durLogsExpanded()"></i>
+                View History
+              </button>
+            }
+          </div>
+
+          @if (durData()) {
+            <div class="return-box-wrapper mb-3" [class.history-panel]="durLogsExpanded()" [class.return-box-wrapper--open]="durLogsExpanded()">
+              <div class="return-box-inner">
+                @if (durLogsLoading()) {
+                  <ul class="history-list" aria-hidden="true">
+                    @for (i of historySkeletonRows; track i) {
+                      <li class="history-item">
+                        <span class="skeleton-dot"></span>
+                        <div class="history-item-body">
+                          <div class="d-flex justify-content-between align-items-baseline gap-2">
+                            <span class="skeleton-bar skeleton-bar--title"></span>
+                            <span class="skeleton-bar skeleton-bar--date"></span>
+                          </div>
+                          <span class="skeleton-bar skeleton-bar--status"></span>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                } @else if (durLogsDisplay().length === 0) {
+                  <p class="text-secondary small mb-0 py-2">No history yet.</p>
+                } @else {
+                  <ul class="history-list">
+                    @for (log of durLogsDisplay(); track log.createdAt) {
+                      <li class="history-item">
+                        <span class="history-item-dot" [class.history-item-dot--returned]="log.action === 'RETURNED'"></span>
+                        <div class="history-item-body">
+                          <div class="d-flex justify-content-between align-items-baseline gap-2">
+                            <span class="history-item-title">{{ log.title }}</span>
+                            <span class="history-item-date">{{ log.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+                          </div>
+                          <span class="history-item-status">{{ log.toStatusLabel }}</span>
+                          @if (log.note) {
+                            <p class="history-item-note mb-0">{{ log.note }}</p>
+                          }
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            </div>
+          }
+
+          @if (!durData()) {
+            <p class="text-secondary py-4 mb-0 text-center">This ULB hasn't submitted a Detailed Utilisation Report yet.</p>
+          } @else {
+            @for (doc of durData()!.documents; track doc.docId) {
+              <div class="doc-row mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                  <div>
+                    <p class="doc-title fw-semibold mb-0">{{ doc.label }}</p>
+                    @if (doc.fileName) {
+                      <p class="doc-date text-secondary small mb-0">
+                        {{ doc.fileName }} &middot; {{ formatFileSize(doc.sizeKb ?? 0) }}
+                      </p>
+                    } @else {
+                      <p class="doc-date text-secondary small mb-0">Not uploaded yet</p>
+                    }
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="badge rounded-pill doc-status-badge"
+                      [class.passed-badge]="doc.processingStatus === 'PASSED'"
+                      [class.failed-badge]="doc.processingStatus === 'FAILED'"
+                      [class.pending-badge]="doc.processingStatus === 'PROCESSING' || doc.processingStatus === 'NOT_STARTED'"
+                    >
+                      {{ doc.processingStatus }}
+                    </span>
+                    @if (doc.fileUrl) {
+                      <button type="button" matButton="outlined" class="view-pdf-btn" (click)="previewDurDocument(doc)">
+                        <i class="bi bi-eye me-1"></i>View Document
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (durEffectiveStateDecision()?.status === 'RETURNED') {
+              <p class="returned-note mb-0 mt-2">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                Returned: {{ durEffectiveStateDecision()?.note ?? 'No reason given.' }}
+              </p>
+            }
+
+            <div class="return-box-wrapper" [class.return-box-wrapper--open]="durReturning()">
+              <div class="return-box-inner">
+                <label class="return-box-label" for="dur-return-note">
+                  Reason for returning this form <span class="text-danger">*</span>
+                </label>
+                <textarea
+                  id="dur-return-note"
+                  class="return-box-textarea"
+                  rows="3"
+                  [maxLength]="returnNoteMaxLength"
+                  placeholder="e.g. Tied grant utilisation figures do not match the uploaded document."
+                  [value]="durReturnNoteDraft()"
+                  (input)="durReturnNoteDraft.set($any($event.target).value)"
+                ></textarea>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                  <span
+                    class="return-box-char-count"
+                    [class.return-box-char-count--invalid]="durReturnNoteDraft().trim().length < returnNoteMinLength"
+                  >
+                    {{ durReturnNoteDraft().trim().length }} / {{ returnNoteMaxLength }} &middot; minimum
+                    {{ returnNoteMinLength }} characters
+                  </span>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-2">
+                  <button type="button" matButton (click)="cancelDurReturn()">Cancel</button>
+                  <button
+                    type="button"
+                    matButton="filled"
+                    class="return-box-submit"
+                    [disabled]="isDeciding() || !isReturnNoteValid(durReturnNoteDraft())"
+                    (click)="confirmDurReturn()"
+                  >
+                    Submit and Return
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
         } @else if (activeSection() === 'SLB') {
           <app-slb-review [data]="slbData()" />
         } @else {
@@ -408,6 +554,35 @@
             on {{ bankAccountData()?.stateDecision?.decidedAt | date: 'MMM d, y, h:mm a' }}
           </span>
           <button type="button" class="approval-banner-action" [disabled]="isDeciding()" (click)="undoPfmsApproval()">
+            Reopen for correction
+          </button>
+        </div>
+      }
+    } @else if (activeSection() === 'DUR') {
+      @if (durData() && canApproveDur() && !durReturning()) {
+        <div class="page-footer d-flex flex-wrap justify-content-end gap-2 mt-3">
+          <button
+            type="button"
+            matButton="outlined"
+            class="text-danger"
+            [disabled]="isDeciding()"
+            (click)="startDurReturn()"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Return for Correction
+          </button>
+          <button type="button" matButton="filled" [disabled]="isDeciding()" (click)="approveDur()">
+            <i class="bi bi-check-circle-fill me-1"></i>Approve Form
+          </button>
+        </div>
+      }
+      @if (durData() && canUndoApprovalDur()) {
+        <div class="approval-banner d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
+          <span class="approval-banner-text">
+            <i class="bi bi-check-circle-fill"></i>
+            Approved by {{ durData()?.stateDecision?.decidedBy?.name || 'State' }}
+            on {{ durData()?.stateDecision?.decidedAt | date: 'MMM d, y, h:mm a' }}
+          </span>
+          <button type="button" class="approval-banner-action" [disabled]="isDeciding()" (click)="undoDurApproval()">
             Reopen for correction
           </button>
         </div>

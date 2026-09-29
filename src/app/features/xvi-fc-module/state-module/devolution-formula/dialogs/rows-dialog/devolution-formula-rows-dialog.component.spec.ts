@@ -51,7 +51,7 @@ function makeRow(overrides: Partial<DevolutionRow> = {}): DevolutionRow {
     installment2Amount: 5000000,
     devolutionFormula: 'Population × 0.5',
     validationStatus: 'VALID',
-    errors: [],
+    validationErrors: [],
     datasetVersion: 1,
     isActive: true,
     createdAt: '2026-01-01T00:00:00Z',
@@ -578,7 +578,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('shows error icon in censusCode cell when row has a censusCode error', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'censusCode', code: 'INVALID_CODE', message: 'Invalid census code' }],
+        validationErrors: [{ field: 'censusCode', code: 'INVALID_CODE', message: 'Invalid census code' }],
       });
       createComponent([row]);
       const icons = fixture.debugElement.queryAll(By.css('.df-error-icon'));
@@ -588,7 +588,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('applies df-cell-invalid class to cell with error', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'totalGrantAllocation', code: 'NEG', message: 'Must be positive' }],
+        validationErrors: [{ field: 'totalGrantAllocation', code: 'NEG', message: 'Must be positive' }],
       });
       createComponent([row]);
       const invalidCells = fixture.debugElement.queryAll(By.css('.df-cell-invalid'));
@@ -596,7 +596,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     });
 
     it('does not show error icon when row has no errors', () => {
-      createComponent([makeRow({ validationStatus: 'VALID', errors: [] })]);
+      createComponent([makeRow({ validationStatus: 'VALID', validationErrors: [] })]);
       const icons = fixture.debugElement.queryAll(By.css('.df-error-icon'));
       expect(icons.length).toBe(0);
     });
@@ -604,7 +604,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('applies df-cell-invalid and a tooltip to the ulbName cell when identityModified is reported', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'ulbName', code: 'identityModified', message: 'ULB name has changed since last upload.' }],
+        validationErrors: [{ field: 'ulbName', code: 'identityModified', message: 'ULB name has changed since last upload.' }],
       });
       createComponent([row]);
 
@@ -623,7 +623,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('clicking an editable invalid cell enters edit mode', fakeAsync(() => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+        validationErrors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
       });
       createComponent([row]);
       fixture.detectChanges();
@@ -640,7 +640,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('error icon in a row cell uses bi-exclamation-triangle-fill', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+        validationErrors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
       });
       createComponent([row]);
       fixture.detectChanges();
@@ -653,7 +653,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('applies cursor-pointer to an editable invalid cell when canEdit is true', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+        validationErrors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
       });
       createComponent([row]);
       fixture.detectChanges();
@@ -666,7 +666,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
     it('clicking a non-editable cell (censusCode) does not enter edit mode', fakeAsync(() => {
       const row = makeRow({
         validationStatus: 'INVALID',
-        errors: [{ field: 'censusCode', code: 'INVALID', message: 'Bad census' }],
+        validationErrors: [{ field: 'censusCode', code: 'INVALID', message: 'Bad census' }],
       });
       createComponent([row]);
       fixture.detectChanges();
@@ -685,7 +685,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
         _id: 'row-2',
         rowNumber: 2,
         validationStatus: 'INVALID',
-        errors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
+        validationErrors: [{ field: 'totalGrantAllocation', code: 'INVALID', message: 'Bad value' }],
       });
       createComponent([row1, row2]);
       component.startEdit(row1);

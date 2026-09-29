@@ -133,6 +133,33 @@ export interface FieldLookupConfig {
   populates: Record<string, string>;
 }
 
+/** Drives `AutocompleteComponent` — a debounced, search-as-you-type remote lookup, as opposed to
+ *  `FieldLookupConfig` (which validates one value and patches siblings). Same "backend hands the
+ *  frontend a relative API path" convention as `FieldLookupConfig.endpoint`. */
+export interface FieldRemoteSearchConfig {
+  /** Relative API path, no `:value` placeholder — the live search term is sent as a query param
+   *  (`searchParam`) instead, alongside `extraParams` and `limit`. */
+  endpoint: string;
+  /** Query param the search text is sent under. Default: `'search'`. */
+  searchParam?: string;
+  /** Extra static query params merged into every request (e.g. state-scoping filters). */
+  extraParams?: Record<string, string | number | boolean>;
+  /** Dot-path into each result item for the option id (the value the bound control actually
+   *  holds). Default: `'_id'`. */
+  valueKey?: string;
+  /** Dot-path into each result item for the option's display label. Default: `'name'`. */
+  labelKey?: string;
+  /** Dot-path into the response body where the array of result items lives (e.g. `'data.data'`
+   *  for a paginated `{success, data: {data: [...], page, ...}}` envelope). Default: `'data.data'`. */
+  resultsPath?: string;
+  /** Minimum characters typed before a search fires. Default: `2`. */
+  minLength?: number;
+  /** Debounce window in ms. Default: `300`ms. */
+  debounceMs?: number;
+  /** Sent as a `limit` query param. Default: `10`. */
+  limit?: number;
+}
+
 export interface LegacyFileValue {
   name: string;
   size: string | number | null;
@@ -200,6 +227,9 @@ export interface FieldConfig {
   displayInlineLabel?: boolean;
   /** On a valid value, calls `endpoint` and patches sibling fields from the response per `populates`. */
   lookup?: FieldLookupConfig;
+  /** Renders as a debounced search-as-you-type autocomplete (`formFieldType: 'autocomplete'`)
+   *  instead of a static `select`'s preloaded `options`. */
+  remoteSearch?: FieldRemoteSearchConfig;
   /** This field's value must equal the named sibling field's value (e.g. confirm-account-number). */
   matchesField?: string;
   /** Strips non-digit characters live as the user types; pairs with named `validations` entries

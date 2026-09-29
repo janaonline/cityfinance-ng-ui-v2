@@ -1,10 +1,10 @@
 /**
  * Numeric form-status values shared across every XVI-FC form type, mirroring the backend's
  * `FORM_STATUS` (cf-nest-api-v2/src/common/constants/form-status.constants.ts). Role-neutral
- * location so any state/mohua/ulb submodule can import the full 0-11 range without depending on
+ * location so any state/mohua/ulb submodule can import the full 0-12 range without depending on
  * another feature's local constant.
  */
-export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export const FORM_STATUS = {
   NO_STATUS: 0,
@@ -19,4 +19,7 @@ export const FORM_STATUS = {
   AWAITING_CLAIM_LETTER: 9,
   UNDO: 10,
   ACTION_REQUIRED: 11,
+  /** Terminal, no-owner. Set automatically when a form is exempted for a genuinely new ULB
+   *  (xvi-fc dynamic year access) — never a manual ULB/STATE/MoHUA action. */
+  EXEMPTED_ACKNOWLEDGED: 12,
 } as const satisfies Record<string, FormStatusType>;

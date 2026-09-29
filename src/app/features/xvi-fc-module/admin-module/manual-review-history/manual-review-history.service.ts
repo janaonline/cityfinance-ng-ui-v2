@@ -7,6 +7,8 @@ import {
   ManualReviewHistoryQuery,
   ManualReviewHistoryResult,
   ManualReviewHistoryRow,
+  ManualReviewHistoryStats,
+  ManualReviewHistoryStatsRange,
 } from './manual-review-history.models';
 
 @Injectable({ providedIn: 'root' })
@@ -50,5 +52,13 @@ export class ManualReviewHistoryService {
     if (query.breachedOnly) params = params.set('breachedOnly', 'true');
 
     return this.http.get(`${this.baseUrl}manual-review-history/dump`, { params, responseType: 'blob' });
+  }
+
+  /** Summary counts for the REQUESTED time-range tabs — independent of the table's own filters. */
+  getStats(range: ManualReviewHistoryStatsRange): Observable<ManualReviewHistoryStats> {
+    const params = new HttpParams().set('range', range);
+    return this.http
+      .get<ApiResponse<ManualReviewHistoryStats>>(`${this.baseUrl}manual-review-history/stats`, { params })
+      .pipe(map((response) => response.data));
   }
 }

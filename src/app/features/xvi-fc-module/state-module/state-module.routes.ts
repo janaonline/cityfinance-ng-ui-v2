@@ -42,6 +42,22 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     canDeactivate: [unsavedChangesGuard],
   },
   {
+    path: 'gtc',
+    loadComponent: () => import('./gtc/gtc.component').then((m) => m.GtcComponent),
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
+    path: 'request-exemption',
+    loadComponent: () =>
+      import('./request-exemption/request-exemption-list.component').then((m) => m.RequestExemptionListComponent),
+  },
+  {
+    path: 'request-exemption/new',
+    loadComponent: () =>
+      import('./request-exemption/new/request-exemption.component').then((m) => m.RequestExemptionComponent),
+    canDeactivate: [unsavedChangesGuard],
+  },
+  {
     path: 'elected-body-status',
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),

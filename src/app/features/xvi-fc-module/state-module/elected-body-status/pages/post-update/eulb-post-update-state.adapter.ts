@@ -145,7 +145,7 @@ export class EulbPostUpdateStateAdapter {
         dateOfExpiry: baseRow.dateOfExpiry,
         remarks: baseRow.remarks ?? '',
         validationStatus: 'INVALID',
-        errors: rowError.errors,
+        validationErrors: rowError.validationErrors,
       });
     }
 
@@ -169,7 +169,7 @@ export class EulbPostUpdateStateAdapter {
       dateOfExpiry: changedPayload?.dateOfExpiry ?? validatedRow?.dateOfExpiry ?? row.dateOfExpiry,
       remarks: changedPayload?.remarks ?? validatedRow?.remarks ?? row.remarks,
       validationStatus: validatedRow?.validationStatus ?? row.validationStatus,
-      errors: validatedRow?.errors ?? row.errors,
+      validationErrors: validatedRow?.validationErrors ?? row.validationErrors,
     };
   }
 

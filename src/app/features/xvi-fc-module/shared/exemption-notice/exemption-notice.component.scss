@@ -1,0 +1,30 @@
+// Same --mat-sys-* token family as shared/not-eligible.component.scss's icon-ring, recolored:
+// exemption isn't an error state, so this uses --mat-sys-primary instead of --mat-sys-error. This
+// component is always rendered nested inside a page under /xvifc/** (unlike not-eligible, a
+// top-level route), so it relies on the ambient Angular Material theme already in scope rather
+// than the xvifc-theme-tokens mixin — same as slb.component.scss itself does.
+:host {
+  display: block;
+}
+
+.exemption-notice {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.exemption-notice-icon-ring {
+  width: 40px;
+  height: 40px;
+  background: var(--mat-sys-primary-container);
+  border: 1.5px solid var(--mat-sys-primary);
+
+  i {
+    color: var(--mat-sys-primary);
+    font-size: 1.1rem;
+  }
+}
+
+.exemption-notice-title {
+  color: var(--mat-sys-on-surface);
+}
