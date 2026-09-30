@@ -18,6 +18,7 @@ describe('LoginService.signInWithPassword', () => {
       'loadScript',
       'showBadge',
       'hideBadge',
+      'reset',
     ]);
     const otpAuthSpy = jasmine.createSpyObj<OtpAuthService>('OtpAuthService', ['sendOtp', 'verifyOtp']);
     const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
@@ -81,5 +82,34 @@ describe('LoginService.signInWithPassword', () => {
         done();
       },
     });
+  });
+});
+
+describe('LoginService.resetRecaptcha', () => {
+  it('delegates to RecaptchaService.reset()', () => {
+    const recaptchaSpy = jasmine.createSpyObj<RecaptchaService>('RecaptchaService', [
+      'execute',
+      'loadScript',
+      'showBadge',
+      'hideBadge',
+      'reset',
+    ]);
+
+    TestBed.configureTestingModule({
+      providers: [
+        LoginService,
+        { provide: AuthService, useValue: jasmine.createSpyObj<AuthService>('AuthService', ['login']) },
+        {
+          provide: OtpAuthService,
+          useValue: jasmine.createSpyObj<OtpAuthService>('OtpAuthService', ['sendOtp', 'verifyOtp']),
+        },
+        { provide: RecaptchaService, useValue: recaptchaSpy },
+        { provide: Router, useValue: jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']) },
+      ],
+    });
+
+    TestBed.inject(LoginService).resetRecaptcha();
+
+    expect(recaptchaSpy.reset).toHaveBeenCalledTimes(1);
   });
 });

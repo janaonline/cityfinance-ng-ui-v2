@@ -527,6 +527,9 @@ export class LoginComponent implements OnInit, OnDestroy {
           // Error thrown client-side (e.g. RecaptchaService.execute()'s blank-token rejection,
           // once retry(1) in signInWithPassword has also given up) — check both.
           const message = err?.error?.message ?? err?.message;
+          // Every failure (bad credentials or a reCAPTCHA failure) gets a fresh Google client for
+          // the next attempt, instead of asking the same possibly-stuck one again.
+          this.loginService.resetRecaptcha();
           // Cantonment-Board ULBs get sent straight to the dedicated not-eligible page instead of an inline error.
           if (message === 'Cantonment boards are not eligible for XVIFC') {
             void this.router.navigate(['/xvifc-not-eligible']);
