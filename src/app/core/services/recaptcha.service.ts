@@ -14,14 +14,32 @@ export class RecaptchaService {
   private readonly siteKey = environment.recaptchaSiteKey;
   private readonly enabled = environment.captchaEnabled;
   private scriptLoaded = false;
+  private scriptEl: HTMLScriptElement | null = null;
 
   loadScript(): void {
     if (!this.enabled || this.scriptLoaded || !this.siteKey) return;
-    const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${this.siteKey}`;
-    script.async = true;
-    document.head.appendChild(script);
+    this.scriptEl = document.createElement('script');
+    this.scriptEl.src = `https://www.google.com/recaptcha/api.js?render=${this.siteKey}`;
+    this.scriptEl.async = true;
+    document.head.appendChild(this.scriptEl);
     this.scriptLoaded = true;
+  }
+
+  /**
+   * Forces a brand-new Google reCAPTCHA client on the next execute() call, instead of reusing
+   * whatever internal state the widget was left in. There's no official "reset" in the v3 API
+   * (that's a v2/checkbox concept) — the closest equivalent is discarding the loaded script and
+   * client object entirely and re-injecting a fresh script tag. Call this after a login attempt
+   * fails (wrong credentials or a reCAPTCHA failure), so the next attempt starts clean rather
+   * than asking the same possibly-stuck client for another token.
+   */
+  reset(): void {
+    if (!this.enabled) return;
+    this.scriptEl?.remove();
+    this.scriptEl = null;
+    this.scriptLoaded = false;
+    delete (window as unknown as { grecaptcha?: unknown }).grecaptcha;
+    this.loadScript();
   }
 
   /** Shows the floating reCAPTCHA badge. Call only while on the login page. */
