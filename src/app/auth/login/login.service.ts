@@ -42,6 +42,12 @@ export class LoginService {
     this.recaptcha.hideBadge();
   }
 
+  /** Call after a failed login attempt (wrong credentials or a reCAPTCHA failure) so the next
+   *  attempt gets a fresh Google client instead of reusing whatever state produced the failure. */
+  resetRecaptcha(): void {
+    this.recaptcha.reset();
+  }
+
   // ─── Auth API ─────────────────────────────────────────────────────────────────
 
   signInWithPassword(identifier: string, password: string, type: string | null): Observable<unknown> {
