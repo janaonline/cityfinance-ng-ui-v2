@@ -8,7 +8,6 @@ import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
-import { environment } from '../../../../../environments/environment';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
@@ -65,6 +64,9 @@ export class ManualReviewQueueComponent implements OnInit {
   /** Row currently mid-decision (approve or reject in flight) — disables its own buttons only. */
   readonly decidingRowKey = signal<string | null>(null);
 
+  /** DUR row currently mid-download — disables its own download control only. */
+  readonly downloadingRowKey = signal<string | null>(null);
+
   readonly filterForm = this.fb.group({ search: [''] });
 
   ngOnInit(): void {
@@ -83,6 +85,34 @@ export class ManualReviewQueueComponent implements OnInit {
 
   isDeciding(row: ManualReviewQueueRow): boolean {
     return this.decidingRowKey() === this.rowKey(row);
+  }
+
+  isDownloading(row: ManualReviewQueueRow): boolean {
+    return this.downloadingRowKey() === this.rowKey(row);
+  }
+
+  onDownloadFile(row: ManualReviewQueueRow): void {
+    if (this.downloadingRowKey()) return;
+    const key = this.rowKey(row);
+    this.downloadingRowKey.set(key);
+    this.service
+      .downloadDurDocument(row)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.downloadingRowKey.set(null);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = row.fileName ?? 'document.pdf';
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.downloadingRowKey.set(null);
+          this.utilityService.triggerSnackbar('Could not download the file. Please try again.', 'snackbar-danger');
+        },
+      });
   }
 
   srNo(index: number): number {
@@ -175,12 +205,5 @@ export class ManualReviewQueueComponent implements OnInit {
     const key = this.rowKey(row);
     this.rows.update((rows) => rows.filter((r) => this.rowKey(r) !== key));
     this.total.update((t) => Math.max(0, t - 1));
-  }
-
-  /** Direct download link for the job's source file — a plain URL, no auth header needed. DUR jobs
-   *  live under a distinct vendor path (dur-validation vs ocr-validation — see DurValidationApiService). */
-  ocrDownloadUrl(jobId: string, formType: ManualReviewFormType): string {
-    const prefix = formType === 'DUR' ? 'dur-validation' : 'ocr-validation';
-    return `${environment.api.url3}${prefix}/jobs/${jobId}/download`;
   }
 }

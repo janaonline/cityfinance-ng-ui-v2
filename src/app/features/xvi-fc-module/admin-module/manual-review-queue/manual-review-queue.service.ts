@@ -117,6 +117,16 @@ export class ManualReviewQueueService {
       );
   }
 
+  /** DUR-only: streams the document straight from S3 via an authenticated, non-expiring endpoint
+   *  (no signed-URL token) — Annual Account rows keep using their signed `fileUrl` link instead. */
+  downloadDurDocument(row: Pick<ManualReviewQueueRow, 'formId' | 'docId' | 'uploadId'>): Observable<Blob> {
+    const params = new HttpParams().set('uploadId', row.uploadId);
+    return this.http.get(`${this.durBaseUrl}${row.formId}/documents/${row.docId}/download`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
   decide(row: Pick<ManualReviewQueueRow, 'formType' | 'formId' | 'section' | 'docId'>, payload: ManualReviewDecisionPayload): Observable<void> {
     const url =
       row.formType === 'DUR'

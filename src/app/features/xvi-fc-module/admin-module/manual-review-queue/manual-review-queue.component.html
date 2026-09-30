@@ -54,8 +54,14 @@
               <div class="text-muted small">
                 {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }} &middot;
                 {{ row.docId }} &middot;
-                @if (row.jobId) {
-                <a [href]="ocrDownloadUrl(row.jobId, row.formType)" class="ms-1 text-muted" target="_blank" rel="noopener"
+                @if (row.formType === 'DUR') {
+                <button type="button" class="btn btn-link p-0 border-0 ms-1 align-baseline"
+                  [disabled]="isDownloading(row)" [title]="row.fileName ?? 'View file'"
+                  (click)="onDownloadFile(row)">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                </button>
+                } @else if (row.fileUrl) {
+                <a [href]="row.fileUrl" class="ms-1 text-muted" target="_blank" rel="noopener"
                   [title]="row.fileName ?? 'View file'">
                   <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
                 </a>
@@ -111,10 +117,28 @@
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>
+                }
+                @if (row.formType === 'DUR') {
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    [disabled]="isDownloading(row)"
+                    (click)="onDownloadFile(row)"
+                    title="Download the uploaded document"
+                  >
+                    @if (isDownloading(row)) {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    } @else {
+                    <i class="bi bi-download"></i>
+                    }
+                    Download
+                  </button>
+                } @else if (row.fileUrl) {
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    [href]="ocrDownloadUrl(row.jobId, row.formType)"
-                    title="Download the job's file"
+                    [href]="row.fileUrl"
+                    target="_blank"
+                    title="Download the uploaded document"
                   >
                     <i class="bi bi-download"></i> Download
                   </a>
