@@ -18,7 +18,6 @@ export class RecaptchaService {
 
   loadScript(): void {
     if (!this.enabled || this.scriptLoaded || !this.siteKey) return;
-    console.log('Loading reCAPTCHA script...');
     this.scriptEl = document.createElement('script');
     this.scriptEl.src = `https://www.google.com/recaptcha/api.js?render=${this.siteKey}`;
     this.scriptEl.async = true;
@@ -59,7 +58,6 @@ export class RecaptchaService {
     return from(
       new Promise<string>((resolve, reject) => {
         grecaptcha.ready(() => {
-          console.log('1. Executing reCAPTCHA...');
           grecaptcha.execute(this.siteKey, { action }).then((token) => {
             // grecaptcha.execute() occasionally resolves with a null/empty token (a known
             // client-side quirk, not tied to any prior call) instead of rejecting — treating that
