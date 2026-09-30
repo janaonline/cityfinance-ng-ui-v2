@@ -760,7 +760,7 @@ export class OcrService {
 
   submitDurValidationJob(
     file: File,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     model?: string | null,
     grantType?: DurGrantType | null,
