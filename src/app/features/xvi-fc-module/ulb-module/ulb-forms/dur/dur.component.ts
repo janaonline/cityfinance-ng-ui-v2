@@ -108,6 +108,7 @@ interface DurDocument {
   manualReviewDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
   isManualReviewRequested: boolean;
   manualReviewError: string | null;
+  retryValidationCount: number;
   postRejectionAttemptsUsed: number;
   manualReviewRejectionCount: number;
   uploadBlockedUntil: Date | null;
@@ -132,6 +133,7 @@ function emptyDoc(id: DurDocId): DurDocument {
     manualReviewDecision: null,
     isManualReviewRequested: false,
     manualReviewError: null,
+    retryValidationCount: 0,
     postRejectionAttemptsUsed: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
@@ -249,7 +251,7 @@ export class DurComponent implements OnInit, OnDestroy {
   }
 
   isEligibleForManualReview(doc: DurDocument): boolean {
-    return (doc.version ?? 1) > 1 && doc.status === 'failed';
+    return doc.status === 'failed' && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
   }
 
   isUploadBlocked(doc: DurDocument): boolean {
@@ -540,6 +542,7 @@ export class DurComponent implements OnInit, OnDestroy {
               failedChecks: [],
               isManualReviewRequested: false,
               manualReviewError: null,
+              retryValidationCount: d.retryValidationCount + 1,
             }
           : d,
       ),
@@ -687,6 +690,7 @@ export class DurComponent implements OnInit, OnDestroy {
               failedChecks: string[];
               isManualReviewRequested: boolean;
             };
+            retryValidationCount: number;
             uploadedAt: string;
           } | null;
           manualReviewDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
@@ -723,6 +727,7 @@ export class DurComponent implements OnInit, OnDestroy {
             validationDetails: cu.ocrInfo?.validationDetails ?? null,
             failedChecks: cu.ocrInfo?.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo?.isManualReviewRequested ?? false,
+            retryValidationCount: cu.retryValidationCount ?? 0,
             manualReviewDecision: saved.manualReviewDecision,
             postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
             manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
@@ -786,6 +791,7 @@ export class DurComponent implements OnInit, OnDestroy {
                   failedChecks: string[];
                   isManualReviewRequested: boolean;
                 };
+                retryValidationCount: number;
               } | null;
               manualReviewDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
               postRejectionAttemptsUsed: number;
@@ -811,6 +817,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 (remote.currentUpload.ocrInfo?.progressStep ?? null) === doc.ocrProgressStep &&
                 (remote.currentUpload.ocrInfo?.validationDetails ?? null) === doc.validationDetails &&
                 (remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false) === doc.isManualReviewRequested &&
+                (remote.currentUpload.retryValidationCount ?? 0) === doc.retryValidationCount &&
                 (remote.postRejectionAttemptsUsed ?? 0) === doc.postRejectionAttemptsUsed &&
                 (remote.manualReviewRejectionCount ?? 0) === doc.manualReviewRejectionCount &&
                 newUploadBlockedUntil?.getTime() === doc.uploadBlockedUntil?.getTime() &&
@@ -824,6 +831,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 validationDetails: remote.currentUpload.ocrInfo?.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo?.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false,
+                retryValidationCount: remote.currentUpload.retryValidationCount ?? 0,
                 manualReviewDecision: remote.manualReviewDecision,
                 postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
                 manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
