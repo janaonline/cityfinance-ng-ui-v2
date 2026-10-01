@@ -1,6 +1,19 @@
 <div class="top-accent"></div>
 
 <section class="p-3 p-md-4">
+  @if (!claimLetterSubmissionEnabled) {
+    <div class="alert alert-info d-flex align-items-start gap-2 mb-0" role="alert" data-cy="claim-letter-locked-message">
+      <i class="bi bi-lock-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+      <div>
+        <h2 class="h5 fw-semibold mb-2">Submit a ULB Claim Letter</h2>
+        <p class="mb-2">
+          Once all five State forms have been submitted and approved, you can generate and submit a claim letter for
+          eligible ULBs here.
+        </p>
+        <p class="fw-semibold mb-0">This section will be enabled once the State forms are approved.</p>
+      </div>
+    </div>
+  } @else {
   <div class="content-stack d-flex flex-column gap-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
       <div>
@@ -258,4 +271,5 @@
       }
     }
   </div>
+  }
 </section>
