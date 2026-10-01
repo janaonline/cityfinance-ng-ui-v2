@@ -363,6 +363,22 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
         path: '/ocr/dur-list',
         apps: ['v2'],
       },
+      {
+        id: 'ocr.afs-digitization',
+        order: 60,
+        label: 'AFS Digitization',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/upload',
+        apps: ['v2'],
+      },
+      {
+        id: 'ocr.afs-digitization-list',
+        order: 70,
+        label: 'AFS Digitization List',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/list',
+        apps: ['v2'],
+      },
     ],
   },
 ];
@@ -389,10 +405,7 @@ export function resolveMenus(
 }
 
 /** Stamps `isActiveRoute` on `item` and every descendant; a parent is active if any child is. */
-function stampActive(
-  item: NavMenuItem,
-  isActiveRoute: (item: NavMenuItem) => boolean,
-): NavMenuItem {
+function stampActive(item: NavMenuItem, isActiveRoute: (item: NavMenuItem) => boolean): NavMenuItem {
   const children = item.children?.map((child) => stampActive(child, isActiveRoute));
   return {
     ...item,
@@ -401,22 +414,14 @@ function stampActive(
   };
 }
 
-function filterVisible(
-  items: NavMenuItem[],
-  isVisible: (item: NavMenuItem) => boolean,
-): NavMenuItem[] {
+function filterVisible(items: NavMenuItem[], isVisible: (item: NavMenuItem) => boolean): NavMenuItem[] {
   return items
     .filter(isVisible)
-    .map((item) =>
-      item.children?.length ? { ...item, children: filterVisible(item.children, isVisible) } : item,
-    )
+    .map((item) => (item.children?.length ? { ...item, children: filterVisible(item.children, isVisible) } : item))
     .filter((item) => !item.children || item.children.length > 0);
 }
 
-function groupAndSort(
-  items: NavMenuItem[],
-  isActiveGroupChild?: (item: NavMenuItem) => boolean,
-): NavMenuItem[] {
+function groupAndSort(items: NavMenuItem[], isActiveGroupChild?: (item: NavMenuItem) => boolean): NavMenuItem[] {
   const groups = new Map<string, NavMenuItem[]>();
   for (const item of items) {
     if (!item.groupId) continue;
