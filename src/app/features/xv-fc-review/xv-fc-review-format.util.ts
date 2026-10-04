@@ -1,9 +1,4 @@
-import {
-  XvFcCurrencyUnit,
-  XvFcLineItem,
-  XvFcLineItemGroup,
-  XvFcLineItemSubGroup,
-} from './models/xv-fc-review.model';
+import { XvFcCurrencyUnit, XvFcLineItemGroup, XvFcLineItemSubGroup } from './models/xv-fc-review.model';
 
 /**
  * These specific line-item codes are generic reconciling entries ("Municipal (General) Fund",
@@ -21,13 +16,19 @@ const OTHERS_SECTION_LABEL = 'OTHERS';
  * `PINNED_LAST_CODES` items are pulled out of their nominal section and merged into the trailing
  * "Others"-named section, regardless of what their real `section`/`subSection` says - or, if the
  * data has no real "Others" section, appended as a new synthetic one at the very end.
+ *
+ * Generic over the item shape (constrained to just `code`/`section`/`subSection`) so both the
+ * ULB and admin sides render the same 77 AFS line items under the exact same section/subsection
+ * headers and "Others" pinning rules, despite carrying different value/decision fields.
  */
-export function groupXvFcLineItems(items: XvFcLineItem[]): XvFcLineItemGroup[] {
+export function groupXvFcLineItems<T extends { code: string; section: string; subSection?: string | null }>(
+  items: T[],
+): XvFcLineItemGroup<T>[] {
   const pinned = items.filter((item) => PINNED_LAST_CODES.has(item.code));
   const rest = items.filter((item) => !PINNED_LAST_CODES.has(item.code));
 
   const order: string[] = [];
-  const bySection = new Map<string, XvFcLineItem[]>();
+  const bySection = new Map<string, T[]>();
   for (const item of rest) {
     if (!bySection.has(item.section)) {
       bySection.set(item.section, []);
@@ -43,7 +44,7 @@ export function groupXvFcLineItems(items: XvFcLineItem[]): XvFcLineItemGroup[] {
   const normalSections = order.filter((section) => !isOthersSubSection(section));
   const othersSections = order.filter((section) => isOthersSubSection(section));
 
-  const groups: XvFcLineItemGroup[] = normalSections.map((section) => ({
+  const groups: XvFcLineItemGroup<T>[] = normalSections.map((section) => ({
     section,
     subGroups: buildSubGroups(bySection.get(section)!),
   }));
@@ -81,9 +82,9 @@ function isOthersSubSection(subSection: string | null): boolean {
   return stripped.toLowerCase().startsWith('other');
 }
 
-function buildSubGroups(items: XvFcLineItem[]): XvFcLineItemSubGroup[] {
+function buildSubGroups<T extends { subSection?: string | null }>(items: T[]): XvFcLineItemSubGroup<T>[] {
   const order: (string | null)[] = [];
-  const bySubSection = new Map<string | null, XvFcLineItem[]>();
+  const bySubSection = new Map<string | null, T[]>();
   for (const item of items) {
     const key = item.subSection ?? null;
     if (!bySubSection.has(key)) {
@@ -98,7 +99,7 @@ function buildSubGroups(items: XvFcLineItem[]): XvFcLineItemSubGroup[] {
   const normalKeys = order.filter((key) => !isOthersSubSection(key));
   const othersKeys = order.filter((key) => isOthersSubSection(key));
 
-  const subGroups: XvFcLineItemSubGroup[] = normalKeys.map((subSection) => ({
+  const subGroups: XvFcLineItemSubGroup<T>[] = normalKeys.map((subSection) => ({
     subSection,
     items: bySubSection.get(subSection)!,
   }));

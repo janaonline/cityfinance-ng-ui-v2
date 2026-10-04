@@ -1,0 +1,277 @@
+<main class="container">
+  <a class="backlink" routerLink="/admin/xv-fc-review">&#8592; Back to Dashboard</a>
+  <div class="breadcrumb">15TH FINANCE COMMISSION &middot; DATA VERIFICATION</div>
+  <h2 class="pagetitle">{{ ulbName() || 'Loading…' }}</h2>
+  <p class="pagedesc">FY {{ financialYear() }}</p>
+
+  <div class="tabs">
+    <button type="button" [class.active]="currentTab() === 'afs'" (click)="switchTab('afs')">
+      <span class="tab-status-dot" [style.background]="dotColor(yearDotStatusForTab('afs'))"></span>
+      Audited Financial Statement
+    </button>
+    <button type="button" [class.active]="currentTab() === 'ptax'" (click)="switchTab('ptax')">
+      <span class="tab-status-dot" [style.background]="dotColor(yearDotStatusForTab('ptax'))"></span>
+      Property Tax
+    </button>
+  </div>
+  <div class="footnote" style="margin: 8px 0 4px">
+    Each form has its own status and Final Submit - switching tabs doesn't affect the other form.
+  </div>
+
+  <div class="year-tabs">
+    <span class="yt-label">Financial year</span>
+    @for (fy of reviewableYears(); track fy) {
+      <button
+        type="button"
+        class="year-pill"
+        [class.active]="fy === financialYear()"
+        (click)="selectYear(fy)"
+      >
+        <span class="yp-dot" [style.background]="dotColor(yearDotStatus(fy))"></span>FY {{ fy }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="d-flex justify-content-center py-5">
+      <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+    </div>
+  } @else if (loadError()) {
+    <div class="status-banner amber">
+      <span>&#9888; Failed to load this year's {{ formLabel() }} review.</span>
+    </div>
+  } @else if (!currentYearId()) {
+    <div class="status-banner blue">
+      <span>No standardised data is available for FY {{ financialYear() }} yet.</span>
+    </div>
+  } @else {
+    <div class="top-actions-bar">
+      @if (isLocked()) {
+        <div class="progress-note">
+          <b>{{ formLabel() }}</b> is {{ currentStatus() === 'APPROVED' ? 'Approved' : 'Rejected' }} - no further
+          admin changes without reopening.
+        </div>
+        <div class="footer-actions">
+          <button class="btn-outline-custom" type="button" [disabled]="submitting()" (click)="openReopen()">
+            Reopen this form
+          </button>
+        </div>
+      } @else {
+        <div class="progress-note">
+          <b>{{ decidedCount() }} of {{ flaggedCount() }}</b> flagged item{{ flaggedCount() === 1 ? '' : 's' }}
+          decided for {{ formLabel() }}
+        </div>
+        <div class="footer-actions">
+          <button
+            class="btn-outline-custom"
+            type="button"
+            [disabled]="submitting() || pendingCount() === 0"
+            (click)="acceptAll()"
+          >
+            &#10003; Accept All
+          </button>
+          <button
+            class="btn-primary-custom"
+            type="button"
+            [disabled]="submitting() || !allDecided() || flaggedCount() === 0"
+            [matTooltip]="allDecided() ? '' : 'Every flagged item needs an Accept/Reject decision before Final Submit.'"
+            (click)="openFinalSubmit()"
+          >
+            Final Submit - {{ formLabel() }}
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (isVerifying()) {
+      <div class="status-banner purple">
+        <span>&#128270; {{ formLabel() }}: Verification in progress - decisions are saved as you go, Final Submit resolves the submission.</span>
+      </div>
+    }
+
+    <div class="table-card" style="margin-bottom: 18px">
+      <div class="li-head">
+        <div class="title">Supporting Documents &amp; Signed Declaration</div>
+        <div class="meta">{{ formLabel() }} &middot; FY {{ financialYear() }}</div>
+      </div>
+      <div style="padding: 6px 18px 14px">
+        @if (declaration(); as decl) {
+          <div class="doc-group">
+            <div class="doc-group-label">Signed Declaration</div>
+            <div class="doc-item">
+              <div class="doc-icon decl"><mat-icon>edit_note</mat-icon></div>
+              <div class="doc-meta">
+                <div class="doc-name">{{ decl.file.name }}</div>
+                <div class="doc-sub">Declared {{ decl.declaredAt ? (decl.declaredAt | date: 'd MMM y') : '' }}</div>
+              </div>
+              <button class="btn-outline-custom btn-sm" type="button" (click)="viewDocument('DECLARATION')">
+                <mat-icon>visibility</mat-icon> View
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="doc-empty">No signed declaration uploaded yet.</div>
+        }
+        @if (supportingDocument(); as doc) {
+          <div class="doc-group">
+            <div class="doc-group-label">Supporting Document</div>
+            <div class="doc-item">
+              <div class="doc-icon"><mat-icon>description</mat-icon></div>
+              <div class="doc-meta">
+                <div class="doc-name">{{ doc.name }}</div>
+              </div>
+              <button class="btn-outline-custom btn-sm" type="button" (click)="viewDocument('SUPPORTING_DOCUMENT')">
+                <mat-icon>visibility</mat-icon> View
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="info-box">
+      Compare <b>Original Value</b> with <b>ULB Corrected Value</b> per line item. <b>Accept</b> confirms the
+      correction, <b>Reject</b> requires a reason. Use the clock icon for the audit trail.
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-fields">
+        <div class="field">
+          <label for="detail-filter">Filter</label>
+          <select id="detail-filter" [ngModel]="filter()" (ngModelChange)="filter.set($event)">
+            <option value="all">All flagged items</option>
+            <option value="pending">Pending decision</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="changed">Only changed values</option>
+          </select>
+        </div>
+      </div>
+      @if (currentTab() === 'afs') {
+        <div class="toolbar-actions">
+          <button class="btn-outline-custom btn-sm" type="button" (click)="expandAll()">Expand All</button>
+          <button class="btn-outline-custom btn-sm" type="button" (click)="collapseAll()">Collapse All</button>
+        </div>
+      }
+    </div>
+
+    <div class="li-card">
+      <div class="li-head">
+        <div class="title">{{ currentTab() === 'afs' ? 'Standardised Financial Statement - NMAM format' : 'Property Tax Details' }}</div>
+        <div class="meta">{{ filteredRows().length }} item{{ filteredRows().length === 1 ? '' : 's' }}</div>
+      </div>
+      <table class="li-table">
+        <thead>
+          <tr>
+            <th style="width: 90px">Code</th>
+            <th>Line item</th>
+            <th class="num">Original Value</th>
+            <th class="num">ULB Corrected Value</th>
+            <th style="width: 190px">Admin Decision</th>
+            <th style="width: 210px">Rejection Reason</th>
+            <th style="width: 44px">Audit</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (currentTab() === 'afs') {
+            @for (group of groupedSections(); track group.section) {
+              <tr class="li-section-row" [class.collapsed]="collapsedSections()[group.section]" (click)="toggleSection(group.section)">
+                <td colspan="7">
+                  <span class="li-section-arrow">{{ collapsedSections()[group.section] ? '▶' : '▼' }}</span>
+                  {{ group.section }}
+                  <span class="li-section-count">{{ sectionItemCount(group) }} item{{ sectionItemCount(group) === 1 ? '' : 's' }}</span>
+                </td>
+              </tr>
+              @if (!collapsedSections()[group.section]) {
+                @for (subGroup of group.subGroups; track subGroup.subSection ?? '') {
+                  @if (subGroup.subSection) {
+                    <tr class="li-subsection-row">
+                      <td colspan="7">{{ subGroup.subSection }}</td>
+                    </tr>
+                  }
+                  @for (row of subGroup.items; track row.code) {
+                    <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }"></ng-container>
+                  }
+                }
+              }
+            }
+          } @else {
+            @for (row of filteredRows(); track row.code) {
+              <ng-container *ngTemplateOutlet="rowTemplate; context: { $implicit: row }"></ng-container>
+            }
+          }
+        </tbody>
+      </table>
+      <div class="sticky-footer">
+        <div class="progress-note">
+          <b>{{ decidedCount() }} of {{ flaggedCount() }}</b> decided &middot; {{ formLabel() }} &middot; FY {{ financialYear() }}
+        </div>
+        <div class="footer-actions">
+          <button class="btn-outline-custom btn-sm" type="button" (click)="scrollToTop()">
+            &#8593; Back to top to Accept All / Final Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</main>
+
+<ng-template #rowTemplate let-row>
+  <tr [class.li-row-locked]="isLocked()">
+    <td>{{ row.code }}</td>
+    <td>{{ row.name }}</td>
+    <td class="num val-orig">{{ row.originalValue ?? '—' }}</td>
+    <td class="num">
+      <div class="val-corr">{{ row.flagged ? (row.correctedValue ?? '—') : '—' }}</div>
+      @if (diffPercent(row); as pct) {
+        <div class="val-diff" [class.up]="pct >= 0" [class.down]="pct < 0">
+          {{ pct >= 0 ? '▲' : '▼' }} {{ pct < 0 ? -pct : pct }}% vs original
+        </div>
+      }
+    </td>
+    <td>
+      @if (!row.flagged) {
+        <span class="text-muted small">Not flagged</span>
+      } @else {
+        <div class="decision-cell">
+          <button
+            class="dec-btn accept"
+            [class.on]="row.decisionStatus === 'ACCEPTED'"
+            [disabled]="isLocked()"
+            type="button"
+            (click)="accept(row)"
+          >
+            &#10003; Accept
+          </button>
+          <button
+            class="dec-btn reject"
+            [class.on]="row.decisionStatus === 'REJECTED'"
+            [disabled]="isLocked()"
+            type="button"
+            (click)="reject(row)"
+          >
+            &#10007; Reject
+          </button>
+        </div>
+      }
+    </td>
+    <td>
+      @if (row.flagged) {
+        <input
+          type="text"
+          class="reason-input"
+          [class.needed]="row.decisionStatus === 'REJECTED' && !row.reason"
+          [placeholder]="row.decisionStatus === 'REJECTED' ? 'Required...' : 'Enabled after Reject'"
+          [value]="row.reason"
+          [disabled]="row.decisionStatus !== 'REJECTED' || isLocked()"
+          (change)="updateReason(row, $any($event.target).value)"
+        />
+      }
+    </td>
+    <td>
+      <button class="icon-btn" type="button" title="View audit trail" (click)="openAudit(row)">
+        <mat-icon>schedule</mat-icon>
+      </button>
+    </td>
+  </tr>
+</ng-template>

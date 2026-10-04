@@ -1,0 +1,21 @@
+<h2 mat-dialog-title>Reopen submission</h2>
+
+<mat-dialog-content>
+  <p class="small text-muted">
+    Reopening moves the <b>{{ data.formLabel }}</b> form for <b>{{ data.ulbName }}</b> back to
+    <b>In Progress</b> so the ULB can edit and resubmit. Previous decisions stay in the audit trail.
+  </p>
+  <label class="fw-bold small d-block mb-2" for="reopen-reason">Reason for reopening (optional, visible to ULB)</label>
+  <textarea
+    id="reopen-reason"
+    class="reopen-reason-field"
+    rows="3"
+    [formControl]="reason"
+    placeholder="e.g. Please re-check line item 12, supporting document was unclear..."
+  ></textarea>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-outline-custom" type="button" (click)="cancel()">Cancel</button>
+  <button class="btn-primary-custom" type="button" (click)="confirm()">Reopen for ULB</button>
+</mat-dialog-actions>

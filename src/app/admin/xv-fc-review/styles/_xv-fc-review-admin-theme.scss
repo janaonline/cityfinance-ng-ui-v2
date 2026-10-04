@@ -1,0 +1,132 @@
+// Ported directly from the approved xvfcdatareviewadmin_updated.html prototype's :root block.
+// Unlike _xvi-fc-theme.scss this isn't derived from a Material palette — the admin dashboard is
+// its own flat custom design, not themed Material components, so plain CSS custom properties
+// scoped under the host class are enough (mirrors how xv-fc-review's own buttons/tables mix
+// --color-primary tokens with literal hex for the same reason).
+$xvfc-admin-theme-class: 'xvfc-admin-theme';
+// Prototype used its own 'Segoe UI' stack, but this screen lives inside the app's own admin
+// shell — follow the project's actual theme font (same token _xvi-fc-theme.scss uses) instead.
+$xvfc-admin-font-family: Montserrat;
+
+@mixin xvfc-admin-theme-tokens {
+  --navy: #16324a;
+  --navy-2: #1e3a4f;
+  --yellow: #f6b83a;
+  --yellow-dark: #e2a422;
+  --blue-link: #2f6fb3;
+  --blue-info-bg: #eaf4fb;
+  --blue-info-border: #cfe6f5;
+  --text-dark: #1f2a37;
+  --text-mid: #4b5768;
+  --text-light: #66707e;
+  --border: #e9ecf1;
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --green: #1a9a5c;
+  --green-bg: #e7f8ef;
+  --red: #d84343;
+  --red-bg: #fdeaea;
+  --amber: #c9861a;
+  --amber-bg: #fdf3e0;
+  --purple: #6a4fbf;
+  --purple-bg: #f0ecfb;
+  --afs-color: #2a6ea8;
+  --afs-bg: #e3f0fb;
+  --ptax-color: #0f7a6b;
+  --ptax-bg: #e2f5f1;
+}
+
+.#{$xvfc-admin-theme-class} {
+  @include xvfc-admin-theme-tokens;
+  color: var(--text-dark);
+  font-family: $xvfc-admin-font-family, sans-serif;
+}
+
+// Full-viewport page chrome — scoped to the shell component's own host tag, not the bare class
+// above. This same class is also passed as the Material `panelClass` for every dialog in this
+// feature (see provideMaterialThemeScope() in xv-fc-review-admin-shell.component.ts), which
+// stamps it directly onto the CDK overlay pane. A bare-class rule here would stretch that pane
+// to `min-height: 100vh` too, leaving a large empty gap below the dialog's real content with its
+// Close/Cancel button floating detached at the bottom instead of sitting under the content.
+app-xv-fc-review-admin-shell.#{$xvfc-admin-theme-class} {
+  background: var(--bg);
+  display: block;
+  min-height: 100vh;
+}
+
+// Shared button + form-field look for this feature's dialogs, which render into the CDK
+// overlay (outside normal component style encapsulation) — declared globally, under the same
+// theme class provideMaterialThemeScope() puts directly on the dialog's own panel container
+// (via panelClass), so both the page and its dialogs share one look.
+.#{$xvfc-admin-theme-class} {
+  .btn-primary-custom,
+  .btn-outline-custom {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border-radius: 7px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-primary-custom {
+    background: var(--navy);
+    color: #fff;
+    &:hover:not(:disabled) { background: var(--navy-2); }
+  }
+  .btn-outline-custom {
+    background: #fff;
+    color: var(--navy);
+    border: 1.5px solid var(--border);
+    &:hover:not(:disabled) { border-color: var(--navy); }
+  }
+  .btn-primary-custom:disabled,
+  .btn-outline-custom:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  textarea.reject-reason-field,
+  textarea.reopen-reason-field,
+  input.corrected-value-field {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-dark);
+    resize: vertical;
+  }
+  .row-label {
+    font-size: 13px;
+    background: var(--bg);
+    border: 1px solid var(--border) !important;
+    border-radius: 8px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+  table.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 560px;
+
+    th, td {
+      padding: 9px 12px;
+      font-size: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f8f9fb;
+      color: var(--text-mid);
+      font-weight: 800;
+    }
+  }
+}

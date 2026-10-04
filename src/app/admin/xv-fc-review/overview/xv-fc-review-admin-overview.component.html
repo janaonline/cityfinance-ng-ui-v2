@@ -1,0 +1,222 @@
+<main class="container">
+  <div class="breadcrumb">15TH FINANCE COMMISSION &middot; DATA VERIFICATION</div>
+  <h2 class="pagetitle">Overview</h2>
+  <p class="pagedesc">
+    Every ULB files two forms - <b>Audited Financial Statement</b> and <b>Property Tax</b> - each tracked separately.
+  </p>
+
+  <div class="section-head" style="margin-bottom: 14px">
+    <div class="mini-filters" style="margin-left: 0">
+      <label for="overview-form-scope">Summary for</label>
+      <select
+        id="overview-form-scope"
+        [ngModel]="formScope()"
+        (ngModelChange)="formScope.set($event); onFormScopeChange()"
+      >
+        <option value="">All Forms (AFS + Property Tax)</option>
+        <option value="afs">Audited Financial Statement only</option>
+        <option value="ptax">Property Tax only</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kpi-card-box">
+    @if (service.analyticsLoading()) {
+      <div class="kpi-loading">
+        <mat-progress-spinner mode="indeterminate" diameter="32"></mat-progress-spinner>
+      </div>
+    } @else {
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="label">Total ULBs</div>
+          <div class="value">{{ service.analytics()?.totalUlbs ?? '—' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">Awaiting Verification</div>
+          <div class="value amber">{{ service.analytics()?.awaitingVerification ?? '—' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">Approved</div>
+          <div class="value green">{{ service.analytics()?.approved ?? '—' }}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">Rejected</div>
+          <div class="value red">{{ service.analytics()?.rejected ?? '—' }}</div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <section class="block">
+    <div class="section-head">
+      <h3>Data Verification - All ULBs</h3>
+      <div class="meta">One row per ULB. AFS and Property Tax each carry their own status.</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-fields">
+        <div class="field">
+          <label for="overview-state">State code</label>
+          <input
+            id="overview-state"
+            type="text"
+            placeholder="e.g. KL"
+            [ngModel]="stateFilter()"
+            (ngModelChange)="stateFilter.set($event); onFilterChange()"
+          />
+        </div>
+        <div class="field">
+          <label for="overview-status">Status</label>
+          <select id="overview-status" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); onFilterChange()">
+            <option value="">All Statuses</option>
+            @for (s of statusOptions; track s) {
+              <option [value]="s">{{ statusLabels[s] }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="overview-census-code">Census Code</label>
+          <input
+            id="overview-census-code"
+            type="text"
+            placeholder="Search census code..."
+            [ngModel]="censusCodeFilter()"
+            (ngModelChange)="censusCodeFilter.set($event); onFilterChange()"
+          />
+        </div>
+        <div class="field">
+          <label for="overview-search">Search</label>
+          <input
+            id="overview-search"
+            type="text"
+            placeholder="Search ULB name..."
+            [ngModel]="searchFilter()"
+            (ngModelChange)="searchFilter.set($event); onFilterChange()"
+          />
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-outline" type="button" [disabled]="exporting()" (click)="downloadSummary()">
+          <mat-icon>download</mat-icon>
+          {{ exporting() ? 'Preparing…' : 'Download Summary (CSV)' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th class="sortable" (click)="setSort('state')">
+              State <span class="arrow">{{ sortBy() === 'state' ? (sortOrder() === 'asc' ? '▲' : '▼') : '' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('ulb')">
+              ULB Name <span class="arrow">{{ sortBy() === 'ulb' ? (sortOrder() === 'asc' ? '▲' : '▼') : '' }}</span>
+            </th>
+            <th class="sortable" (click)="setSort('censusCode')">
+              Census Code
+              <span class="arrow">{{ sortBy() === 'censusCode' ? (sortOrder() === 'asc' ? '▲' : '▼') : '' }}</span>
+            </th>
+            <th>Overall Status</th>
+            <th class="forms-td">Audited Financial Statement</th>
+            <th class="forms-td">Property Tax</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (service.listLoading()) {
+            <tr>
+              <td colspan="7" style="padding: 32px">
+                <div class="table-loading">
+                  <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+                </div>
+              </td>
+            </tr>
+          } @else if (service.listError()) {
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 32px; color: var(--red)">
+                Failed to load the review list.
+              </td>
+            </tr>
+          } @else if (rows().length === 0) {
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 32px; color: var(--text-light)">
+                No ULBs match the selected filters.
+              </td>
+            </tr>
+          } @else {
+            @for (row of rows(); track row.ulbId) {
+              <tr>
+                <td>{{ row.state }}</td>
+                <td><div class="ulb-name">{{ row.ulbName }}</div></td>
+                <td>{{ row.censusCode ?? '—' }}</td>
+                <td>
+                  <span class="badge">
+                    <span class="badge-dot" [style.background]="dotColor(row.overallStatus)"></span>
+                    {{ statusLabel(row.overallStatus) }}
+                  </span>
+                </td>
+                <td class="forms-td">
+                  <div class="form-cell">
+                    <div class="fc-stat">
+                      @if (row.afs.flaggedCount > 0) {
+                        <b class="acc">{{ reviewedPct(row.afs) }}% Reviewed</b> ·
+                        <b class="pend">{{ row.afs.pendingCount }} pending</b>
+                      } @else {
+                        <span class="fc-not-reviewed">{{ row.afs.status === 'NOT_STARTED' ? 'Not Started' : row.afs.status }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td class="forms-td">
+                  <div class="form-cell">
+                    <div class="fc-stat">
+                      @if (row.ptax.flaggedCount > 0) {
+                        <b class="acc">{{ reviewedPct(row.ptax) }}% Reviewed</b> ·
+                        <b class="pend">{{ row.ptax.pendingCount }} pending</b>
+                      } @else {
+                        <span class="fc-not-reviewed">{{ row.ptax.status === 'NOT_STARTED' ? 'Not Started' : row.ptax.status }}</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm"
+                    [class.btn-primary]="actionLabel(row) === 'Verify'"
+                    [class.btn-outline]="actionLabel(row) !== 'Verify'"
+                    type="button"
+                    (click)="open(row)"
+                  >
+                    {{ actionLabel(row) }}
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar">
+      <div class="page-count">
+        Showing <b>{{ rangeStart() }}–{{ rangeEnd() }}</b> of <b>{{ total() }}</b> ULBs
+      </div>
+      <div class="page-size">
+        Rows per page:
+        <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)">
+          @for (n of [10, 25, 50, 100, 200]; track n) {
+            <option [value]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+      <div class="pager-btns">
+        <button type="button" [disabled]="page() === 1" (click)="goToPage(1)">&laquo; First</button>
+        <button type="button" [disabled]="page() === 1" (click)="goToPage(page() - 1)">&#8249; Prev</button>
+        <span class="pg-of">Page {{ page() }} of {{ totalPages() }}</span>
+        <button type="button" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">Next &#8250;</button>
+        <button type="button" [disabled]="page() === totalPages()" (click)="goToPage(totalPages())">Last &raquo;</button>
+      </div>
+    </div>
+  </section>
+</main>

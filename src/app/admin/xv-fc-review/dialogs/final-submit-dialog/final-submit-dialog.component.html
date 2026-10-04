@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Confirm Final Submit</h2>
+
+<mat-dialog-content>
+  <p class="small text-muted">
+    Finalize verification of the <b>{{ data.formLabel }}</b> form for <b>{{ data.ulbName }}</b>. This can't be
+    reversed except via Reopen.
+  </p>
+  <div class="row-label px-3 py-2 mb-2">
+    {{ data.formLabel }}: <b style="color: var(--green)">{{ data.acceptedCount }} accepted</b>,
+    <b style="color: var(--red)">{{ data.rejectedCount }} rejected</b> of {{ data.total }}
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-outline-custom" type="button" (click)="cancel()">Cancel</button>
+  <button class="btn-primary-custom" type="button" (click)="confirm()">Yes, Final Submit</button>
+</mat-dialog-actions>

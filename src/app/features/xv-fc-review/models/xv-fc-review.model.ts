@@ -56,16 +56,21 @@ export interface XvFcLineItem {
   adminDecision: Record<string, unknown> | null;
 }
 
-/** UI sub-grouping of a section's items by `subSection`, when present. */
-export interface XvFcLineItemSubGroup {
+/**
+ * UI sub-grouping of a section's items by `subSection`, when present. Generic (default
+ * `XvFcLineItem`) so `groupXvFcLineItems()` — section/subSection grouping plus the "Others"
+ * merge/pin rules — can be reused as-is against the admin side's own line-item shape, which
+ * carries the same 77 AFS line items but different value/decision fields.
+ */
+export interface XvFcLineItemSubGroup<T = XvFcLineItem> {
   subSection: string | null;
-  items: XvFcLineItem[];
+  items: T[];
 }
 
 /** UI grouping of line items by `section`, further split into `subSection`s where available. */
-export interface XvFcLineItemGroup {
+export interface XvFcLineItemGroup<T = XvFcLineItem> {
   section: string;
-  subGroups: XvFcLineItemSubGroup[];
+  subGroups: XvFcLineItemSubGroup<T>[];
 }
 
 export interface XvFcSourceDocument {

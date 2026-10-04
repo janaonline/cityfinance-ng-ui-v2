@@ -1,0 +1,41 @@
+<h2 mat-dialog-title>Audit trail</h2>
+
+<mat-dialog-content>
+  <p class="small text-muted mb-2">{{ data.title }}</p>
+  <div class="table-responsive">
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Role</th>
+          <th>Action</th>
+          <th>Previous</th>
+          <th>New</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (data.entries.length === 0) {
+          <tr>
+            <td colspan="6" class="text-muted small text-center py-3">No audit entries yet.</td>
+          </tr>
+        } @else {
+          @for (entry of data.entries; track $index) {
+            <tr>
+              <td>{{ entry.createdAt | date: 'medium' }}</td>
+              <td>{{ entry.performedByRole }}</td>
+              <td>{{ actionLabel(entry.action) }}</td>
+              <td>{{ entry.previousValue ?? '—' }}</td>
+              <td>{{ entry.newValue ?? '—' }}</td>
+              <td>{{ entry.reason || '—' }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button class="btn-outline-custom" type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>
