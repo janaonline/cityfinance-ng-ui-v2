@@ -758,15 +758,20 @@ export class OcrService {
 
   // ─── DUR (Utilisation Report) Validation API ─────────────────────────────────
 
+  /** `source` is either an uploaded PDF or an S3 path in the CityFinance bucket (sent as `s3_path`). */
   submitDurValidationJob(
-    file: File,
+    source: File | string,
     ulb?: IULB | string | null,
     financialYear?: string | null,
     model?: string | null,
     grantType?: DurGrantType | null,
   ) {
     const formData = new FormData();
-    formData.append('file', file);
+    if (typeof source === 'string') {
+      formData.append('s3_path', source.trim());
+    } else {
+      formData.append('file', source);
+    }
     const ulbName = this.getulb(ulb);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);

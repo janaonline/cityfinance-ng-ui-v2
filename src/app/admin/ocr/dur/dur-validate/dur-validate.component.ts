@@ -84,7 +84,11 @@ export class DurValidateComponent implements OnInit {
   });
 
   selectedFile: File | null = null;
+  /** When true the PDF is read from S3 (`s3Path`) instead of a manual upload. */
+  useS3 = false;
+  readonly s3Path = this.fb.nonNullable.control('');
   readonly isSubmitting = signal(false);
+  readonly downloadingJobId = signal<string | null>(null);
   readonly jobs = signal<DurJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly filteredUlbs = signal<IULB[]>([]);
@@ -132,9 +136,24 @@ export class DurValidateComponent implements OnInit {
     this.fileInput?.nativeElement.click();
   }
 
+  onSourceToggle(useS3: boolean): void {
+    this.useS3 = useS3;
+    // Only one source is ever sent, so drop whatever the hidden option held.
+    if (useS3) {
+      this.clearFile();
+    } else {
+      this.s3Path.reset();
+    }
+  }
+
+  hasSource(): boolean {
+    return this.useS3 ? !!this.s3Path.value.trim() : !!this.selectedFile;
+  }
+
   submit(): void {
-    if (!this.selectedFile) {
-      this.utilityService.swalPopup('File required', 'Please choose a scanned DUR PDF.', 'error');
+    if (!this.hasSource()) {
+      const message = this.useS3 ? 'Please enter the S3 path of the DUR PDF.' : 'Please choose a scanned DUR PDF.';
+      this.utilityService.swalPopup(this.useS3 ? 'S3 path required' : 'File required', message, 'error');
       return;
     }
     if (this.form.invalid) {
@@ -143,16 +162,17 @@ export class DurValidateComponent implements OnInit {
     }
 
     const { model, financialYear, grantType } = this.form.getRawValue();
-    const file = this.selectedFile;
+    const source: File | string = this.useS3 ? this.s3Path.value.trim() : this.selectedFile!;
+    const filename = typeof source === 'string' ? source.split('/').pop() || source : source.name;
     this.isSubmitting.set(true);
     this.ocrService
-      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model, grantType)
+      .submitDurValidationJob(source, this.selectedUlb(), financialYear, model, grantType)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
           this.addJob({
             jobId: response.job_id,
-            filename: file.name,
+            filename,
             status: 'queued',
             message: response.message,
             progressStep: null,
@@ -163,9 +183,30 @@ export class DurValidateComponent implements OnInit {
           });
           this.startPolling(response.job_id);
           this.clearFile();
+          this.s3Path.reset();
         },
         error: (err) => {
           this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
+        },
+      });
+  }
+
+  downloadPdf(job: DurJobTracker): void {
+    this.downloadingJobId.set(job.jobId);
+    this.ocrService
+      .downloadDurJobFile(job.jobId)
+      .pipe(finalize(() => this.downloadingJobId.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = /\.pdf$/i.test(job.filename) ? job.filename : `${job.filename}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.utilityService.swalPopup('Download failed', 'Could not download the DUR PDF.', 'error');
         },
       });
   }
@@ -232,11 +273,11 @@ export class DurValidateComponent implements OnInit {
       case 'format_invalid':
         return `The document does not follow the Annexure-VI DUR format. ${detail}`.trim();
       case 'signature_missing':
-        return 'No signature was found on the certification line.';
+        return 'No handwritten signature was found on any page of the document.';
       case 'signature_undetermined':
         return 'The signature could not be confidently detected. Please check the scan manually.';
       case 'seal_missing':
-        return 'No seal or stamp was found on the certification line.';
+        return 'No seal or stamp was found on any page of the document.';
       case 'seal_undetermined':
         return 'The seal could not be confidently detected. Please check the scan manually.';
       default:
