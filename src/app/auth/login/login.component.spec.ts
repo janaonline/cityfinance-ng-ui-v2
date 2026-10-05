@@ -38,6 +38,7 @@ describe('LoginComponent', () => {
       'loadScript',
       'showBadge',
       'hideBadge',
+      'reset',
     ]);
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
     xvifcSpy = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', [

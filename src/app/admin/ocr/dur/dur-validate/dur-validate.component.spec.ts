@@ -131,8 +131,8 @@ describe('DurValidateComponent', () => {
       expect(d('format_invalid: missing Section B; no signature line')).toBe(
         'The document does not follow the Annexure-VI DUR format. missing Section B; no signature line',
       );
-      expect(d('signature_missing: no signature detected on the certification line')).toBe(
-        'No signature was found on the certification line.',
+      expect(d('signature_missing: no handwritten signature detected on any page')).toBe(
+        'No handwritten signature was found on any page of the document.',
       );
       expect(d('seal_undetermined: could not confidently detect a seal')).toBe(
         'The seal could not be confidently detected. Please check the scan manually.',

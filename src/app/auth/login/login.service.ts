@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, defer } from 'rxjs';
+import { retry, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { OtpAuthService } from '../../core/auth/auth.service';
@@ -42,10 +42,24 @@ export class LoginService {
     this.recaptcha.hideBadge();
   }
 
+  /** Call after a failed login attempt (wrong credentials or a reCAPTCHA failure) so the next
+   *  attempt gets a fresh Google client instead of reusing whatever state produced the failure. */
+  resetRecaptcha(): void {
+    this.recaptcha.reset();
+  }
+
   // ─── Auth API ─────────────────────────────────────────────────────────────────
 
   signInWithPassword(identifier: string, password: string, type: string | null): Observable<unknown> {
-    return this.recaptcha.execute('login').pipe(
+    // defer() is required here, not optional — execute('login') itself only runs once to build
+    // the Observable; without defer, retry(1) would just resubscribe to that same
+    // already-settled result instead of calling execute() again, so a blank/rejected token would
+    // never actually get a fresh ask.
+    return defer(() => this.recaptcha.execute('login')).pipe(
+      // A blank token from grecaptcha.execute() is a known transient client-side quirk, not
+      // something tied to a prior call — asking again almost always succeeds. Only surface an
+      // error to the user if it fails twice in a row for this one submit.
+      retry(1),
       switchMap((recaptchaToken) => this.auth.login({ identifier, password, type, recaptchaToken })),
     );
   }
