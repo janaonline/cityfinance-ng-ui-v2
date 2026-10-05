@@ -68,12 +68,18 @@ export class ManualReviewQueueComponent implements OnInit {
   /** DUR row currently mid-download — disables its own download control only. */
   readonly downloadingRowKey = signal<string | null>(null);
 
-  readonly filterForm = this.fb.group({ search: [''] });
+  readonly filterForm = this.fb.group({ search: [''], formType: [''] });
 
   ngOnInit(): void {
     this.loadRows();
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page.set(1);
+        this.loadRows();
+      });
+    this.filterForm.controls.formType.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.page.set(1);
         this.loadRows();
@@ -139,10 +145,15 @@ export class ManualReviewQueueComponent implements OnInit {
     this.isLoading.set(true);
     this.loadError.set(null);
 
-    const search = this.filterForm.getRawValue().search?.trim() || undefined;
+    const { search, formType } = this.filterForm.getRawValue();
 
     this.service
-      .getQueue({ page: this.page(), pageSize: this.pageSize(), search })
+      .getQueue({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        search: search?.trim() || undefined,
+        formType: (formType || undefined) as ManualReviewFormType | undefined,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {

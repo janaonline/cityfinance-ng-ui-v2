@@ -42,9 +42,12 @@ export class ManualReviewQueueService {
   private readonly durBaseUrl = `${environment.api.url2}xvi-fc/dur/`;
 
   getQueue(query: ManualReviewQueueQuery): Observable<ManualReviewQueueResult> {
+    const empty = of({ rows: [], failed: false, truncated: false });
     return forkJoin([
-      this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
-      this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
+      query.formType && query.formType !== 'ANNUAL_ACCOUNT'
+        ? empty
+        : this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
+      query.formType && query.formType !== 'DUR' ? empty : this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
     ]).pipe(
       map(([annualAccount, dur]) => {
         const merged = [...annualAccount.rows, ...dur.rows].sort(

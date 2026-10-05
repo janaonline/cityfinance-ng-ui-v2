@@ -248,7 +248,7 @@
                               <mat-icon class="align-middle">lock_clock</mat-icon>
                               <span>
                                 This document has failed too many times. You can't re-upload this document for
-                                {{ manualReviewCooldownDays }} days until
+                                {{ manualReviewCooldownHours }} hours until
                                 {{ doc.uploadBlockedUntil | date: 'd MMM y, h:mm a' }} IST. Email
                                 <a href="mailto:{{ manualReviewSupportEmail }}">{{ manualReviewSupportEmail }}</a>
                                 for help.
@@ -263,7 +263,7 @@
                             <p class="attempts-remaining-note mt-1 mb-0">
                               {{ maxManualReviewAttempts - doc.postRejectionAttemptsUsed }} of
                               {{ maxManualReviewAttempts }} attempts remaining. After that, uploads for this document
-                              will be temporarily blocked for {{ manualReviewCooldownDays }} days.
+                              will be temporarily blocked for {{ manualReviewCooldownHours }} hours.
                             </p>
                           }
                         } @else if (doc.isManualReviewRequested) {
