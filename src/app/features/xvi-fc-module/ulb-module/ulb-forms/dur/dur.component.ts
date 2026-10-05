@@ -155,7 +155,7 @@ const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
 const MAX_PDF_PAGES = 1000;
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
-const MANUAL_REVIEW_COOLDOWN_DAYS = 7;
+const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
@@ -263,7 +263,7 @@ export class DurComponent implements OnInit, OnDestroy {
   }
 
   readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
-  readonly manualReviewCooldownDays = MANUAL_REVIEW_COOLDOWN_DAYS;
+  readonly manualReviewCooldownHours = MANUAL_REVIEW_COOLDOWN_HOURS;
   readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
 
   canRequestManualReview(doc: DurDocument): boolean {
