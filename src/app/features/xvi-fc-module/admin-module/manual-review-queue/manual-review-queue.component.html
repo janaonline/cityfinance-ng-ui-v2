@@ -59,8 +59,8 @@
                   (click)="onDownloadFile(row)">
                   <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
                 </button>
-                } @else if (row.fileUrl) {
-                <a [href]="row.fileUrl" class="ms-1 text-muted" target="_blank" rel="noopener"
+                } @else if (row.jobId) {
+                <a [href]="ocrDownloadUrl(row.jobId)" class="ms-1 text-muted" target="_blank" rel="noopener"
                   [title]="row.fileName ?? 'View file'">
                   <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
                 </a>
@@ -132,12 +132,12 @@
                     }
                     Download
                   </button>
-                } @else if (row.fileUrl) {
+                } @else if (row.jobId) {
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    [href]="row.fileUrl"
+                    [href]="ocrDownloadUrl(row.jobId)"
                     target="_blank"
-                    title="Download the uploaded document"
+                    title="Download the job's file"
                   >
                     <i class="bi bi-download"></i> Download
                   </a>
