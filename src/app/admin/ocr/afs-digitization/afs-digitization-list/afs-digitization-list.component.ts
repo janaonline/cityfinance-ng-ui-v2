@@ -17,13 +17,14 @@ interface DigitizationListRow {
   filename: string;
   fileSizeLabel: string;
   geminiModel: string;
+  ocrEngine: string;
   status: string;
   progressStep: string;
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
   pageCount: number | null;
-  textractPriceInr: number | null;
+  ocrPriceInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
@@ -88,6 +89,8 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly loading = signal(false);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly revalidatingJobId = signal<string | null>(null);
+  readonly regeneratingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -188,6 +191,56 @@ export class AfsDigitizationListComponent implements OnInit {
       });
   }
 
+  revalidateJob(row: DigitizationListRow): void {
+    if (this.revalidatingJobId()) return;
+    this.revalidatingJobId.set(row.jobId);
+    this.digitizationService
+      .revalidateDigitizationJob(row.jobId)
+      .pipe(finalize(() => this.revalidatingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Revalidation queued',
+            'Gemini validation is re-running for this job; the Textract extraction is reused unchanged.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Revalidate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  regenerateExcel(row: DigitizationListRow): void {
+    if (this.regeneratingJobId()) return;
+    this.regeneratingJobId.set(row.jobId);
+    this.digitizationService
+      .regenerateDigitizationExcel(row.jobId)
+      .pipe(finalize(() => this.regeneratingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Excel regenerated',
+            'The workbook has been rebuilt from the stored extraction and re-uploaded.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Regenerate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
   private loadJobs(): void {
     const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
@@ -228,13 +281,14 @@ export class AfsDigitizationListComponent implements OnInit {
       filename: job.filename || '—',
       fileSizeLabel: this.formatFileSize(job.file_size_bytes),
       geminiModel: job.gemini_model || '—',
+      ocrEngine: job.ocr_engine || 'textract',
       status: job.status || '—',
       progressStep: job.progress_step || '—',
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
       pageCount: job.page_count,
-      textractPriceInr: job.textract_price_inr,
+      ocrPriceInr: job.ocr_price_inr,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',

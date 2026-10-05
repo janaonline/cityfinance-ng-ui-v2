@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { OcrApiResponse } from './upload-file-ocr/ocr-response';
-import { IULB } from '../../core/models/ulb';
+import { IUlbSummary } from '../../core/models/ulb-summary';
 import {
   OcrValidationJobSubmitResponse,
   OcrValidationBatchSubmitResponse,
@@ -406,7 +406,7 @@ export class OcrService {
     ocrMethod: string,
     model: string,
     enableOrientationCheck: boolean,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -448,7 +448,7 @@ export class OcrService {
       params: queryParams,
     });
   }
-  getulb(ulb: IULB | string | null | undefined): string {
+  getulb(ulb: IUlbSummary | string | null | undefined): string {
     if (ulb && typeof ulb === 'object') {
       const ulbKeys: string[] = [ulb?.name];
 
@@ -464,7 +464,7 @@ export class OcrService {
     file: File,
     extractionModel: string,
     validationModel: string,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     docType?: string | null,
     tableExists?: boolean | null,
@@ -504,7 +504,7 @@ export class OcrService {
     files: File[],
     extractionModel: string,
     validationModel: string,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     docType?: string | null,
     enableOrientationCheck?: boolean,
@@ -760,7 +760,7 @@ export class OcrService {
 
   submitDurValidationJob(
     file: File,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     model?: string | null,
     grantType?: DurGrantType | null,
