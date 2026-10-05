@@ -25,6 +25,7 @@ import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.servi
 import {
   ArithmeticCheck,
   DigitizationJobTracker,
+  DigitizationOcrEngine,
   DigitizationResult,
   DigitizationStatus,
   GeminiFieldCheck,
@@ -66,11 +67,13 @@ export class AfsDigitizationComponent implements OnInit {
   readonly maxFileSizeMb = 50;
 
   readonly geminiModels = this.digitizationService.geminiModels;
+  readonly ocrEngines = this.digitizationService.ocrEngines;
   readonly documentTypes = this.digitizationService.documentTypes;
   readonly financialYears = this.digitizationService.financialYears;
 
   readonly form = this.fb.group({
-    geminiModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
+    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('textract', Validators.required),
+    geminiModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
     ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     docType: this.fb.control<string | null>(null),
@@ -190,7 +193,7 @@ export class AfsDigitizationComponent implements OnInit {
       return;
     }
 
-    const { geminiModel, ulbName, financialYear, docType, enableValidation, enableArithmeticValidation } =
+    const { ocrEngine, geminiModel, ulbName, financialYear, docType, enableValidation, enableArithmeticValidation } =
       this.form.getRawValue();
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const file = this.selectedFile;
@@ -205,6 +208,7 @@ export class AfsDigitizationComponent implements OnInit {
         docType,
         enableValidation,
         enableArithmeticValidation,
+        ocrEngine,
       )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
@@ -287,8 +291,12 @@ export class AfsDigitizationComponent implements OnInit {
     return this.arithmeticRuleLabels[rule] ?? rule;
   }
 
+  ocrEngineLabel(engine: DigitizationOcrEngine | null | undefined): string {
+    return engine === 'sarvam' ? 'Sarvam' : engine === 'gemini' ? 'Gemini' : 'Textract';
+  }
+
   getTaskTimings(result: DigitizationResult): Array<{ label: string; seconds: number | null }> {
-    const extractionSeconds = result.textract_extraction.extraction_seconds;
+    const extractionSeconds = result.ocr_extraction.extraction_seconds;
     const validationSeconds = result.gemini_validation?.validation_seconds ?? null;
     const arithmeticSeconds = result.arithmetic_validation?.validation_seconds ?? null;
     const totalSeconds = result.processing_time_seconds;
@@ -302,7 +310,7 @@ export class AfsDigitizationComponent implements OnInit {
     }
 
     return [
-      { label: 'Textract Extraction', seconds: extractionSeconds },
+      { label: `${this.ocrEngineLabel(result.ocr_engine)} Extraction`, seconds: extractionSeconds },
       { label: 'Gemini Cross-check', seconds: validationSeconds },
       { label: 'Gemini Arithmetic', seconds: arithmeticSeconds },
       { label: 'Excel Build & Upload', seconds: excelSeconds },

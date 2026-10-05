@@ -6,6 +6,7 @@ import {
   DigitizationJobStatusResponse,
   DigitizationJobSubmitResponse,
   DigitizationJobsListResponse,
+  DigitizationOcrEngine,
 } from './afs-digitization-models';
 
 export interface SelectOption<T = string> {
@@ -54,6 +55,12 @@ export class AfsDigitizationService {
     },
   ];
 
+  readonly ocrEngines: SelectOption<DigitizationOcrEngine>[] = [
+    { value: 'textract', label: 'Amazon Textract' },
+    { value: 'sarvam', label: 'Sarvam AI (max 10 pages, no confidence score)' },
+    { value: 'gemini', label: 'Gemini (reads PDF directly, cheapest, no confidence score)' },
+  ];
+
   readonly documentTypes: SelectOption[] = [
     { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
     { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
@@ -82,9 +89,11 @@ export class AfsDigitizationService {
     docType?: string | null,
     enableValidation = true,
     enableArithmeticValidation = true,
+    ocrEngine: DigitizationOcrEngine = 'textract',
   ) {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
@@ -155,6 +164,7 @@ export class AfsDigitizationService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    ocr_engine?: DigitizationOcrEngine;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
@@ -166,6 +176,7 @@ export class AfsDigitizationService {
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
     if (params?.sort_order) queryParams['sort_order'] = params.sort_order;

@@ -17,13 +17,14 @@ interface DigitizationListRow {
   filename: string;
   fileSizeLabel: string;
   geminiModel: string;
+  ocrEngine: string;
   status: string;
   progressStep: string;
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
   pageCount: number | null;
-  textractPriceInr: number | null;
+  ocrPriceInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
@@ -280,13 +281,14 @@ export class AfsDigitizationListComponent implements OnInit {
       filename: job.filename || '—',
       fileSizeLabel: this.formatFileSize(job.file_size_bytes),
       geminiModel: job.gemini_model || '—',
+      ocrEngine: job.ocr_engine || 'textract',
       status: job.status || '—',
       progressStep: job.progress_step || '—',
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
       pageCount: job.page_count,
-      textractPriceInr: job.textract_price_inr,
+      ocrPriceInr: job.ocr_price_inr,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',

@@ -18,6 +18,15 @@
         <form [formGroup]="form" class="upload-form">
           <div class="form-grid">
             <mat-form-field appearance="outline">
+              <mat-label>OCR engine</mat-label>
+              <mat-select formControlName="ocrEngine">
+                @for (e of ocrEngines; track e.value) {
+                  <mat-option [value]="e.value">{{ e.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Gemini cross-check model</mat-label>
               <mat-select formControlName="geminiModel">
                 @for (m of geminiModels; track m.value) {
@@ -75,7 +84,7 @@
               <mat-label>Gemini validation</mat-label>
               <mat-select formControlName="enableValidation">
                 <mat-option [value]="true">Enabled — cross-check with Gemini now</mat-option>
-                <mat-option [value]="false">Disabled — Textract only (validate later)</mat-option>
+                <mat-option [value]="false">Disabled — OCR only (validate later)</mat-option>
               </mat-select>
             </mat-form-field>
 
@@ -210,7 +219,7 @@
                   <!-- Score cards -->
                   <div class="score-cards">
                     <div class="score-card">
-                      <span class="score-card__label">Confidence Score (Textract)</span>
+                      <span class="score-card__label">Confidence Score ({{ ocrEngineLabel(job.result.ocr_engine) }})</span>
                       <span class="score-card__value" [ngClass]="getScoreClass(job.result.confidence_score)">
                         {{ job.result.confidence_score !== null ? (job.result.confidence_score | number: '1.0-1') + '%' : '—' }}
                       </span>
@@ -239,7 +248,7 @@
                   <div class="summary-grid">
                     <div class="summary-item">
                       <span class="summary-item__label">Pages</span>
-                      <span class="summary-item__value">{{ job.result.textract_extraction.page_count }}</span>
+                      <span class="summary-item__value">{{ job.result.ocr_extraction.page_count }}</span>
                     </div>
                     <div class="summary-item">
                       <span class="summary-item__label">File Size</span>
@@ -247,18 +256,24 @@
                     </div>
                     <div class="summary-item">
                       <span class="summary-item__label">Tables Extracted</span>
-                      <span class="summary-item__value">{{ job.result.textract_extraction.tables.length }}</span>
+                      <span class="summary-item__value">{{ job.result.ocr_extraction.tables.length }}</span>
                     </div>
                     <div class="summary-item">
-                      <span class="summary-item__label">Key-Value Pairs</span>
-                      <span class="summary-item__value">{{ job.result.textract_extraction.key_value_pairs.length }}</span>
+                      <span class="summary-item__label">OCR Engine</span>
+                      <span class="summary-item__value">{{ ocrEngineLabel(job.result.ocr_engine) }}</span>
                     </div>
-                    <div class="summary-item">
-                      <span class="summary-item__label">Low-Confidence Blocks</span>
-                      <span class="summary-item__value">
-                        {{ job.result.textract_extraction.low_confidence_block_count }} / {{ job.result.textract_extraction.total_block_count }}
-                      </span>
-                    </div>
+                    @if (job.result.ocr_engine === 'textract') {
+                      <div class="summary-item">
+                        <span class="summary-item__label">Key-Value Pairs</span>
+                        <span class="summary-item__value">{{ job.result.ocr_extraction.key_value_pairs.length }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-item__label">Low-Confidence Blocks</span>
+                        <span class="summary-item__value">
+                          {{ job.result.ocr_extraction.low_confidence_block_count }} / {{ job.result.ocr_extraction.total_block_count }}
+                        </span>
+                      </div>
+                    }
                     @if (job.result.gemini_validation) {
                       <div class="summary-item">
                         <span class="summary-item__label">Gemini Fields Checked</span>
@@ -403,29 +418,29 @@
                   <div class="row g-3">
                     <div class="col-lg-4">
                     <div class="usage-section">
-                      <h5>Textract Usage</h5>
+                      <h5>{{ ocrEngineLabel(job.result.ocr_engine) }} Usage</h5>
                       <div class="usage-steps-grid">
                         <div class="usage-step-card">
                           <div class="usage-step-header">
-                            <div class="usage-step-title">textract_extraction</div>
-                            <div class="usage-step-model">{{ job.result.textract_extraction.feature_types.join(' + ') }}</div>
+                            <div class="usage-step-title">ocr_extraction</div>
+                            <div class="usage-step-model">{{ job.result.ocr_extraction.feature_types.join(' + ') }}</div>
                           </div>
 
                           <div class="usage-token-row">
                             <span class="usage-token-label">Pages Billed</span>
-                            <span class="usage-token-value">{{ job.result.textract_extraction.page_count }}</span>
+                            <span class="usage-token-value">{{ job.result.ocr_extraction.page_count }}</span>
                           </div>
 
-                          @if (job.result.textract_extraction.cost_usd !== null) {
+                          @if (job.result.ocr_extraction.cost_usd !== null) {
                             <div class="usage-cost-row">
                               <span class="usage-cost-label">Est. Cost</span>
                               <span class="usage-cost-value">
-                                ~${{ job.result.textract_extraction.cost_usd.toFixed(4) }}
-                                <span class="usage-cost-inr">(₹{{ job.result.textract_extraction.price_inr!.toFixed(2) }})</span>
+                                ~${{ job.result.ocr_extraction.cost_usd.toFixed(4) }}
+                                <span class="usage-cost-inr">(₹{{ job.result.ocr_extraction.price_inr!.toFixed(2) }})</span>
                               </span>
                             </div>
                             <p class="usage-cost-formula">
-                              {{ job.result.textract_extraction.page_count }} pages × ${{ (job.result.textract_extraction.cost_usd / job.result.textract_extraction.page_count).toFixed(4) }}/page
+                              {{ job.result.ocr_extraction.page_count }} pages × ${{ (job.result.ocr_extraction.cost_usd / job.result.ocr_extraction.page_count).toFixed(4) }}/page
                             </p>
                           } @else {
                             <div class="usage-cost-row">

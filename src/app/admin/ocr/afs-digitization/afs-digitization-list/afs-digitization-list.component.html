@@ -107,6 +107,7 @@
             <th mat-header-cell *matHeaderCellDef>Model</th>
             <td mat-cell *matCellDef="let row">
               <span class="model-value">{{ row.geminiModel }}</span>
+              <p class="progress-step-chip">OCR: {{ row.ocrEngine | titlecase }}</p>
             </td>
           </ng-container>
 
@@ -144,10 +145,10 @@
           </ng-container>
 
           <ng-container matColumnDef="cost">
-            <th mat-header-cell *matHeaderCellDef>Textract Cost</th>
+            <th mat-header-cell *matHeaderCellDef>OCR Cost</th>
             <td mat-cell *matCellDef="let row">
               <span class="cell-value">
-                {{ row.textractPriceInr !== null ? '₹' + (row.textractPriceInr | number: '1.2-2') : '—' }}
+                {{ row.ocrPriceInr !== null ? '₹' + (row.ocrPriceInr | number: '1.2-2') : '—' }}
               </span>
             </td>
           </ng-container>

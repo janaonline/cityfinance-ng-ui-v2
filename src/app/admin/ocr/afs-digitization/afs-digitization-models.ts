@@ -1,5 +1,7 @@
 export type DigitizationStatus = 'queued' | 'processing' | 'completed' | 'failed';
 
+export type DigitizationOcrEngine = 'textract' | 'sarvam' | 'gemini';
+
 export interface DigitizationExpectedFields {
   ulb_name: string | null;
   financial_year: string | null;
@@ -17,6 +19,7 @@ export interface DigitizationJobStatusResponse {
   status: DigitizationStatus;
   filename: string;
   file_size_bytes: number | null;
+  ocr_engine: DigitizationOcrEngine;
   gemini_model: string;
   enable_validation: boolean;
   enable_arithmetic_validation: boolean;
@@ -27,8 +30,8 @@ export interface DigitizationJobStatusResponse {
   accuracy_score: number | null;
   arithmetic_assessment: string | null;
   page_count: number | null;
-  textract_cost_usd: number | null;
-  textract_price_inr: number | null;
+  ocr_cost_usd: number | null;
+  ocr_price_inr: number | null;
   excel_s3_key: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -37,7 +40,7 @@ export interface DigitizationJobStatusResponse {
   message: string;
 }
 
-export interface TextractCell {
+export interface OcrCell {
   row_index: number;
   column_index: number;
   row_span: number;
@@ -47,27 +50,27 @@ export interface TextractCell {
   is_header: boolean;
 }
 
-export interface TextractTable {
+export interface OcrTable {
   table_index: number;
   page_number: number;
   row_count: number;
   column_count: number;
   confidence: number | null;
-  cells: TextractCell[];
+  cells: OcrCell[];
 }
 
-export interface TextractKeyValuePair {
+export interface OcrKeyValuePair {
   page_number: number;
   key: string;
   value: string;
   confidence: number | null;
 }
 
-export interface TextractExtraction {
-  textract_job_id: string | null;
+export interface OcrExtraction {
+  ocr_job_id: string | null;
   page_count: number;
-  tables: TextractTable[];
-  key_value_pairs: TextractKeyValuePair[];
+  tables: OcrTable[];
+  key_value_pairs: OcrKeyValuePair[];
   confidence_score: number | null;
   low_confidence_block_count: number;
   total_block_count: number;
@@ -161,7 +164,8 @@ export interface DigitizationResult {
   file_size_bytes: number | null;
   processing_time_seconds: number;
   expected: DigitizationExpectedFields | null;
-  textract_extraction: TextractExtraction;
+  ocr_engine: DigitizationOcrEngine;
+  ocr_extraction: OcrExtraction;
   gemini_validation: GeminiValidation | null;
   confidence_score: number | null;
   accuracy_score: number | null;
