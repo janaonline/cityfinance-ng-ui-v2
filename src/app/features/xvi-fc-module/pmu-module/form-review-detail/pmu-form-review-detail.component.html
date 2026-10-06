@@ -1,0 +1,61 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+
+        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+          <span class="text-secondary">16th Finance Commission</span>
+          &nbsp;&middot;&nbsp; {{ stateName }}
+        </div> -->
+
+        <h1 class="page-title my-2">{{ formOption.label }}</h1>
+
+        <p class="page-subtitle text-secondary mb-0">
+          Review the state's submitted {{ formOption.label }} form below, then approve or reject.
+        </p>
+      </div>
+
+      <!-- Form Status -->
+      <div class="col-auto">
+        <!-- <span class="text-secondary">Status:</span> -->
+        <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ status() }}</span>
+      </div>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else {
+      <!-- Reject Reason -->
+      @if (rejectionRemarks()) {
+        <div class="alert alert-danger m-0" role="alert"><b>Return Reason:</b> {{ rejectionRemarks() }}</div>
+      }
+
+      <form class="content-body">
+        @for (item of fields(); track item.key; let isLast = $last) {
+          <div
+            class="my-2"
+            [class.border-bottom]="!isLast"
+            [class.border-secondary]="!isLast"
+            [class.border-opacity-25]="!isLast"
+          >
+            <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup" mode="view"></app-dynamic-form>
+          </div>
+        }
+      </form>
+    }
+  </div>
+</section>
+
+<app-review-acknowledgment
+  [canApprove]="canApprove()"
+  [canReject]="canReject()"
+  (approveClicked)="onApprove()"
+  (rejectConfirmed)="onReject($event)"
+></app-review-acknowledgment>

@@ -1,0 +1,177 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+
+        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+          <span class="text-secondary">16th Finance Commission</span>
+          &nbsp;&middot;&nbsp; {{ stateName }}
+        </div> -->
+
+        <h1 class="page-title my-2">{{ formOption.label }}</h1>
+
+        <p class="page-subtitle text-secondary mb-0">
+          Review the state's submitted {{ formOption.label }} form and per-ULB rows below, then approve or reject.
+        </p>
+      </div>
+
+      <!-- Form Status -->
+      <div class="col-auto">
+        <!-- <span class="text-secondary">Status:</span> -->
+        <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ status() }}</span>
+      </div>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else {
+      <!-- Reject Reason -->
+      @if (rejectionRemarks()) {
+        <div class="alert alert-danger m-0" role="alert"><b>Return Reason:</b> {{ rejectionRemarks() }}</div>
+      }
+
+      <form class="content-body">
+        @for (item of fields(); track item.key; let isLast = $last) {
+          <div
+            class="my-2"
+            [class.border-bottom]="!isLast"
+            [class.border-secondary]="!isLast"
+            [class.border-opacity-25]="!isLast"
+          >
+            <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup" mode="view"></app-dynamic-form>
+          </div>
+        }
+      </form>
+
+      <div>
+        <h2 class="h6 fw-bold mb-1">ULB Rows</h2>
+        <div class="my-2 d-flex align-items-center justify-content-between gap-2">
+          <input
+            type="text"
+            id="search_ulb"
+            class="form-control form-control-sm w-75"
+            placeholder="Census code or ULB name"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            aria-label="Search ULB rows"
+          />
+          <button
+            type="button"
+            style="width: fit-content"
+            matButton="outlined"
+            class="reject-btn"
+            [disabled]="!hasSelection()"
+            (click)="startRejectSelectedRows()"
+          >
+            Reject Selected
+          </button>
+          <button
+            type="button"
+            style="width: fit-content"
+            matButton="outlined"
+            [disabled]="!hasSelection()"
+            (click)="approveSelectedRows()"
+          >
+            Approve Selected
+          </button>
+        </div>
+
+        <div class="table-responsive overflow-y-hidden rounded-3 border">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light border-bottom">
+              <tr>
+                <th scope="col" class="ps-3">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="allReviewableSelected()"
+                    [disabled]="!reviewableRows().length"
+                    (change)="toggleSelectAll()"
+                    aria-label="Select all reviewable rows"
+                  />
+                </th>
+                <th scope="col" class="text-muted small fw-semibold">ULB Name</th>
+                <th scope="col" class="text-muted small fw-semibold">Census Code</th>
+                @if (showEligibility) {
+                  <th scope="col" class="text-muted small fw-semibold">Eligibility</th>
+                }
+                <th scope="col" class="text-muted small fw-semibold pe-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of pagedRows(); track row.rowId) {
+                <tr>
+                  <td class="ps-3">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="selectedRowIds().has(row.rowId)"
+                      [disabled]="row.status !== 'Pending Review'"
+                      (change)="toggleRow(row.rowId)"
+                      [attr.aria-label]="'Select ' + row.ulbName"
+                    />
+                  </td>
+                  <td class="fw-semibold">{{ row.ulbName }}</td>
+                  <td class="text-muted">{{ row.censusCode }}</td>
+                  @if (showEligibility) {
+                    <td class="small">{{ row.eligibility }}</td>
+                  }
+                  <td class="pe-3">
+                    <span [class]="'badge rounded-pill ' + rowBadgeClass(row)">{{ row.status }}</span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td [attr.colspan]="showEligibility ? 5 : 4" class="text-center py-4 text-secondary small">
+                    No rows found for the current filters.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (total() > 0) {
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 small">
+            <span class="text-secondary">Showing {{ startIndex() }}–{{ endIndex() }} of {{ total() }} rows</span>
+            <div class="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasPrev()"
+                (click)="goToPage(page() - 1)"
+              >
+                &lsaquo; Prev
+              </button>
+              <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasNext()"
+                (click)="goToPage(page() + 1)"
+              >
+                Next &rsaquo;
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<app-review-acknowledgment
+  [canApprove]="canApprove()"
+  [canReject]="canReject()"
+  approveLabel="Approve Form"
+  rejectLabel="Reject Form"
+  (approveClicked)="onApprove()"
+  (rejectConfirmed)="onReject($event)"
+></app-review-acknowledgment>

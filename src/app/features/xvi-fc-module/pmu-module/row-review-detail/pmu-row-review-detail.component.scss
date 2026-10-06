@@ -1,0 +1,19 @@
+@use '@angular/material' as mat;
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
+.reject-confirm-btn {
+  --mat-button-filled-label-text-color: #fff;
+  --mat-button-filled-container-color: var(--bs-danger, #dc3545);
+}
+
+// "Reject Selected" is an outlined button, so it needs the outlined-button custom properties
+// (review-acknowledgment.component.scss's own `.reject-btn`) — `.reject-confirm-btn` above only
+// affects filled buttons and has no effect here.
+.reject-btn {
+  --mat-button-outlined-label-text-color: var(--bs-danger, #dc3545);
+  --mat-button-outlined-outline-color: var(--bs-danger, #dc3545);
+}
