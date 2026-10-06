@@ -74,6 +74,18 @@
             </mat-form-field>
           </div>
 
+          <!-- Source: S3 path or manual upload -->
+          <mat-checkbox class="source-toggle" color="primary" [checked]="useS3" (change)="onSourceToggle($event.checked)">
+            Use S3 path (PDF already in the CityFinance bucket)
+          </mat-checkbox>
+
+          @if (useS3) {
+          <mat-form-field appearance="outline" class="s3-path-field">
+            <mat-label>S3 path</mat-label>
+            <input matInput [formControl]="s3Path" placeholder="objects/abc.pdf" />
+            <mat-hint>Object key, s3:// URI or the full S3 URL of the PDF.</mat-hint>
+          </mat-form-field>
+          } @else {
           <!-- File picker -->
           <div class="file-picker">
             <input #fileInput class="file-input-hidden" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
@@ -91,15 +103,20 @@
 
             <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB.</p>
           </div>
+          }
 
           <!-- Actions -->
           <div class="actions">
+            @if (useS3) {
+            <button mat-stroked-button type="button" (click)="s3Path.reset()">Clear Path</button>
+            } @else {
             <button mat-stroked-button type="button" (click)="clearFile()">Clear File</button>
+            }
             <button
               mat-flat-button
               color="primary"
               type="button"
-              [disabled]="!selectedFile || form.invalid || isSubmitting()"
+              [disabled]="!hasSource() || form.invalid || isSubmitting()"
               (click)="submit()"
             >
               @if (isSubmitting()) { Submitting... } @else { Submit & Validate }
@@ -141,6 +158,14 @@
               </div>
             </div>
             <div class="job-header__actions">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                [disabled]="downloadingJobId() === job.jobId"
+                (click)="downloadPdf(job)"
+              >
+                {{ downloadingJobId() === job.jobId ? 'Downloading...' : 'Download PDF' }}
+              </button>
               @if (job.status === 'completed' && job.result) {
               <button type="button" class="btn btn-sm btn-outline-primary" (click)="toggleResult(job.jobId)">
                 {{ job.showResult ? 'Collapse' : 'Expand' }} Result
