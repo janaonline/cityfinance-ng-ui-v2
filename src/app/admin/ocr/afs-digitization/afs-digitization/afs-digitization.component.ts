@@ -429,6 +429,15 @@ export class AfsDigitizationComponent implements OnInit {
     };
   }
 
+  /** { main: "1m 54s", exact: "114.3s" } from a minute up; { main: "9.4s", exact: null } below that. */
+  formatDuration(seconds: number | null): { main: string; exact: string | null } {
+    if (seconds === null) return { main: '—', exact: null };
+    const exact = `${seconds.toFixed(1)}s`;
+    if (seconds < 60) return { main: exact, exact: null };
+    const rounded = Math.round(seconds);
+    return { main: `${Math.floor(rounded / 60)}m ${rounded % 60}s`, exact };
+  }
+
   formatFileSize(bytes: number | null): string {
     return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
   }

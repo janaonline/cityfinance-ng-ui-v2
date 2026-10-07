@@ -319,6 +319,22 @@
     font-weight: 700;
     color: #1e3a5f;
   }
+
+  &__sub {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  &--total &__label {
+    font-weight: 700;
+    color: #475569;
+  }
+
+  &--total &__value {
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
 }
 
 .gemini-summary {

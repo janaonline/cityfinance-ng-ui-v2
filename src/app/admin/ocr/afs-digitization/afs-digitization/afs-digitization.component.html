@@ -308,10 +308,14 @@
                     <h5>Task Timings</h5>
                     <div class="summary-grid">
                       @for (t of getTaskTimings(job.result); track t.label) {
-                        <div class="summary-item">
+                        <div class="summary-item" [class.summary-item--total]="t.label === 'Total'">
                           <span class="summary-item__label">{{ t.label }}</span>
+                          @let duration = formatDuration(t.seconds);
                           <span class="summary-item__value">
-                            {{ t.seconds !== null ? (t.seconds | number: '1.1-1') + 's' : '—' }}
+                            {{ duration.main }}
+                            @if (duration.exact) {
+                              <span class="summary-item__sub">({{ duration.exact }})</span>
+                            }
                           </span>
                         </div>
                       }
