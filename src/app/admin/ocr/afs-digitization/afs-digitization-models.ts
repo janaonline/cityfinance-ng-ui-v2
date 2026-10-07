@@ -29,6 +29,9 @@ export interface DigitizationJobStatusResponse {
   confidence_score: number | null;
   accuracy_score: number | null;
   arithmetic_assessment: string | null;
+  enable_document_classification: boolean;
+  detected_document_type: AfsDocumentType | null;
+  multiple_documents_detected: boolean | null;
   page_count: number | null;
   ocr_cost_usd: number | null;
   ocr_price_inr: number | null;
@@ -158,6 +161,43 @@ export interface ArithmeticValidation {
   validation_seconds: number | null;
 }
 
+export type AfsDocumentType =
+  | 'BALANCE_SHEET'
+  | 'BALANCE_SHEET_SCHEDULE'
+  | 'INCOME_EXPENDITURE'
+  | 'INCOME_EXPENDITURE_SCHEDULE'
+  | 'CASH_FLOW'
+  | 'AUDITOR_REPORT'
+  | 'UNKNOWN'
+  /** Only ever the overall type of a PDF holding more than one document. */
+  | 'MULTIPLE_DOCUMENTS';
+
+/** One document found inside the uploaded PDF (1-based, inclusive pages). */
+export interface DocumentSegment {
+  document_type: AfsDocumentType;
+  start_page: number;
+  end_page: number;
+  pages: number[];
+  title: string | null;
+  is_duplicate: boolean;
+  confidence: number | null;
+}
+
+export interface DocumentClassification {
+  model: string;
+  document_type: AfsDocumentType;
+  multiple_documents_detected: boolean;
+  duplicate_documents_detected: boolean;
+  document_count: number;
+  document_types: AfsDocumentType[];
+  segments: DocumentSegment[];
+  unclassified_pages: number[];
+  page_count: number;
+  summary: string | null;
+  usage_metadata: Record<string, unknown> | null;
+  classification_seconds: number | null;
+}
+
 export interface DigitizationResult {
   filename: string;
   doc_id: string;
@@ -172,6 +212,8 @@ export interface DigitizationResult {
   overall_assessment: string | null;
   arithmetic_validation: ArithmeticValidation | null;
   arithmetic_assessment: string | null;
+  document_classification: DocumentClassification | null;
+  detected_document_type: AfsDocumentType | null;
   error_messages: string[];
   excel_s3_key: string | null;
 }

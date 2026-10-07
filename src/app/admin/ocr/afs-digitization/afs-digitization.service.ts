@@ -6,6 +6,7 @@ import {
   DigitizationJobStatusResponse,
   DigitizationJobSubmitResponse,
   DigitizationJobsListResponse,
+  AfsDocumentType,
   DigitizationOcrEngine,
 } from './afs-digitization-models';
 
@@ -71,6 +72,18 @@ export class AfsDigitizationService {
     { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
   ];
 
+  /** Labels for the types the Gemini document classification can report. */
+  readonly detectedDocumentTypeLabels: Record<AfsDocumentType, string> = {
+    BALANCE_SHEET: 'Balance Sheet',
+    BALANCE_SHEET_SCHEDULE: 'Balance Sheet Schedule',
+    INCOME_EXPENDITURE: 'Income and Expenditure',
+    INCOME_EXPENDITURE_SCHEDULE: 'Income and Expenditure Schedule',
+    CASH_FLOW: 'Cash Flow Statement',
+    AUDITOR_REPORT: 'Auditors Report',
+    UNKNOWN: 'Unknown',
+    MULTIPLE_DOCUMENTS: 'Multiple Documents',
+  };
+
   readonly financialYears: SelectOption[] = [
     { value: '2025-26', label: '2025-26' },
     { value: '2024-25', label: '2024-25' },
@@ -90,6 +103,7 @@ export class AfsDigitizationService {
     enableValidation = true,
     enableArithmeticValidation = true,
     ocrEngine: DigitizationOcrEngine = 'textract',
+    enableDocumentClassification = true,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -100,6 +114,7 @@ export class AfsDigitizationService {
     if (docType) formData.append('doc_type', docType);
     formData.append('enable_validation', String(enableValidation));
     formData.append('enable_arithmetic_validation', String(enableArithmeticValidation));
+    formData.append('enable_document_classification', String(enableDocumentClassification));
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + 'afs-digitization/jobs',
       formData,

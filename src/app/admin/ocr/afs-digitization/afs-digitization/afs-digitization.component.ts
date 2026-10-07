@@ -23,6 +23,7 @@ import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
 import {
+  AfsDocumentType,
   ArithmeticCheck,
   DigitizationJobTracker,
   DigitizationOcrEngine,
@@ -79,6 +80,7 @@ export class AfsDigitizationComponent implements OnInit {
     docType: this.fb.control<string | null>(null),
     enableValidation: this.fb.nonNullable.control(true, Validators.required),
     enableArithmeticValidation: this.fb.nonNullable.control(true, Validators.required),
+    enableDocumentClassification: this.fb.nonNullable.control(true, Validators.required),
   });
 
   private readonly arithmeticRuleLabels: Partial<Record<string, string>> = {
@@ -193,8 +195,16 @@ export class AfsDigitizationComponent implements OnInit {
       return;
     }
 
-    const { ocrEngine, geminiModel, ulbName, financialYear, docType, enableValidation, enableArithmeticValidation } =
-      this.form.getRawValue();
+    const {
+      ocrEngine,
+      geminiModel,
+      ulbName,
+      financialYear,
+      docType,
+      enableValidation,
+      enableArithmeticValidation,
+      enableDocumentClassification,
+    } = this.form.getRawValue();
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const file = this.selectedFile;
     this.isSubmitting.set(true);
@@ -209,6 +219,7 @@ export class AfsDigitizationComponent implements OnInit {
         enableValidation,
         enableArithmeticValidation,
         ocrEngine,
+        enableDocumentClassification,
       )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
@@ -287,6 +298,29 @@ export class AfsDigitizationComponent implements OnInit {
     }
   }
 
+  documentTypeLabel(type: AfsDocumentType | null | undefined): string {
+    return type ? (this.digitizationService.detectedDocumentTypeLabels[type] ?? type) : 'NOT RUN';
+  }
+
+  /** Multiple documents -> warning; unknown -> fail; a single known type -> pass. */
+  getDocumentTypeClass(type: AfsDocumentType | null | undefined): string {
+    switch (type) {
+      case null:
+      case undefined:
+        return 'assessment--skipped';
+      case 'MULTIPLE_DOCUMENTS':
+        return 'assessment--warning';
+      case 'UNKNOWN':
+        return 'assessment--fail';
+      default:
+        return 'assessment--pass';
+    }
+  }
+
+  formatPageRange(start: number, end: number): string {
+    return start === end ? `${start}` : `${start}–${end}`;
+  }
+
   ruleLabel(rule: string): string {
     return this.arithmeticRuleLabels[rule] ?? rule;
   }
@@ -299,10 +333,11 @@ export class AfsDigitizationComponent implements OnInit {
     const extractionSeconds = result.ocr_extraction.extraction_seconds;
     const validationSeconds = result.gemini_validation?.validation_seconds ?? null;
     const arithmeticSeconds = result.arithmetic_validation?.validation_seconds ?? null;
+    const classificationSeconds = result.document_classification?.classification_seconds ?? null;
     const totalSeconds = result.processing_time_seconds;
 
-    // Cross-check and arithmetic run in parallel, so only the longer one adds to wall time.
-    const geminiWallSeconds = Math.max(validationSeconds ?? 0, arithmeticSeconds ?? 0);
+    // The Gemini stages run in parallel, so only the longest one adds to wall time.
+    const geminiWallSeconds = Math.max(validationSeconds ?? 0, arithmeticSeconds ?? 0, classificationSeconds ?? 0);
     let excelSeconds: number | null = null;
     if (extractionSeconds !== null && totalSeconds !== null) {
       const remainder = totalSeconds - extractionSeconds - geminiWallSeconds;
@@ -313,6 +348,7 @@ export class AfsDigitizationComponent implements OnInit {
       { label: `${this.ocrEngineLabel(result.ocr_engine)} Extraction`, seconds: extractionSeconds },
       { label: 'Gemini Cross-check', seconds: validationSeconds },
       { label: 'Gemini Arithmetic', seconds: arithmeticSeconds },
+      { label: 'Gemini Classification', seconds: classificationSeconds },
       { label: 'Excel Build & Upload', seconds: excelSeconds },
       { label: 'Total', seconds: totalSeconds },
     ];
@@ -326,6 +362,9 @@ export class AfsDigitizationComponent implements OnInit {
     }
     if (result.arithmetic_validation?.usage_metadata) {
       steps.push(this.getUsageStep('gemini_arithmetic_validation', result.arithmetic_validation));
+    }
+    if (result.document_classification?.usage_metadata) {
+      steps.push(this.getUsageStep('gemini_document_classification', result.document_classification));
     }
     return steps;
   }
@@ -343,6 +382,24 @@ export class AfsDigitizationComponent implements OnInit {
       ? steps.reduce((sum, s) => sum + s.estimatedCostUsd!, 0)
       : null;
     return { thoughtsTokens, totalTokens, costUsd, costInr: costUsd !== null ? costUsd * USD_TO_INR : null };
+  }
+
+  /**
+   * OCR + all Gemini calls in INR. `complete` is false when a part has no
+   * pricing, in which case `inr` covers only the priced parts.
+   */
+  getJobTotalCost(result: DigitizationResult): { inr: number; complete: boolean; parts: string } {
+    const ocrInr = result.ocr_extraction.price_inr;
+    const geminiInr = this.getUsageTotal(this.getUsageSteps(result)).costInr;
+    const parts = [
+      `${this.ocrEngineLabel(result.ocr_engine)} ${ocrInr !== null ? '₹' + ocrInr.toFixed(2) : 'N/A'}`,
+      `Gemini ${geminiInr !== null ? '₹' + geminiInr.toFixed(4) : 'N/A'}`,
+    ].join(' + ');
+    return {
+      inr: (ocrInr ?? 0) + (geminiInr ?? 0),
+      complete: ocrInr !== null && geminiInr !== null,
+      parts,
+    };
   }
 
   private getUsageStep(
