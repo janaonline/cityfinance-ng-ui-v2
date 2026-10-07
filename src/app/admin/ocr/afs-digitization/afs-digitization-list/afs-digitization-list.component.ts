@@ -15,17 +15,22 @@ import { DigitizationJobStatusResponse } from '../afs-digitization-models';
 interface DigitizationListRow {
   jobId: string;
   filename: string;
+  fileSizeLabel: string;
   geminiModel: string;
+  ocrEngine: string;
   status: string;
   progressStep: string;
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
-  textractPriceInr: number | null;
+  pageCount: number | null;
+  ocrPriceInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
   expectedDocType: string;
+  detectedDocumentType: string;
+  multipleDocumentsDetected: boolean;
   createdAt: string;
   completedAt: string;
 }
@@ -58,6 +63,7 @@ export class AfsDigitizationListComponent implements OnInit {
     'model',
     'status',
     'scores',
+    'detectedType',
     'cost',
     'expected',
     'dates',
@@ -86,6 +92,8 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly loading = signal(false);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly revalidatingJobId = signal<string | null>(null);
+  readonly regeneratingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -186,6 +194,56 @@ export class AfsDigitizationListComponent implements OnInit {
       });
   }
 
+  revalidateJob(row: DigitizationListRow): void {
+    if (this.revalidatingJobId()) return;
+    this.revalidatingJobId.set(row.jobId);
+    this.digitizationService
+      .revalidateDigitizationJob(row.jobId)
+      .pipe(finalize(() => this.revalidatingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Revalidation queued',
+            'Gemini validation is re-running for this job; the Textract extraction is reused unchanged.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Revalidate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  regenerateExcel(row: DigitizationListRow): void {
+    if (this.regeneratingJobId()) return;
+    this.regeneratingJobId.set(row.jobId);
+    this.digitizationService
+      .regenerateDigitizationExcel(row.jobId)
+      .pipe(finalize(() => this.regeneratingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Excel regenerated',
+            'The workbook has been rebuilt from the stored extraction and re-uploaded.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Regenerate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
   private loadJobs(): void {
     const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
@@ -224,20 +282,32 @@ export class AfsDigitizationListComponent implements OnInit {
     return {
       jobId: job.job_id || '—',
       filename: job.filename || '—',
+      fileSizeLabel: this.formatFileSize(job.file_size_bytes),
       geminiModel: job.gemini_model || '—',
+      ocrEngine: job.ocr_engine || 'textract',
       status: job.status || '—',
       progressStep: job.progress_step || '—',
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
-      textractPriceInr: job.textract_price_inr,
+      pageCount: job.page_count,
+      ocrPriceInr: job.ocr_price_inr,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',
       expectedDocType: job.expected?.doc_type || '—',
+      detectedDocumentType: job.detected_document_type
+        ? (this.digitizationService.detectedDocumentTypeLabels[job.detected_document_type] ??
+          job.detected_document_type)
+        : '—',
+      multipleDocumentsDetected: job.multiple_documents_detected === true,
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
     };
+  }
+
+  private formatFileSize(bytes: number | null): string {
+    return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   private formatDate(value?: string | null): string {
