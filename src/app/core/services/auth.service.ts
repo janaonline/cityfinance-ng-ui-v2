@@ -1,7 +1,19 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import { BehaviorSubject, Observable, Subject, catchError, filter, finalize, map, of, shareReplay, take, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  catchError,
+  filter,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  take,
+  throwError,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
@@ -35,11 +47,8 @@ export class AuthService {
   public helper = this.jwtHelper;
   public loginLogoutCheck = new Subject<any>();
 
-  private readonly currentUserSubject =
-    new BehaviorSubject<IUserLoggedInDetails | null>(this.readStoredUser());
-  private readonly sessionStateSubject = new BehaviorSubject<AuthSessionState>(
-    this.buildSessionState(),
-  );
+  private readonly currentUserSubject = new BehaviorSubject<IUserLoggedInDetails | null>(this.readStoredUser());
+  private readonly sessionStateSubject = new BehaviorSubject<AuthSessionState>(this.buildSessionState());
 
   readonly currentUser$ = this.currentUserSubject.asObservable();
   readonly sessionState$ = this.sessionStateSubject.asObservable();
@@ -58,18 +67,16 @@ export class AuthService {
 
   getLastUpdated(params?: any) {
     return this.http.get(
-      environment.api.url +
-      `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
+      environment.api.url + `ledger/lastUpdated?ulb=${params?.ulb ?? ''}&state=${params?.state ?? ''}`,
     );
   }
 
   getCityData(ulbId: any) {
-    return this.http.get(
-      environment.api.url + `all-dashboard/people-information?type=ulb&ulb=${ulbId}`,
-    );
+    return this.http.get(environment.api.url + `all-dashboard/people-information?type=ulb&ulb=${ulbId}`);
   }
 
   login(user: any) {
+    console.log('2. Logging in user:', user);
     return this.http
       .post(this.loginUrl, user, {
         withCredentials: true,
@@ -109,9 +116,7 @@ export class AuthService {
     this.isRefreshing = true;
     this.publishSessionState();
 
-    this.refreshRequest$ = this.http
-      .post(this.refreshTokenUrl, {}, { withCredentials: true })
-      .pipe(
+    this.refreshRequest$ = this.http.post(this.refreshTokenUrl, {}, { withCredentials: true }).pipe(
       map((response: any) => {
         this.applyAuthResponse(response);
         return response;
@@ -278,10 +283,7 @@ export class AuthService {
     return { ...user, subRole: this.deriveSubRole(user.accessLevel, user.role) };
   }
 
-  private deriveSubRole(
-    accessLevel?: string,
-    role?: string,
-  ): 'SUBMITTER' | 'EDITOR' | 'VIEWER' | undefined {
+  private deriveSubRole(accessLevel?: string, role?: string): 'SUBMITTER' | 'EDITOR' | 'VIEWER' | undefined {
     if (role !== 'STATE') return undefined;
     if (accessLevel === 'ADMIN') return 'SUBMITTER';
     if (accessLevel === 'EDITOR') return 'EDITOR';
@@ -301,11 +303,7 @@ export class AuthService {
   }
 
   isAuthRequest(url: string) {
-    return (
-      this.isLoginRequest(url) ||
-      this.isRefreshRequest(url) ||
-      this.isLogoutRequest(url)
-    );
+    return this.isLoginRequest(url) || this.isRefreshRequest(url) || this.isLogoutRequest(url);
   }
 
   isApiRequest(url: string) {
@@ -323,26 +321,21 @@ export class AuthService {
   }
 
   verifyCaptcha(recaptcha: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(
-      `${environment.api.url}captcha_validate`,
-      {
+    return this.http.post<{ success: boolean; message: string }>(`${environment.api.url}captcha_validate`, {
       recaptcha,
-      },
-    );
+    });
   }
 
   logout() {
-    const request$ = this.http
-      .post(this.logoutUrl, {}, { withCredentials: true })
-      .pipe(
+    const request$ = this.http.post(this.logoutUrl, {}, { withCredentials: true }).pipe(
       catchError(() => of(null)),
       finalize(() => this.clearLocalStorage()),
       shareReplay(1),
     );
 
     request$.subscribe({
-      next: () => { },
-      error: () => { },
+      next: () => {},
+      error: () => {},
     });
 
     return request$;
@@ -367,7 +360,10 @@ export class AuthService {
       );
   }
 
-  checkUser(identifier: string, role: string): Observable<{
+  checkUser(
+    identifier: string,
+    role: string,
+  ): Observable<{
     status?: string;
     isXVIFCProfileVerified?: boolean;
     maskedContact?: string;
@@ -375,13 +371,16 @@ export class AuthService {
     message?: string;
   }> {
     return this.http.post<any>(`${environment.api.url2}auth/check-user`, { identifier, role }).pipe(
-      map((res: any) => (res?.data ?? res) as {
+      map(
+        (res: any) =>
+          (res?.data ?? res) as {
             status?: string;
             isXVIFCProfileVerified?: boolean;
             maskedContact?: string;
             loginFlow?: string;
             message?: string;
-      }),
+          },
+      ),
     );
   }
 

@@ -65,12 +65,21 @@ export class ManualReviewQueueComponent implements OnInit {
   /** Row currently mid-decision (approve or reject in flight) — disables its own buttons only. */
   readonly decidingRowKey = signal<string | null>(null);
 
-  readonly filterForm = this.fb.group({ search: [''] });
+  /** DUR row currently mid-download — disables its own download control only. */
+  readonly downloadingRowKey = signal<string | null>(null);
+
+  readonly filterForm = this.fb.group({ search: [''], formType: [''] });
 
   ngOnInit(): void {
     this.loadRows();
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page.set(1);
+        this.loadRows();
+      });
+    this.filterForm.controls.formType.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.page.set(1);
         this.loadRows();
@@ -83,6 +92,34 @@ export class ManualReviewQueueComponent implements OnInit {
 
   isDeciding(row: ManualReviewQueueRow): boolean {
     return this.decidingRowKey() === this.rowKey(row);
+  }
+
+  isDownloading(row: ManualReviewQueueRow): boolean {
+    return this.downloadingRowKey() === this.rowKey(row);
+  }
+
+  onDownloadFile(row: ManualReviewQueueRow): void {
+    if (this.downloadingRowKey()) return;
+    const key = this.rowKey(row);
+    this.downloadingRowKey.set(key);
+    this.service
+      .downloadDurDocument(row)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.downloadingRowKey.set(null);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = row.fileName ?? 'document.pdf';
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.downloadingRowKey.set(null);
+          this.utilityService.triggerSnackbar('Could not download the file. Please try again.', 'snackbar-danger');
+        },
+      });
   }
 
   srNo(index: number): number {
@@ -108,10 +145,15 @@ export class ManualReviewQueueComponent implements OnInit {
     this.isLoading.set(true);
     this.loadError.set(null);
 
-    const search = this.filterForm.getRawValue().search?.trim() || undefined;
+    const { search, formType } = this.filterForm.getRawValue();
 
     this.service
-      .getQueue({ page: this.page(), pageSize: this.pageSize(), search })
+      .getQueue({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        search: search?.trim() || undefined,
+        formType: (formType || undefined) as ManualReviewFormType | undefined,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -177,10 +219,10 @@ export class ManualReviewQueueComponent implements OnInit {
     this.total.update((t) => Math.max(0, t - 1));
   }
 
-  /** Direct download link for the job's source file — a plain URL, no auth header needed. DUR jobs
-   *  live under a distinct vendor path (dur-validation vs ocr-validation — see DurValidationApiService). */
-  ocrDownloadUrl(jobId: string, formType: ManualReviewFormType): string {
-    const prefix = formType === 'DUR' ? 'dur-validation' : 'ocr-validation';
-    return `${environment.api.url3}${prefix}/jobs/${jobId}/download`;
+  /** Annual Account only: direct download link for the OCR job's source file, served by the v3
+   *  vendor — a plain URL, no auth header needed. DUR uses onDownloadFile/downloadDurDocument
+   *  instead (the vendor never built an equivalent route for DUR jobs). */
+  ocrDownloadUrl(jobId: string): string {
+    return `${environment.api.url3}ocr-validation/jobs/${jobId}/download`;
   }
 }

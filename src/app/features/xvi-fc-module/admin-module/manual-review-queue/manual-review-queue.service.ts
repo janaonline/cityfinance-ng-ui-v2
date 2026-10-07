@@ -42,9 +42,12 @@ export class ManualReviewQueueService {
   private readonly durBaseUrl = `${environment.api.url2}xvi-fc/dur/`;
 
   getQueue(query: ManualReviewQueueQuery): Observable<ManualReviewQueueResult> {
+    const empty = of({ rows: [], failed: false, truncated: false });
     return forkJoin([
-      this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
-      this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
+      query.formType && query.formType !== 'ANNUAL_ACCOUNT'
+        ? empty
+        : this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
+      query.formType && query.formType !== 'DUR' ? empty : this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
     ]).pipe(
       map(([annualAccount, dur]) => {
         const merged = [...annualAccount.rows, ...dur.rows].sort(
@@ -115,6 +118,17 @@ export class ManualReviewQueueService {
           return of({ rows: [], failed: true, truncated: false });
         }),
       );
+  }
+
+  /** DUR-only: streams the document straight from S3 via an authenticated, non-expiring endpoint
+   *  (no signed-URL token) — Annual Account rows keep using the v3 vendor's own download route
+   *  instead (see ManualReviewQueueComponent.ocrDownloadUrl). */
+  downloadDurDocument(row: Pick<ManualReviewQueueRow, 'formId' | 'docId' | 'uploadId'>): Observable<Blob> {
+    const params = new HttpParams().set('uploadId', row.uploadId);
+    return this.http.get(`${this.durBaseUrl}${row.formId}/documents/${row.docId}/download`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
   decide(row: Pick<ManualReviewQueueRow, 'formType' | 'formId' | 'section' | 'docId'>, payload: ManualReviewDecisionPayload): Observable<void> {
