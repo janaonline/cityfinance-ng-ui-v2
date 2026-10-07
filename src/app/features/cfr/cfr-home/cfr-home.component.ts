@@ -42,9 +42,16 @@ export class CfrHomeComponent implements OnInit {
 
   loadData() {
     this.isLoadingData = true;
-    this.fiscalRankingService.dashboard().subscribe(({ data }: any) => {
-      this.data = data;
-      this.isLoadingData = false;
+    this.fiscalRankingService.dashboard().subscribe({
+      next: ({ data }: any) => {
+        this.data = data;
+        this.isLoadingData = false;
+      },
+      error: (error) => {
+        // Without this the pre-loader skeleton stays up forever on a failed request.
+        console.error('Failed to load CFR dashboard', error);
+        this.isLoadingData = false;
+      },
     });
   }
 

@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { environment } from '../../../../../environments/environment';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import {
@@ -67,12 +68,18 @@ export class ManualReviewQueueComponent implements OnInit {
   /** DUR row currently mid-download — disables its own download control only. */
   readonly downloadingRowKey = signal<string | null>(null);
 
-  readonly filterForm = this.fb.group({ search: [''] });
+  readonly filterForm = this.fb.group({ search: [''], formType: [''] });
 
   ngOnInit(): void {
     this.loadRows();
     this.filterForm.controls.search.valueChanges
       .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.page.set(1);
+        this.loadRows();
+      });
+    this.filterForm.controls.formType.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.page.set(1);
         this.loadRows();
@@ -138,10 +145,15 @@ export class ManualReviewQueueComponent implements OnInit {
     this.isLoading.set(true);
     this.loadError.set(null);
 
-    const search = this.filterForm.getRawValue().search?.trim() || undefined;
+    const { search, formType } = this.filterForm.getRawValue();
 
     this.service
-      .getQueue({ page: this.page(), pageSize: this.pageSize(), search })
+      .getQueue({
+        page: this.page(),
+        pageSize: this.pageSize(),
+        search: search?.trim() || undefined,
+        formType: (formType || undefined) as ManualReviewFormType | undefined,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
@@ -205,5 +217,12 @@ export class ManualReviewQueueComponent implements OnInit {
     const key = this.rowKey(row);
     this.rows.update((rows) => rows.filter((r) => this.rowKey(r) !== key));
     this.total.update((t) => Math.max(0, t - 1));
+  }
+
+  /** Annual Account only: direct download link for the OCR job's source file, served by the v3
+   *  vendor — a plain URL, no auth header needed. DUR uses onDownloadFile/downloadDurDocument
+   *  instead (the vendor never built an equivalent route for DUR jobs). */
+  ocrDownloadUrl(jobId: string): string {
+    return `${environment.api.url3}ocr-validation/jobs/${jobId}/download`;
   }
 }

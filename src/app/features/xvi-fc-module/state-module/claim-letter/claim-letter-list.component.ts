@@ -154,6 +154,11 @@ export class ClaimLetterListComponent implements OnInit {
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
   readonly installment = CLAIM_LETTER_INSTALLMENT;
 
+  /** Temporary gate — flip to `true` once Claim Letter access is actually wired to the "5 State
+   *  forms approved" condition. Until then this route shows a static locked message and makes no
+   *  API calls (the feature isn't complete yet, but the locked message ships for optics). */
+  readonly claimLetterSubmissionEnabled = false;
+
   toggleInstructions(): void {
     this.showInstructions.update((value) => !value);
   }
@@ -172,7 +177,7 @@ export class ClaimLetterListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAll();
+    if (this.claimLetterSubmissionEnabled) this.loadAll();
   }
 
   loadAll(): void {
