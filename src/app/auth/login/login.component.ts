@@ -543,7 +543,9 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
-    this.loginService.loadRecaptchaScript();
+    // Fresh Google client on every visit — one left over from before a login/logout round trip
+    // hands back blank tokens ("reCAPTCHA verification failed").
+    this.loginService.resetRecaptcha();
     this.loginService.showRecaptchaBadge();
   }
 
@@ -558,6 +560,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loginService.hideRecaptchaBadge();
     this.grantEnvelopeChart?.destroy();
     this.scrollRevealObserver?.disconnect();
+    this.loginService.teardownRecaptcha();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────
