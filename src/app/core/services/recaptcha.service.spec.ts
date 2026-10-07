@@ -78,4 +78,53 @@ describe('RecaptchaService', () => {
       },
     });
   });
+
+  it('teardown removes the Google globals, the badge and the injected scripts so a revisit starts clean', () => {
+    const win = window as unknown as { grecaptcha?: unknown; ___grecaptcha_cfg?: unknown };
+    win.grecaptcha = {};
+    win.___grecaptcha_cfg = {};
+    const wrapper = document.createElement('div');
+    const badge = document.createElement('div');
+    badge.className = 'grecaptcha-badge';
+    wrapper.appendChild(badge);
+    document.body.appendChild(wrapper);
+    const script = document.createElement('script');
+    script.setAttribute('src', 'https://www.gstatic.com/recaptcha/releases/x/recaptcha__en.js');
+    document.head.appendChild(script);
+
+    new RecaptchaService().teardown();
+
+    expect(win.grecaptcha).toBeUndefined();
+    expect(win.___grecaptcha_cfg).toBeUndefined();
+    expect(document.body.contains(wrapper)).toBeFalse();
+    expect(document.head.contains(script)).toBeFalse();
+  });
+
+  it('waits for a freshly injected script to load before calling grecaptcha after a reset', (done) => {
+    (environment as { captchaEnabled: boolean }).captchaEnabled = true;
+    (environment as { recaptchaSiteKey: string }).recaptchaSiteKey = 'site-key';
+    let injected: HTMLScriptElement | undefined;
+    const appendChild = document.head.appendChild.bind(document.head);
+    spyOn(document.head, 'appendChild').and.callFake(<T extends Node>(node: T): T => {
+      if (node instanceof HTMLScriptElement && node.src.includes('recaptcha/api.js')) {
+        injected = node;
+        return node;
+      }
+      return appendChild(node);
+    });
+    const service = new RecaptchaService();
+
+    service.reset();
+    service.execute('login').subscribe((token) => {
+      expect(token).toBe('fresh-token');
+      done();
+    });
+
+    expect(injected).toBeDefined();
+    (window as unknown as { grecaptcha: unknown }).grecaptcha = {
+      ready: (cb: () => void) => cb(),
+      execute: () => Promise.resolve('fresh-token'),
+    };
+    injected!.onload!(new Event('load'));
+  });
 });
