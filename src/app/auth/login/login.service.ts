@@ -48,6 +48,11 @@ export class LoginService {
     this.recaptcha.reset();
   }
 
+  /** Call when leaving the login page so a later visit (e.g. after logout) never reuses this client. */
+  teardownRecaptcha(): void {
+    this.recaptcha.teardown();
+  }
+
   // ─── Auth API ─────────────────────────────────────────────────────────────────
 
   signInWithPassword(identifier: string, password: string, type: string | null): Observable<unknown> {
