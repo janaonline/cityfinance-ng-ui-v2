@@ -385,12 +385,14 @@
 
 .usage-steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0.75rem;
+  align-items: start; // cards keep their natural height instead of stretching to the tallest
 }
 
 .usage-step-card {
   display: grid;
+  align-content: start; // rows stay packed at the top
   gap: 0.35rem;
   padding: 0.75rem 1rem;
   background: #f8fafc;
@@ -398,11 +400,13 @@
   border-radius: 12px;
 }
 
+// Title on its own line, model underneath — long titles like
+// "Gemini Arithmetic Validation" no longer squeeze the model name.
 .usage-step-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   margin-bottom: 0.35rem;
 }
 
@@ -412,15 +416,29 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #1d4ed8;
-  flex-shrink: 0;
 }
 
 .usage-step-model {
   font-family: Consolas, 'Courier New', monospace;
   font-size: 0.68rem;
   color: #475569;
-  text-align: right;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.usage-total-card {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  .usage-cost-row {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
 }
 
 .usage-token-row {
@@ -451,6 +469,7 @@
 .usage-modality-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.3rem;
   margin-top: 0.25rem;
   padding-top: 0.35rem;
@@ -472,6 +491,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .usage-cost-value {
@@ -503,6 +523,8 @@
 }
 
 .usage-modality-chip {
+  line-height: 1.4;
+  white-space: nowrap;
   font-size: 0.68rem;
   font-weight: 600;
   padding: 0.1rem 0.45rem;

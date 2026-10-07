@@ -28,9 +28,9 @@ import {
   timer,
 } from 'rxjs';
 import { MaterialModule } from '../../../material.module';
-import { IULB } from '../../../core/models/ulb';
-import { CommonService } from '../../../core/services/common.service';
+import { IUlbSummary } from '../../../core/models/ulb-summary';
 import { GlobalLoaderService } from '../../../core/services/loaders/global-loader.service';
+import { UlbService } from '../../../core/services/ulb.service';
 import { UtilityService } from '../../../core/services/utility.service';
 import { OcrService, SelectOption } from '../ocr.service';
 import {
@@ -76,7 +76,7 @@ export class OcrValidationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly ocrService = inject(OcrService);
-  private readonly commonService = inject(CommonService);
+  private readonly ulbService = inject(UlbService);
   private readonly utilityService = inject(UtilityService);
   readonly globalLoader = inject(GlobalLoaderService);
 
@@ -109,7 +109,7 @@ export class OcrValidationComponent implements OnInit {
     state: this.fb.control<string | null>(null),
     auditType: this.fb.control<string | null>(null),
     financialYear: this.fb.control<string | null>(null),
-    ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
+    ulb: this.fb.control<IUlbSummary | string | null>(null, this.ulbSelectionValidator()),
     enableOrientationCheck: this.fb.control<boolean | null>(false),
     enableFinancialValidation: this.fb.control<boolean | null>(false),
     enableQualityCheck: this.fb.control<boolean | null>(false),
@@ -119,7 +119,7 @@ export class OcrValidationComponent implements OnInit {
   readonly isSubmitting = signal(false);
   readonly jobs = signal<OcrValidationJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
-  readonly filteredUlbs = signal<IULB[]>([]);
+  readonly filteredUlbs = signal<IUlbSummary[]>([]);
   readonly ulbSearchInProgress = signal(false);
   readonly selectedUlb = toSignal(
     this.form.controls.ulb.valueChanges.pipe(
@@ -834,10 +834,10 @@ export class OcrValidationComponent implements OnInit {
   }
 
   onUlbSelected(event: MatAutocompleteSelectedEvent): void {
-    this.form.controls.ulb.setValue(event.option.value as IULB);
+    this.form.controls.ulb.setValue(event.option.value as IUlbSummary);
   }
 
-  displayUlbName(ulb: IULB | string | null): string {
+  displayUlbName(ulb: IUlbSummary | string | null): string {
     if (!ulb) return '';
     return typeof ulb === 'string' ? ulb : ulb.name;
   }
@@ -856,11 +856,11 @@ export class OcrValidationComponent implements OnInit {
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((searchText) => {
-          if (!searchText || searchText.length < 2) return of<IULB[]>([]);
+          if (!searchText || searchText.length < 2) return of<IUlbSummary[]>([]);
           this.ulbSearchInProgress.set(true);
-          return this.commonService.searchUlb({ matchingWord: searchText }, 'ulb').pipe(
-            map((response: any) => this.extractUlbs(response).slice(0, 50)),
-            catchError(() => of<IULB[]>([])),
+          return this.ulbService.searchAutocomplete(searchText).pipe(
+            map((ulbs) => ulbs.slice(0, 50)),
+            catchError(() => of<IUlbSummary[]>([])),
             finalize(() => this.ulbSearchInProgress.set(false)),
           );
         }),
@@ -874,14 +874,6 @@ export class OcrValidationComponent implements OnInit {
       if (!value) return null;
       return typeof value === 'object' ? null : { invalidUlb: true };
     };
-  }
-
-  private extractUlbs(response: any): IULB[] {
-    if (Array.isArray(response)) return response;
-    if (Array.isArray(response?.data)) return response.data;
-    if (Array.isArray(response?.ulbs)) return response.ulbs;
-    if (Array.isArray(response?.data?.ulbs)) return response.data.ulbs;
-    return [];
   }
 
   private addJob(job: OcrValidationJobTracker): void {

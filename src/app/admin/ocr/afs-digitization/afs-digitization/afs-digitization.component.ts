@@ -1,13 +1,36 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
-import { finalize, switchMap, takeWhile, tap, timer } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  map,
+  of,
+  startWith,
+  switchMap,
+  takeWhile,
+  tap,
+  timer,
+} from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
+import { IUlbSummary } from '../../../../core/models/ulb-summary';
+import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
-import { DigitizationJobTracker, DigitizationStatus, GeminiFieldCheck, GeminiValidation } from '../afs-digitization-models';
+import {
+  ArithmeticCheck,
+  DigitizationJobTracker,
+  DigitizationOcrEngine,
+  DigitizationResult,
+  DigitizationStatus,
+  GeminiFieldCheck,
+  GeminiValidation,
+} from '../afs-digitization-models';
 
 const USD_TO_INR = 96.28; // Example conversion rate, should be updated with real-time data in production
 
@@ -38,20 +61,34 @@ export class AfsDigitizationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly digitizationService = inject(AfsDigitizationService);
+  private readonly ulbService = inject(UlbService);
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
 
   readonly geminiModels = this.digitizationService.geminiModels;
+  readonly ocrEngines = this.digitizationService.ocrEngines;
   readonly documentTypes = this.digitizationService.documentTypes;
   readonly financialYears = this.digitizationService.financialYears;
 
   readonly form = this.fb.group({
-    geminiModel: this.fb.nonNullable.control('gemini-3.1-pro-preview', Validators.required),
-    ulbName: this.fb.control<string | null>(null),
+    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('textract', Validators.required),
+    geminiModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
+    ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     docType: this.fb.control<string | null>(null),
+    enableValidation: this.fb.nonNullable.control(true, Validators.required),
+    enableArithmeticValidation: this.fb.nonNullable.control(true, Validators.required),
   });
+
+  private readonly arithmeticRuleLabels: Partial<Record<string, string>> = {
+    TOTAL_TALLY: 'Totals tally with components',
+    ASSETS_EQUAL_LIABILITIES: 'Total Assets = Total Liabilities',
+    TOTAL_INCOME_NON_NEGATIVE: 'Total Income not negative',
+    TAX_REVENUE_NON_NEGATIVE: 'Tax Revenue not negative',
+    KEY_TOTAL_NON_ZERO: 'Key totals not zero',
+    NUMERIC_AMOUNTS: 'Amounts are numeric',
+  };
 
   selectedFile: File | null = null;
   readonly isSubmitting = signal(false);
@@ -59,13 +96,59 @@ export class AfsDigitizationComponent implements OnInit {
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
+  readonly revalidatingJobId = signal<string | null>(null);
+  readonly revalidatingArithmeticJobId = signal<string | null>(null);
+  readonly regeneratingJobId = signal<string | null>(null);
   readonly copiedKey = signal<string | null>(null);
+  readonly filteredUlbs = signal<IUlbSummary[]>([]);
+  readonly ulbSearchInProgress = signal(false);
+  readonly selectedUlb = toSignal(
+    this.form.controls.ulbName.valueChanges.pipe(
+      startWith(this.form.controls.ulbName.value),
+      map((value) => (value && typeof value !== 'string' ? value : undefined)),
+    ),
+  );
 
   ngOnInit(): void {
+    this.setupUlbAutocomplete();
     const jobId = this.route.snapshot.queryParamMap.get('jobId');
     if (jobId) {
       this.loadJobById(jobId);
     }
+  }
+
+  onUlbSelected(event: MatAutocompleteSelectedEvent): void {
+    this.form.controls.ulbName.setValue(event.option.value as IUlbSummary);
+  }
+
+  displayUlbName(ulb: IUlbSummary | string | null): string {
+    if (!ulb) return '';
+    return typeof ulb === 'string' ? ulb : ulb.name;
+  }
+
+  private setupUlbAutocomplete(): void {
+    this.form.controls.ulbName.valueChanges
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map((value) => (typeof value === 'string' ? value : (value?.name ?? '')).trim()),
+        tap((searchText) => {
+          if (!searchText) {
+            this.filteredUlbs.set([]);
+            this.ulbSearchInProgress.set(false);
+          }
+        }),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((searchText) => {
+          if (!searchText || searchText.length < 2) return of<IUlbSummary[]>([]);
+          this.ulbSearchInProgress.set(true);
+          return this.ulbService.searchAutocomplete(searchText).pipe(
+            catchError(() => of<IUlbSummary[]>([])),
+            finalize(() => this.ulbSearchInProgress.set(false)),
+          );
+        }),
+      )
+      .subscribe((ulbs) => this.filteredUlbs.set(ulbs));
   }
 
   onFileSelected(event: Event): void {
@@ -110,12 +193,23 @@ export class AfsDigitizationComponent implements OnInit {
       return;
     }
 
-    const { geminiModel, ulbName, financialYear, docType } = this.form.getRawValue();
+    const { ocrEngine, geminiModel, ulbName, financialYear, docType, enableValidation, enableArithmeticValidation } =
+      this.form.getRawValue();
+    const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const file = this.selectedFile;
     this.isSubmitting.set(true);
 
     this.digitizationService
-      .submitDigitizationJob(file, geminiModel, ulbName, financialYear, docType)
+      .submitDigitizationJob(
+        file,
+        geminiModel,
+        ulbNameValue,
+        financialYear,
+        docType,
+        enableValidation,
+        enableArithmeticValidation,
+        ocrEngine,
+      )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
@@ -174,7 +268,87 @@ export class AfsDigitizationComponent implements OnInit {
     return checks.filter((c) => !c.matched);
   }
 
-  getUsageStep(validation: GeminiValidation): UsageStep {
+  failedArithmeticChecks(checks: ArithmeticCheck[]): ArithmeticCheck[] {
+    return checks.filter((c) => c.status === 'fail');
+  }
+
+  ruleResultEntries(ruleResults: Record<string, string>): Array<{ rule: string; label: string; result: string }> {
+    return Object.entries(ruleResults).map(([rule, result]) => ({ rule, label: this.ruleLabel(rule), result }));
+  }
+
+  errorSourceLabel(check: ArithmeticCheck): string {
+    switch (check.error_source) {
+      case 'source_document':
+        return 'Source document';
+      case 'digitization':
+        return 'Digitization';
+      default:
+        return '—';
+    }
+  }
+
+  ruleLabel(rule: string): string {
+    return this.arithmeticRuleLabels[rule] ?? rule;
+  }
+
+  ocrEngineLabel(engine: DigitizationOcrEngine | null | undefined): string {
+    return engine === 'sarvam' ? 'Sarvam' : engine === 'gemini' ? 'Gemini' : 'Textract';
+  }
+
+  getTaskTimings(result: DigitizationResult): Array<{ label: string; seconds: number | null }> {
+    const extractionSeconds = result.ocr_extraction.extraction_seconds;
+    const validationSeconds = result.gemini_validation?.validation_seconds ?? null;
+    const arithmeticSeconds = result.arithmetic_validation?.validation_seconds ?? null;
+    const totalSeconds = result.processing_time_seconds;
+
+    // Cross-check and arithmetic run in parallel, so only the longer one adds to wall time.
+    const geminiWallSeconds = Math.max(validationSeconds ?? 0, arithmeticSeconds ?? 0);
+    let excelSeconds: number | null = null;
+    if (extractionSeconds !== null && totalSeconds !== null) {
+      const remainder = totalSeconds - extractionSeconds - geminiWallSeconds;
+      excelSeconds = remainder >= 0 ? remainder : null;
+    }
+
+    return [
+      { label: `${this.ocrEngineLabel(result.ocr_engine)} Extraction`, seconds: extractionSeconds },
+      { label: 'Gemini Cross-check', seconds: validationSeconds },
+      { label: 'Gemini Arithmetic', seconds: arithmeticSeconds },
+      { label: 'Excel Build & Upload', seconds: excelSeconds },
+      { label: 'Total', seconds: totalSeconds },
+    ];
+  }
+
+  /** One usage card per Gemini call that reported token usage. */
+  getUsageSteps(result: DigitizationResult): UsageStep[] {
+    const steps: UsageStep[] = [];
+    if (result.gemini_validation?.usage_metadata) {
+      steps.push(this.getUsageStep('gemini_cross_check', result.gemini_validation));
+    }
+    if (result.arithmetic_validation?.usage_metadata) {
+      steps.push(this.getUsageStep('gemini_arithmetic_validation', result.arithmetic_validation));
+    }
+    return steps;
+  }
+
+  /** Combined Gemini tokens/cost; cost is null if any step lacks pricing. */
+  getUsageTotal(steps: UsageStep[]): {
+    thoughtsTokens: number;
+    totalTokens: number;
+    costUsd: number | null;
+    costInr: number | null;
+  } {
+    const thoughtsTokens = steps.reduce((sum, s) => sum + (s.thoughtsTokens ?? 0), 0);
+    const totalTokens = steps.reduce((sum, s) => sum + (s.totalTokens ?? 0), 0);
+    const costUsd = steps.every((s) => s.estimatedCostUsd !== null)
+      ? steps.reduce((sum, s) => sum + s.estimatedCostUsd!, 0)
+      : null;
+    return { thoughtsTokens, totalTokens, costUsd, costInr: costUsd !== null ? costUsd * USD_TO_INR : null };
+  }
+
+  private getUsageStep(
+    name: string,
+    validation: Pick<GeminiValidation, 'model' | 'usage_metadata'>,
+  ): UsageStep {
     const s = (validation.usage_metadata ?? {}) as Record<string, unknown>;
     const pricing = this.geminiModels.find((m) => m.value === validation.model)?.pricing ?? null;
     const prompt = (s['prompt_token_count'] as number) ?? 0;
@@ -185,7 +359,7 @@ export class AfsDigitizationComponent implements OnInit {
       : null;
     const estimatedCostInr = estimatedCostUsd !== null ? estimatedCostUsd * USD_TO_INR : null;
     return {
-      name: 'gemini_cross_check',
+      name,
       model: validation.model,
       promptTokens: (s['prompt_token_count'] as number) ?? null,
       candidatesTokens: (s['candidates_token_count'] as number) ?? null,
@@ -196,6 +370,10 @@ export class AfsDigitizationComponent implements OnInit {
       estimatedCostInr,
       pricing,
     };
+  }
+
+  formatFileSize(bytes: number | null): string {
+    return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   formatDateTime(d: string | null): string {
@@ -250,6 +428,74 @@ export class AfsDigitizationComponent implements OnInit {
         },
         error: () => {
           this.utilityService.swalPopup('Download failed', 'Could not download the source PDF.', 'error');
+        },
+      });
+  }
+
+  revalidateJob(job: DigitizationJobTracker): void {
+    if (this.revalidatingJobId()) return;
+    this.revalidatingJobId.set(job.jobId);
+    this.digitizationService
+      .revalidateDigitizationJob(job.jobId)
+      .pipe(finalize(() => this.revalidatingJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            status: 'processing',
+            message: response.message,
+            progressStep: 'revalidation_queued',
+            result: null,
+          });
+          this.startPolling(job.jobId);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Revalidate failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
+  revalidateArithmetic(job: DigitizationJobTracker): void {
+    if (this.revalidatingArithmeticJobId()) return;
+    this.revalidatingArithmeticJobId.set(job.jobId);
+    this.digitizationService
+      .revalidateDigitizationArithmetic(job.jobId)
+      .pipe(finalize(() => this.revalidatingArithmeticJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            status: 'processing',
+            message: response.message,
+            progressStep: 'arithmetic_revalidation_queued',
+            result: null,
+          });
+          this.startPolling(job.jobId);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Arithmetic revalidation failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
+  regenerateExcel(job: DigitizationJobTracker): void {
+    if (this.regeneratingJobId()) return;
+    this.regeneratingJobId.set(job.jobId);
+    this.digitizationService
+      .regenerateDigitizationExcel(job.jobId)
+      .pipe(finalize(() => this.regeneratingJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            result: response.result,
+            excelS3Key: response.result?.excel_s3_key ?? null,
+          });
+          this.utilityService.swalPopup(
+            'Excel regenerated',
+            'The workbook has been rebuilt from the stored extraction and re-uploaded.',
+            'success',
+          );
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Regenerate failed', this.parseApiError(err), 'error');
         },
       });
   }

@@ -96,6 +96,10 @@
                 <span class="cell-label">File</span>
                 <span class="cell-value" [title]="row.filename">{{ row.filename }}</span>
               </div>
+              <div class="identity-cell">
+                <span class="cell-label">Pages / Size</span>
+                <span class="cell-value">{{ row.pageCount ?? '—' }} pg · {{ row.fileSizeLabel }}</span>
+              </div>
             </td>
           </ng-container>
 
@@ -103,6 +107,7 @@
             <th mat-header-cell *matHeaderCellDef>Model</th>
             <td mat-cell *matCellDef="let row">
               <span class="model-value">{{ row.geminiModel }}</span>
+              <p class="progress-step-chip">OCR: {{ row.ocrEngine | titlecase }}</p>
             </td>
           </ng-container>
 
@@ -140,10 +145,10 @@
           </ng-container>
 
           <ng-container matColumnDef="cost">
-            <th mat-header-cell *matHeaderCellDef>Textract Cost</th>
+            <th mat-header-cell *matHeaderCellDef>OCR Cost</th>
             <td mat-cell *matCellDef="let row">
               <span class="cell-value">
-                {{ row.textractPriceInr !== null ? '₹' + (row.textractPriceInr | number: '1.2-2') : '—' }}
+                {{ row.ocrPriceInr !== null ? '₹' + (row.ocrPriceInr | number: '1.2-2') : '—' }}
               </span>
             </td>
           </ng-container>
@@ -192,40 +197,41 @@
                 <a class="btn btn-sm btn-outline-primary" routerLink="/ocr/afs-digitization/upload" [queryParams]="{ jobId: row.jobId }" target="_blank" title="View result">
                   View
                 </a>
-                @if (row.hasExcel) {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-success"
-                    [disabled]="downloadingJobId() === row.jobId"
-                    (click)="downloadExcel(row)"
-                    title="Download digitized Excel"
-                  >
-                    @if (downloadingJobId() === row.jobId) {
-                      <mat-icon class="spin-icon">hourglass_empty</mat-icon>
-                    } @else {
-                      <span class="icon-stack">
-                        <mat-icon>table_chart</mat-icon>
-                        <mat-icon class="icon-stack__badge">download</mat-icon>
-                      </span>
-                    }
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  [disabled]="downloadingPdfJobId() === row.jobId"
-                  (click)="downloadPdf(row)"
-                  title="Download source PDF"
-                >
-                  @if (downloadingPdfJobId() === row.jobId) {
-                    <mat-icon class="spin-icon">hourglass_empty</mat-icon>
-                  } @else {
-                    <span class="icon-stack">
-                      <mat-icon>picture_as_pdf</mat-icon>
-                      <mat-icon class="icon-stack__badge">download</mat-icon>
-                    </span>
-                  }
+                <button type="button" class="btn btn-sm btn-outline-secondary" [matMenuTriggerFor]="actionMenu" title="More actions">
+                  Actions <mat-icon class="menu-caret">arrow_drop_down</mat-icon>
                 </button>
+                <mat-menu #actionMenu="matMenu">
+                  @if (row.hasExcel) {
+                    <button mat-menu-item [disabled]="downloadingJobId() === row.jobId" (click)="downloadExcel(row)">
+                      <mat-icon [class.spin-icon]="downloadingJobId() === row.jobId">{{ downloadingJobId() === row.jobId ? 'hourglass_empty' : 'table_chart' }}</mat-icon>
+                      <span>Download Excel</span>
+                    </button>
+                  }
+                  <button mat-menu-item [disabled]="downloadingPdfJobId() === row.jobId" (click)="downloadPdf(row)">
+                    <mat-icon [class.spin-icon]="downloadingPdfJobId() === row.jobId">{{ downloadingPdfJobId() === row.jobId ? 'hourglass_empty' : 'picture_as_pdf' }}</mat-icon>
+                    <span>Download source PDF</span>
+                  </button>
+                  @if (row.status === 'completed') {
+                    <button
+                      mat-menu-item
+                      [disabled]="revalidatingJobId() === row.jobId"
+                      (click)="revalidateJob(row)"
+                      title="Re-run Gemini validation only (Textract extraction is reused)"
+                    >
+                      <mat-icon [class.spin-icon]="revalidatingJobId() === row.jobId">{{ revalidatingJobId() === row.jobId ? 'hourglass_empty' : 'fact_check' }}</mat-icon>
+                      <span>Re-validate</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      [disabled]="regeneratingJobId() === row.jobId"
+                      (click)="regenerateExcel(row)"
+                      title="Rebuild the Excel workbook from the stored result (no Textract/Gemini calls)"
+                    >
+                      <mat-icon [class.spin-icon]="regeneratingJobId() === row.jobId">{{ regeneratingJobId() === row.jobId ? 'hourglass_empty' : 'refresh' }}</mat-icon>
+                      <span>Regenerate Excel</span>
+                    </button>
+                  }
+                </mat-menu>
               </div>
             </td>
           </ng-container>
