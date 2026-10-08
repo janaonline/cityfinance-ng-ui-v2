@@ -102,8 +102,9 @@ export class AfsDigitizationService {
     docType?: string | null,
     enableValidation = true,
     enableArithmeticValidation = true,
-    ocrEngine: DigitizationOcrEngine = 'textract',
+    ocrEngine: DigitizationOcrEngine = 'gemini',
     enableDocumentClassification = true,
+    notes?: string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -112,6 +113,7 @@ export class AfsDigitizationService {
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
+    if (notes) formData.append('notes', notes);
     formData.append('enable_validation', String(enableValidation));
     formData.append('enable_arithmetic_validation', String(enableArithmeticValidation));
     formData.append('enable_document_classification', String(enableDocumentClassification));
@@ -136,6 +138,13 @@ export class AfsDigitizationService {
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate-arithmetic`,
       formData,
+    );
+  }
+
+  updateDigitizationJobNotes(jobId: string, notes: string | null) {
+    return this.http.patch<DigitizationJobStatusResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/notes`,
+      { notes },
     );
   }
 

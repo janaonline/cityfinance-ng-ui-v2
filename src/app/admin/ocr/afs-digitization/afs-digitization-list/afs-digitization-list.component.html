@@ -1,4 +1,4 @@
-<div class="wrapper app-wrapper">
+<div class="wrapper app-wrapper container-fluid">
   <section class="digitization-list-page">
     <!-- Hero -->
     <div class="hero-card">
@@ -180,7 +180,12 @@
                 @if (row.expectedDocType !== '—') {
                   <div><span class="cell-label">Type</span><span class="cell-value">{{ row.expectedDocType }}</span></div>
                 }
-                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—') {
+                @if (row.notes) {
+                  <div class="notes-line" [title]="row.notes">
+                    <span class="cell-label">Notes</span><span class="cell-value">{{ row.notes }}</span>
+                  </div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—' && !row.notes) {
                   <span class="dim">—</span>
                 }
               </div>
@@ -199,6 +204,9 @@
                 <div><span class="cell-label">Created</span><span class="cell-value">{{ row.createdAt }}</span></div>
                 @if (row.completedAt !== '—') {
                   <div><span class="cell-label">Done</span><span class="cell-value">{{ row.completedAt }}</span></div>
+                }
+                @if (row.elapsed !== '—') {
+                  <div><span class="cell-label">{{ row.elapsedLabel }}</span><span class="cell-value">{{ row.elapsed }}</span></div>
                 }
               </div>
             </td>

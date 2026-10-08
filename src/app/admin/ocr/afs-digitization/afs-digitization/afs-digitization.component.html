@@ -1,4 +1,4 @@
-<div class="wrapper app-wrapper">
+<div class="wrapper app-wrapper container-fluid">
   <section class="digitization-page">
     <!-- Hero -->
     <div class="hero-card">
@@ -104,6 +104,13 @@
                 <mat-option [value]="false">Disabled — skip</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="notes-field">
+              <mat-label>Notes (optional)</mat-label>
+              <textarea matInput formControlName="notes" rows="2" [maxlength]="maxNotesLength"
+                placeholder="Anything worth remembering about this upload"></textarea>
+              <mat-hint align="end">{{ form.controls.notes.value.length }} / {{ maxNotesLength }}</mat-hint>
+            </mat-form-field>
           </div>
 
           <!-- File picker -->
@@ -192,6 +199,10 @@
                     (click)="downloadPdf(job)">
                     @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
                   </button>
+                  <button mat-stroked-button type="button" [disabled]="editingNotesJobId() === job.jobId"
+                    (click)="startEditNotes(job)">
+                    {{ job.notes ? 'Update Notes' : 'Add Notes' }}
+                  </button>
                   @if (job.status === 'completed') {
                     <button mat-stroked-button type="button" [disabled]="revalidatingJobId() === job.jobId"
                       title="Re-run Gemini validation only — the Textract extraction is reused unchanged"
@@ -222,6 +233,26 @@
                   <span class="job-progress-step"> — {{ job.progressStep }}</span>
                 }
               </p>
+              @if (editingNotesJobId() === job.jobId) {
+                <div class="notes-editor">
+                  <mat-form-field appearance="outline" class="notes-editor__field">
+                    <mat-label>Notes</mat-label>
+                    <textarea matInput [formControl]="notesDraft" rows="3" [maxlength]="maxNotesLength"
+                      placeholder="Anything worth remembering about this upload"></textarea>
+                    <mat-hint align="end">{{ notesDraft.value.length }} / {{ maxNotesLength }}</mat-hint>
+                  </mat-form-field>
+                  <div class="notes-editor__actions">
+                    <button mat-stroked-button type="button" [disabled]="savingNotesJobId() === job.jobId"
+                      (click)="cancelEditNotes()">Cancel</button>
+                    <button mat-flat-button color="primary" type="button"
+                      [disabled]="savingNotesJobId() === job.jobId || notesDraft.invalid" (click)="saveNotes(job)">
+                      @if (savingNotesJobId() === job.jobId) { Saving... } @else { Save Notes }
+                    </button>
+                  </div>
+                </div>
+              } @else if (job.notes) {
+                <p class="job-notes"><span class="job-notes__label">Notes:</span> {{ job.notes }}</p>
+              }
 
               @if (job.showResult && job.result) {
                 <div class="job-result">
