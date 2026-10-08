@@ -18,7 +18,12 @@
         <div class="row g-3">
           <div class="col-md-4">
             <div class="text-muted small">ULB</div>
-            <div class="fw-bold">{{ r.ulbName ?? '—' }} <span>{{ r.ulbCode }}</span></div>
+            <div class="fw-bold">
+              {{ r.ulbName ?? '—' }} <span>{{ r.ulbCode }}</span>
+              <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">
+                {{ r.formType === 'DUR' ? 'DUR' : 'Annual Account' }}
+              </span>
+            </div>
           </div>
           <div class="col-md-4">
             <div class="text-muted small">State</div>
@@ -30,11 +35,11 @@
           </div>
 
           <div class="col-md-4">
-            <div class="text-muted small">Section</div>
-            <div class="fw-bold">{{ sectionLabel(r.section) }}</div>
+            <div class="text-muted small">{{ r.formType === 'DUR' ? 'Document' : 'Section' }}</div>
+            <div class="fw-bold">{{ docLabel(r) }}</div>
           </div>
           <div class="col-md-4">
-            <div class="text-muted small">Document</div>
+            <div class="text-muted small">Doc ID</div>
             <div class="fw-bold">{{ r.docId }}</div>
           </div>
           <div class="col-md-4">

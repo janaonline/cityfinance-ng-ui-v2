@@ -4,13 +4,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MaterialModule } from '../../../../../material.module';
 import { PreLoaderComponent } from '../../../../../shared/components/pre-loader/pre-loader.component';
-import { AnnualAccountSectionKey } from '../../manual-review-queue/manual-review-queue.models';
+import { AnnualAccountSectionKey, ManualReviewFormType } from '../../manual-review-queue/manual-review-queue.models';
 import { ManualReviewHistoryRow, ManualReviewRequestStatus } from '../manual-review-history.models';
 import { ManualReviewHistoryService } from '../manual-review-history.service';
 
 const SECTION_LABEL: Record<AnnualAccountSectionKey, string> = {
   auditedData: 'Audited',
   unauditedData: 'Provisional',
+};
+
+const DUR_DOC_LABEL: Record<string, string> = {
+  tiedGrant: 'Tied Grant',
+  untiedGrant: 'Untied Grant',
 };
 
 const STATUS_LABEL: Record<ManualReviewRequestStatus, string> = {
@@ -35,8 +40,13 @@ export class ManualReviewHistoryDetailComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
 
+  private formType: ManualReviewFormType = 'ANNUAL_ACCOUNT';
+
   ngOnInit(): void {
     const requestId = this.route.snapshot.paramMap.get('requestId');
+    // Defaults to Annual Account for any pre-existing link/bookmark saved before the formType
+    // query param existed — those were always Annual Account requests.
+    this.formType = (this.route.snapshot.queryParamMap.get('formType') as ManualReviewFormType) || 'ANNUAL_ACCOUNT';
     if (!requestId) {
       this.isLoading.set(false);
       this.loadError.set('No request id provided.');
@@ -45,8 +55,9 @@ export class ManualReviewHistoryDetailComponent implements OnInit {
     this.load(requestId);
   }
 
-  sectionLabel(section: AnnualAccountSectionKey): string {
-    return SECTION_LABEL[section];
+  docLabel(row: ManualReviewHistoryRow): string {
+    if (row.formType === 'DUR') return DUR_DOC_LABEL[row.docId] ?? row.docId;
+    return row.section ? SECTION_LABEL[row.section] : row.docId;
   }
 
   statusLabel(status: ManualReviewRequestStatus): string {
@@ -58,7 +69,7 @@ export class ManualReviewHistoryDetailComponent implements OnInit {
     this.loadError.set(null);
 
     this.service
-      .getById(requestId)
+      .getById(requestId, this.formType)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (row) => {

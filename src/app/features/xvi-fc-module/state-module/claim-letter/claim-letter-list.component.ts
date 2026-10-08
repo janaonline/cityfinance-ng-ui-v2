@@ -159,7 +159,7 @@ export class ClaimLetterListComponent implements OnInit {
   /** Temporary gate — flip to `true` once Claim Letter access is actually wired to the "5 State
    *  forms approved" condition. Until then this route shows a static locked message and makes no
    *  API calls (the feature isn't complete yet, but the locked message ships for optics). */
-  readonly claimLetterSubmissionEnabled = true;
+  readonly claimLetterSubmissionEnabled = false;
 
   toggleInstructions(): void {
     this.showInstructions.update((value) => !value);
