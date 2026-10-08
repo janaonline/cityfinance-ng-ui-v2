@@ -66,6 +66,7 @@ export class AfsDigitizationComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
+  readonly maxNotesLength = 2000;
 
   readonly geminiModels = this.digitizationService.geminiModels;
   readonly ocrEngines = this.digitizationService.ocrEngines;
@@ -81,6 +82,7 @@ export class AfsDigitizationComponent implements OnInit {
     enableValidation: this.fb.nonNullable.control(true, Validators.required),
     enableArithmeticValidation: this.fb.nonNullable.control(true, Validators.required),
     enableDocumentClassification: this.fb.nonNullable.control(true, Validators.required),
+    notes: this.fb.nonNullable.control('', Validators.maxLength(this.maxNotesLength)),
   });
 
   private readonly arithmeticRuleLabels: Partial<Record<string, string>> = {
@@ -101,6 +103,9 @@ export class AfsDigitizationComponent implements OnInit {
   readonly revalidatingJobId = signal<string | null>(null);
   readonly revalidatingArithmeticJobId = signal<string | null>(null);
   readonly regeneratingJobId = signal<string | null>(null);
+  readonly editingNotesJobId = signal<string | null>(null);
+  readonly savingNotesJobId = signal<string | null>(null);
+  readonly notesDraft = this.fb.nonNullable.control('', Validators.maxLength(this.maxNotesLength));
   readonly copiedKey = signal<string | null>(null);
   readonly filteredUlbs = signal<IUlbSummary[]>([]);
   readonly ulbSearchInProgress = signal(false);
@@ -204,7 +209,9 @@ export class AfsDigitizationComponent implements OnInit {
       enableValidation,
       enableArithmeticValidation,
       enableDocumentClassification,
+      notes,
     } = this.form.getRawValue();
+    const notesValue = notes.trim() || null;
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const file = this.selectedFile;
     this.isSubmitting.set(true);
@@ -220,6 +227,7 @@ export class AfsDigitizationComponent implements OnInit {
         enableArithmeticValidation,
         ocrEngine,
         enableDocumentClassification,
+        notesValue,
       )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
@@ -232,10 +240,12 @@ export class AfsDigitizationComponent implements OnInit {
             progressStep: null,
             result: null,
             excelS3Key: null,
+            notes: notesValue,
             showResult: true,
           });
           this.startPolling(response.job_id);
           this.clearFile();
+          this.form.controls.notes.reset();
         },
         error: (err) => {
           this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
@@ -542,6 +552,32 @@ export class AfsDigitizationComponent implements OnInit {
       });
   }
 
+  startEditNotes(job: DigitizationJobTracker): void {
+    this.notesDraft.setValue(job.notes ?? '');
+    this.editingNotesJobId.set(job.jobId);
+  }
+
+  cancelEditNotes(): void {
+    this.editingNotesJobId.set(null);
+  }
+
+  saveNotes(job: DigitizationJobTracker): void {
+    if (this.savingNotesJobId() || this.notesDraft.invalid) return;
+    this.savingNotesJobId.set(job.jobId);
+    this.digitizationService
+      .updateDigitizationJobNotes(job.jobId, this.notesDraft.value.trim() || null)
+      .pipe(finalize(() => this.savingNotesJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, { notes: response.notes });
+          this.editingNotesJobId.set(null);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Update notes failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
   regenerateExcel(job: DigitizationJobTracker): void {
     if (this.regeneratingJobId()) return;
     this.regeneratingJobId.set(job.jobId);
@@ -672,6 +708,7 @@ export class AfsDigitizationComponent implements OnInit {
           progressStep: status.progress_step,
           result: null,
           excelS3Key: status.excel_s3_key,
+          notes: status.notes,
           showResult: true,
         });
 

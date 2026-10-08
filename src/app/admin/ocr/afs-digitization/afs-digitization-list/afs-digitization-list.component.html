@@ -180,7 +180,12 @@
                 @if (row.expectedDocType !== '—') {
                   <div><span class="cell-label">Type</span><span class="cell-value">{{ row.expectedDocType }}</span></div>
                 }
-                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—') {
+                @if (row.notes) {
+                  <div class="notes-line" [title]="row.notes">
+                    <span class="cell-label">Notes</span><span class="cell-value">{{ row.notes }}</span>
+                  </div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—' && !row.notes) {
                   <span class="dim">—</span>
                 }
               </div>

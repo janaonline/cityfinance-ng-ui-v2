@@ -29,6 +29,7 @@ interface DigitizationListRow {
   expectedUlbName: string;
   expectedFinancialYear: string;
   expectedDocType: string;
+  notes: string;
   detectedDocumentType: string;
   multipleDocumentsDetected: boolean;
   createdAt: string;
@@ -296,6 +297,7 @@ export class AfsDigitizationListComponent implements OnInit {
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',
       expectedDocType: job.expected?.doc_type || '—',
+      notes: job.notes || '',
       detectedDocumentType: job.detected_document_type
         ? (this.digitizationService.detectedDocumentTypeLabels[job.detected_document_type] ??
           job.detected_document_type)
