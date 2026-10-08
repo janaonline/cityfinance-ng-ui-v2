@@ -205,6 +205,9 @@
                 @if (row.completedAt !== '—') {
                   <div><span class="cell-label">Done</span><span class="cell-value">{{ row.completedAt }}</span></div>
                 }
+                @if (row.elapsed !== '—') {
+                  <div><span class="cell-label">{{ row.elapsedLabel }}</span><span class="cell-value">{{ row.elapsed }}</span></div>
+                }
               </div>
             </td>
           </ng-container>

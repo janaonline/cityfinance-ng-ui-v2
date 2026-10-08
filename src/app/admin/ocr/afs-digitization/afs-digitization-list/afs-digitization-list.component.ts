@@ -34,6 +34,8 @@ interface DigitizationListRow {
   multipleDocumentsDetected: boolean;
   createdAt: string;
   completedAt: string;
+  elapsed: string;
+  elapsedLabel: string;
 }
 
 @Component({
@@ -305,11 +307,35 @@ export class AfsDigitizationListComponent implements OnInit {
       multipleDocumentsDetected: job.multiple_documents_detected === true,
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
+      elapsed: this.formatElapsed(job),
+      elapsedLabel: job.status === 'completed' || job.status === 'failed' ? 'Took' : 'Running',
     };
   }
 
   private formatFileSize(bytes: number | null): string {
     return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  /** Duration of the latest run: started_at (reset on reruns) to completed_at, or to now if still running. */
+  private formatElapsed(job: DigitizationJobStatusResponse): string {
+    const start = this.parseUtc(job.started_at ?? job.created_at);
+    if (start === null) return '—';
+    const running = job.status === 'queued' || job.status === 'processing';
+    const end = running ? Date.now() : this.parseUtc(job.completed_at);
+    if (end === null || end < start) return '—';
+    const total = Math.round((end - start) / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  private parseUtc(value?: string | null): number | null {
+    if (!value) return null;
+    const ms = Date.parse(/[Z+]/.test(value.slice(-6)) ? value : value + 'Z');
+    return Number.isNaN(ms) ? null : ms;
   }
 
   private formatDate(value?: string | null): string {
