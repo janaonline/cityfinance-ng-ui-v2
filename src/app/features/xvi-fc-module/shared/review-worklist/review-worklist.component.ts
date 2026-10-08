@@ -44,6 +44,10 @@ export class ReviewWorklistComponent<T> {
   /** When omitted, every row is treated as actionable ("Review"/filled); when supplied, rows this
    *  returns false for show "View"/outlined instead — nothing further can be done on them. */
   readonly canActOn = input<((row: T) => boolean) | null>(null);
+  /** When supplied, a row this returns false for renders its action button disabled — nothing to
+   *  open at all (as opposed to `canActOn`, which only changes the label/style for an existing,
+   *  openable row). Omitted default: every row stays clickable. */
+  readonly canOpenRow = input<((row: T) => boolean) | null>(null);
   /** Heading rendered above the table, inside the same card, e.g. "SFC Status — All States". */
   readonly title = input<string | null>(null);
   /** Controlled bucket selection — pass this (and listen to `bucketSelected`) when some other
@@ -53,6 +57,10 @@ export class ReviewWorklistComponent<T> {
   /** When true, the table area shows a spinner instead of rows (e.g. while refetching after a
    *  filter change) — bucket cards and the paginator stay mounted throughout. */
   readonly isLoading = input(false);
+  /** Sort applied until the user clicks a column header themselves — e.g. `{active: 'submittedOn',
+   *  direction: 'desc'}` for "latest first" by default. Omit for no default sort (today's
+   *  behavior). */
+  readonly defaultSort = input<Sort | null>(null);
 
   readonly reviewClicked = output<T>();
   readonly bucketSelected = output<string>();
@@ -61,7 +69,10 @@ export class ReviewWorklistComponent<T> {
   readonly pageIndex = signal(0);
   readonly pageSize = signal(PAGE_SIZE);
   readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
-  readonly sort = signal<Sort | null>(null);
+  private readonly userSort = signal<Sort | null>(null);
+  /** The caller's `defaultSort` applies until the user actually clicks a column header — same
+   *  controlled-falls-back-to-default shape as `activeBucketKey` below. */
+  readonly sort = computed(() => this.userSort() ?? this.defaultSort());
 
   readonly displayedColumns = computed(() => [...this.columns().map((c) => c.key), 'action']);
 
@@ -123,7 +134,7 @@ export class ReviewWorklistComponent<T> {
   }
 
   onSortChange(sort: Sort): void {
-    this.sort.set(sort);
+    this.userSort.set(sort);
     this.pageIndex.set(0);
   }
 
@@ -140,5 +151,10 @@ export class ReviewWorklistComponent<T> {
   isActionableRow(row: T): boolean {
     const canAct = this.canActOn();
     return !canAct || canAct(row);
+  }
+
+  isOpenableRow(row: T): boolean {
+    const canOpen = this.canOpenRow();
+    return !canOpen || canOpen(row);
   }
 }

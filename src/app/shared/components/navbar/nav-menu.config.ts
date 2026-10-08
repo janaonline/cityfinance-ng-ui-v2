@@ -18,7 +18,8 @@ export type NavRoleName =
   | 'STATE_DASHBOARD'
   | 'XVIFC'
   | 'PARTNER'
-  | 'PMU';
+  | 'PMU'
+  | 'XVIFC_PMU';
 
 export type NavAppKey = 'ui' | 'ssr' | 'v2';
 export type NavHostApp = NavAppKey | 'external';
@@ -34,10 +35,7 @@ export interface NavMenuVisibility {
   ocrRouteOnly?: boolean; // V2 only
   showOnMobileOnly?: boolean; // UI only
 
-  // Route-based gating, independent of role/auth. Before combining more than
-  // one of these three fields on one item, see CLAUDE.md ("How the three
-  // role/route dimensions actually combine") — they don't compose the way
-  // you'd expect.
+  // Route-based gating, independent of role/auth. See CLAUDE.md before combining these fields
   showOnlyOnRoutePrefixes?: string[]; // allow-list
   hideOnRoutePrefixes?: string[]; // deny-list
   hideWhenRoleOnRoute?: { roles: NavRoleName[]; routePrefixes: string[] }; // AND of role + route
@@ -173,7 +171,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     // would hit every admin sub-page). Same rule on 'blog' below; Dashboard stays visible there.
     visibility: {
       hideWhenRoleOnRoute: {
-        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC'],
+        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
         routePrefixes: ['/xvifc', '/xvifc-form'],
       },
       hideOnRoutePrefixes: ['/admin/xvi-fc-review'],
@@ -189,7 +187,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     visibility: {
       // Same rule as Resources above.
       hideWhenRoleOnRoute: {
-        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC'],
+        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
         routePrefixes: ['/xvifc', '/xvifc-form'],
       },
       hideOnRoutePrefixes: ['/admin/xvi-fc-review'],
@@ -206,9 +204,8 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     groupDefaultLabel: 'My Forms',
     visibility: {
       requiresAuth: true,
-      // XVIFC added so this role has zero visible 'ulb-forms' members — see rankings-22-dashboard
-      // below; the whole "My Forms" group must disappear for XVIFC, not just this one entry.
-      excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC'],
+      // XVIFC/XVIFC_PMU have no visible 'ulb-forms' members; hide the entire "My Forms" group, not just this entry.
+      excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
     },
   },
   {
@@ -233,13 +230,11 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     isDisabled: true,
     groupId: 'ulb-forms',
     groupDefaultLabel: 'My Forms',
-    // XVIFC: this was the only 'ulb-forms' member still visible to that role — excluding it here
-    // makes the whole "My Forms" group disappear for XVIFC (see fc-15th-grants above).
-    // XVIFC_STATE: same story — this was XVIFC_STATE's one remaining visible member.
+    // XVIFC/XVIFCSTATE/XVIFCPMU: last visible 'ulb-forms' member; excluding it hides the entire "My Forms" group
     visibility: {
       requiresAuth: true,
       readonlyGated: true,
-      excludeRoles: ['ULB', 'STATE_DASHBOARD', 'XVIFC', 'XVIFC_STATE'],
+      excludeRoles: ['ULB', 'STATE_DASHBOARD', 'XVIFC', 'XVIFC_STATE', 'XVIFC_PMU'],
     },
   },
   {

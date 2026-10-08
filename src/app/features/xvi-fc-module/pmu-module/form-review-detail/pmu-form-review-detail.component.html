@@ -21,7 +21,7 @@
       <!-- Form Status -->
       <div class="col-auto">
         <!-- <span class="text-secondary">Status:</span> -->
-        <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ status() }}</span>
+        <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ statusLabel() }}</span>
       </div>
     </div>
 
@@ -31,24 +31,89 @@
       <app-pre-loader></app-pre-loader>
       <app-pre-loader></app-pre-loader>
       <app-pre-loader></app-pre-loader>
+    } @else if (loadError()) {
+      <div class="alert alert-danger m-0" role="alert">{{ loadError() }}</div>
     } @else {
       <!-- Reject Reason -->
       @if (rejectionRemarks()) {
         <div class="alert alert-danger m-0" role="alert"><b>Return Reason:</b> {{ rejectionRemarks() }}</div>
       }
 
-      <form class="content-body">
-        @for (item of fields(); track item.key; let isLast = $last) {
-          <div
-            class="my-2"
-            [class.border-bottom]="!isLast"
-            [class.border-secondary]="!isLast"
-            [class.border-opacity-25]="!isLast"
-          >
-            <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup" mode="view"></app-dynamic-form>
+      @if (formOption.hasReadOnlyRows) {
+        <!-- Read-only — this form's PMU reviewer never mutates row data (whole-form reject only),
+             so there's no checkbox/bulk-action UI here, unlike the row-level detail component. -->
+        @if (isLoadingRows()) {
+          <app-pre-loader></app-pre-loader>
+        } @else if (!rows().length) {
+          <p class="text-secondary small fst-italic mb-0">No ULB-wise allocation rows found for this submission.</p>
+        } @else {
+          <div class="d-flex justify-content-end mb-2">
+            <app-amount-display-toggle />
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0 pmu-df-rows-table">
+              <colgroup>
+                <col class="pmu-df-col-row-number" />
+                <col class="pmu-df-col-census" />
+                <col class="pmu-df-col-ulb-name" />
+                <col class="pmu-df-col-amount" />
+                <col class="pmu-df-col-amount" />
+                <col class="pmu-df-col-amount" />
+                <col class="pmu-df-col-formula" />
+              </colgroup>
+              <thead class="table-light border-bottom">
+                <tr>
+                  <th class="ps-3 small fw-semibold">#</th>
+                  <th class="small fw-semibold">Census Code</th>
+                  <th class="small fw-semibold">ULB Name</th>
+                  <th class="small fw-semibold text-end">Installment 1 (in {{ unitSuffix() }})</th>
+                  <th class="small fw-semibold text-end">Installment 2 (in {{ unitSuffix() }})</th>
+                  <th class="small fw-semibold text-end">Total Grant Allocation (in {{ unitSuffix() }})</th>
+                  <th class="small fw-semibold pe-3">Devolution Formula</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rows(); track row.rowNumber) {
+                  <tr>
+                    <td class="ps-3 small text-secondary">{{ row.rowNumber }}</td>
+                    <td class="small text-secondary text-nowrap">{{ row.censusCode }}</td>
+                    <td class="small fw-medium">{{ row.ulbName }}</td>
+                    <td class="small text-end" [title]="formatAmountExact(row.installment1Amount)">
+                      {{ formatAmount(row.installment1Amount) }}
+                    </td>
+                    <td class="small text-end" [title]="formatAmountExact(row.installment2Amount)">
+                      {{ formatAmount(row.installment2Amount) }}
+                    </td>
+                    <td class="small text-end" [title]="formatAmountExact(row.totalGrantAllocation)">
+                      {{ formatAmount(row.totalGrantAllocation) }}
+                    </td>
+                    <td class="small text-secondary pe-3">{{ row.devolutionFormula }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
           </div>
         }
-      </form>
+      } @else if (visibleFields().length > 0) {
+        <form class="content-body">
+          @for (item of visibleFields(); track item.key; let isLast = $last) {
+            <div
+              class="my-2"
+              [class.border-bottom]="!isLast"
+              [class.border-secondary]="!isLast"
+              [class.border-opacity-25]="!isLast"
+            >
+              <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup()" mode="view"></app-dynamic-form>
+            </div>
+          }
+        </form>
+      } @else {
+        <p class="text-secondary small fst-italic mb-0">
+          This form has no field-level data for PMU to review — its submitted data lives entirely in its per-ULB rows,
+          already recorded at submission time.
+        </p>
+      }
     }
   </div>
 </section>
@@ -56,6 +121,7 @@
 <app-review-acknowledgment
   [canApprove]="canApprove()"
   [canReject]="canReject()"
+  [busy]="isBusy()"
   (approveClicked)="onApprove()"
   (rejectConfirmed)="onReject($event)"
 ></app-review-acknowledgment>

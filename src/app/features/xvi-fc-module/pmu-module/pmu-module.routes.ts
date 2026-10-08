@@ -20,13 +20,13 @@ export const PMU_ROUTES: Routes = [
           import('./form-review-detail/pmu-form-review-detail.component').then((m) => m.PmuFormReviewDetailComponent),
       },
       {
-        path: 'gtc-review/:stateId',
+        path: 'gtc-review/:stateId/:installment',
         data: { form: 'GTC' },
         loadComponent: () =>
           import('./form-review-detail/pmu-form-review-detail.component').then((m) => m.PmuFormReviewDetailComponent),
       },
       {
-        path: 'devolution-formula-review/:stateId',
+        path: 'devolution-formula-review/:stateId/:installment',
         data: { form: 'DEVOLUTION_FORMULA' },
         loadComponent: () =>
           import('./form-review-detail/pmu-form-review-detail.component').then((m) => m.PmuFormReviewDetailComponent),

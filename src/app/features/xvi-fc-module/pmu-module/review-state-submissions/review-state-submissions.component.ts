@@ -1,52 +1,58 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { Sort } from '@angular/material/sort';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { StateService } from '../../../../core/services/state/state.service';
+import { UtilityService } from '../../../../core/services/utility.service';
+import { IState } from '../../../../core/models/state/state';
+import { FORM_STATUS } from '../../common/constants/form-status.constants';
+import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
-  ReviewWorklistBucket,
+  // TODO: Clean up card — restore `ReviewWorklistBucket` once the bucket cards come back (see the
+  // commented-out `buckets`/`activeBucketKey`/`onBucketSelected` below).
   ReviewWorklistColumn,
   ReviewWorklistComponent,
 } from '../../shared/review-worklist/review-worklist.component';
 import {
-  PMU_DUMMY_STATES,
   PMU_FORM_OPTIONS,
-  PMU_REVIEW_DUMMY_ROWS,
-  PMU_REVIEW_STATUS_BADGE_CLASS,
-  PmuDummyState,
+  PMU_FORM_STATUS_OPTIONS,
   PmuReviewFormId,
-  PmuReviewStatus,
-  PmuReviewSubmissionRow,
   pmuFormOption,
-} from '../pmu-review.dummy-data';
+  pmuStatusBadgeClass,
+  // TODO: Clean up card — restore `pmuStatusBucket` once the bucket cards come back.
+  pmuStatusLabel,
+} from '../pmu-review.config';
+import { PmuWorklistRow } from '../pmu-review.models';
+import { PmuWorklistService } from '../pmu-worklist.service';
 
-const STATUS_OPTIONS: ReadonlyArray<{ value: PmuReviewStatus; label: string }> = [
-  { value: 'Pending Review', label: 'Pending Review' },
-  { value: 'Approved', label: 'Approved' },
-  { value: 'Returned', label: 'Returned' },
-];
-
-type PmuBucketKey = 'ALL' | 'PENDING' | 'APPROVED' | 'RETURNED';
-
-/** Bridges the Form Status dropdown's domain (`PmuReviewStatus | null`) and the worklist's bucket
- *  cards' domain (`PmuBucketKey`) — both edit the same underlying filter, kept in sync. */
-const STATUS_TO_BUCKET_KEY: Record<'ALL' | PmuReviewStatus, PmuBucketKey> = {
-  ALL: 'ALL',
-  'Pending Review': 'PENDING',
-  Approved: 'APPROVED',
-  Returned: 'RETURNED',
-};
-
-const BUCKET_KEY_TO_STATUS: Record<PmuBucketKey, PmuReviewStatus | null> = {
-  ALL: null,
-  PENDING: 'Pending Review',
-  APPROVED: 'Approved',
-  RETURNED: 'Returned',
-};
+// TODO: Clean up card — the 4 bucket cards (Total/Pending Review/Approved/Returned) are disabled
+// for now (causing more confusion than clarity once the Form Status dropdown went granular). The
+// type/maps/wiring below are commented out, not deleted, so this is a quick revert once revisited.
+// type PmuBucketKey = 'ALL' | 'PENDING' | 'APPROVED' | 'RETURNED' | 'NONE';
+//
+// /** Exhaustive, precise bidirectional map between the Form Status dropdown's raw numeric values and
+//  *  the 4 bucket cards — each card now corresponds to exactly one specific status, not a group of
+//  *  statuses. Only 3 of the 7 dropdown values have a card counterpart at all; the other 4 (Not
+//  *  Started/In Progress/Returned by MoHUA/Acknowledged by MoHUA) deliberately select no card. */
+// const STATUS_TO_BUCKET: Partial<Record<number, PmuBucketKey>> = {
+//   [FORM_STATUS.UNDER_REVIEW_BY_PMU]: 'PENDING',
+//   [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: 'APPROVED',
+//   [FORM_STATUS.RETURNED_BY_PMU]: 'RETURNED',
+// };
+//
+// const BUCKET_TO_STATUS: Record<PmuBucketKey, number | null> = {
+//   ALL: null,
+//   PENDING: FORM_STATUS.UNDER_REVIEW_BY_PMU,
+//   APPROVED: FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
+//   RETURNED: FORM_STATUS.RETURNED_BY_PMU,
+//   NONE: null,
+// };
 
 @Component({
   selector: 'app-review-state-submissions',
@@ -67,114 +73,166 @@ export class ReviewStateSubmissionsComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly stateService = inject(StateService);
+  private readonly utilityService = inject(UtilityService);
+  private readonly moduleService = inject(XvifcModuleService);
+  private readonly worklistService = inject(PmuWorklistService);
 
-  readonly states = PMU_DUMMY_STATES;
   readonly formOptions = PMU_FORM_OPTIONS;
-  readonly statusOptions = STATUS_OPTIONS;
+  readonly formStatusOptions = PMU_FORM_STATUS_OPTIONS;
 
   /** Built from the same `PMU_FORM_OPTIONS` the Forms dropdown reads, so a future 6th form updates
    *  this sentence automatically instead of needing a second, hand-synced copy. */
   readonly formNamesList = this.joinWithAnd(PMU_FORM_OPTIONS.map((o) => o.label));
 
-  /** Simulated — this is still the static dummy-data mockup, so there's no real fetch to await yet.
-   *  Phase 9.3 replaces this timer with a real HTTP subscribe; the template/signal shape stays the same. */
+  readonly states = signal<IState[]>([]);
   readonly isPageLoading = signal(true);
   readonly isTableLoading = signal(false);
-  private isFirstFilterRun = true;
 
   private readonly initialFilters = this.resolveInitialFilters();
 
   readonly filterForm = this.fb.group({
     state: this.fb.control(this.initialFilters.state),
     form: this.fb.nonNullable.control<PmuReviewFormId>(this.initialFilters.form),
-    status: this.fb.control<PmuReviewStatus | null>(this.initialFilters.status),
+    status: this.fb.control<number | null>(this.initialFilters.status),
   });
 
   private readonly stateQuery = toSignal(this.filterForm.controls.state.valueChanges, { initialValue: '' });
   private readonly selectedForm = toSignal(this.filterForm.controls.form.valueChanges, {
     initialValue: this.filterForm.controls.form.value,
   });
-  private readonly selectedStatus = toSignal(this.filterForm.controls.status.valueChanges, { initialValue: null });
+  private readonly selectedStatus = toSignal(this.filterForm.controls.status.valueChanges, {
+    initialValue: this.filterForm.controls.status.value,
+  });
+
+  private readonly worklistRows = signal<PmuWorklistRow[]>([]);
 
   constructor() {
-    setTimeout(() => this.isPageLoading.set(false), 500);
+    this.loadStates();
 
-    // Simulates a brief reload whenever State/Form/Status changes — skips its first run since
-    // isPageLoading already covers the initial paint.
+    // Re-fetches the worklist whenever the selected Form changes — State/Status narrow the
+    // already-fetched rows client-side (see `filteredRows` below), so neither triggers a re-fetch.
     effect(() => {
-      this.stateQuery();
       this.selectedForm();
-      this.selectedStatus();
-      if (this.isFirstFilterRun) {
-        this.isFirstFilterRun = false;
-        return;
-      }
-      this.isTableLoading.set(true);
-      setTimeout(() => this.isTableLoading.set(false), 400);
+      this.loadWorklist();
     });
+  }
+
+  private loadStates(): void {
+    this.stateService
+      .getStates()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => this.states.set(res.data ?? []),
+        error: () => this.utilityService.triggerSnackbar('Unable to load the list of states.', 'snackbar-danger'),
+      });
+  }
+
+  private loadWorklist(): void {
+    const yearId = this.moduleService.yearId();
+    if (!yearId) return;
+
+    // isPageLoading is already true on the very first call (its initial signal value) — only a
+    // later, form-changed call needs to flip the in-table spinner on instead.
+    if (!this.isPageLoading()) this.isTableLoading.set(true);
+
+    const basePath = pmuFormOption(this.selectedForm()).basePath;
+    this.worklistService
+      .getWorklist(basePath, yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (rows) => {
+          this.worklistRows.set(rows);
+          this.isPageLoading.set(false);
+          this.isTableLoading.set(false);
+        },
+        error: () => {
+          this.isPageLoading.set(false);
+          this.isTableLoading.set(false);
+          this.utilityService.triggerSnackbar('Unable to load the worklist.', 'snackbar-danger');
+        },
+      });
   }
 
   readonly filteredStates = computed(() => {
     const query = (this.stateQuery() ?? '').trim().toLowerCase();
-    if (!query) return this.states;
-    return this.states.filter((s) => s.stateName.toLowerCase().includes(query));
+    if (!query) return this.states();
+    return this.states().filter((s) => s.name.toLowerCase().includes(query));
   });
 
   /** Resolves the autocomplete's free-text query to a selected state, only once it exactly
    *  matches an option (mat-autocomplete always emits the raw text on every keystroke too). */
   private readonly selectedStateId = computed(() => {
     const query = (this.stateQuery() ?? '').trim().toLowerCase();
-    return this.states.find((s) => s.stateName.toLowerCase() === query)?.stateId ?? null;
+    return this.states().find((s) => s.name.toLowerCase() === query)?._id ?? null;
   });
 
-  displayState = (stateId: string | PmuDummyState | null): string => {
+  displayState = (stateId: string | IState | null): string => {
     if (!stateId) return '';
-    if (typeof stateId === 'object') return stateId.stateName;
-    return this.states.find((s) => s.stateId === stateId)?.stateName ?? '';
+    if (typeof stateId === 'object') return stateId.name;
+    return this.states().find((s) => s._id === stateId)?.name ?? '';
   };
 
   onStateSelected(stateId: string): void {
     this.filterForm.controls.state.setValue(this.displayState(stateId), { emitEvent: true });
   }
 
-  /** State + Form narrow the dataset handed to the worklist; Status does NOT narrow here — it's
-   *  synced with the worklist's own bucket cards (see `activeBucketKey`/`onBucketSelected` below)
-   *  and applied entirely inside `ReviewWorklistComponent`, so the bucket counts always reflect
-   *  the full state+form-scoped distribution across all statuses, not just the active one. */
-  readonly filteredRows = computed<PmuReviewSubmissionRow[]>(() => {
-    let rows = PMU_REVIEW_DUMMY_ROWS.filter((r) => r.form === this.selectedForm());
+  /** State + the granular Form Status dropdown both narrow the dataset handed to the worklist —
+   *  same composable mechanism for both, mirroring how picking a specific State already works. */
+  readonly filteredRows = computed<PmuWorklistRow[]>(() => {
     const stateId = this.selectedStateId();
-    if (stateId) rows = rows.filter((r) => r.stateId === stateId);
-    return rows;
+    const status = this.selectedStatus();
+    return this.worklistRows().filter(
+      (r) => (!stateId || r.stateId === stateId) && (status === null || r.currentFormStatus === status),
+    );
   });
 
-  readonly columns: ReviewWorklistColumn<PmuReviewSubmissionRow>[] = [
-    { key: 'stateName', header: 'State', cell: (r) => r.stateName, sortValue: (r) => r.stateName },
-    {
-      key: 'submittedOn',
-      header: 'Submitted On',
-      cell: (r) => this.formatDate(r.submittedOn),
-      sortValue: (r) => r.submittedOn,
-    },
-    { key: 'daysPending', header: 'Pending Since', cell: (r) => (r.daysPending > 0 ? `${r.daysPending} days` : '—') },
-    {
-      key: 'status',
-      header: 'Status',
-      cell: (r) => r.status,
-      badgeClass: (r) => PMU_REVIEW_STATUS_BADGE_CLASS[r.status],
-    },
-  ];
+  readonly isInstallmentScoped = computed(() => pmuFormOption(this.selectedForm()).installmentScoped);
 
-  readonly buckets: ReviewWorklistBucket<PmuReviewSubmissionRow>[] = [
-    { key: 'ALL', label: 'Total', predicate: () => true },
-    { key: 'PENDING', label: 'Pending Review', predicate: (r) => r.status === 'Pending Review' },
-    { key: 'APPROVED', label: 'Approved', predicate: (r) => r.status === 'Approved' },
-    { key: 'RETURNED', label: 'Returned', predicate: (r) => r.status === 'Returned' },
-  ];
+  readonly columns = computed<ReviewWorklistColumn<PmuWorklistRow>[]>(() => {
+    const base: ReviewWorklistColumn<PmuWorklistRow>[] = [
+      { key: 'stateName', header: 'State', cell: (r) => r.stateName, sortValue: (r) => r.stateName },
+    ];
+    if (this.isInstallmentScoped()) {
+      base.push({ key: 'installment', header: 'Installment', cell: (r) => `Installment ${r.installment}` });
+    }
+    base.push(
+      {
+        key: 'submittedOn',
+        header: 'Last Updated',
+        cell: (r) => this.formatDate(r.updatedAt),
+        sortValue: (r) => r.updatedAt ?? '',
+      },
+      { key: 'daysPending', header: 'Pending Since', cell: (r) => this.daysPendingLabel(r) },
+      {
+        key: 'status',
+        header: 'Status',
+        cell: (r) => pmuStatusLabel(r.currentFormStatus),
+        badgeClass: (r) => pmuStatusBadgeClass(r.currentFormStatus),
+      },
+    );
+    return base;
+  });
+
+  /** Latest-updated states shown first until the user clicks a different column header themselves. */
+  readonly defaultSort: Sort = { active: 'submittedOn', direction: 'desc' };
+
+  // TODO: Clean up card — see the top-of-file note; restore alongside `STATUS_TO_BUCKET`.
+  // readonly buckets: ReviewWorklistBucket<PmuWorklistRow>[] = [
+  //   { key: 'ALL', label: 'Total', predicate: () => true },
+  //   { key: 'PENDING', label: 'Pending Review', predicate: (r) => pmuStatusBucket(r.currentFormStatus) === 'Pending Review' },
+  //   { key: 'APPROVED', label: 'Approved', predicate: (r) => pmuStatusBucket(r.currentFormStatus) === 'Approved' },
+  //   { key: 'RETURNED', label: 'Returned', predicate: (r) => pmuStatusBucket(r.currentFormStatus) === 'Returned' },
+  // ];
 
   /** Only a form still awaiting PMU action is actionable ("Review"); Approved/Returned rows are
    *  view-only ("View") — nothing further can be done on them. */
-  readonly canActOn = (row: PmuReviewSubmissionRow): boolean => row.status === 'Pending Review';
+  readonly canActOn = (row: PmuWorklistRow): boolean => row.currentFormStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU;
+
+  /** `NOT_STARTED` is never a real, persisted status (every form service falls back to it only when
+   *  no document exists at all) — so a synthesized Not Started row has nothing to open at all. */
+  readonly canOpenRow = (row: PmuWorklistRow): boolean => row.currentFormStatus !== FORM_STATUS.NOT_STARTED;
 
   readonly selectedFormOption = computed(() => pmuFormOption(this.selectedForm()));
   readonly worklistTitle = computed(() => {
@@ -183,16 +241,27 @@ export class ReviewStateSubmissionsComponent {
     return `${this.selectedFormOption().label} — ${stateName || 'All States'}`;
   });
 
-  readonly activeBucketKey = computed(() => STATUS_TO_BUCKET_KEY[this.selectedStatus() ?? 'ALL']);
+  // TODO: Clean up card — see the top-of-file note; restore alongside `buckets`.
+  // /** Purely derived, no independent state — each dropdown value maps to exactly one card (or none),
+  //  *  per `STATUS_TO_BUCKET`. `'NONE'` matches no real bucket key, so no card highlights at all. */
+  // readonly activeBucketKey = computed(() => {
+  //   const status = this.selectedStatus();
+  //   if (status === null) return 'ALL';
+  //   return STATUS_TO_BUCKET[status] ?? 'NONE';
+  // });
+  //
+  // /** Each card maps to exactly one specific dropdown value — clicking a card simply writes that
+  //  *  value into the status control (the dropdown and the cards are two views of one filter). */
+  // onBucketSelected(key: string): void {
+  //   this.filterForm.controls.status.setValue(BUCKET_TO_STATUS[key as PmuBucketKey] ?? null);
+  // }
 
-  onBucketSelected(key: string): void {
-    this.filterForm.controls.status.setValue(BUCKET_KEY_TO_STATUS[key as PmuBucketKey] ?? null);
-  }
-
-  onReview(row: PmuReviewSubmissionRow): void {
-    const routeSegment = pmuFormOption(row.form).routeSegment;
+  onReview(row: PmuWorklistRow): void {
+    const formOption = pmuFormOption(this.selectedForm());
     const { state, form, status } = this.filterForm.getRawValue();
-    this.router.navigate(['..', routeSegment, row.stateId], {
+    const segments: (string | number)[] = ['..', formOption.routeSegment, row.stateId];
+    if (formOption.installmentScoped && row.installment) segments.push(row.installment);
+    this.router.navigate(segments, {
       relativeTo: this.route,
       queryParams: { form, state: state || null, status: status ?? null },
     });
@@ -206,19 +275,32 @@ export class ReviewStateSubmissionsComponent {
   /** Restores the filter the user had set before drilling into a Review — the breadcrumb's "Review
    *  State Submissions" link carries these back as query params (set in `onReview` above), so
    *  returning from a review doesn't reset the list to its defaults (mirrors
-   *  ulb-submissions.component.ts's own `resolveInitialFormId()`). */
-  private resolveInitialFilters(): { state: string; form: PmuReviewFormId; status: PmuReviewStatus | null } {
+   *  ulb-submissions.component.ts's own `resolveInitialFormId()`). No default Form Status — a fresh
+   *  visit shows every status until the user explicitly narrows it. */
+  private resolveInitialFilters(): { state: string; form: PmuReviewFormId; status: number | null } {
     const params = this.route.snapshot.queryParamMap;
     const form = params.get('form');
-    const status = params.get('status');
+    const statusParam = params.get('status');
+    const status = PMU_FORM_STATUS_OPTIONS.some((o) => String(o.value) === statusParam) ? Number(statusParam) : null;
     return {
       state: params.get('state') ?? '',
       form: PMU_FORM_OPTIONS.some((o) => o.value === form) ? (form as PmuReviewFormId) : PMU_FORM_OPTIONS[0].value,
-      status: STATUS_OPTIONS.some((o) => o.value === status) ? (status as PmuReviewStatus) : null,
+      status,
     };
   }
 
-  private formatDate(value: string): string {
+  /** Only meaningful while still pending PMU action — once PMU has acted, there's nothing left
+   *  "pending", mirroring the original mockup's own "—" for non-pending rows. `UNDER_REVIEW_BY_PMU`
+   *  only ever occurs on a row with a real document, so `updatedAt` is never actually null here —
+   *  the check is just a type-safe guard, not a real fallback path. */
+  private daysPendingLabel(row: PmuWorklistRow): string {
+    if (row.currentFormStatus !== FORM_STATUS.UNDER_REVIEW_BY_PMU || !row.updatedAt) return '—';
+    const days = Math.floor((Date.now() - new Date(row.updatedAt).getTime()) / 86400000);
+    return days > 0 ? `${days} days` : '—';
+  }
+
+  private formatDate(value: string | null): string {
+    if (!value) return '—';
     return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 

@@ -45,8 +45,8 @@
               placeholder="All states"
             />
             <mat-autocomplete #stateAuto="matAutocomplete" (optionSelected)="onStateSelected($event.option.value)">
-              @for (state of filteredStates(); track state.stateId) {
-                <mat-option [value]="state.stateId">{{ state.stateName }}</mat-option>
+              @for (state of filteredStates(); track state._id) {
+                <mat-option [value]="state._id">{{ state.name }}</mat-option>
               }
             </mat-autocomplete>
           </mat-form-field>
@@ -56,7 +56,7 @@
               <mat-label>Form Status</mat-label>
               <mat-select formControlName="status">
                 <mat-option [value]="null">All Statuses</mat-option>
-                @for (option of statusOptions; track option.value) {
+                @for (option of formStatusOptions; track option.value) {
                   <mat-option [value]="option.value">{{ option.label }}</mat-option>
                 }
               </mat-select>
@@ -74,15 +74,17 @@
         </div>
       </fieldset>
 
+      <!-- TODO: Clean up card — the 4 bucket cards are disabled for now (causing more confusion
+           than clarity once the Form Status dropdown went granular); [buckets]/[activeBucketKeyInput]/
+           (bucketSelected) are commented out, not deleted, alongside their .ts-side wiring. -->
       <app-review-worklist
         [rows]="filteredRows()"
-        [columns]="columns"
-        [buckets]="buckets"
+        [columns]="columns()"
         [canActOn]="canActOn"
+        [canOpenRow]="canOpenRow"
         [title]="worklistTitle()"
-        [activeBucketKey]="activeBucketKey()"
+        [defaultSort]="defaultSort"
         [isLoading]="isTableLoading()"
-        (bucketSelected)="onBucketSelected($event)"
         (reviewClicked)="onReview($event)"
       ></app-review-worklist>
     }

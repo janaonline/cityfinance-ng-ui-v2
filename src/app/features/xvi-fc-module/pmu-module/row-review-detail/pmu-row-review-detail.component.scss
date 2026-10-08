@@ -17,3 +17,45 @@
   --mat-button-outlined-label-text-color: var(--bs-danger, #dc3545);
   --mat-button-outlined-outline-color: var(--bs-danger, #dc3545);
 }
+
+// Matches the State-side row tables' own styling (e.g. unspent-ulb-table.component.scss,
+// eulb-rows-dialog.component.scss) — fixed layout so column widths are never pushed by content,
+// and a stable 48px row height.
+.pmu-rows-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.pmu-rows-col-checkbox {
+  width: 40px;
+}
+
+.pmu-rows-col-ulb-name {
+  width: 200px;
+}
+
+.pmu-rows-col-census {
+  width: 110px;
+}
+
+.pmu-rows-col-amount {
+  width: 130px;
+}
+
+.pmu-rows-col-eligibility {
+  width: 110px;
+}
+
+.pmu-rows-col-status {
+  width: 150px;
+}
+
+.pmu-rows-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  height: 48px;
+}
+
+.pmu-rows-table tbody tr {
+  min-height: 48px;
+}
