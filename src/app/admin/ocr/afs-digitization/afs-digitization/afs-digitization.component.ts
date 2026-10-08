@@ -74,7 +74,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly financialYears = this.digitizationService.financialYears;
 
   readonly form = this.fb.group({
-    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('textract', Validators.required),
+    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('gemini', Validators.required),
     geminiModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
     ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),

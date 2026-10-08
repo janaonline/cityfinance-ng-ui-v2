@@ -102,7 +102,7 @@ export class AfsDigitizationService {
     docType?: string | null,
     enableValidation = true,
     enableArithmeticValidation = true,
-    ocrEngine: DigitizationOcrEngine = 'textract',
+    ocrEngine: DigitizationOcrEngine = 'gemini',
     enableDocumentClassification = true,
     notes?: string | null,
   ) {
