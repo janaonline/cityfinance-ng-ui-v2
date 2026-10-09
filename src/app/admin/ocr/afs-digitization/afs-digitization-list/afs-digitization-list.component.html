@@ -72,7 +72,22 @@
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Financial Year</mat-label>
-          <input matInput formControlName="financialYear" placeholder="e.g. 2024-25" />
+          <mat-select formControlName="financialYear">
+            <mat-option value="">All</mat-option>
+            @for (fy of financialYearOptions; track fy.value) {
+              <mat-option [value]="fy.value">{{ fy.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Document Type</mat-label>
+          <mat-select formControlName="docType">
+            <mat-option value="">All</mat-option>
+            @for (dt of docTypeOptions; track dt.value) {
+              <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">

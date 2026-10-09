@@ -81,11 +81,15 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'failed', label: 'Failed' },
   ];
 
+  readonly docTypeOptions = this.digitizationService.documentTypes;
+  readonly financialYearOptions = this.digitizationService.financialYears;
+
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
     filename: [''],
     ulbName: [''],
     financialYear: [''],
+    docType: [''],
     dateFrom: this.fb.control<Date | null>(null),
     dateTo: this.fb.control<Date | null>(null),
   });
@@ -115,7 +119,15 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ status: '', filename: '', ulbName: '', financialYear: '', dateFrom: null, dateTo: null });
+    this.filterForm.reset({
+      status: '',
+      filename: '',
+      ulbName: '',
+      financialYear: '',
+      docType: '',
+      dateFrom: null,
+      dateTo: null,
+    });
     this.pageIndex = 0;
     this.paginator?.firstPage();
     this.loadJobs();
@@ -160,7 +172,7 @@ export class AfsDigitizationListComponent implements OnInit {
 
   exportToExcel(): void {
     if (this.exporting()) return;
-    const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.exporting.set(true);
 
     this.digitizationService
@@ -169,6 +181,7 @@ export class AfsDigitizationListComponent implements OnInit {
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
         financial_year: financialYear.trim() || undefined,
+        doc_type: docType || undefined,
         sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
@@ -311,7 +324,7 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.digitizationService
@@ -320,6 +333,7 @@ export class AfsDigitizationListComponent implements OnInit {
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
         financial_year: financialYear.trim() || undefined,
+        doc_type: docType || undefined,
         sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
