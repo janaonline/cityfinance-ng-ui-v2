@@ -136,11 +136,18 @@ export class PmuFormReviewDetailComponent {
       return;
     }
 
+    const installment = this.resolveInstallment();
+    if (this.formOption.installmentScoped && installment === undefined) {
+      this.loadError.set('Invalid installment. Please navigate here from the PMU worklist.');
+      this.isLoading.set(false);
+      return;
+    }
+
     this.isLoading.set(true);
     this.loadError.set(null);
 
     this.reviewService
-      .getReview(this.formOption, this.stateId, yearId, this.resolveInstallment())
+      .getReview(this.formOption, this.stateId, yearId, installment)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -252,7 +259,7 @@ export class PmuFormReviewDetailComponent {
       });
   }
 
-  onReject(remarks: string): void {
+  onReject(remarks: string, ack: ReviewAcknowledgmentComponent): void {
     if (!this.canReject() || this.isBusy()) return;
     const yearId = this.moduleService.yearId();
     if (!yearId) return;
@@ -265,6 +272,7 @@ export class PmuFormReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isRejecting.set(false);
+          ack.resetReject();
           this.utilityService.triggerSnackbar('Form rejected.', 'snackbar-danger');
           this.reloadAfterMutation();
         },

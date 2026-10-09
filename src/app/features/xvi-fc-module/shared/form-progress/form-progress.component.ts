@@ -15,7 +15,10 @@ export const FORM_STATUS = {
   UNDER_REVIEW_BY_MOHUA: 5,
   RETURNED_BY_MOHUA: 6,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
-  /** PMU Review feature (state-level forms only) */
+  /** PMU Review feature (state-level forms only) — PMU reviews before MoHUA does, but only while a
+   *  decision is pending (13) or it rejects (14); approval has no status of its own and jumps
+   *  straight to MoHUA's own 5/6/7. That's why `STATE_STATUS_LABEL` below aliases 13/14 to MoHUA's
+   *  own labels instead of introducing a separate "PMU" term the state-facing UI never had before. */
   UNDER_REVIEW_BY_PMU: 13,
   RETURNED_BY_PMU: 14,
 } as const;

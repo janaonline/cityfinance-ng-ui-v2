@@ -18,7 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
-import { canStateEditRow } from '../../../../common/constants/form-status.constants';
+import { canStateEditRow, isRowPendingPmuDecision } from '../../../../common/constants/form-status.constants';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../../dynamic-form-visibility.service';
 import { EulbStatusService } from '../../eulb-status.service';
 import {
@@ -184,6 +184,18 @@ export class EulbRowsDialogComponent implements OnInit {
    *  overall (and other rows) remain editable (mixed-approval deadlock fix). */
   canEditRow(row: EulbRow): boolean {
     return this.canEditRows && canStateEditRow(row.rowStatus);
+  }
+
+  /** True only once PMU has actually approved this row — as opposed to merely awaiting PMU's
+   *  decision (see `isRowPendingPmuReview`). Drives the "Approved" vs. "Pending Review" badge;
+   *  `canEditRow` alone still drives the disabled edit button. */
+  isRowApproved(row: EulbRow): boolean {
+    return !canStateEditRow(row.rowStatus) && !isRowPendingPmuDecision(row.rowStatus);
+  }
+
+  /** True while a row is locked pending PMU's own decision — not yet approved. */
+  isRowPendingPmuReview(row: EulbRow): boolean {
+    return isRowPendingPmuDecision(row.rowStatus);
   }
 
   /**

@@ -266,12 +266,19 @@
                       [validationStatus]="row.validationStatus"
                       class="badge rounded px-1 small"
                     ></span>
-                    @if (!canEditRow(row) && canEditRows) {
+                    @if (isRowApproved(row) && canEditRows) {
                       <span
                         class="badge rounded-pill bg-success-subtle text-success-emphasis small"
                         matTooltip="Approved by PMU — this row can no longer be edited."
                         matTooltipPosition="above"
                         >Approved</span
+                      >
+                    } @else if (isRowPendingPmuReview(row) && canEditRows) {
+                      <span
+                        class="badge rounded-pill bg-warning-subtle text-warning-emphasis small"
+                        matTooltip="Pending PMU review — this row can no longer be edited."
+                        matTooltipPosition="above"
+                        >Pending Review</span
                       >
                     }
                   </div>
