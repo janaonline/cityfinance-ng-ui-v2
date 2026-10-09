@@ -291,7 +291,7 @@ mat-button-toggle-group {
 .os-lhead,
 .os-row {
   display: grid;
-  grid-template-columns: 28px minmax(140px, 1fr) 210px 200px 90px 104px;
+  grid-template-columns: 28px minmax(130px, 1.2fr) minmax(90px, 0.7fr) minmax(170px, 1.3fr) minmax(90px, 0.7fr) 104px;
   gap: 16px;
   align-items: center;
   padding: 0 12px;
@@ -344,7 +344,6 @@ mat-button-toggle-group {
   white-space: nowrap;
   color: var(--os-muted);
 
-  .zero { opacity: 0.5; }
 }
 
 .os-group {
@@ -450,7 +449,8 @@ mat-button-toggle-group {
   font-variant-numeric: tabular-nums;
 
   mat-progress-bar {
-    width: 110px;
+    flex: 1;
+    max-width: 150px;
   }
 }
 
@@ -621,7 +621,6 @@ mat-button-toggle-group {
 
   b { font-size: 0.72rem; }
   small { font-size: 0.6rem; color: var(--os-muted); white-space: nowrap; }
-  .zero { opacity: 0.5; }
 }
 
 .os-segs {

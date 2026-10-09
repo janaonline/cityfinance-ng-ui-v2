@@ -12,6 +12,7 @@
 .ud-tone--orange { --t: var(--clr-primary, #d9730d); }
 .ud-tone--good { --t: #1d7a46; }
 .ud-tone--grey { --t: #5f6f7c; }
+.ud-tone--bad { --t: #c0322b; }
 
 .ud-page {
   max-width: 1080px;
@@ -411,4 +412,32 @@
   .ud-doc,
   .ud-banner { animation: none; }
   .ud-tab:hover { translate: none; }
+}
+
+.ud-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ud-muted);
+
+  p {
+    margin: 0;
+  }
+}
+
+.ud-note {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 0.7rem;
+  color: var(--ud-muted);
+}
+
+.ud-doc__fail {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 0.656rem;
+  color: #c0322b;
 }

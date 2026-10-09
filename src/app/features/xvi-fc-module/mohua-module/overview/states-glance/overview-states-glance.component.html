@@ -108,21 +108,19 @@
                 <a
                   class="os-row os-tone--{{ toneOf(row) }}"
                   [class.off]="!matches(row)"
-                  [routerLink]="['../review-state-submissions', row.id]"
+                  [routerLink]="['../review-state-submissions', row.stateId]"
                   [attr.aria-label]="'View ' + row.name"
                   [style.top.px]="listLayout().tops.get(row.code)"
                   [style.--dl]="i * 16 + 'ms'"
                 >
                   <span class="os-rk">{{ listLayout().numbers.get(row.code) }}</span>
                   <span class="os-nm"><i></i>{{ row.name }}</span>
-                  <span class="os-claimsum" [attr.aria-label]="claimSummary(row) || 'No claim letters'">
-                    @for (c of claimAll(row); track c.status; let last = $last) {
-                      <span [class.zero]="!c.n">{{ c.n }} {{ c.label }}</span>{{ last ? '' : ' · ' }}
-                    }
-                  </span>
+                  <span class="os-claimsum">Coming soon</span>
                   <span class="os-ulb">
-                    <mat-progress-bar mode="determinate" [value]="progressPercent(row)" />
-                    {{ row.ulbsDone }}/{{ row.ulbsTotal }}
+                    @if (row.ulbsDone !== null) {
+                      <mat-progress-bar mode="determinate" [value]="progressPercent(row)" />
+                    }
+                    {{ row.ulbsDone ?? '--' }}/{{ row.ulbsTotal }}
                   </span>
                   <span class="os-r">{{ formatCrore(row.allocation) }}</span>
                   <span class="os-view-btn" aria-hidden="true">View State <i class="bi bi-chevron-right"></i></span>
@@ -139,7 +137,7 @@
         <span>Bubble size is annual allocation.</span>
         <span>Earlier stages on the left, closer to release on the right</span>
       } @else {
-        <span>Ranked by ULB form completion; click a heading to change the ranking</span>
+        <span>Ranked within each stage; click a heading to change the ranking</span>
         <span>Click a state to explore its data</span>
       }
     </div>
@@ -157,46 +155,40 @@
           <div><span>Eligible</span><b>{{ formatCrore(s.eligible) }}</b></div>
         </div>
 
-        <div class="os-line"><span>ULBs meeting conditions</span><b>{{ s.ulbsDone }} of {{ s.ulbsTotal }}</b></div>
-        <mat-progress-bar mode="determinate" [value]="progressPercent(s)" />
+        <div class="os-line"><span>ULBs meeting conditions</span><b>{{ s.ulbsDone ?? '--' }} of {{ s.ulbsTotal }}</b></div>
+        @if (s.ulbsDone !== null) {
+          <mat-progress-bar mode="determinate" [value]="progressPercent(s)" />
+        }
         <div class="os-claim">
-          <span class="os-claim__icon"><i class="bi" [class.bi-envelope-check]="s.claimLetters.length > 0" [class.bi-envelope]="!s.claimLetters.length" aria-hidden="true"></i></span>
+          <span class="os-claim__icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
           <span class="os-claim__text">
             <b>Claim letter</b>
-            <small>
-              @if (s.claimLetters.length) {
-                @for (c of claimAll(s); track c.status; let last = $last) {
-                  <span [class.zero]="!c.n">{{ c.n }} {{ c.label }}</span>{{ last ? '' : ' · ' }}
-                }
-              } @else {
-                Not received yet
-              }
-            </small>
+            <small>Coming soon</small>
           </span>
         </div>
 
         <div class="os-forms">
-          <div class="os-line"><span>State forms</span><b>{{ s.formsDone }} of {{ forms.length }} completed</b></div>
+          <div class="os-line"><span>State forms</span><b>{{ s.formsDone }} of {{ s.forms.length }} completed</b></div>
           <div class="os-segs" aria-hidden="true">
-            @for (f of forms; track f; let i = $index) {
-              <i [class.on]="i < s.formsDone" [style.--k]="i"></i>
+            @for (f of s.forms; track f.key; let i = $index) {
+              <i [class.on]="f.completed" [style.--k]="i"></i>
             }
           </div>
           <ul>
-            @for (f of forms; track f; let i = $index) {
-              <li [class.done]="i < s.formsDone">
-                <i class="bi" [class.bi-check-circle-fill]="i < s.formsDone" [class.bi-circle]="i >= s.formsDone" aria-hidden="true"></i>
-                {{ f }}
-                <span class="os-sr">{{ i < s.formsDone ? 'Completed' : 'Pending' }}</span>
-                @if (i >= s.formsDone) {
-                  <em aria-hidden="true">Pending</em>
+            @for (f of s.forms; track f.key) {
+              <li [class.done]="f.completed">
+                <i class="bi" [class.bi-check-circle-fill]="f.completed" [class.bi-circle]="!f.completed" aria-hidden="true"></i>
+                {{ f.label }}
+                <span class="os-sr">{{ f.statusLabel }}</span>
+                @if (!f.completed) {
+                  <em aria-hidden="true">{{ f.statusLabel }}</em>
                 }
               </li>
             }
           </ul>
         </div>
 
-        <a mat-flat-button class="os-go" [routerLink]="['../review-state-submissions', s.id]">
+        <a mat-flat-button class="os-go" [routerLink]="['../review-state-submissions', s.stateId]">
           View State <i class="bi bi-chevron-right" aria-hidden="true"></i>
         </a>
       </div>

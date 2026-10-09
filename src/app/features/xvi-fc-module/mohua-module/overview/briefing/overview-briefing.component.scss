@@ -97,46 +97,40 @@
 .ob-tile {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
-  padding: 7px 9px;
+  padding: 8px 10px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   animation: ob-rise 0.45s ease both;
   animation-delay: calc(var(--k) * 70ms + 200ms);
-
 }
 
 .ob-tile__label {
   display: flex;
-  align-items: center;
   gap: 5px;
+  align-items: center;
   font-size: 0.625rem;
   font-weight: 700;
   color: var(--ob-muted);
 }
 
-.ob-tile__amount {
-  font-size: 1.1rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+.ob-soon {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
 }
 
-.ob-tile__note {
-  font-size: 0.594rem;
-  color: var(--ob-muted);
-}
+@keyframes ob-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 
-.ob-need {
-  --mat-chip-container-height: 18px;
-  --mat-chip-label-text-size: 0.563rem;
-  --mat-chip-label-text-color: #fff;
-  --mat-chip-elevated-container-color: transparent;
-  --mat-chip-label-text-color: #fff;
-  --mat-chip-elevated-container-color: transparent;
-
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .ob-dots {
@@ -217,18 +211,6 @@
 
   &--progress {
     background: #f5b58a;
-  }
-}
-
-@keyframes ob-rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 
