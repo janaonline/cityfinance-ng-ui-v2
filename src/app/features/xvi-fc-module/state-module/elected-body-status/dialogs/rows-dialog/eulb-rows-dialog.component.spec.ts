@@ -576,6 +576,7 @@ describe('EulbRowsDialogComponent', () => {
       remarks: '',
       validationStatus: 'INVALID',
       validationErrors: [],
+      rowStatus: null,
     };
   }
 
@@ -645,6 +646,7 @@ describe('EulbRowsDialogComponent buildEditForm', () => {
     remarks: '',
     validationStatus: 'VALID',
     validationErrors: [],
+    rowStatus: null,
   };
 
   it('never creates censusCode or ulbName form controls — identity fields are not portal-editable', () => {
@@ -670,6 +672,7 @@ describe('EulbRowsDialogComponent edit-form subscription teardown', () => {
     remarks: '',
     validationStatus: 'INVALID',
     validationErrors: [],
+    rowStatus: null,
   };
 
   let fixture: ComponentFixture<EulbRowsDialogComponent>;

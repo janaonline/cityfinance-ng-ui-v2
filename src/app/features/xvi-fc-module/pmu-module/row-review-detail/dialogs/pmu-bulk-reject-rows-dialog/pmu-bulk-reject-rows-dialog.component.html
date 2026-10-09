@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Reject {{ rejectCount }} selected row(s)?</h2>
+<mat-dialog-content>
+  @if (data.rows) {
+    <p class="text-secondary small mb-2">The following ULBs will be rejected and returned to the state:</p>
+    <ul class="small mb-3" style="max-height: 160px; overflow-y: auto">
+      @for (row of data.rows; track $index) {
+        <li>
+          {{ row.ulbName }} <span class="text-secondary">({{ row.censusCode }})</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="text-secondary small mb-3">
+      All {{ rejectCount }} rows matching your current filter will be rejected and returned to the state.
+    </p>
+  }
+
+  <label class="form-label small fw-semibold" for="pmu-bulk-reject-remarks">Reason for rejection</label>
+  <textarea
+    id="pmu-bulk-reject-remarks"
+    class="form-control"
+    [class.is-invalid]="showRequiredError"
+    rows="3"
+    [formControl]="remarks"
+  ></textarea>
+  @if (showRequiredError) {
+    <div class="invalid-feedback d-block">Remarks are required.</div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="cancel()">Cancel</button>
+  <button matButton="filled" class="reject-confirm-btn" type="button" (click)="confirm()">Confirm Reject</button>
+</mat-dialog-actions>

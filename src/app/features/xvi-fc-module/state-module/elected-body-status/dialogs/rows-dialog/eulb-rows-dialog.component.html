@@ -216,7 +216,7 @@
                   class="small"
                   field="electedBodyStatus"
                   [value]="row.electedBodyStatus"
-                  [canEdit]="canEditRows"
+                  [canEdit]="canEditRow(row)"
                   [cellHasError]="!!vm.cellHasError['electedBodyStatus']"
                   [cellErrorText]="vm.cellErrorText['electedBodyStatus']"
                   errorIconExtraClass="eulb-error-icon"
@@ -228,7 +228,7 @@
                   class="small text-nowrap"
                   field="dateOfConstitution"
                   [value]="row.dateOfConstitution"
-                  [canEdit]="canEditRows"
+                  [canEdit]="canEditRow(row)"
                   [cellHasError]="!!vm.cellHasError['dateOfConstitution']"
                   [cellErrorText]="vm.cellErrorText['dateOfConstitution']"
                   errorIconExtraClass="eulb-error-icon"
@@ -240,7 +240,7 @@
                   class="small text-nowrap"
                   field="dateOfExpiry"
                   [value]="row.dateOfExpiry"
-                  [canEdit]="canEditRows"
+                  [canEdit]="canEditRow(row)"
                   [cellHasError]="!!vm.cellHasError['dateOfExpiry']"
                   [cellErrorText]="vm.cellErrorText['dateOfExpiry']"
                   errorIconExtraClass="eulb-error-icon"
@@ -252,7 +252,7 @@
                   class="small"
                   field="remarks"
                   [value]="row.remarks"
-                  [canEdit]="canEditRows"
+                  [canEdit]="canEditRow(row)"
                   [cellHasError]="!!vm.cellHasError['remarks']"
                   [cellErrorText]="vm.cellErrorText['remarks']"
                   errorIconExtraClass="eulb-error-icon"
@@ -260,11 +260,21 @@
                   (editRequested)="startEditAtField(row, $event)"
                 ></td>
                 <td>
-                  <span
-                    app-eulb-validation-badge
-                    [validationStatus]="row.validationStatus"
-                    class="badge rounded px-1 small"
-                  ></span>
+                  <div class="d-flex align-items-center gap-1">
+                    <span
+                      app-eulb-validation-badge
+                      [validationStatus]="row.validationStatus"
+                      class="badge rounded px-1 small"
+                    ></span>
+                    @if (!canEditRow(row) && canEditRows) {
+                      <span
+                        class="badge rounded-pill bg-success-subtle text-success-emphasis small"
+                        matTooltip="Approved by PMU — this row can no longer be edited."
+                        matTooltipPosition="above"
+                        >Approved</span
+                      >
+                    }
+                  </div>
                 </td>
                 @if (canEditRows) {
                   <td class="pe-3 eulb-actions-col">
@@ -273,7 +283,9 @@
                       matButton="outlined"
                       class="eulb-row-btn"
                       aria-label="Edit row"
-                      [disabled]="editingRowId() !== null"
+                      [disabled]="editingRowId() !== null || !canEditRow(row)"
+                      [matTooltip]="canEditRow(row) ? '' : 'Approved by PMU — this row can no longer be edited.'"
+                      matTooltipPosition="above"
                       (click)="startEdit(row)"
                     >
                       <i class="bi bi-pencil"></i>
