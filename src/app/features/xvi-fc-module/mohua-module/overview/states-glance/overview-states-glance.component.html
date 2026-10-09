@@ -1,0 +1,199 @@
+<div class="os-head" appReveal>
+  <div>
+    <h2 class="os-title">States at a glance</h2>
+    <p class="os-sub">{{ subtitle() }}</p>
+  </div>
+  <mat-button-toggle-group aria-label="View" hideSingleSelectionIndicator [value]="view()" (change)="onView($event.value)">
+    @for (v of views; track v.key) {
+      <mat-button-toggle [value]="v.key">{{ v.label }}</mat-button-toggle>
+    }
+  </mat-button-toggle-group>
+</div>
+
+<div class="os-layout" [class.os-layout--solo]="view() === 'list'" appReveal [revealDelay]="60">
+  <mat-card appearance="outlined" class="os-panel">
+    <div class="os-tools">
+      @if (view() === 'track') {
+        <mat-chip-listbox class="os-chips" aria-label="Filter by stage" [value]="filter()" (change)="onChip($event.value)">
+          @for (c of chips(); track c.key) {
+            <mat-chip-option class="os-tone--{{ c.tone }}" [value]="c.key">
+              <i class="os-dot" [class.round]="c.round"></i>{{ c.label }} <b>{{ c.count }}</b>
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      }
+
+      <mat-form-field class="os-search" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="search" placeholder="Search by state name" aria-label="Search by state name" [value]="search()" (input)="onSearch($event)" />
+        <i matSuffix class="bi bi-search" aria-hidden="true"></i>
+      </mat-form-field>
+    </div>
+
+    <div class="os-view" #viewBox>
+      @if (view() === 'track') {
+        @if (trackWidth() > 0) {
+          <div class="os-track" [style.height.px]="trackHeight">
+            @for (stage of laneStages; track stage; let i = $index) {
+              <div
+                class="os-lane os-tone--{{ lanes[stage].tone }}"
+                [class.alt]="i % 2 === 1"
+                [style.left.px]="laneWidth() * i + 3"
+                [style.width.px]="laneWidth() - 6"
+              >
+                <h3>{{ lanes[stage].label }}</h3>
+                <span class="os-count">{{ laneCounts()[stage] === 1 ? '1 state' : laneCounts()[stage] + ' states' }}</span>
+                @if (!laneCounts()[stage]) {
+                  <span class="os-none">No state here</span>
+                }
+              </div>
+            }
+
+            @for (b of bubbles(); track b.row.code) {
+              <div
+                class="os-bw os-tone--{{ toneOf(b.row) }}"
+                [class.off]="!matches(b.row)"
+                [style.left.px]="b.x - b.r"
+                [style.top.px]="b.y - b.r"
+                [style.width.px]="b.r * 2"
+                [style.height.px]="b.r * 2"
+                [style.--dx]="b.dx + 'px'"
+                [style.--dl]="b.delay + 'ms'"
+              >
+                <button
+                  type="button"
+                  class="os-bub"
+                  [style.font-size.px]="b.r >= 19 ? 10.5 : 8.5"
+                  [matTooltip]="tooltipText(b.row)"
+                  [attr.aria-pressed]="selected()?.code === b.row.code"
+                  [attr.aria-label]="b.row.name + ', ' + lanes[b.stage].label"
+                  (click)="select(b.row.code)"
+                >
+                  {{ b.row.code }}
+                </button>
+              </div>
+            }
+
+            <svg class="os-axis" [attr.width]="trackWidth()" height="28" aria-hidden="true">
+              <path class="os-flow" [attr.d]="'M12 14 H' + (trackWidth() - 24)" stroke-width="3" stroke-linecap="round" fill="none" />
+              <path
+                class="os-axis__head"
+                [attr.d]="'M' + (trackWidth() - 28) + ' 9 L' + (trackWidth() - 18) + ' 14 L' + (trackWidth() - 28) + ' 19'"
+                stroke-width="2.4"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              @for (stage of laneStages; track stage; let i = $index) {
+                <circle class="os-axis__dot" [attr.cx]="laneWidth() * i + laneWidth() / 2" cy="14" r="5" stroke-width="2.2" />
+              }
+            </svg>
+          </div>
+        }
+      } @else {
+        <div class="os-scroll">
+          <div class="os-inner">
+            <div class="os-lhead">
+              <span>#</span>
+              <span>State</span>
+              <span>Claim letters</span>
+              <button type="button" [attr.aria-pressed]="sortKey() === 'ulb'" (click)="sortKey.set('ulb')">{{ sortLabel('ulb', 'ULB progress') }}</button>
+              <button type="button" class="r" [attr.aria-pressed]="sortKey() === 'alloc'" (click)="sortKey.set('alloc')">{{ sortLabel('alloc', 'Allocation') }}</button>
+              <span></span>
+            </div>
+            <div class="os-rows" [style.height.px]="listLayout().height">
+              @for (head of listLayout().heads; track head.label) {
+                <div class="os-group" [style.top.px]="head.top">States — {{ head.label }} ({{ head.count }})</div>
+              }
+              @for (row of rows(); track row.code; let i = $index) {
+                <a
+                  class="os-row os-tone--{{ toneOf(row) }}"
+                  [class.off]="!matches(row)"
+                  [routerLink]="['../review-state-submissions', row.id]"
+                  [attr.aria-label]="'View ' + row.name"
+                  [style.top.px]="listLayout().tops.get(row.code)"
+                  [style.--dl]="i * 16 + 'ms'"
+                >
+                  <span class="os-rk">{{ listLayout().numbers.get(row.code) }}</span>
+                  <span class="os-nm"><i></i>{{ row.name }}</span>
+                  <span class="os-claimsum" [attr.aria-label]="claimSummary(row) || 'No claim letters'">
+                    @for (c of claimAll(row); track c.status; let last = $last) {
+                      <span [class.zero]="!c.n">{{ c.n }} {{ c.label }}</span>{{ last ? '' : ' · ' }}
+                    }
+                  </span>
+                  <span class="os-ulb">
+                    <mat-progress-bar mode="determinate" [value]="progressPercent(row)" />
+                    {{ row.ulbsDone }}/{{ row.ulbsTotal }}
+                  </span>
+                  <span class="os-r">{{ formatCrore(row.allocation) }}</span>
+                  <span class="os-view-btn" aria-hidden="true">View State <i class="bi bi-chevron-right"></i></span>
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="os-legend">
+      @if (view() === 'track') {
+        <span>Bubble size is annual allocation.</span>
+        <span>Earlier stages on the left, closer to release on the right</span>
+      } @else {
+        <span>Ranked by ULB form completion; click a heading to change the ranking</span>
+        <span>Click a state to explore its data</span>
+      }
+    </div>
+  </mat-card>
+
+  @if (view() === 'track') {
+  <mat-card appearance="outlined" class="os-panel os-report" aria-label="Selected state">
+    @if (selected(); as s) {
+      <div class="os-report__body os-tone--{{ toneOf(s) }}">
+        <h3 class="os-report__name">{{ s.name }}</h3>
+        <span class="os-stage">{{ stageLabel(s) }}</span>
+
+        <div class="os-kv">
+          <div><span>Allocation</span><b>{{ formatCrore(s.allocation) }}</b></div>
+          <div><span>Eligible</span><b>{{ formatCrore(s.eligible) }}</b></div>
+        </div>
+
+        <div class="os-line"><span>ULBs meeting conditions</span><b>{{ s.ulbsDone }} of {{ s.ulbsTotal }}</b></div>
+        <mat-progress-bar mode="determinate" [value]="progressPercent(s)" />
+        <div class="os-claim" [class.got]="s.claimLetters.length > 0">
+          <span class="os-claim__icon"><i class="bi" [class.bi-envelope-check]="s.claimLetters.length > 0" [class.bi-envelope]="!s.claimLetters.length" aria-hidden="true"></i></span>
+          <span class="os-claim__text">
+            <b>Claim letter</b>
+            <small>{{ claimSummary(s) || 'Not received yet' }}</small>
+          </span>
+          <em>{{ s.claimLetters.length ? 'Received' : 'Pending' }}</em>
+        </div>
+
+        <div class="os-forms">
+          <div class="os-line"><span>State forms</span><b>{{ s.formsDone }} of {{ forms.length }} completed</b></div>
+          <div class="os-segs" aria-hidden="true">
+            @for (f of forms; track f; let i = $index) {
+              <i [class.on]="i < s.formsDone" [style.--k]="i"></i>
+            }
+          </div>
+          <ul>
+            @for (f of forms; track f; let i = $index) {
+              <li [class.done]="i < s.formsDone">
+                <i class="bi" [class.bi-check-circle-fill]="i < s.formsDone" [class.bi-circle]="i >= s.formsDone" aria-hidden="true"></i>
+                {{ f }}
+                <span class="os-sr">{{ i < s.formsDone ? 'Completed' : 'Pending' }}</span>
+                @if (i >= s.formsDone) {
+                  <em aria-hidden="true">Pending</em>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+
+        <a mat-flat-button class="os-go" [routerLink]="['../review-state-submissions', s.id]">
+          View State <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+      </div>
+    }
+  </mat-card>
+  }
+</div>

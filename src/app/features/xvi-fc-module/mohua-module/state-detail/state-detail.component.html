@@ -1,0 +1,238 @@
+<div class="sd-page">
+  <nav class="sd-crumb" aria-label="Breadcrumb" appReveal>
+    <a [routerLink]="['overview']" [relativeTo]="mohuaRoute"><i class="bi bi-grid" aria-hidden="true"></i> All States</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <span aria-current="page">{{ stateName() }}</span>
+  </nav>
+
+  <header class="sd-head" appReveal [revealDelay]="60">
+    <h1 class="sd-title">{{ stateName() }}</h1>
+    <span class="sd-chip sd-tone--teal">{{ detail.overallStatus }}</span>
+    <p class="sd-meta">{{ detail.fy }} · {{ detail.grantType }} · {{ detail.allocationLabel }}</p>
+  </header>
+
+  <!-- ── Summary figures ─────────────────────────────────────────────── -->
+  <section class="sd-stats" aria-label="Summary">
+    @for (stat of detail.stats; track $index) {
+      <mat-card appearance="outlined" class="sd-stat sd-tone--{{ stat.tone }}" [attr.data-motion]="stat.motion" appReveal [revealDelay]="160 + $index * 60">
+        <i class="sd-stat__mark bi {{ stat.icon }}" aria-hidden="true"></i>
+        <span class="sd-stat__icon"><i class="bi {{ stat.icon }}" aria-hidden="true"></i></span>
+        <span class="sd-stat__text">
+          <span class="sd-stat__value" [appCountUp]="stat.value"></span>
+          <span class="sd-stat__label">{{ stat.label }}</span>
+          <span class="sd-stat__note">{{ stat.note }}</span>
+        </span>
+      </mat-card>
+    }
+  </section>
+
+  <!-- ── State Form Completion ───────────────────────────────────────── -->
+  <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-cond">
+    <div class="sd-panel__head">
+      <h2 id="sd-h-cond">State Form Completion</h2>
+      <p>The five conditions the State DMA submits for the 1st Instalment before any claim can be processed.</p>
+    </div>
+    <div class="sd-cond">
+      @for (cond of detail.conditions; track cond.label; let i = $index) {
+        <div class="sd-cond__item sd-tone--good">
+          <span class="sd-cond__badge">
+            <i class="bi {{ cond.icon }}" aria-hidden="true"></i>
+            <span class="sd-cond__stamp" [style.--k]="i"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+          </span>
+          <span class="sd-cond__name">{{ cond.label }}</span>
+          <button mat-stroked-button type="button" class="sd-cond__pdf" [attr.aria-label]="'View ' + cond.label + ' PDF, submitted'" (click)="viewFile()">
+            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> View PDF
+          </button>
+        </div>
+      }
+    </div>
+  </mat-card>
+
+  <!-- ── Claim Letters ───────────────────────────────────────────────── -->
+  <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-claims">
+    <div class="sd-panel__head">
+      <h2 id="sd-h-claims">Claim Letters</h2>
+      <p>Raised by {{ stateName() }} State DMA. Reviewed in Claims &amp; Submissions.</p>
+    </div>
+    @if (sortedClaims().length) {
+      <div class="sd-table-wrap sd-table-wrap--claims">
+        <table mat-table class="sd-table sd-table--claims" [dataSource]="visibleClaims()">
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef>Claim letter</th>
+            <td mat-cell *matCellDef="let claim"><b class="sd-claim-id">{{ claim.id }}</b></td>
+          </ng-container>
+          <ng-container matColumnDef="received">
+            <th mat-header-cell *matHeaderCellDef>Received</th>
+            <td mat-cell *matCellDef="let claim" class="sd-muted">{{ claim.received }}</td>
+          </ng-container>
+          <ng-container matColumnDef="ulbs">
+            <th mat-header-cell *matHeaderCellDef class="sd-r">ULBs</th>
+            <td mat-cell *matCellDef="let claim" class="sd-r">{{ claim.ulbCount }}</td>
+          </ng-container>
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef class="sd-r">Amount</th>
+            <td mat-cell *matCellDef="let claim" class="sd-r"><b>{{ claim.amount }}</b></td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let claim">
+              <span class="sd-status sd-tone--{{ claim.tone }}"><i aria-hidden="true"></i>{{ claim.statusLabel }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="pdf">
+            <th mat-header-cell *matHeaderCellDef class="sd-c"><span class="sd-sr">Letter</span></th>
+            <td mat-cell *matCellDef="let claim" class="sd-c">
+              <button mat-stroked-button type="button" class="sd-cond__pdf" [attr.aria-label]="'View letter ' + claim.id" (click)="viewFile()">
+                <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> View letter
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="claimColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: claimColumns; let i = index" [style.--i]="i"></tr>
+        </table>
+      </div>
+      @if (canToggleClaims()) {
+        <div class="sd-claims__more">
+          <button mat-button type="button" class="sd-more-btn" [attr.aria-expanded]="showAllClaims()" (click)="toggleClaims()">
+            @if (showAllClaims()) {
+              Show fewer
+            } @else {
+              Show all {{ sortedClaims().length }} claim letters
+            }
+            <i class="bi" [class.bi-chevron-up]="showAllClaims()" [class.bi-chevron-down]="!showAllClaims()" aria-hidden="true"></i>
+          </button>
+        </div>
+      }
+    } @else {
+        <div class="sd-claims__empty">
+          <span class="sd-claims__empty-icon"><i class="bi bi-envelope-open" aria-hidden="true"></i></span>
+          <p>No claim letters raised yet.</p>
+          <p class="sd-muted">They will appear here once {{ stateName() }} State DMA raises one.</p>
+        </div>
+      }
+    <div class="sd-panel__foot">
+      <span>{{ detail.claimSummary }}</span>
+    </div>
+  </mat-card>
+
+  <!-- ── ULB health ──────────────────────────────────────────────────── -->
+    <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-forms">
+      <div class="sd-panel__head">
+        <h2 id="sd-h-forms">ULB Form Completion</h2>
+        <p>ULBs that have completed each form, out of the state's {{ detail.totalUlbs }} ULBs.</p>
+      </div>
+      <div class="sd-rings">
+        @for (form of detail.ulbForms; track form.label) {
+          <div class="sd-ring-card sd-tone--teal">
+            <div class="sd-ring">
+              <svg viewBox="0 0 42 42" aria-hidden="true">
+                <circle class="sd-ring__bg" cx="21" cy="21" r="15.915" />
+                <circle class="sd-ring__fill" cx="21" cy="21" r="15.915" [style.--p]="formPercent(form.approved)" />
+              </svg>
+              <span class="sd-ring__icon"><i class="bi {{ form.icon }}" aria-hidden="true"></i></span>
+            </div>
+            <div class="sd-ring-card__text">
+              <span class="sd-ring-card__name">{{ form.label }}</span>
+              <span class="sd-ring-card__count"><span [appCountUp]="'' + form.approved"></span>/{{ detail.totalUlbs }}</span>
+              <span class="sd-ring-card__pct"><span [appCountUp]="'' + formPercent(form.approved)"></span>% completed</span>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card>
+
+  <!-- ── ULB-wise Progress ───────────────────────────────────────────── -->
+  <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-ulb">
+    <div class="sd-panel__head">
+      <h2 id="sd-h-ulb">ULB-wise Progress</h2>
+      <p>Each compliance shown separately. Click a ULB to see its individual form statuses.</p>
+    </div>
+    <div class="sd-tools">
+      <mat-form-field class="sd-search" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="search" placeholder="Search ULB name" aria-label="Search ULB name" [value]="searchTerm()" (input)="onSearch($event)" />
+        <i matSuffix class="bi bi-search" aria-hidden="true"></i>
+      </mat-form-field>
+
+      <mat-form-field class="sd-filter" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Eligibility</mat-label>
+        <mat-select [value]="eligibilityValue()" (selectionChange)="onEligibilityFilter($event.value)">
+          <mat-option value="all">All</mat-option>
+          @for (f of eligibilityOptions; track f.key) {
+            <mat-option [value]="f.key">{{ f.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="sd-filter" appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Progress</mat-label>
+        <mat-select [value]="progressValue()" (selectionChange)="onProgressFilter($event.value)">
+          <mat-option value="all">All</mat-option>
+          @for (f of progressOptions; track f.key) {
+            <mat-option [value]="f.key">{{ f.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-icon-button type="button" class="sd-export" disabled aria-label="Export" title="Not available yet">
+        <i class="bi bi-download" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="sd-table-wrap">
+      <table mat-table class="sd-table" [dataSource]="pagedUlbs()">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>ULB name</th>
+          <td mat-cell *matCellDef="let ulb"><a class="sd-ulb-name" [routerLink]="['ulb', ulb.census]">{{ ulb.name }}</a></td>
+        </ng-container>
+        <ng-container matColumnDef="census">
+          <th mat-header-cell *matHeaderCellDef>Census code</th>
+          <td mat-cell *matCellDef="let ulb" class="sd-muted">{{ ulb.census }}</td>
+        </ng-container>
+        <ng-container matColumnDef="allocation">
+          <th mat-header-cell *matHeaderCellDef class="sd-r">Allocation</th>
+          <td mat-cell *matCellDef="let ulb" class="sd-r">₹{{ ulb.allocation }} cr</td>
+        </ng-container>
+        <ng-container matColumnDef="electedBody">
+          <th mat-header-cell *matHeaderCellDef>Elected body</th>
+          <td mat-cell *matCellDef="let ulb">{{ ulb.electedBody }}</td>
+        </ng-container>
+        @for (col of formColumns; track col.def) {
+          <ng-container [matColumnDef]="col.def">
+            <th mat-header-cell *matHeaderCellDef class="sd-c">{{ col.label }}</th>
+            <td mat-cell *matCellDef="let ulb" class="sd-c">
+              @if (ulb[col.def]) {
+                <i class="bi bi-check-lg sd-ok" aria-label="Done"></i>
+              } @else {
+                <i class="bi bi-x-lg sd-no" aria-label="Not done"></i>
+              }
+            </td>
+          </ng-container>
+        }
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Overall status</th>
+          <td mat-cell *matCellDef="let ulb">
+            <span class="sd-chip sd-tone--{{ statusTone(ulb.status) }}">{{ statusLabel(ulb.status) }}</span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="ulbColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: ulbColumns; let i = index" [style.--i]="i"></tr>
+      </table>
+
+      @if (!pagedUlbs().length) {
+        <p class="sd-empty">No ULBs match your search.</p>
+      }
+    </div>
+
+    <mat-paginator
+      hidePageSize
+      showFirstLastButtons="false"
+      aria-label="ULB pages"
+      [length]="filteredUlbs().length"
+      [pageSize]="pageSize"
+      [pageIndex]="page() - 1"
+      (page)="onPage($event)"
+    />
+  </mat-card>
+</div>
