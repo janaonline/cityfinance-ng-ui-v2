@@ -598,20 +598,7 @@ mat-button-toggle-group {
   border: 1px solid color-mix(in srgb, var(--t) 30%, transparent);
   border-radius: 10px;
 
-  &.got { --t: #1d7a46; }
 
-  em {
-    margin-left: auto;
-    padding: 2px 8px;
-    font-size: 0.5625rem;
-    font-style: normal;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--t);
-    background: color-mix(in srgb, var(--t) 14%, transparent);
-    border-radius: 999px;
-  }
 }
 
 .os-claim__icon {
@@ -633,7 +620,8 @@ mat-button-toggle-group {
   line-height: 1.25;
 
   b { font-size: 0.72rem; }
-  small { font-size: 0.6rem; color: var(--os-muted); }
+  small { font-size: 0.6rem; color: var(--os-muted); white-space: nowrap; }
+  .zero { opacity: 0.5; }
 }
 
 .os-segs {
