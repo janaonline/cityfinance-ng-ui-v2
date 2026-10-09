@@ -6,6 +6,9 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 export interface PmuBulkRejectRowsDialogRow {
   ulbName: string;
   censusCode: string | null;
+  /** Only present for FC Unspent rows — fallback display when `censusCode` is absent, same as
+   *  `unspent-ulb-table.component.html`'s own Census Code column. */
+  sbCode?: string | null;
 }
 
 export interface PmuBulkRejectRowsDialogData {

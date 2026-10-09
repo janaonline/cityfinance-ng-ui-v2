@@ -288,11 +288,12 @@
 </section>
 
 <app-review-acknowledgment
+  #ack
   [canApprove]="canApprove()"
   [canReject]="canReject()"
   [busy]="isBusy()"
   approveLabel="Approve Form"
   rejectLabel="Reject Form"
   (approveClicked)="onApprove()"
-  (rejectConfirmed)="onReject($event)"
+  (rejectConfirmed)="onReject($event, ack)"
 ></app-review-acknowledgment>

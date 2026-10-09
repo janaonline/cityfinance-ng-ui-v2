@@ -21,7 +21,7 @@ import { resolveThemeClass } from '../../../../../../shared/components/confirm-d
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
-import { canStateEditRow } from '../../../../common/constants/form-status.constants';
+import { canStateEditRow, isRowPendingPmuDecision } from '../../../../common/constants/form-status.constants';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -46,10 +46,15 @@ interface FcUnspentUlbRowViewModel {
   allocationAmount: number | null;
   allocationPerc: number | null;
   eligible: boolean | null;
-  /** True once PMU has approved this row (`rowStatus` fails `canStateEditRow`) — a brand-new,
-   *  never-saved row is never locked. Mixed-approval deadlock fix: an approved row must stay
-   *  read-only even while sibling rejected rows, and the form as a whole, remain editable. */
+  /** True once a row is no longer editable by the state — either PMU is still deciding on it, or
+   *  has already approved it (`rowStatus` fails `canStateEditRow`); a brand-new, never-saved row is
+   *  never locked. Mixed-approval deadlock fix: a locked row must stay read-only even while sibling
+   *  rejected rows, and the form as a whole, remain editable. */
   locked: boolean;
+  /** True only once PMU has actually approved this row — as opposed to merely locked-pending (see
+   *  `isRowPendingPmuDecision`). Drives the "Approved" vs. "Pending Review" badge; `locked` alone
+   *  still drives the disabled inputs/remove button. */
+  approved: boolean;
 }
 
 /** Resolves the single message to show for a control's current errors — a backend `apiErrors`
@@ -213,13 +218,11 @@ export class UnspentUlbTableComponent {
    *  change-detection-reactive, and this also fires on structural `push`/`removeAt` changes. */
   private readonly rowValues = toSignal(
     toObservable(this.rows).pipe(
-      switchMap((formArray) => formArray.valueChanges.pipe(startWith(formArray.value))),
-      map((values): FcUnspentUlbRowValue[] =>
-        values.map((value) => ({
-          ulbId: value.ulbId ?? null,
-          unspentAmount: value.unspentAmount ?? null,
-          previousFcUnspentBalance: value.previousFcUnspentBalance ?? null,
-        })),
+      switchMap((formArray) =>
+        formArray.valueChanges.pipe(
+          startWith(formArray.getRawValue()),
+          map(() => formArray.getRawValue() as FcUnspentUlbRowValue[]),
+        ),
       ),
     ),
     { initialValue: [] as FcUnspentUlbRowValue[] },
@@ -259,6 +262,8 @@ export class UnspentUlbTableComponent {
           ? (value.unspentAmount / allocationAmount) * 100
           : null;
 
+      const locked = !!saved && !canStateEditRow(saved.rowStatus);
+
       return {
         ulbName,
         censusCode,
@@ -266,7 +271,8 @@ export class UnspentUlbTableComponent {
         allocationAmount,
         allocationPerc,
         eligible: allocationPerc !== null ? allocationPerc <= threshold : null,
-        locked: !!saved && !canStateEditRow(saved.rowStatus),
+        locked,
+        approved: locked && !isRowPendingPmuDecision(saved?.rowStatus),
       };
     });
   });

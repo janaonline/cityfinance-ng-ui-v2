@@ -3,7 +3,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormControl, FormGroup } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -238,6 +238,12 @@ export class PmuRowReviewDetailComponent {
   private currentSearch = '';
   private readonly searchInput$ = new Subject<string>();
 
+  /** Tracks the in-flight rows request so a search/status/sort/page change or mutation reload that
+   *  arrives before the previous one resolves can cancel it — otherwise an older response can
+   *  overwrite newer rows/total/pendingTotal. Mirrors `dur.component.ts`'s/
+   *  `upload-documents.component.ts`'s own `pollingSub` pattern. */
+  private rowsSub: Subscription | null = null;
+
   /** The 4 reachable status-filter options the template renders as `<option>`s — see
    *  `STATUS_FILTER_OPTIONS`'s own doc comment for why "Not Submitted" is excluded. */
   readonly statusFilterOptions = STATUS_FILTER_OPTIONS;
@@ -375,7 +381,8 @@ export class PmuRowReviewDetailComponent {
     const sort = this.sort();
 
     this.isLoadingRows.set(true);
-    this.reviewService
+    this.rowsSub?.unsubscribe();
+    this.rowsSub = this.reviewService
       .getRows(this.formOption, this.stateId, yearId, {
         page,
         limit: this.limit,
@@ -704,7 +711,7 @@ export class PmuRowReviewDetailComponent {
       });
   }
 
-  onReject(remarks: string): void {
+  onReject(remarks: string, ack: ReviewAcknowledgmentComponent): void {
     if (!this.canReject() || this.isBusy()) return;
     const yearId = this.moduleService.yearId();
     if (!yearId) return;
@@ -717,6 +724,7 @@ export class PmuRowReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isRejecting.set(false);
+          ack.resetReject();
           this.utilityService.triggerSnackbar('Form rejected.', 'snackbar-danger');
           this.reloadAfterMutation();
         },
