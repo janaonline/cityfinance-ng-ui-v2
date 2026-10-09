@@ -159,13 +159,20 @@
 
         <div class="os-line"><span>ULBs meeting conditions</span><b>{{ s.ulbsDone }} of {{ s.ulbsTotal }}</b></div>
         <mat-progress-bar mode="determinate" [value]="progressPercent(s)" />
-        <div class="os-claim" [class.got]="s.claimLetters.length > 0">
+        <div class="os-claim">
           <span class="os-claim__icon"><i class="bi" [class.bi-envelope-check]="s.claimLetters.length > 0" [class.bi-envelope]="!s.claimLetters.length" aria-hidden="true"></i></span>
           <span class="os-claim__text">
             <b>Claim letter</b>
-            <small>{{ claimSummary(s) || 'Not received yet' }}</small>
+            <small>
+              @if (s.claimLetters.length) {
+                @for (c of claimAll(s); track c.status; let last = $last) {
+                  <span [class.zero]="!c.n">{{ c.n }} {{ c.label }}</span>{{ last ? '' : ' · ' }}
+                }
+              } @else {
+                Not received yet
+              }
+            </small>
           </span>
-          <em>{{ s.claimLetters.length ? 'Received' : 'Pending' }}</em>
         </div>
 
         <div class="os-forms">
