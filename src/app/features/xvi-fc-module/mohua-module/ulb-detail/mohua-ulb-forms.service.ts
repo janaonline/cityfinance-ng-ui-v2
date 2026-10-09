@@ -38,7 +38,9 @@ export class MohuaUlbFormsService {
     const section = (name: 'auditedData' | 'unauditedData') =>
       safely(
         this.http
-          .get<ApiEnvelope<AnnualSectionResponse> | AnnualSectionResponse | null>(`${this.api}annual-account/by-ulb/${ulbId}/${yearId}`, { params: { section: name } })
+          .get<
+            ApiEnvelope<AnnualSectionResponse> | AnnualSectionResponse | null
+          >(`${this.api}annual-account/by-ulb/${ulbId}/${yearId}`, { params: { section: name } })
           .pipe(map((response) => unwrapNullableResponse<AnnualSectionResponse>(response))),
       );
 
@@ -49,7 +51,9 @@ export class MohuaUlbFormsService {
       provisionalConfig: safely(this.uploadDocuments.getUploadConfig('provisional', yearId)),
       bank: safely(
         this.http
-          .get<ApiEnvelope<BankAccountRecord> | BankAccountRecord | null>(`${this.api}bank-account`, { params: { ulbId, yearId } })
+          .get<
+            ApiEnvelope<BankAccountRecord> | BankAccountRecord | null
+          >(`${this.api}bank-account`, { params: { ulbId, yearId } })
           .pipe(map((response) => unwrapNullableResponse<BankAccountRecord>(response))),
       ),
       slb: safely(this.slbService.getSlbForm(ulbId, yearId)),

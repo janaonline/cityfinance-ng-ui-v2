@@ -89,7 +89,8 @@ function packCircles(
       const dist = k * 0.3;
       const x = centre.x + dist * Math.cos(angle);
       const y = centre.y + dist * Math.sin(angle);
-      if (x - item.r < bounds.x0 || x + item.r > bounds.x1 || y - item.r < bounds.y0 || y + item.r > bounds.y1) continue;
+      if (x - item.r < bounds.x0 || x + item.r > bounds.x1 || y - item.r < bounds.y0 || y + item.r > bounds.y1)
+        continue;
       const clear = placed.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 >= (p.r + item.r + 4) ** 2);
       if (clear) spot = { x, y };
     }
@@ -171,7 +172,13 @@ export class OverviewStatesGlanceComponent {
   // ── Selection ──────────────────────────────────────────────────────────────
   readonly selected = computed<StateRow | null>(() => {
     const rows = this.rows();
-    return rows.find((r) => r.code === this.selectedCode()) ?? this.firstUnderReview(rows) ?? rows.find((r) => r.status === 'progress') ?? rows[0] ?? null;
+    return (
+      rows.find((r) => r.code === this.selectedCode()) ??
+      this.firstUnderReview(rows) ??
+      rows.find((r) => r.status === 'progress') ??
+      rows[0] ??
+      null
+    );
   });
 
   /** Default selection: the under-review state that got there first (rows without a date sort last); callers fall back to an in-progress state. */
@@ -185,9 +192,27 @@ export class OverviewStatesGlanceComponent {
     const rows = this.rows();
     const count = (status: StateStatus) => rows.filter((r) => r.status === status).length;
     return [
-      { key: 'review' as StateFilter, label: STATUS_LABEL.review, count: count('review'), tone: 'orange' as Tone, round: false },
-      { key: 'progress' as StateFilter, label: STATUS_LABEL.progress, count: count('progress'), tone: 'teal' as Tone, round: false },
-      { key: 'notStarted' as StateFilter, label: STATUS_LABEL.notStarted, count: count('notStarted'), tone: 'grey' as Tone, round: false },
+      {
+        key: 'review' as StateFilter,
+        label: STATUS_LABEL.review,
+        count: count('review'),
+        tone: 'orange' as Tone,
+        round: false,
+      },
+      {
+        key: 'progress' as StateFilter,
+        label: STATUS_LABEL.progress,
+        count: count('progress'),
+        tone: 'teal' as Tone,
+        round: false,
+      },
+      {
+        key: 'notStarted' as StateFilter,
+        label: STATUS_LABEL.notStarted,
+        count: count('notStarted'),
+        tone: 'grey' as Tone,
+        round: false,
+      },
     ];
   });
 
@@ -332,7 +357,7 @@ export class OverviewStatesGlanceComponent {
 
   subtitle(): string {
     return this.view() === 'track'
-      ? "Where each state stands on its own conditions. Bubble size shows the annual allocation. Click a state to preview it, then open View State to explore more."
+      ? 'Where each state stands on its own conditions. Bubble size shows the annual allocation. Click a state to preview it, then open View State to explore more.'
       : 'Every state grouped by stage, with its ULB progress. Pick a column heading to re-rank, or click a state to explore its data.';
   }
 }

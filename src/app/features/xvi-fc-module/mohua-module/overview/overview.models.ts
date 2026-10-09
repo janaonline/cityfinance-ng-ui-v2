@@ -66,7 +66,14 @@ export interface MohuaOverviewApiState {
   ulbsDone: number | null;
   ulbsTotal: number;
   formsDone: number;
-  forms: { key: string; label: string; statusCode: number; statusLabel: string; completed: boolean; canView: boolean }[];
+  forms: {
+    key: string;
+    label: string;
+    statusCode: number;
+    statusLabel: string;
+    completed: boolean;
+    canView: boolean;
+  }[];
 }
 
 export interface MohuaOverviewApiData {
@@ -80,4 +87,5 @@ export interface MohuaOverviewApiData {
   states: MohuaOverviewApiState[];
 }
 
-export const formatCrore = (value: number | null): string => (value === null ? '--' : `₹${value.toLocaleString('en-IN')} cr`);
+export const formatCrore = (value: number | null): string =>
+  value === null ? '--' : `₹${value.toLocaleString('en-IN')} cr`;

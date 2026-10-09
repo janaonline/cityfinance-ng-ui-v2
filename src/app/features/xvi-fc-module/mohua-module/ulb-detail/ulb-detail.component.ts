@@ -229,7 +229,13 @@ export class UlbDetailComponent {
         const section = (audited ? forms.audited : forms.unaudited).data?.data;
         return (config?.documents ?? []).map((def) => {
           const doc = section?.documents.find((d) => d.docId === def.id);
-          return row(def.id, def.title, def.subtitle || null, doc?.processingStatus ?? 'NOT_STARTED', doc?.currentUpload ?? null);
+          return row(
+            def.id,
+            def.title,
+            def.subtitle || null,
+            doc?.processingStatus ?? 'NOT_STARTED',
+            doc?.currentUpload ?? null,
+          );
         });
       }
       case 'DUR':
@@ -259,7 +265,9 @@ export class UlbDetailComponent {
     }
   });
 
-  readonly paneTitle = computed(() => (this.selectedKey() === 'PFMS_BANK_ACCOUNT' ? 'Bank account' : 'Document review'));
+  readonly paneTitle = computed(() =>
+    this.selectedKey() === 'PFMS_BANK_ACCOUNT' ? 'Bank account' : 'Document review',
+  );
 
   readonly paneSubtitle = computed(() => {
     if (this.selectedKey() === 'PFMS_BANK_ACCOUNT') return 'Account number is masked · read-only';
@@ -309,7 +317,13 @@ export class UlbDetailComponent {
   }
 
   processingLabel(status: ProcessingStatus): string {
-    return status === 'PASSED' ? 'Passed' : status === 'FAILED' ? 'Failed' : status === 'PROCESSING' ? 'Processing' : 'Not uploaded';
+    return status === 'PASSED'
+      ? 'Passed'
+      : status === 'FAILED'
+        ? 'Failed'
+        : status === 'PROCESSING'
+          ? 'Processing'
+          : 'Not uploaded';
   }
 
   selectTab(key: ReviewFormId): void {

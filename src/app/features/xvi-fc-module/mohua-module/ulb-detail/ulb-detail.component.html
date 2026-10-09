@@ -1,6 +1,8 @@
 <div class="ud-page">
   <nav class="ud-crumb" aria-label="Breadcrumb" appReveal>
-    <a [routerLink]="['overview']" [relativeTo]="mohuaRoute"><i class="bi bi-grid" aria-hidden="true"></i> All States</a>
+    <a [routerLink]="['overview']" [relativeTo]="mohuaRoute"
+      ><i class="bi bi-grid" aria-hidden="true"></i> All States</a
+    >
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
     <a [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">{{ stateName() || 'State' }}</a>
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
@@ -12,7 +14,9 @@
       <h1 class="ud-title">{{ ulbName() || 'ULB' }}</h1>
       @if (ulbCode()) {
         <div class="ud-meta">
-          <span>Census code <b>{{ ulbCode() }}</b></span>
+          <span
+            >Census code <b>{{ ulbCode() }}</b></span
+          >
         </div>
       }
     </mat-card>
@@ -26,7 +30,9 @@
           [attr.aria-selected]="tab.key === selectedKey()"
           (click)="selectTab(tab.key)"
         >
-          <span class="ud-tab__icon"><i class="bi {{ tab.done ? 'bi-check-circle' : 'bi-circle' }}" aria-hidden="true"></i></span>
+          <span class="ud-tab__icon"
+            ><i class="bi {{ tab.done ? 'bi-check-circle' : 'bi-circle' }}" aria-hidden="true"></i
+          ></span>
           <span class="ud-tab__text">
             <span class="ud-tab__name">{{ tab.label }}</span>
             <span class="ud-tab__status">{{ tab.statusText }}</span>
@@ -60,23 +66,41 @@
             @case ('PFMS_BANK_ACCOUNT') {
               @if (bank(); as account) {
                 <div class="ud-kv">
-                  <div><span class="k">IFSC</span><span class="v">{{ account.ifscCode }}</span></div>
-                  <div><span class="k">Bank</span><span class="v">{{ account.bankDetails.name }}</span></div>
-                  <div><span class="k">Branch</span><span class="v">{{ account.bankDetails.branch }}</span></div>
-                  <div><span class="k">Account number</span><span class="v">{{ account.accountNumberMasked }}</span></div>
-                  <div><span class="k">City</span><span class="v">{{ account.bankDetails.city }}</span></div>
+                  <div>
+                    <span class="k">IFSC</span><span class="v">{{ account.ifscCode }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Bank</span><span class="v">{{ account.bankDetails.name }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Branch</span><span class="v">{{ account.bankDetails.branch }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Account number</span><span class="v">{{ account.accountNumberMasked }}</span>
+                  </div>
+                  <div>
+                    <span class="k">City</span><span class="v">{{ account.bankDetails.city }}</span>
+                  </div>
                   <div>
                     <span class="k">Proof</span>
                     <span class="v">{{ account.proofFile.originalName }}</span>
                     @if (account.proofFile.fileUrl) {
-                      <button mat-stroked-button type="button" class="ud-preview" (click)="viewFile(account.proofFile.fileUrl)">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        class="ud-preview"
+                        (click)="viewFile(account.proofFile.fileUrl)"
+                      >
                         <i class="bi bi-eye" aria-hidden="true"></i> View Document
                       </button>
                     }
                   </div>
                 </div>
                 @if (account.designYearLabel) {
-                  <p class="ud-note">Submitted for FY {{ account.designYearLabel }}; the bank account is submitted once and applies to every year.</p>
+                  <p class="ud-note">
+                    Submitted for FY {{ account.designYearLabel }}; the bank account is submitted once and applies to
+                    every year.
+                  </p>
                 }
               }
             }
@@ -109,9 +133,17 @@
                       </ul>
                     }
                   </div>
-                  <mat-chip class="ud-chip ud-tone--{{ processingTone(doc.status) }}">{{ processingLabel(doc.status) }}</mat-chip>
+                  <mat-chip class="ud-chip ud-tone--{{ processingTone(doc.status) }}">{{
+                    processingLabel(doc.status)
+                  }}</mat-chip>
                   @if (doc.fileUrl) {
-                    <button mat-stroked-button type="button" class="ud-preview" [attr.aria-label]="'View ' + doc.title" (click)="viewFile(doc.fileUrl)">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      class="ud-preview"
+                      [attr.aria-label]="'View ' + doc.title"
+                      (click)="viewFile(doc.fileUrl)"
+                    >
                       <i class="bi bi-eye" aria-hidden="true"></i> View
                     </button>
                   } @else {
@@ -124,7 +156,10 @@
 
           @if (approval(); as approvalLine) {
             <div class="ud-banner ud-tone--{{ approvalLine.tone }}">
-              <i class="bi {{ approvalLine.tone === 'good' ? 'bi-check-circle' : 'bi-arrow-return-left' }}" aria-hidden="true"></i>
+              <i
+                class="bi {{ approvalLine.tone === 'good' ? 'bi-check-circle' : 'bi-arrow-return-left' }}"
+                aria-hidden="true"
+              ></i>
               <span>{{ approvalLine.text }}</span>
             </div>
           }
@@ -132,7 +167,9 @@
 
         <mat-expansion-panel class="ud-checks" [expanded]="checksOpen()" (expandedChange)="checksOpen.set($event)">
           <mat-expansion-panel-header>
-            <mat-panel-title><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title>
+            <mat-panel-title
+              ><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title
+            >
           </mat-expansion-panel-header>
           <p class="ud-checks__caption">{{ checks().caption }}</p>
           <h3>Checked automatically</h3>
@@ -156,7 +193,9 @@
     <div class="ud-message" role="alert">
       <p>{{ error() }}</p>
       <button mat-stroked-button type="button" (click)="load()">Try again</button>
-      <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">Back to {{ stateName() || 'the state' }}</a>
+      <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute"
+        >Back to {{ stateName() || 'the state' }}</a
+      >
     </div>
   }
 </div>

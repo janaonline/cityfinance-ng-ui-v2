@@ -78,7 +78,13 @@ export interface UlbFormStatus {
 }
 
 export interface UlbFormStatuses {
-  forms: { audited: UlbFormStatus; unaudited: UlbFormStatus; pfms: UlbFormStatus; slb: UlbFormStatus; dur: UlbFormStatus };
+  forms: {
+    audited: UlbFormStatus;
+    unaudited: UlbFormStatus;
+    pfms: UlbFormStatus;
+    slb: UlbFormStatus;
+    dur: UlbFormStatus;
+  };
 }
 
 /** One form's load result: the data (null when the ULB has none) and whether the call failed. */

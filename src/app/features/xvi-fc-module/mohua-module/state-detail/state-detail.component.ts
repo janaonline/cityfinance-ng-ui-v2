@@ -111,8 +111,22 @@ export class StateDetailComponent {
       motion,
     });
     return [
-      { value: formatCrore(data.allocation), label: 'Annual Allocation', note: '', icon: 'bi-bank', tone: 'teal', motion: 'grow' },
-      { value: formatCrore(null), label: 'Eligible Amount', note: '', icon: 'bi-check-circle', tone: 'teal', motion: 'pop' },
+      {
+        value: formatCrore(data.allocation),
+        label: 'Annual Allocation',
+        note: '',
+        icon: 'bi-bank',
+        tone: 'teal',
+        motion: 'grow',
+      },
+      {
+        value: formatCrore(null),
+        label: 'Eligible Amount',
+        note: '',
+        icon: 'bi-check-circle',
+        tone: 'teal',
+        motion: 'pop',
+      },
       soon('Under Review by MoHUA', 'bi-hourglass-split', 'orange', 'flip'),
       soon('Returned by MoHUA', 'bi-arrow-return-left', 'bad', 'back'),
       soon('Approved by MoHUA', 'bi-shield-check', 'good', 'pop'),
