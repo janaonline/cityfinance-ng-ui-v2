@@ -1,0 +1,201 @@
+<div class="ud-page">
+  <nav class="ud-crumb" aria-label="Breadcrumb" appReveal>
+    <a [routerLink]="['overview']" [relativeTo]="mohuaRoute"
+      ><i class="bi bi-grid" aria-hidden="true"></i> All States</a
+    >
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <a [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">{{ stateName() || 'State' }}</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <span aria-current="page">{{ ulbName() || 'ULB' }}</span>
+  </nav>
+
+  @if (forms()) {
+    <mat-card appearance="outlined" class="ud-head" appReveal [revealDelay]="60">
+      <h1 class="ud-title">{{ ulbName() || 'ULB' }}</h1>
+      @if (ulbCode()) {
+        <div class="ud-meta">
+          <span
+            >Census code <b>{{ ulbCode() }}</b></span
+          >
+        </div>
+      }
+    </mat-card>
+
+    <div class="ud-tabs" role="tablist" aria-label="Forms" appReveal [revealDelay]="140">
+      @for (tab of tabs(); track tab.key) {
+        <button
+          type="button"
+          role="tab"
+          class="ud-tab ud-tone--{{ tabTone(tab) }}"
+          [attr.aria-selected]="tab.key === selectedKey()"
+          (click)="selectTab(tab.key)"
+        >
+          <span class="ud-tab__icon"
+            ><i class="bi {{ tab.done ? 'bi-check-circle' : 'bi-circle' }}" aria-hidden="true"></i
+          ></span>
+          <span class="ud-tab__text">
+            <span class="ud-tab__name">{{ tab.label }}</span>
+            <span class="ud-tab__status">{{ tab.statusText }}</span>
+          </span>
+        </button>
+      }
+    </div>
+
+    <mat-card appearance="outlined" class="ud-panel" appReveal [revealDelay]="220" aria-live="polite">
+      <div class="ud-pane">
+        @if (selectedKey() !== 'SERVICE_LEVEL_BENCHMARKS') {
+          <div class="ud-panel__head">
+            <h2>{{ paneTitle() }}</h2>
+            <p>{{ paneSubtitle() }}</p>
+          </div>
+        }
+
+        @if (selectedFailed()) {
+          <div class="ud-empty">
+            <span class="ud-empty__icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+            <p>Could not load {{ selectedTab().label }}.</p>
+            <button mat-stroked-button type="button" (click)="load()">Try again</button>
+          </div>
+        } @else if (!hasRecord()) {
+          <div class="ud-empty">
+            <span class="ud-empty__icon"><i class="bi bi-inbox" aria-hidden="true"></i></span>
+            <p>{{ selectedTab().label }} has not been submitted yet.</p>
+          </div>
+        } @else {
+          @switch (selectedKey()) {
+            @case ('PFMS_BANK_ACCOUNT') {
+              @if (bank(); as account) {
+                <div class="ud-kv">
+                  <div>
+                    <span class="k">IFSC</span><span class="v">{{ account.ifscCode }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Bank</span><span class="v">{{ account.bankDetails.name }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Branch</span><span class="v">{{ account.bankDetails.branch }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Account number</span><span class="v">{{ account.accountNumberMasked }}</span>
+                  </div>
+                  <div>
+                    <span class="k">City</span><span class="v">{{ account.bankDetails.city }}</span>
+                  </div>
+                  <div>
+                    <span class="k">Proof</span>
+                    <span class="v">{{ account.proofFile.originalName }}</span>
+                    @if (account.proofFile.fileUrl) {
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        class="ud-preview"
+                        (click)="viewFile(account.proofFile.fileUrl)"
+                      >
+                        <i class="bi bi-eye" aria-hidden="true"></i> View Document
+                      </button>
+                    }
+                  </div>
+                </div>
+                @if (account.designYearLabel) {
+                  <p class="ud-note">
+                    Submitted for FY {{ account.designYearLabel }}; the bank account is submitted once and applies to
+                    every year.
+                  </p>
+                }
+              }
+            }
+            @case ('SERVICE_LEVEL_BENCHMARKS') {
+              <div class="ud-slb">
+                <app-slb-review [data]="slb()" />
+              </div>
+            }
+            @default {
+              @for (doc of documents(); track doc.key; let i = $index) {
+                <div class="ud-doc ud-tone--{{ processingTone(doc.status) }}" [style.--i]="i">
+                  <span class="ud-doc__icon"><i class="bi {{ selectedTab().icon }}" aria-hidden="true"></i></span>
+                  <div>
+                    <div class="ud-doc__name">{{ doc.title }}</div>
+                    <div class="ud-doc__sub">
+                      @if (doc.uploadedAt) {
+                        Uploaded {{ doc.uploadedAt | date: 'd MMM y' }}
+                      } @else {
+                        Not uploaded
+                      }
+                      @if (doc.subtitle) {
+                        · {{ doc.subtitle }}
+                      }
+                    </div>
+                    @if (doc.status === 'FAILED' && doc.failedChecks.length) {
+                      <ul class="ud-doc__fail">
+                        @for (check of doc.failedChecks; track check) {
+                          <li>{{ check }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                  <mat-chip class="ud-chip ud-tone--{{ processingTone(doc.status) }}">{{
+                    processingLabel(doc.status)
+                  }}</mat-chip>
+                  @if (doc.fileUrl) {
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      class="ud-preview"
+                      [attr.aria-label]="'View ' + doc.title"
+                      (click)="viewFile(doc.fileUrl)"
+                    >
+                      <i class="bi bi-eye" aria-hidden="true"></i> View
+                    </button>
+                  } @else {
+                    <span></span>
+                  }
+                </div>
+              }
+            }
+          }
+
+          @if (approval(); as approvalLine) {
+            <div class="ud-banner ud-tone--{{ approvalLine.tone }}">
+              <i
+                class="bi {{ approvalLine.tone === 'good' ? 'bi-check-circle' : 'bi-arrow-return-left' }}"
+                aria-hidden="true"
+              ></i>
+              <span>{{ approvalLine.text }}</span>
+            </div>
+          }
+        }
+
+        <mat-expansion-panel class="ud-checks" [expanded]="checksOpen()" (expandedChange)="checksOpen.set($event)">
+          <mat-expansion-panel-header>
+            <mat-panel-title
+              ><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title
+            >
+          </mat-expansion-panel-header>
+          <p class="ud-checks__caption">{{ checks().caption }}</p>
+          <h3>Checked automatically</h3>
+          <ul>
+            @for (item of checks().checked; track item) {
+              <li><i class="bi bi-check-lg ud-ok" aria-hidden="true"></i>{{ item }}</li>
+            }
+          </ul>
+          <h3>Not checked</h3>
+          <ul class="ud-no">
+            @for (item of checks().notChecked; track item) {
+              <li><i class="bi bi-circle" aria-hidden="true"></i>{{ item }}</li>
+            }
+          </ul>
+        </mat-expansion-panel>
+      </div>
+    </mat-card>
+  } @else if (loading()) {
+    <app-mohua-page-loader label="Loading the ULB" />
+  } @else {
+    <div class="ud-message" role="alert">
+      <p>{{ error() }}</p>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
+      <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute"
+        >Back to {{ stateName() || 'the state' }}</a
+      >
+    </div>
+  }
+</div>

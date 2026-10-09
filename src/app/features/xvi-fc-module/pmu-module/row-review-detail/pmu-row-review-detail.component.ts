@@ -140,6 +140,8 @@ export class PmuRowReviewDetailComponent {
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
   private readonly form = this.route.snapshot.data['form'] as PmuReviewFormId;
+  /** Set by the MoHUA routes: the same screen, read-only (MoHUA views these forms, it never approves or returns them). */
+  readonly viewOnly = this.route.snapshot.data['viewOnly'] === true;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
 
   readonly formOption = pmuFormOption(this.form);
@@ -150,10 +152,10 @@ export class PmuRowReviewDetailComponent {
   readonly showMoneyColumns = this.showEligibility;
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
-  /** Loading/empty-state row's `colspan` — checkbox + ULB Name + Census Code + Status (4), plus the
+  /** Loading/empty-state row's `colspan` — checkbox (not in view-only) + ULB Name + Census Code + Status (4), plus the
    *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
   readonly colSpan =
-    4 + (this.showMoneyColumns ? 3 : 0) + (this.showEligibility ? 1 : 0) + (this.showElectedBodyColumns ? 4 : 0);
+    (this.viewOnly ? 3 : 4) + (this.showMoneyColumns ? 3 : 0) + (this.showEligibility ? 1 : 0) + (this.showElectedBodyColumns ? 4 : 0);
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
@@ -170,16 +172,27 @@ export class PmuRowReviewDetailComponent {
     }
   }
 
-  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => [
-    {
-      label: 'Review State Submissions',
-      routerLink: ['/xvifc', this.moduleService.yearId(), 'review-state-submissions'],
-      queryParams: { ...this.route.snapshot.queryParams, form: this.form },
-    },
-    { label: this.formOption.label },
-  ]);
+  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
+    const yearId = this.moduleService.yearId();
+    if (this.viewOnly) {
+      return [
+        { label: 'All States', routerLink: ['/xvifc', yearId, 'overview'] },
+        { label: this.stateName(), routerLink: ['/xvifc', yearId, 'review-state-submissions', this.stateId] },
+        { label: this.formOption.label },
+      ];
+    }
+    return [
+      {
+        label: 'Review State Submissions',
+        routerLink: ['/xvifc', yearId, 'review-state-submissions'],
+        queryParams: { ...this.route.snapshot.queryParams, form: this.form },
+      },
+      { label: this.formOption.label },
+    ];
+  });
 
   readonly review = signal<PmuFormReviewData | null>(null);
+  readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly isApproving = signal(false);

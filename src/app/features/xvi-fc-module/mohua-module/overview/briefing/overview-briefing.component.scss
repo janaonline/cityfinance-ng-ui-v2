@@ -1,0 +1,256 @@
+@use '../reveal.partial' as r;
+
+// Same surface colour as the side menu (--nav-surface); the only dark surface on the page.
+:host {
+  --ob-muted: #b5d3d6;
+
+  display: block;
+
+  // Layout follows this band's own width (the page sits beside a side menu), not the viewport's.
+  container: ob / inline-size;
+}
+
+.ob-band {
+  --mat-card-filled-container-color: transparent;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  color: #fff;
+  background: var(--nav-surface, var(--color-primary, #12535c));
+  border-radius: 14px;
+}
+
+.ob-col {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px 18px;
+
+  & + & {
+    border-left: 1px solid rgba(255, 255, 255, 0.14);
+  }
+}
+
+.ob-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--ob-muted);
+}
+
+.ob-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 32px;
+}
+
+.ob-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ob-big {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+
+  small {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--ob-muted);
+  }
+
+  &--md {
+    font-size: 1.4rem;
+  }
+}
+
+.ob-hint {
+  font-size: 0.6875rem;
+  color: var(--ob-muted);
+
+  &--end {
+    margin-top: auto;
+  }
+}
+
+.ob-claims {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ob-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ob-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  animation: ob-rise 0.45s ease both;
+  animation-delay: calc(var(--k) * 70ms + 200ms);
+}
+
+.ob-tile__label {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--ob-muted);
+}
+
+.ob-soon {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+@keyframes ob-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ob-dots {
+  display: grid;
+  grid-template-columns: repeat(14, 11px);
+  gap: 5px;
+}
+
+.ob-dot {
+  width: 11px;
+  height: 11px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  animation: ob-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--k) * 14ms + 200ms);
+
+  &--review {
+    background: #a9c2f5;
+  }
+
+  &--progress {
+    background: #f5b58a;
+  }
+}
+
+.ob-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ob-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 6px 9px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 10px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  b {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.95rem;
+  }
+
+  span {
+    font-size: 0.625rem;
+    color: #cfe3e5;
+  }
+}
+
+.ob-swatch {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+
+  &--review {
+    background: #a9c2f5;
+  }
+
+  &--progress {
+    background: #f5b58a;
+  }
+}
+
+@keyframes ob-pop {
+  from {
+    transform: scale(0);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@container ob (max-width: 760px) {
+  .ob-band {
+    grid-template-columns: 1fr;
+  }
+
+  .ob-col + .ob-col {
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-left: 0;
+  }
+}
+
+@container ob (max-width: 520px) {
+  .ob-big {
+    font-size: 2.25rem;
+  }
+
+  .ob-buttons,
+  .ob-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-dot,
+  .ob-tile {
+    animation: none;
+  }
+}
+
+@include r.reveal;

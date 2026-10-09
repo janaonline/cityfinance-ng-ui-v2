@@ -1,0 +1,55 @@
+<mat-card appearance="filled" class="ob-band" appReveal [revealDelay]="80" aria-label="Today's briefing">
+  <div class="ob-col">
+    <div class="ob-pair">
+      <div class="ob-stat-block">
+        <span class="ob-eyebrow">Annual allocation</span>
+        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(totals().allocation)"></span>
+      </div>
+      <div class="ob-stat-block">
+        <span class="ob-eyebrow">Instalment 1</span>
+        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(totals().instalment1)"></span>
+      </div>
+    </div>
+    <span class="ob-hint"
+      >Across {{ total() }} states · {{ totals().ulbsCovered.toLocaleString('en-IN') }} ULBs covered by Instalment
+      1</span
+    >
+
+    <div class="ob-claims">
+      <span class="ob-eyebrow">Claims with MoHUA</span>
+      <div class="ob-tiles">
+        @for (tile of claimTiles; track tile.label; let i = $index) {
+          <div class="ob-tile" [style.--k]="i">
+            <span class="ob-tile__label"><i class="bi {{ tile.icon }}" aria-hidden="true"></i>{{ tile.label }}</span>
+            <span class="ob-soon">Coming soon</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="ob-col">
+    <span class="ob-eyebrow">States moving towards a claim</span>
+    <span class="ob-big">
+      <span [appCountUp]="text(moving())"></span>
+      <small>of {{ total() }}</small>
+    </span>
+
+    <div class="ob-dots" aria-hidden="true">
+      @for (dot of dots(); track $index) {
+        <i class="ob-dot ob-dot--{{ dot }}" [style.--k]="$index"></i>
+      }
+    </div>
+
+    <div class="ob-buttons">
+      @for (b of buttons(); track b.status) {
+        <button type="button" class="ob-stat" (click)="statusPick.emit(b.status)">
+          <b><i class="ob-swatch ob-swatch--{{ b.dot }}"></i>{{ b.count }}</b>
+          <span>{{ b.label }}</span>
+        </button>
+      }
+    </div>
+
+    <span class="ob-hint ob-hint--end">Moving = under MoHUA review or in progress</span>
+  </div>
+</mat-card>

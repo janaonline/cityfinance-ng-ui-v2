@@ -1,235 +1,91 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  OnInit,
+  ElementRef,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
+import { findRouteParam } from '../route-params.util';
+import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
+import { OverviewBriefingComponent } from './briefing/overview-briefing.component';
+import { MohuaOverviewService } from './mohua-overview.service';
+import { OverviewData, StateStatus } from './overview.models';
+import { OverviewStatesGlanceComponent, StateFilter } from './states-glance/overview-states-glance.component';
 
-type MohuaSubRole = 'admin' | 'reviewer' | 'viewer';
+const LOAD_ERROR = 'Could not load the overview. Please try again.';
 
-interface MohuaUser {
-  name: string;
-  email: string;
-  designation: string;
-  xviFcSubrole: MohuaSubRole | null;
-}
-
-interface KpiCard {
-  label: string;
-  value: string | number;
-  icon: string;
-  colorClass: string;
-  bgClass: string;
-}
-
-interface QuickAction {
-  label: string;
-  description: string;
-  icon: string;
-  route: string[];
-  roles: MohuaSubRole[];
-  variant: 'primary' | 'success' | 'danger' | 'secondary';
-  disabled?: boolean;
-  disabledReason?: string;
-}
-
-interface Notice {
-  text: string;
-  icon: string;
-  type: 'info' | 'warning' | 'success';
-}
-
-const SUB_ROLE_LABEL: Record<MohuaSubRole, string> = {
-  admin: 'Submitter',
-  reviewer: 'Editor',
-  viewer: 'Viewer',
-};
-
-const SUB_ROLE_BADGE_CLASS: Record<MohuaSubRole, string> = {
-  admin: 'role-chip--submitter',
-  reviewer: 'role-chip--editor',
-  viewer: 'role-chip--viewer',
-};
-
-const KPI_CARDS: KpiCard[] = [
-  {
-    label: 'State Submissions',
-    value: 28,
-    icon: 'bi-buildings',
-    colorClass: 'text-primary',
-    bgClass: 'bg-primary bg-opacity-10',
-  },
-  {
-    label: 'Pending Review',
-    value: 12,
-    icon: 'bi-hourglass-split',
-    colorClass: 'text-warning',
-    bgClass: 'bg-warning bg-opacity-10',
-  },
-  {
-    label: 'Approved',
-    value: 8,
-    icon: 'bi-check-circle-fill',
-    colorClass: 'text-success',
-    bgClass: 'bg-success bg-opacity-10',
-  },
-  {
-    label: 'Action Needed',
-    value: 4,
-    icon: 'bi-exclamation-triangle-fill',
-    colorClass: 'text-danger',
-    bgClass: 'bg-danger bg-opacity-10',
-  },
-];
-
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    label: 'Review State Submissions',
-    description: 'Examine and verify the latest state-level annual account submissions before approval.',
-    icon: 'bi-file-earmark-check',
-    route: ['review-state-submissions'],
-    roles: ['admin', 'reviewer'],
-    variant: 'primary',
-  },
-  {
-    label: 'Manage Team',
-    description: 'Invite editors and viewers, update roles, or transfer Submitter ownership.',
-    icon: 'bi-people-fill',
-    route: ['roles-teams-unified-view'],
-    roles: ['admin'],
-    variant: 'secondary',
-  },
-  {
-    label: 'Issue Office Memorandum',
-    description: 'Prepare and issue OMs to states confirming grant approval and conditions.',
-    icon: 'bi-file-richtext',
-    route: ['overview'],
-    roles: ['admin'],
-    variant: 'success',
-    disabled: true,
-    disabledReason: 'Approval must be completed before issuing an OM',
-  },
-  {
-    label: 'Final Submit to DoE',
-    description: 'Submit consolidated state recommendations to the Department of Expenditure.',
-    icon: 'bi-send-check-fill',
-    route: ['overview'],
-    roles: ['admin'],
-    variant: 'danger',
-    disabled: true,
-    disabledReason: 'All state approvals must be complete before final submission',
-  },
-];
-
-const NOTICES: Notice[] = [
-  {
-    text: 'FY 2024-25 submission window is open. States must upload audited annual accounts before the deadline.',
-    icon: 'bi-info-circle-fill',
-    type: 'info',
-  },
-  {
-    text: '12 state submissions are awaiting MoHUA review — timely review ensures grant disbursement stays on schedule.',
-    icon: 'bi-exclamation-triangle-fill',
-    type: 'warning',
-  },
-  {
-    text: 'Andhra Pradesh and Maharashtra submissions have been approved. Grant letters are ready for issuance.',
-    icon: 'bi-check-circle-fill',
-    type: 'success',
-  },
-];
-
+/** MoHUA overview: a briefing band with allocation and stage counts, and every state at a glance. */
 @Component({
   selector: 'app-mohua-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatCardModule, MatButtonModule, MatDividerModule, MatTooltipModule],
+  imports: [MatButtonModule, MohuaPageLoaderComponent, OverviewBriefingComponent, OverviewStatesGlanceComponent],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })
-export class MohuaOverviewComponent implements OnInit {
-  private readonly router = inject(Router);
+export class MohuaOverviewComponent {
+  private readonly service = inject(MohuaOverviewService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
-  readonly destroyRef = inject(DestroyRef);
 
-  readonly user = signal<MohuaUser>({ name: '', email: '', designation: '', xviFcSubrole: null });
-  readonly yearLabel = signal<string>('');
-  readonly kpiCards = signal<KpiCard[]>(KPI_CARDS);
-  readonly notices = signal<Notice[]>(NOTICES);
+  readonly yearLabel = signal<string>(this.readStored(XVIFC_LS_KEYS.selectedYearString));
+  readonly overview = signal<OverviewData | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly rows = computed(() => this.overview()?.rows ?? []);
+  readonly stateFilter = signal<StateFilter | null>(null);
 
-  readonly subRoleLabel = computed(() => {
-    const role = this.user().xviFcSubrole;
-    return role ? SUB_ROLE_LABEL[role] : '';
-  });
+  private readonly statesSection = viewChild('states', { read: ElementRef<HTMLElement> });
 
-  readonly subRoleBadgeClass = computed(() => {
-    const role = this.user().xviFcSubrole;
-    return role ? SUB_ROLE_BADGE_CLASS[role] : '';
-  });
+  constructor() {
+    this.load();
+  }
 
-  readonly visibleActions = computed(() => {
-    const role = this.user().xviFcSubrole;
-    if (!role) return QUICK_ACTIONS;
-    return QUICK_ACTIONS.filter((a) => (a.roles as string[]).includes(role));
-  });
-
-  readonly isSubmitter = computed(() => this.user().xviFcSubrole === 'admin');
-
-  readonly displayName = computed(() => {
-    const name = this.user().name;
-    return name ? name.split(' ')[0] : 'there';
-  });
-
-  ngOnInit(): void {
-    try {
-      const raw = localStorage.getItem('userData');
-      if (raw) {
-        const stored = JSON.parse(raw) as Record<string, unknown>;
-        this.user.set({
-          name: (stored['name'] as string) ?? '',
-          email: (stored['email'] as string) ?? '',
-          designation: (stored['designation'] as string) ?? '',
-          xviFcSubrole: (stored['xviFcSubrole'] as MohuaSubRole | null) ?? null,
-        });
-      }
-
-      const yearStr = localStorage.getItem(XVIFC_LS_KEYS.selectedYearString) ?? '';
-      this.yearLabel.set(yearStr || 'FY 2024-25');
-    } catch {
-      // localStorage unavailable; retain defaults
+  load(): void {
+    const yearId = findRouteParam(this.route.snapshot, 'yearId') || this.readStored(XVIFC_LS_KEYS.selectedYearId);
+    if (!yearId) {
+      this.loading.set(false);
+      this.error.set('Select a financial year to view the overview.');
+      return;
     }
+
+    this.loading.set(true);
+    this.error.set(null);
+    this.service
+      .getOverview(yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.overview.set(data);
+          this.loading.set(false);
+        },
+        error: (err: unknown) => {
+          this.error.set(err instanceof HttpErrorResponse ? (err.error?.message ?? LOAD_ERROR) : LOAD_ERROR);
+          this.loading.set(false);
+        },
+      });
   }
 
-  navigateTo(segments: string[]): void {
-    void this.router.navigate(['../', ...segments], { relativeTo: this.route });
+  /** A status button in the briefing band filters the states section and brings it into view. */
+  showStatus(status: StateStatus): void {
+    this.stateFilter.set(status);
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    this.statesSection()?.nativeElement.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   }
 
-  getNoticeAlertClass(type: Notice['type']): string {
-    const map: Record<Notice['type'], string> = {
-      info: 'alert-info',
-      warning: 'alert-warning',
-      success: 'alert-success',
-    };
-    return map[type];
-  }
-
-  getActionBtnClass(variant: QuickAction['variant']): string {
-    const map: Record<QuickAction['variant'], string> = {
-      primary: 'btn btn-primary',
-      secondary: 'btn btn-outline-secondary',
-      success: 'btn btn-outline-success',
-      danger: 'btn btn-outline-danger',
-    };
-    return map[variant];
+  private readStored(key: string): string {
+    try {
+      return localStorage.getItem(key) ?? '';
+    } catch {
+      return '';
+    }
   }
 }
