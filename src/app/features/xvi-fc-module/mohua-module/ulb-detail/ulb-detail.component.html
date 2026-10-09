@@ -1,0 +1,134 @@
+<div class="ud-page">
+  <nav class="ud-crumb" aria-label="Breadcrumb" appReveal>
+    <a [routerLink]="['overview']" [relativeTo]="mohuaRoute"><i class="bi bi-grid" aria-hidden="true"></i> All States</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <a [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">{{ stateName() }}</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    <span aria-current="page">{{ ulb()?.name ?? 'ULB' }}</span>
+  </nav>
+
+  @if (ulb(); as u) {
+    <mat-card appearance="outlined" class="ud-head" appReveal [revealDelay]="60">
+      <h1 class="ud-title">{{ u.name }}</h1>
+      <div class="ud-meta">
+        <span class="ud-amount">₹{{ u.allocation }} cr</span>
+        <mat-chip class="ud-chip ud-tone--{{ u.status === 'eligible' ? 'good' : 'grey' }}">{{
+          u.status === 'eligible' ? 'Eligible' : 'Not eligible yet'
+        }}</mat-chip>
+        @if (isIncludedInClaim()) {
+          <span>Included in <b>{{ claimLetterId }}</b></span>
+          <mat-chip class="ud-chip ud-tone--good">Approved by MoHUA</mat-chip>
+        }
+      </div>
+    </mat-card>
+
+    <div class="ud-tabs" role="tablist" aria-label="Forms" appReveal [revealDelay]="140">
+      @for (tab of tabs(); track tab.key) {
+        <button
+          type="button"
+          role="tab"
+          class="ud-tab ud-tone--{{ tabTone(tab) }}"
+          [attr.aria-selected]="tab.key === selectedKey()"
+          (click)="selectTab(tab.key)"
+        >
+          <span class="ud-tab__icon"><i class="bi {{ tab.done ? 'bi-check-circle' : 'bi-circle' }}" aria-hidden="true"></i></span>
+          <span class="ud-tab__text">
+            <span class="ud-tab__name">{{ tab.label }}</span>
+            <span class="ud-tab__status">{{ tabStatus(tab) }}</span>
+          </span>
+        </button>
+      }
+    </div>
+
+    <mat-card appearance="outlined" class="ud-panel" appReveal [revealDelay]="220" aria-live="polite">
+      <div class="ud-pane">
+        @if (selectedKey() !== 'SERVICE_LEVEL_BENCHMARKS') {
+          <div class="ud-panel__head">
+            <h2>{{ selectedKey() === 'PFMS_BANK_ACCOUNT' ? 'Bank account' : 'Document review' }}</h2>
+            <p>{{ paneSubtitle() }}</p>
+          </div>
+        }
+
+        @if (!selectedTab().done) {
+          <div class="ud-empty">
+            <span class="ud-empty__icon"><i class="bi bi-inbox" aria-hidden="true"></i></span>
+            <p>{{ selectedTab().label }} has not been submitted yet.</p>
+          </div>
+        } @else {
+          @switch (selectedKey()) {
+            @case ('PFMS_BANK_ACCOUNT') {
+              <div class="ud-kv">
+                <div><span class="k">IFSC</span><span class="v">{{ bank.ifsc }}</span></div>
+                <div><span class="k">Bank</span><span class="v">{{ bank.bank }}</span></div>
+                <div><span class="k">Branch</span><span class="v">{{ bank.branch }}</span></div>
+                <div><span class="k">Account number</span><span class="v">{{ bank.accountMasked }}</span></div>
+                <div><span class="k">City</span><span class="v">{{ bank.city }}</span></div>
+                <div>
+                  <span class="k">Proof</span>
+                  <span class="v">{{ bank.proofFile }}</span>
+                  <button mat-stroked-button type="button" class="ud-preview" (click)="viewFile()">
+                    <i class="bi bi-eye" aria-hidden="true"></i> View Document
+                  </button>
+                </div>
+              </div>
+            }
+            @case ('SERVICE_LEVEL_BENCHMARKS') {
+              <div class="ud-slb">
+                <app-slb-review [data]="slbData" />
+              </div>
+            }
+            @default {
+              @for (doc of documents(); track doc.name; let i = $index) {
+                <div class="ud-doc ud-tone--good" [style.--i]="i">
+                  <span class="ud-doc__icon"><i class="bi {{ selectedTab().icon }}" aria-hidden="true"></i></span>
+                  <div>
+                    <div class="ud-doc__name">{{ doc.name }}</div>
+                    <div class="ud-doc__sub">Uploaded {{ doc.uploaded }}</div>
+                  </div>
+                  <mat-chip class="ud-chip ud-tone--good">Passed</mat-chip>
+                  <button mat-stroked-button type="button" class="ud-preview" (click)="viewFile()">
+                    <i class="bi bi-eye" aria-hidden="true"></i> View PDF
+                  </button>
+                </div>
+              }
+            }
+          }
+
+          @if (approval(); as approvalText) {
+            <div class="ud-banner">
+              <i class="bi bi-check-circle" aria-hidden="true"></i>
+              <span>{{ approvalText }}</span>
+            </div>
+          }
+        }
+
+        <mat-expansion-panel class="ud-checks" [expanded]="checksOpen()" (expandedChange)="checksOpen.set($event)">
+          <mat-expansion-panel-header>
+            <mat-panel-title><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title>
+          </mat-expansion-panel-header>
+          <p class="ud-checks__caption">{{ checks().caption }}</p>
+          <h3>Checked automatically</h3>
+          <ul>
+            @for (item of checks().checked; track item) {
+              <li><i class="bi bi-check-lg ud-ok" aria-hidden="true"></i>{{ item }}</li>
+            }
+          </ul>
+          <h3>Not checked</h3>
+          <ul class="ud-no">
+            @for (item of checks().notChecked; track item) {
+              <li><i class="bi bi-circle" aria-hidden="true"></i>{{ item }}</li>
+            }
+          </ul>
+        </mat-expansion-panel>
+      </div>
+    </mat-card>
+  } @else {
+    <mat-card appearance="outlined" class="ud-panel">
+      <div class="ud-empty">
+        <span class="ud-empty__icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <p>This ULB could not be found.</p>
+        <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">Back to {{ stateName() }}</a>
+      </div>
+    </mat-card>
+  }
+</div>

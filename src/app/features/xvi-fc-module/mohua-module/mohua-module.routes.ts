@@ -31,6 +31,14 @@ export const MOHUA_ROUTES: Routes = [
           ),
       },
       {
+        path: 'review-state-submissions/:stateId',
+        loadComponent: () => import('./state-detail/state-detail.component').then((m) => m.StateDetailComponent),
+      },
+      {
+        path: 'review-state-submissions/:stateId/ulb/:ulbId',
+        loadComponent: () => import('./ulb-detail/ulb-detail.component').then((m) => m.UlbDetailComponent),
+      },
+      {
         path: 'fc-unspent-review',
         loadComponent: () =>
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
