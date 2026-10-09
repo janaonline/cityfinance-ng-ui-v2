@@ -103,6 +103,7 @@ describe('EulbRowsDialogComponent', () => {
   });
 
   it('saveRow calls update API with the same row edit payload shape', () => {
+    component.rows.set([row]);
     component.editForm = createEditForm({
       electedBodyStatus: 'Constituted',
       dateOfConstitution: '2026-01-01',
@@ -448,6 +449,7 @@ describe('EulbRowsDialogComponent', () => {
     it('includes the latest validation summary when a save returned one', () => {
       const summary = createSummary();
       service.updateRow.and.returnValue(of(createUpdateResponse(row, summary)));
+      component.rows.set([row]);
       component.editForm = createEditForm({
         electedBodyStatus: 'Constituted',
         dateOfConstitution: '',
