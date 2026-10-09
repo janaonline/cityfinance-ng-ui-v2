@@ -1,0 +1,95 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div>
+      <!-- <div class="text-uppercase fw-semibold mb-2 custom-font-size-7">
+        <span class="text-secondary">16th Finance Commission</span>
+      </div> -->
+
+      <h1 class="page-title my-2">Review State Submissions</h1>
+
+      <p class="page-subtitle text-secondary mb-0">
+        Review and approve or return state-level form submissions across {{ formNamesList }}.
+      </p>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isPageLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else {
+      <!-- Filter section -->
+      <fieldset class="border rounded-3 shadow-sm" [formGroup]="filterForm">
+        <legend class="float-none w-auto m-2 p-0">Filter By:</legend>
+
+        <div class="d-flex flex-wrap gap-3 m-3 mt-0 align-items-center justify-content-between">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+            <mat-label>Form</mat-label>
+            <mat-select formControlName="form">
+              @for (option of formOptions; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+            <mat-label>State</mat-label>
+            <input
+              type="text"
+              matInput
+              formControlName="state"
+              [matAutocomplete]="stateAuto"
+              placeholder="All states"
+            />
+            <mat-autocomplete #stateAuto="matAutocomplete" (optionSelected)="onStateSelected($event.option.value)">
+              @for (state of filteredStates(); track state._id) {
+                <mat-option [value]="state._id">{{ state.name }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <div class="d-flex align-items-center gap-2 filter-field">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-grow-1">
+              <mat-label>Form Status</mat-label>
+              <mat-select formControlName="status">
+                <mat-option [value]="null">All Statuses</mat-option>
+                @for (option of formStatusOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button
+              type="button"
+              class="btn btn-link p-2"
+              (click)="resetFilters()"
+              aria-label="Reset filters"
+              title="Reset filters"
+            >
+              <i class="fs-4 bi bi-arrow-counterclockwise" style="color: var(--color-primary)"></i>
+            </button>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- TODO: Clean up card — the 4 bucket cards are disabled for now (causing more confusion
+           than clarity once the Form Status dropdown went granular); [buckets]/[activeBucketKeyInput]/
+           (bucketSelected) are commented out, not deleted, alongside their .ts-side wiring. -->
+      <app-review-worklist
+        [rows]="rows()"
+        [columns]="columns()"
+        [canActOn]="canActOn"
+        [canOpenRow]="canOpenRow"
+        [title]="worklistTitle()"
+        [defaultSort]="defaultSort"
+        [isLoading]="isTableLoading()"
+        [serverPage]="serverPage()"
+        (reviewClicked)="onReview($event)"
+        (pageChange)="onWorklistPageChange($event)"
+        (sortChange)="onWorklistSortChange($event)"
+      ></app-review-worklist>
+    }
+  </div>
+</section>

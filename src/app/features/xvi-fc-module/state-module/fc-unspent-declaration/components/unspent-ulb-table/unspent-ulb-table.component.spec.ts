@@ -60,6 +60,7 @@ const SAVED_ROWS: FcUnspentUlbData[] = [
     previousFcUnspentBalance: 0.5,
     allocationPerc: 7.5,
     eligibility: true,
+    rowStatus: null,
   },
   {
     slNo: 2,
@@ -72,6 +73,7 @@ const SAVED_ROWS: FcUnspentUlbData[] = [
     previousFcUnspentBalance: 0.4,
     allocationPerc: 15,
     eligibility: false,
+    rowStatus: null,
   },
 ];
 

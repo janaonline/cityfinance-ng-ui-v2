@@ -1,10 +1,10 @@
 /**
  * Numeric form-status values shared across every XVI-FC form type, mirroring the backend's
  * `FORM_STATUS` (cf-nest-api-v2/src/common/constants/form-status.constants.ts). Role-neutral
- * location so any state/mohua/ulb submodule can import the full 0-12 range without depending on
+ * location so any state/mohua/ulb submodule can import the full 0-14 range without depending on
  * another feature's local constant.
  */
-export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
 
 export const FORM_STATUS = {
   NO_STATUS: 0,
@@ -22,4 +22,28 @@ export const FORM_STATUS = {
   /** Terminal, no-owner. Set automatically when a form is exempted for a genuinely new ULB
    *  (xvi-fc dynamic year access) — never a manual ULB/STATE/MoHUA action. */
   EXEMPTED_ACKNOWLEDGED: 12,
+  /** XVIFC_PMU Review feature (state-level forms only) */
+  UNDER_REVIEW_BY_PMU: 13,
+  RETURNED_BY_PMU: 14,
 } as const satisfies Record<string, FormStatusType>;
+
+/**
+ * Row-level edit lock for forms with per-ULB PMU row review (Elected Urban Local Bodies, FC Unspent
+ * Declaration) — mirrors the backend's `canStateEditRow` (xvi-fc-form-status-access.util.ts) exactly,
+ * same FORM_STATUS values. A row is editable by the State only while it hasn't yet been approved by
+ * PMU — `null`/`undefined` (pre-submission), `RETURNED_BY_PMU`, or `RETURNED_BY_MOHUA`. Once a row
+ * reaches `UNDER_REVIEW_BY_PMU` (decision pending) or any approved-adjacent status
+ * (`UNDER_REVIEW_BY_MOHUA`/`SUBMISSION_ACKNOWLEDGED_BY_MOHUA`), it is locked from further edits here.
+ */
+export function canStateEditRow(rowStatus: number | null | undefined): boolean {
+  return (
+    rowStatus == null || rowStatus === FORM_STATUS.RETURNED_BY_PMU || rowStatus === FORM_STATUS.RETURNED_BY_MOHUA
+  );
+}
+
+/** True only while a row is awaiting PMU's own decision — distinct from `canStateEditRow`'s binary
+ *  edit-lock, which also locks a row once PMU has approved it (`UNDER_REVIEW_BY_MOHUA` and later).
+ *  Lets callers show a "Pending Review" badge instead of mislabeling an undecided row "Approved". */
+export function isRowPendingPmuDecision(rowStatus: number | null | undefined): boolean {
+  return rowStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU;
+}

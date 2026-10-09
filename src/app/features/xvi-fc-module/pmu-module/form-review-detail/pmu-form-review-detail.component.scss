@@ -1,0 +1,42 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
+// Matches devolution-formula-rows-dialog.component.scss's own `.df-rows-table`/`.df-col-*` rules —
+// fixed layout so column widths are never pushed by content, and a stable 48px row height.
+.pmu-df-rows-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.pmu-df-col-row-number {
+  width: 48px;
+}
+
+.pmu-df-col-census {
+  width: 110px;
+}
+
+.pmu-df-col-ulb-name {
+  width: 200px;
+}
+
+.pmu-df-col-amount {
+  width: 130px;
+}
+
+.pmu-df-col-formula {
+  width: 160px;
+}
+
+.pmu-df-rows-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  height: 48px;
+}
+
+.pmu-df-rows-table tbody tr {
+  min-height: 48px;
+}

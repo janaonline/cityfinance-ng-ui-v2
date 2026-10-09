@@ -319,6 +319,22 @@
     font-weight: 700;
     color: #1e3a5f;
   }
+
+  &__sub {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  &--total &__label {
+    font-weight: 700;
+    color: #475569;
+  }
+
+  &--total &__value {
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
 }
 
 .gemini-summary {
@@ -330,6 +346,33 @@
   color: #475569;
   line-height: 1.6;
   font-size: 0.88rem;
+}
+
+.segment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  td {
+    padding: 0.45rem 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    color: #374151;
+    vertical-align: top;
+  }
+
+  .segment-row--duplicate td {
+    background: #fff1f2;
+  }
 }
 
 .mismatches h5,
@@ -439,6 +482,13 @@
     padding-top: 0;
     border-top: none;
   }
+}
+
+.job-total-cost__value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  font-variant-numeric: tabular-nums;
 }
 
 .usage-token-row {

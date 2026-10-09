@@ -45,6 +45,21 @@
                   <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
                     {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
                   </span>
+                  @if (rowViewModels()[i].approved) {
+                    <span
+                      class="badge rounded-pill bg-success-subtle text-success-emphasis small flex-shrink-0"
+                      matTooltip="Approved by PMU — this row can no longer be edited."
+                      matTooltipPosition="above"
+                      >Approved</span
+                    >
+                  } @else if (rowViewModels()[i].locked) {
+                    <span
+                      class="badge rounded-pill bg-warning-subtle text-warning-emphasis small flex-shrink-0"
+                      matTooltip="Pending PMU review — this row can no longer be edited."
+                      matTooltipPosition="above"
+                      >Pending Review</span
+                    >
+                  }
                 </div>
                 @if (ulbIdErrorText) {
                   <button
@@ -71,7 +86,7 @@
               {{ formatAmount(rowViewModels()[i].allocationAmount) }}
             </td>
             <td class="text-end pe-3">
-              @if (canEdit()) {
+              @if (canEdit() && !rowViewModels()[i].locked) {
                 @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
                 <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
                 <div class="d-flex align-items-center gap-2">
@@ -113,7 +128,7 @@
               }
             </td>
             <td class="text-end pe-3">
-              @if (canEdit()) {
+              @if (canEdit() && !rowViewModels()[i].locked) {
                 @let previousFcUnspentBalanceErrorText = rowFieldErrorText(row, 'previousFcUnspentBalance');
                 <label class="visually-hidden" [attr.for]="'fc-unspent-prev-balance-' + i"
                   >Previous FC unspent balance</label
@@ -179,7 +194,9 @@
                 type="button"
                 matButton="outlined"
                 class="unspent-row-btn"
-                [disabled]="!canEdit()"
+                [disabled]="!canEdit() || rowViewModels()[i].locked"
+                [matTooltip]="rowViewModels()[i].locked ? 'Approved by PMU — this row cannot be removed.' : ''"
+                matTooltipPosition="above"
                 (click)="removeRow(i)"
                 aria-label="Remove row"
               >

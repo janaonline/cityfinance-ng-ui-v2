@@ -79,7 +79,14 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ELECTED_BODIES_LIST: 'download-elected-bodies-list',
 } as const;
 
+/** Mirrors the backend's authoritative `POST_SUBMISSION_UPDATE_ALLOWED_STATUSES`
+ *  (`xvi-fc-form-status-access.util.ts`) — kept in sync by hand, not imported, since this is a
+ *  frontend-only route guard/button-visibility check. Was missing `UNDER_REVIEW_BY_PMU`: once the
+ *  PMU Review feature retargeted `finalSubmit` to land there instead of `UNDER_REVIEW_BY_MOHUA`,
+ *  this button/page became unreachable for every form sitting in PMU's queue, even though the
+ *  backend already allowed it. */
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
+  FORM_STATUS.UNDER_REVIEW_BY_PMU,
   FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
   FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA,
 ];
