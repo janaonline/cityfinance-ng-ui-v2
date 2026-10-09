@@ -29,6 +29,8 @@ interface DigitizationListRow {
   expectedUlbName: string;
   expectedFinancialYear: string;
   expectedDocType: string;
+  detectedDocumentType: string;
+  multipleDocumentsDetected: boolean;
   createdAt: string;
   completedAt: string;
 }
@@ -61,6 +63,7 @@ export class AfsDigitizationListComponent implements OnInit {
     'model',
     'status',
     'scores',
+    'detectedType',
     'cost',
     'expected',
     'dates',
@@ -293,6 +296,11 @@ export class AfsDigitizationListComponent implements OnInit {
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',
       expectedDocType: job.expected?.doc_type || '—',
+      detectedDocumentType: job.detected_document_type
+        ? (this.digitizationService.detectedDocumentTypeLabels[job.detected_document_type] ??
+          job.detected_document_type)
+        : '—',
+      multipleDocumentsDetected: job.multiple_documents_detected === true,
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
     };

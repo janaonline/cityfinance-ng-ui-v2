@@ -144,6 +144,20 @@
             </td>
           </ng-container>
 
+          <ng-container matColumnDef="detectedType">
+            <th mat-header-cell *matHeaderCellDef>Detected Type</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.detectedDocumentType === '—') {
+                <span class="dim">—</span>
+              } @else {
+                <span class="status-badge"
+                  [ngClass]="row.multipleDocumentsDetected ? 'status-badge--processing' : 'status-badge--queued'">
+                  {{ row.detectedDocumentType }}
+                </span>
+              }
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="cost">
             <th mat-header-cell *matHeaderCellDef>OCR Cost</th>
             <td mat-cell *matCellDef="let row">

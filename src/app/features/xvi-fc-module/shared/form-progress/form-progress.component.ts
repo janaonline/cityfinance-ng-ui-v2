@@ -15,6 +15,9 @@ export const FORM_STATUS = {
   UNDER_REVIEW_BY_MOHUA: 5,
   RETURNED_BY_MOHUA: 6,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
+  /** PMU Review feature (state-level forms only) */
+  UNDER_REVIEW_BY_PMU: 13,
+  RETURNED_BY_PMU: 14,
 } as const;
 
 // ─── Public API types ─────────────────────────────────────────────────────────
@@ -81,9 +84,12 @@ const STATUS_TONE_MAP: Readonly<Record<FormStatusValue, StatusTone>> = {
   5: 'primary',
   6: 'error',
   7: 'primary',
+  13: 'primary',
+  14: 'error',
 };
 
-/** Human-readable status pill labels for State forms. */
+/** Human-readable status pill labels for State forms. 13/14 (PMU Review feature) literally alias
+ *  5's/6's own labels — see this file's `FORM_STATUS` doc comment for why. */
 const STATE_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   0: 'Not Started',
   1: 'Not Started',
@@ -93,6 +99,8 @@ const STATE_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   5: 'Under Review by MoHUA',
   6: 'Returned by MoHUA',
   7: 'Acknowledged by MoHUA',
+  13: 'Under Review by MoHUA',
+  14: 'Returned by MoHUA',
 };
 
 /** Human-readable status pill labels for ULB forms. */
@@ -105,6 +113,8 @@ const ULB_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   5: 'Approved by State',
   6: 'Returned by MoHUA',
   7: 'Approved by MoHUA',
+  13: 'In Progress', // Status not possible for ULB forms
+  14: 'In Progress', // Status not possible for ULB forms
 };
 
 /**
@@ -120,6 +130,8 @@ const STATE_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep
   5: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED_INACTIVE],
   6: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_REJECTED],
   7: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED],
+  13: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED_INACTIVE], // alias of 5 — PMU Review feature
+  14: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_REJECTED], // alias of 6 — PMU Review feature
 };
 
 /** Ordered stepper steps for each numeric status on ULB forms. */
@@ -132,6 +144,8 @@ const ULB_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep[]
   5: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_ACTIVE, MOHUA_APPROVED_INACTIVE],
   6: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, MOHUA_REJECTED],
   7: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, MOHUA_APPROVED],
+  13: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
+  14: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
 };
 
 // ─── Pure helper functions ────────────────────────────────────────────────────

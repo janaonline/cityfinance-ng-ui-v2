@@ -8,7 +8,8 @@
         Excel workbook (<strong>confidence score</strong>), then Gemini re-reads the source PDF and cross-checks
         every extracted value (<strong>accuracy score</strong>). Optionally, Gemini also checks the arithmetic of the
         digitized output — totals tally, assets equal liabilities, and sign/zero/numeric rules
-        (<strong>arithmetic assessment</strong>).
+        (<strong>arithmetic assessment</strong>) — and identifies each document in the PDF with its page range,
+        flagging merged or duplicate documents (<strong>detected document type</strong>).
       </p>
     </div>
 
@@ -93,6 +94,14 @@
               <mat-select formControlName="enableArithmeticValidation">
                 <mat-option [value]="true">Enabled — check totals, balances &amp; amounts now</mat-option>
                 <mat-option [value]="false">Disabled — skip (run later)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini Document Classification</mat-label>
+              <mat-select formControlName="enableDocumentClassification">
+                <mat-option [value]="true">Enabled — detect document types &amp; page ranges</mat-option>
+                <mat-option [value]="false">Disabled — skip</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -242,6 +251,12 @@
                         {{ job.result.arithmetic_assessment ?? 'NOT RUN' }}
                       </span>
                     </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Detected Document Type (Gemini)</span>
+                      <span class="assessment-badge" [ngClass]="getDocumentTypeClass(job.result.detected_document_type)">
+                        {{ documentTypeLabel(job.result.detected_document_type) }}
+                      </span>
+                    </div>
                   </div>
 
                   <!-- Extraction summary -->
@@ -293,10 +308,14 @@
                     <h5>Task Timings</h5>
                     <div class="summary-grid">
                       @for (t of getTaskTimings(job.result); track t.label) {
-                        <div class="summary-item">
+                        <div class="summary-item" [class.summary-item--total]="t.label === 'Total'">
                           <span class="summary-item__label">{{ t.label }}</span>
+                          @let duration = formatDuration(t.seconds);
                           <span class="summary-item__value">
-                            {{ t.seconds !== null ? (t.seconds | number: '1.1-1') + 's' : '—' }}
+                            {{ duration.main }}
+                            @if (duration.exact) {
+                              <span class="summary-item__sub">({{ duration.exact }})</span>
+                            }
                           </span>
                         </div>
                       }
@@ -332,6 +351,54 @@
                         </tbody>
                       </table>
                     </div>
+                  }
+
+                  <!-- Document classification -->
+                  @if (job.result.document_classification; as classification) {
+                    <div class="usage-section">
+                      <h5>
+                        Documents in this PDF ({{ classification.document_count }})
+                        @if (classification.multiple_documents_detected) {
+                          <span class="assessment-badge assessment--warning">Multiple documents detected</span>
+                        }
+                        @if (classification.duplicate_documents_detected) {
+                          <span class="assessment-badge assessment--fail">Duplicate detected</span>
+                        }
+                      </h5>
+                      @if (classification.segments.length > 0) {
+                        <table class="segment-table">
+                          <thead>
+                            <tr>
+                              <th>Document Type</th>
+                              <th>Pages</th>
+                              <th>Title</th>
+                              <th>Duplicate</th>
+                              <th>Confidence</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (seg of classification.segments; track $index) {
+                              <tr [class.segment-row--duplicate]="seg.is_duplicate">
+                                <td>{{ documentTypeLabel(seg.document_type) }}</td>
+                                <td>{{ formatPageRange(seg.start_page, seg.end_page) }}</td>
+                                <td>{{ seg.title ?? '—' }}</td>
+                                <td>{{ seg.is_duplicate ? 'Yes' : 'No' }}</td>
+                                <td>{{ seg.confidence !== null ? (seg.confidence * 100 | number: '1.0-0') + '%' : '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @if (classification.unclassified_pages.length > 0) {
+                        <p class="gemini-summary">
+                          Unclassified pages: {{ classification.unclassified_pages.join(', ') }}
+                        </p>
+                      }
+                    </div>
+
+                    @if (classification.summary) {
+                      <p class="gemini-summary">{{ classification.summary }}</p>
+                    }
                   }
 
                   <!-- Arithmetic validations -->
@@ -547,6 +614,20 @@
                     </div>
                   }
                 </div>
+
+                  @let totalCost = getJobTotalCost(job.result);
+                  <div class="usage-total-card job-total-cost">
+                    <div class="usage-cost-row">
+                      <span class="usage-cost-label">Total Cost (OCR + Gemini)</span>
+                      <span class="job-total-cost__value">
+                        {{ totalCost.complete ? '' : '≥ ' }}₹{{ totalCost.inr | number: '1.2-2' }}
+                      </span>
+                    </div>
+                    <p class="usage-cost-formula">
+                      {{ totalCost.parts }}
+                      @if (!totalCost.complete) { · some pricing unavailable, total is a lower bound }
+                    </p>
+                  </div>
 
                   <p class="job-timing">
                     Processed in {{ job.result.processing_time_seconds | number: '1.1-1' }}s

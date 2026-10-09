@@ -64,11 +64,12 @@ export class ClaimLetterListComponent implements OnInit {
   readonly hasPrev = computed(() => this.page() > 1);
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
-  /** Unified 7-item checklist: the 4 state-level gate sources (SFC, Devolution, Elected Body, FC
-   *  Unspent) plus the 3 ULB-only criteria (SLB, Provisional, Audited) from `ulbLevelCriteria`,
-   *  mapped into the same item shape with `result` left `undefined` — the checklist component
-   *  renders those with a neutral icon and excludes them from "all passing" (plan: one unified
-   *  list, not a separate informational block). */
+  /** Unified checklist: the state-level gate sources (today: SFC, Devolution, Elected Body, FC
+   *  Unspent, GTC) plus the ULB-only criteria from `ulbLevelCriteria` (today: SLB, Provisional,
+   *  Audited, Bank Account, DUR), mapped into the same item shape with `result` left `undefined` —
+   *  the checklist component renders those with a neutral icon and excludes them from "all
+   *  passing" (plan: one unified list, not a separate informational block). Both lists are
+   *  config-driven (`formjsons.claimEligibility`) and will change over time. */
   readonly checklistItems = computed<ClaimLetterEligibilitySource[]>(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return [];
@@ -85,8 +86,9 @@ export class ClaimLetterListComponent implements OnInit {
   });
 
   /** True exactly when zero ULBs meet every ULB-bulk requirement at once — the true intersection
-   *  across SLB/Provisional/Audited plus the Elected Body/FC Unspent row tallies, not just whether
-   *  any single criterion individually hits 0 (a criterion can each look fine on its own while no
+   *  across every ULB-level criterion (today: SLB, Provisional, Audited, Bank Account, DUR) plus
+   *  the Elected Body/FC Unspent row tallies, not just whether any single criterion individually
+   *  hits 0 (a criterion can each look fine on its own while no
    *  ULB passes all of them, e.g. different ULBs failing different criteria). Same `ulbReadiness`
    *  stat shown in the top banner and passed into the checklist component, so this button, the top
    *  badge, and the checklist's ULB section always agree on whether ULBs are actually pickable. */
