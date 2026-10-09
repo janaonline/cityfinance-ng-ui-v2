@@ -19,6 +19,7 @@ import {
 } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { IUlbSummary } from '../../../../core/models/ulb-summary';
+import { environment } from '../../../../../environments/environment';
 import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
@@ -630,7 +631,8 @@ export class AfsDigitizationComponent implements OnInit {
   }
 
   getJobLink(jobId: string): string {
-    return `${window.location.origin}/ocr/afs-digitization/upload?jobId=${jobId}`;
+    const base = environment.ui.urlV2.replace(/\/+$/, '');
+    return `${base}/ocr/afs-digitization/upload?jobId=${jobId}`;
   }
 
   private addJob(job: DigitizationJobTracker): void {

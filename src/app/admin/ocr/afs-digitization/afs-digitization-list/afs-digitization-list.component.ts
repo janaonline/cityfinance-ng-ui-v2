@@ -6,7 +6,9 @@ import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/p
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { saveAs } from 'file-saver';
 import { finalize } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
@@ -93,6 +95,8 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly sortOrder = signal<'asc' | 'desc'>('desc');
   readonly dataSource = new MatTableDataSource<DigitizationListRow>([]);
   readonly loading = signal(false);
+  readonly exporting = signal(false);
+  readonly copiedKey = signal<string | null>(null);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
   readonly revalidatingJobId = signal<string | null>(null);
@@ -139,13 +143,13 @@ export class AfsDigitizationListComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'completed':
-        return 'status-badge--completed';
+        return 'bg-success-subtle text-success-emphasis';
       case 'failed':
-        return 'status-badge--failed';
+        return 'bg-danger-subtle text-danger-emphasis';
       case 'processing':
-        return 'status-badge--processing';
+        return 'bg-warning-subtle text-warning-emphasis';
       default:
-        return 'status-badge--queued';
+        return 'bg-secondary-subtle text-secondary-emphasis';
     }
   }
 
@@ -154,6 +158,63 @@ export class AfsDigitizationListComponent implements OnInit {
     if (score >= 90) return 'text-success';
     if (score >= 70) return 'text-warning';
     return 'text-danger';
+  }
+
+  exportToExcel(): void {
+    if (this.exporting()) return;
+    const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
+    this.exporting.set(true);
+
+    this.digitizationService
+      .dumpDigitizationJobs({
+        status: status || undefined,
+        filename: filename.trim() || undefined,
+        ulb_name: ulbName.trim() || undefined,
+        financial_year: financialYear.trim() || undefined,
+        sort_order: this.sortOrder(),
+        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
+        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
+      })
+      .pipe(finalize(() => this.exporting.set(false)))
+      .subscribe({
+        next: (blob) => {
+          const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
+          saveAs(blob, `afs_digitization_jobs_${timestamp}.xlsx`);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Export failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  copyValue(label: string, value: string): void {
+    if (!value || value === '—') return;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        const key = `${label}:${value}`;
+        this.copiedKey.set(key);
+        window.setTimeout(() => {
+          if (this.copiedKey() === key) this.copiedKey.set(null);
+        }, 1500);
+      })
+      .catch(() => {
+        this.utilityService.swalPopup('Copy failed', `Unable to copy ${label.toLowerCase()}. Please try again.`, 'error');
+      });
+  }
+
+  isCopied(label: string, value: string): boolean {
+    return this.copiedKey() === `${label}:${value}`;
+  }
+
+  getJobLink(jobId: string): string {
+    const base = environment.ui.urlV2.replace(/\/+$/, '');
+    return `${base}/ocr/afs-digitization/upload?jobId=${jobId}`;
   }
 
   downloadExcel(row: DigitizationListRow): void {

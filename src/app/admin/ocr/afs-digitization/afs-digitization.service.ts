@@ -183,6 +183,31 @@ export class AfsDigitizationService {
     });
   }
 
+  dumpDigitizationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    ocr_engine?: DigitizationOcrEngine;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'afs-digitization/jobs/dump', {
+      params: queryParams,
+      responseType: 'blob',
+    });
+  }
+
   listDigitizationJobs(params?: {
     status?: string;
     filename?: string;
