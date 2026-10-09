@@ -177,6 +177,11 @@ export class AfsDigitizationService {
     });
   }
 
+  /** URL that renders the job's file inline in the browser (PDF) — for links / window.open. */
+  getDigitizationFileViewUrl(jobId: string, fileType: 'pdf' | 'excel' = 'pdf'): string {
+    return `${environment.api.url3}afs-digitization/jobs/${jobId}/view/${fileType}`;
+  }
+
   downloadDigitizationPdf(jobId: string) {
     return this.http.get(environment.api.url3 + `afs-digitization/jobs/${jobId}/pdf`, {
       responseType: 'blob',

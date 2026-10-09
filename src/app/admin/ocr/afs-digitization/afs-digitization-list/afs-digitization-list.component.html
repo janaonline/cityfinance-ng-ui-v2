@@ -97,13 +97,21 @@
 
       <!-- Table -->
       <div class="table-responsive border rounded-2">
-        <table mat-table [dataSource]="dataSource" class="val-table">
+        <table mat-table [dataSource]="dataSource" class="val-table w-100">
           <ng-container matColumnDef="jobAndFile">
             <th mat-header-cell *matHeaderCellDef>Job / File</th>
             <td mat-cell *matCellDef="let row">
               <div class="identity-cell d-flex flex-column gap-1">
                 <span class="d-flex align-items-center gap-1">
-                  <span class="small fw-medium font-monospace text-truncate flex-grow-1" [title]="row.jobId">{{ row.jobId }}</span>
+                  <a
+                    class="small fw-medium font-monospace text-truncate flex-grow-1"
+                    routerLink="/ocr/afs-digitization/upload"
+                    [queryParams]="{ jobId: row.jobId }"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="'Open job ' + row.jobId + ' in a new tab'"
+                    >{{ row.jobId }}</a
+                  >
                   <button
                     type="button"
                     class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
@@ -124,7 +132,28 @@
                   </button>
                 </span>
                 <span class="d-flex align-items-center gap-1">
-                  <span class="small fw-medium text-truncate flex-grow-1" [title]="row.filename">{{ row.filename }}</span>
+                  <a
+                    class="small fw-medium text-truncate flex-grow-1"
+                    [href]="getPdfViewUrl(row.jobId)"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="'Open ' + row.filename + ' in a new tab'"
+                    >{{ row.filename }}</a
+                  >
+                  @if (row.hasExcel) {
+                    <button
+                      type="button"
+                      class="copy-btn btn btn-outline-success rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                      aria-label="Download Excel"
+                      title="Download Excel"
+                      [disabled]="downloadingJobId() === row.jobId"
+                      (click)="downloadExcel(row)"
+                    >
+                      <mat-icon [class.spin-icon]="downloadingJobId() === row.jobId">{{
+                        downloadingJobId() === row.jobId ? 'hourglass_empty' : 'table_chart'
+                      }}</mat-icon>
+                    </button>
+                  }
                   <button
                     type="button"
                     class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
@@ -140,19 +169,12 @@
             </td>
           </ng-container>
 
-          <ng-container matColumnDef="model">
-            <th mat-header-cell *matHeaderCellDef>Model</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="font-monospace small">{{ row.geminiModel }}</span>
-              <p class="small fst-italic text-body-secondary mt-1 mb-0">OCR: {{ row.ocrEngine | titlecase }}</p>
-            </td>
-          </ng-container>
-
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef>Status</th>
             <td mat-cell *matCellDef="let row">
               <div class="d-flex align-items-center gap-2">
                 <span class="badge rounded-pill" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
+                <span class="small fst-italic text-body-secondary text-nowrap" [title]="'Gemini model: ' + row.geminiModel">OCR: {{ row.ocrEngine | titlecase }}</span>
                 @if (row.status === 'failed' && row.errorMessage !== '—') {
                   <button
                     type="button"
@@ -165,6 +187,14 @@
                   </button>
                 }
               </div>
+              @if (row.detectedDocumentType !== '—') {
+                <div class="mt-1" title="Detected document type">
+                  <span class="badge rounded-pill"
+                    [ngClass]="row.multipleDocumentsDetected ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis'">
+                    {{ row.detectedDocumentType }}
+                  </span>
+                </div>
+              }
               @if (row.progressStep !== '—' && row.progressStep.toLowerCase() !== row.status.toLowerCase()) {
                 <p class="small fst-italic text-body-secondary mt-1 mb-0">{{ row.progressStep }}</p>
               }
@@ -194,20 +224,6 @@
             </td>
           </ng-container>
 
-          <ng-container matColumnDef="detectedType">
-            <th mat-header-cell *matHeaderCellDef>Detected Type</th>
-            <td mat-cell *matCellDef="let row">
-              @if (row.detectedDocumentType === '—') {
-                <span class="text-body-tertiary">—</span>
-              } @else {
-                <span class="badge rounded-pill"
-                  [ngClass]="row.multipleDocumentsDetected ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis'">
-                  {{ row.detectedDocumentType }}
-                </span>
-              }
-            </td>
-          </ng-container>
-
           <ng-container matColumnDef="cost">
             <th mat-header-cell *matHeaderCellDef>OCR Cost</th>
             <td mat-cell *matCellDef="let row">
@@ -220,15 +236,15 @@
           <ng-container matColumnDef="expected">
             <th mat-header-cell *matHeaderCellDef>Expected</th>
             <td mat-cell *matCellDef="let row">
-              <div class="d-flex flex-column gap-1">
+              <div class="expected-cell d-flex flex-column gap-1">
                 @if (row.expectedUlbName !== '—') {
-                  <div><span class="small text-uppercase text-body-secondary me-1">ULB</span><span class="small fw-medium">{{ row.expectedUlbName }}</span></div>
+                  <div title="ULB"><span class="small fw-medium">{{ row.expectedUlbName }}</span></div>
                 }
                 @if (row.expectedFinancialYear !== '—') {
-                  <div><span class="small text-uppercase text-body-secondary me-1">FY</span><span class="small fw-medium">{{ row.expectedFinancialYear }}</span></div>
+                  <div title="Financial year"><span class="small fw-medium">{{ row.expectedFinancialYear }}</span></div>
                 }
                 @if (row.expectedDocType !== '—') {
-                  <div><span class="small text-uppercase text-body-secondary me-1">Type</span><span class="small fw-medium">{{ row.expectedDocType }}</span></div>
+                  <div title="Document type"><span class="small fw-medium">{{ row.expectedDocType }}</span></div>
                 }
                 @if (row.notes) {
                   <div class="notes-line" [title]="row.notes">
@@ -263,14 +279,11 @@
           </ng-container>
 
           <ng-container matColumnDef="action">
-            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row">
-              <div class="d-flex flex-column gap-1 align-items-stretch">
-                <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center text-nowrap" routerLink="/ocr/afs-digitization/upload" [queryParams]="{ jobId: row.jobId }" target="_blank" title="View result">
-                  View
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center text-nowrap" [matMenuTriggerFor]="actionMenu" title="More actions">
-                  Actions <mat-icon class="menu-caret">arrow_drop_down</mat-icon>
+              <div class="d-flex justify-content-center">
+                <button type="button" mat-icon-button [matMenuTriggerFor]="actionMenu" aria-label="More actions" title="More actions">
+                  <mat-icon>more_vert</mat-icon>
                 </button>
                 <mat-menu #actionMenu="matMenu">
                   @if (row.hasExcel) {

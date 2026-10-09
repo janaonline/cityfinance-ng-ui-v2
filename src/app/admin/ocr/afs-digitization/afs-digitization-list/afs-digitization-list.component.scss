@@ -68,7 +68,7 @@
 }
 
 .error-text {
-  width: 300px;
+  max-width: 300px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -127,4 +127,17 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+// Action column only holds the three-dot menu button: shrink it to its content.
+.val-table .mat-column-action {
+  width: 1%;
+  white-space: nowrap;
+  padding-left: 0.25rem;
+  padding-right: 0.5rem;
+}
+
+// Expected column: compact text (Bootstrap's .small is 0.875em).
+.expected-cell .small {
+  font-size: 0.75rem;
 }

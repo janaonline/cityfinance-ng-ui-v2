@@ -65,10 +65,8 @@ export class AfsDigitizationListComponent implements OnInit {
 
   readonly displayedColumns: string[] = [
     'jobAndFile',
-    'model',
     'status',
     'scores',
-    'detectedType',
     'cost',
     'expected',
     'dates',
@@ -236,6 +234,10 @@ export class AfsDigitizationListComponent implements OnInit {
           this.utilityService.swalPopup('Download failed', 'Could not download the Excel file.', 'error');
         },
       });
+  }
+
+  getPdfViewUrl(jobId: string): string {
+    return this.digitizationService.getDigitizationFileViewUrl(jobId, 'pdf');
   }
 
   downloadPdf(row: DigitizationListRow): void {
