@@ -244,10 +244,29 @@
   font-style: italic;
 }
 
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.error-row {
+  margin-top: 0.3rem;
+  width: 300px;
+}
+
+// Clamped to 3 lines with an ellipsis (full text in the title tooltip / copy button).
 .error-text {
-  margin: 0.3rem 0 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
   font-size: 0.75rem;
   color: #dc2626;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .action-cell {
