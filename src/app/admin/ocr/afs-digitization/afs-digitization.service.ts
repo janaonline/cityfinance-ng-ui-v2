@@ -177,6 +177,11 @@ export class AfsDigitizationService {
     });
   }
 
+  /** URL that renders the job's file inline in the browser (PDF) — for links / window.open. */
+  getDigitizationFileViewUrl(jobId: string, fileType: 'pdf' | 'excel' = 'pdf'): string {
+    return `${environment.api.url3}afs-digitization/jobs/${jobId}/view/${fileType}`;
+  }
+
   downloadDigitizationPdf(jobId: string) {
     return this.http.get(environment.api.url3 + `afs-digitization/jobs/${jobId}/pdf`, {
       responseType: 'blob',
@@ -188,6 +193,7 @@ export class AfsDigitizationService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
     date_from?: string;
     date_to?: string;
@@ -198,6 +204,7 @@ export class AfsDigitizationService {
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
     if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
@@ -213,6 +220,7 @@ export class AfsDigitizationService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
     date_from?: string;
     date_to?: string;
@@ -225,6 +233,7 @@ export class AfsDigitizationService {
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
     if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
