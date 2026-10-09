@@ -26,3 +26,17 @@ export const FORM_STATUS = {
   UNDER_REVIEW_BY_PMU: 13,
   RETURNED_BY_PMU: 14,
 } as const satisfies Record<string, FormStatusType>;
+
+/**
+ * Row-level edit lock for forms with per-ULB PMU row review (Elected Urban Local Bodies, FC Unspent
+ * Declaration) — mirrors the backend's `canStateEditRow` (xvi-fc-form-status-access.util.ts) exactly,
+ * same FORM_STATUS values. A row is editable by the State only while it hasn't yet been approved by
+ * PMU — `null`/`undefined` (pre-submission), `RETURNED_BY_PMU`, or `RETURNED_BY_MOHUA`. Once a row
+ * reaches `UNDER_REVIEW_BY_PMU` (decision pending) or any approved-adjacent status
+ * (`UNDER_REVIEW_BY_MOHUA`/`SUBMISSION_ACKNOWLEDGED_BY_MOHUA`), it is locked from further edits here.
+ */
+export function canStateEditRow(rowStatus: number | null | undefined): boolean {
+  return (
+    rowStatus == null || rowStatus === FORM_STATUS.RETURNED_BY_PMU || rowStatus === FORM_STATUS.RETURNED_BY_MOHUA
+  );
+}

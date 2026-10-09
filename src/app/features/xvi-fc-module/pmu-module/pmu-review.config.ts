@@ -79,6 +79,10 @@ export function hasEligibilityColumn(form: PmuReviewFormId): boolean {
   return form === 'FC_UNSPENT';
 }
 
+export function hasElectedBodyColumns(form: PmuReviewFormId): boolean {
+  return form === 'ELECTED_BODY';
+}
+
 export type PmuReviewStatus = 'Pending Review' | 'Approved' | 'Returned';
 
 /** The 7 statuses a PMU state-level form (SFC/GTC/Devolution/Elected Body/FC Unspent) can actually

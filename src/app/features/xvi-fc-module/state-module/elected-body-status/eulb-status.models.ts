@@ -123,6 +123,10 @@ export interface EulbRow {
   remarks?: string;
   validationStatus: EulbRowValidationStatus;
   validationErrors: EulbRowError[];
+  /** PMU row-review status — `null` pre-submission. Drives the per-row State edit lock
+   *  (`canStateEditRow`): once PMU approves a row (`UNDER_REVIEW_BY_MOHUA`+), it renders read-only
+   *  here even while the rest of the form stays editable (mixed-approval deadlock fix). */
+  rowStatus: number | null;
 }
 
 export interface EulbRowsQuery {

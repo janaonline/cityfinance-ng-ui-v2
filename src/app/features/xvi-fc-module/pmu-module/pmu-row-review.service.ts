@@ -42,8 +42,10 @@ export class PmuRowReviewService {
     if (query.search) params = params.set('search', query.search);
     if (query.page !== undefined) params = params.set('page', String(query.page));
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
-    if (query.rowStatus !== undefined) params = params.set('rowStatus', String(query.rowStatus));
+    if (query.rowStatus?.length) params = params.set('rowStatus', query.rowStatus.join(','));
     if (query.eligibility !== undefined) params = params.set('eligibility', String(query.eligibility));
+    if (query.sortBy !== undefined) params = params.set('sortBy', query.sortBy);
+    if (query.sortDir !== undefined) params = params.set('sortDir', query.sortDir);
 
     return this.http
       .get<PmuApiResponse<{ rows: PmuRow[] }>>(`${environment.api.url2}${form.basePath}${stateId}/${yearId}/rows`, {
@@ -59,6 +61,7 @@ export class PmuRowReviewService {
             page: typeof meta['page'] === 'number' ? meta['page'] : (query.page ?? 1),
             limit: typeof meta['limit'] === 'number' ? meta['limit'] : (query.limit ?? rows.length),
             total: typeof meta['total'] === 'number' ? meta['total'] : rows.length,
+            pendingTotal: typeof meta['pendingTotal'] === 'number' ? meta['pendingTotal'] : rows.length,
           };
         }),
       );

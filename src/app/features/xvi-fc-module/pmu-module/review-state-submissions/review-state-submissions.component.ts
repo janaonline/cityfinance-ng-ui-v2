@@ -1,10 +1,11 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { Sort } from '@angular/material/sort';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
@@ -18,6 +19,7 @@ import {
   // commented-out `buckets`/`activeBucketKey`/`onBucketSelected` below).
   ReviewWorklistColumn,
   ReviewWorklistComponent,
+  ReviewWorklistServerPage,
 } from '../../shared/review-worklist/review-worklist.component';
 import {
   PMU_FORM_OPTIONS,
@@ -30,6 +32,22 @@ import {
 } from '../pmu-review.config';
 import { PmuWorklistRow } from '../pmu-review.models';
 import { PmuWorklistService } from '../pmu-worklist.service';
+
+/** The worklist's own row shape uses `updatedAt`, but the `mat-sort-header` for that column is
+ *  keyed `submittedOn` (the column key, chosen for its header label) — this maps a clicked column
+ *  back to the real backend field name `sortBy` expects. Only the 2 columns with `sortValue` set
+ *  below are ever sortable at all. */
+const WORKLIST_SORT_FIELD: Partial<Record<string, string>> = {
+  stateName: 'stateName',
+  submittedOn: 'updatedAt',
+};
+
+/** Capped at the backend's own worklist page-size ceiling (`PMU_WORKLIST_PAGINATION_MAX_LIMIT`) —
+ *  deliberately not `ReviewWorklistComponent`'s own default `[10, 15, 25, 50]` choices, since `50`
+ *  would 400 against this endpoint (the global `ValidationPipe` rejects an out-of-bound `limit`
+ *  rather than clamping it). */
+const WORKLIST_PAGE_SIZE_OPTIONS = [10, 20, 25];
+const WORKLIST_DEFAULT_PAGE_SIZE = 20;
 
 // TODO: Clean up card — the 4 bucket cards (Total/Pending Review/Approved/Returned) are disabled
 // for now (causing more confusion than clarity once the Form Status dropdown went granular). The
@@ -106,16 +124,41 @@ export class ReviewStateSubmissionsComponent {
     initialValue: this.filterForm.controls.status.value,
   });
 
-  private readonly worklistRows = signal<PmuWorklistRow[]>([]);
+  /** Exactly one server page — never the whole worklist (a form's cross-state row count can be
+   *  large once installment-scoped forms are counted; see `pmu-worklist.util.ts`'s own doc comment
+   *  on the backend). Public: bound directly as `<app-review-worklist>`'s `[rows]`. */
+  readonly rows = signal<PmuWorklistRow[]>([]);
+  private readonly page = signal(1);
+  private readonly limit = signal(WORKLIST_DEFAULT_PAGE_SIZE);
+  private readonly total = signal(0);
+  /** Latest-updated states shown first until the user clicks a different column header themselves. */
+  readonly defaultSort: Sort = { active: 'submittedOn', direction: 'desc' };
+  private readonly sort = signal<Sort>(this.defaultSort);
+
+  /** Drives `<app-review-worklist>`'s server-driven paginator — see its own `serverPage` doc. */
+  readonly serverPage = computed<ReviewWorklistServerPage>(() => ({
+    pageIndex: this.page() - 1,
+    pageSize: this.limit(),
+    pageSizeOptions: WORKLIST_PAGE_SIZE_OPTIONS,
+    total: this.total(),
+  }));
 
   constructor() {
     this.loadStates();
 
-    // Re-fetches the worklist whenever the selected Form changes — State/Status narrow the
-    // already-fetched rows client-side (see `filteredRows` below), so neither triggers a re-fetch.
+    // Refetches the worklist whenever Form/State/Status changes — all three are now server-side
+    // query params, not a client-side filter over an already-fetched list (the underlying dataset
+    // can be large). Deliberately reads `limit`/`sort` through `untracked()`: they're passed as the
+    // *current* page size/sort to use, not as something this effect should itself react to — a
+    // page-size or sort change is handled by its own dedicated handler below (`onWorklistPageChange`/
+    // `onWorklistSortChange`), and letting this effect also track them would make it incorrectly
+    // reset back to page 1 every time either one changes instead of just Form/State/Status.
     effect(() => {
       this.selectedForm();
-      this.loadWorklist();
+      this.selectedStateId();
+      this.selectedStatus();
+      this.page.set(1);
+      untracked(() => this.loadWorklist(1, this.limit(), this.sort()));
     });
   }
 
@@ -129,21 +172,32 @@ export class ReviewStateSubmissionsComponent {
       });
   }
 
-  private loadWorklist(): void {
+  private loadWorklist(page: number, limit: number, sort: Sort): void {
     const yearId = this.moduleService.yearId();
     if (!yearId) return;
 
     // isPageLoading is already true on the very first call (its initial signal value) — only a
-    // later, form-changed call needs to flip the in-table spinner on instead.
+    // later, filter/page/sort-changed call needs to flip the in-table spinner on instead.
     if (!this.isPageLoading()) this.isTableLoading.set(true);
 
     const basePath = pmuFormOption(this.selectedForm()).basePath;
+    const sortField = sort.direction ? WORKLIST_SORT_FIELD[sort.active] : undefined;
     this.worklistService
-      .getWorklist(basePath, yearId)
+      .getWorklist(basePath, yearId, {
+        stateId: this.selectedStateId() ?? undefined,
+        status: this.selectedStatus() ?? undefined,
+        sortBy: sortField,
+        sortDir: sortField ? (sort.direction as 'asc' | 'desc') : undefined,
+        page,
+        limit,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (rows) => {
-          this.worklistRows.set(rows);
+        next: (res) => {
+          this.rows.set(res.rows);
+          this.page.set(res.page);
+          this.limit.set(res.limit);
+          this.total.set(res.total);
           this.isPageLoading.set(false);
           this.isTableLoading.set(false);
         },
@@ -153,6 +207,16 @@ export class ReviewStateSubmissionsComponent {
           this.utilityService.triggerSnackbar('Unable to load the worklist.', 'snackbar-danger');
         },
       });
+  }
+
+  onWorklistPageChange(event: PageEvent): void {
+    this.loadWorklist(event.pageIndex + 1, event.pageSize, this.sort());
+  }
+
+  onWorklistSortChange(sort: Sort): void {
+    this.sort.set(sort);
+    this.page.set(1);
+    this.loadWorklist(1, this.limit(), sort);
   }
 
   readonly filteredStates = computed(() => {
@@ -177,16 +241,6 @@ export class ReviewStateSubmissionsComponent {
   onStateSelected(stateId: string): void {
     this.filterForm.controls.state.setValue(this.displayState(stateId), { emitEvent: true });
   }
-
-  /** State + the granular Form Status dropdown both narrow the dataset handed to the worklist —
-   *  same composable mechanism for both, mirroring how picking a specific State already works. */
-  readonly filteredRows = computed<PmuWorklistRow[]>(() => {
-    const stateId = this.selectedStateId();
-    const status = this.selectedStatus();
-    return this.worklistRows().filter(
-      (r) => (!stateId || r.stateId === stateId) && (status === null || r.currentFormStatus === status),
-    );
-  });
 
   readonly isInstallmentScoped = computed(() => pmuFormOption(this.selectedForm()).installmentScoped);
 
@@ -214,9 +268,6 @@ export class ReviewStateSubmissionsComponent {
     );
     return base;
   });
-
-  /** Latest-updated states shown first until the user clicks a different column header themselves. */
-  readonly defaultSort: Sort = { active: 'submittedOn', direction: 'desc' };
 
   // TODO: Clean up card — see the top-of-file note; restore alongside `STATUS_TO_BUCKET`.
   // readonly buckets: ReviewWorklistBucket<PmuWorklistRow>[] = [

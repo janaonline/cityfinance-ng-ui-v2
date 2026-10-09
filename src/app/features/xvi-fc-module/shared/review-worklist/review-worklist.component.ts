@@ -20,6 +20,19 @@ export interface ReviewWorklistBucket<T> {
   predicate: (row: T) => boolean;
 }
 
+/** Drives "server-driven" mode as one controlled object rather than several parallel inputs — see
+ *  `ReviewWorklistComponent.serverPage`'s own doc comment. */
+export interface ReviewWorklistServerPage {
+  /** 0-based, matching `PageEvent.pageIndex` — pass the parent's own `page - 1`. */
+  pageIndex: number;
+  pageSize: number;
+  /** Replaces the default `[10, 15, 25, 50]` choices — e.g. capped at a backend's own max page size
+   *  so picking one can never request more than the server allows. */
+  pageSizeOptions?: number[];
+  /** Total row count across every page — `rows()` in this mode is only ever ≤ one page. */
+  total: number;
+}
+
 const PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
 
@@ -61,17 +74,36 @@ export class ReviewWorklistComponent<T> {
    *  direction: 'desc'}` for "latest first" by default. Omit for no default sort (today's
    *  behavior). */
   readonly defaultSort = input<Sort | null>(null);
+  /** When set, this component is "server-driven": `rows()` is already exactly one page's worth of
+   *  data the parent fetched server-side (filtered/sorted/paginated on the backend), not this
+   *  component's own full local dataset. In this mode `pagedRows()` returns `rows()` directly,
+   *  `total()` and the paginator's index/size/options all come from this object instead of being
+   *  owned internally, and sort/page interactions are re-emitted via `sortChange`/`pageChange` for
+   *  the parent to refetch instead of being applied locally. Bucket cards are not supported
+   *  alongside this mode — no caller uses both today. `null` (the default): today's fully
+   *  local/uncontrolled behavior, unchanged. */
+  readonly serverPage = input<ReviewWorklistServerPage | null>(null);
 
   readonly reviewClicked = output<T>();
   readonly bucketSelected = output<string>();
+  /** Emitted instead of paginating locally when `serverPage` is set. */
+  readonly pageChange = output<PageEvent>();
+  /** Emitted instead of sorting locally when `serverPage` is set. */
+  readonly sortChange = output<Sort>();
 
   private readonly internalBucketKey = signal<string | null>(null);
-  readonly pageIndex = signal(0);
-  readonly pageSize = signal(PAGE_SIZE);
-  readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
+  private readonly internalPageIndex = signal(0);
+  private readonly internalPageSize = signal(PAGE_SIZE);
+  /** Controlled/uncontrolled, same shape as `activeBucketKey` below — `serverPage` wins when set. */
+  readonly pageIndex = computed(() => this.serverPage()?.pageIndex ?? this.internalPageIndex());
+  readonly pageSize = computed(() => this.serverPage()?.pageSize ?? this.internalPageSize());
+  readonly pageSizeOptions = computed(() => this.serverPage()?.pageSizeOptions ?? PAGE_SIZE_OPTIONS);
   private readonly userSort = signal<Sort | null>(null);
   /** The caller's `defaultSort` applies until the user actually clicks a column header — same
-   *  controlled-falls-back-to-default shape as `activeBucketKey` below. */
+   *  controlled-falls-back-to-default shape as `activeBucketKey` below. Tracked the same way
+   *  regardless of mode, purely to drive the mat-sort header's active/direction display — with
+   *  `serverPage` set, the actual re-sorting of data happens on the backend, not via
+   *  `filteredRows()` below. */
   readonly sort = computed(() => this.userSort() ?? this.defaultSort());
 
   readonly displayedColumns = computed(() => [...this.columns().map((c) => c.key), 'action']);
@@ -111,36 +143,43 @@ export class ReviewWorklistComponent<T> {
     });
   });
 
-  readonly total = computed(() => this.filteredRows().length);
+  readonly total = computed(() => this.serverPage()?.total ?? this.filteredRows().length);
 
   readonly pagedRows = computed(() => {
+    if (this.serverPage()) return this.rows();
     const start = this.pageIndex() * this.pageSize();
     return this.filteredRows().slice(start, start + this.pageSize());
   });
 
   constructor() {
     // Parent-level filters (state/form/status) changing the incoming `rows` shouldn't leave the
-    // paginator stranded on a now out-of-range page.
+    // paginator stranded on a now out-of-range page. Skipped when `serverPage` is set: there,
+    // `rows()` changes on *every* page navigation too (the parent hands over a new page each time),
+    // not just on a filter change — resetting here would immediately snap back to page 0 after every
+    // forward/back click. A `serverPage` parent resets via its own `pageIndex` instead, deliberately.
     effect(() => {
       this.rows();
-      this.pageIndex.set(0);
+      if (this.serverPage()) return;
+      this.internalPageIndex.set(0);
     });
   }
 
   selectBucket(key: string): void {
     this.internalBucketKey.set(key);
     this.bucketSelected.emit(key);
-    this.pageIndex.set(0);
+    this.internalPageIndex.set(0);
   }
 
   onSortChange(sort: Sort): void {
     this.userSort.set(sort);
-    this.pageIndex.set(0);
+    this.internalPageIndex.set(0);
+    if (this.serverPage()) this.sortChange.emit(sort);
   }
 
   onPageChange(event: PageEvent): void {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
+    this.internalPageIndex.set(event.pageIndex);
+    this.internalPageSize.set(event.pageSize);
+    if (this.serverPage()) this.pageChange.emit(event);
   }
 
   actionLabelFor(row: T): string {

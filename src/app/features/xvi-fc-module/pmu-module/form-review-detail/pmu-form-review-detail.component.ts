@@ -21,7 +21,7 @@ import { PmuReviewFormId, pmuFormOption, pmuStatusBadgeClass, pmuStatusLabel } f
 import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { PmuDevolutionRow, PmuFormReviewData } from '../pmu-review.models';
 import { PmuFormReviewService } from '../pmu-form-review.service';
-import { extractApiErrorResponse } from '../pmu-review.utils';
+import { extractApiErrorResponse, extractFormLevelErrorMessage } from '../pmu-review.utils';
 
 /**
  * One generic form-level PMU review detail, serving SFC Status / GTC / Devolution Formula — only
@@ -76,6 +76,10 @@ export class PmuFormReviewDetailComponent {
   readonly loadError = signal<string | null>(null);
   readonly isApproving = signal(false);
   readonly isRejecting = signal(false);
+  /** Set when approve/reject fails — distinct from `loadError`, which blocks the whole page on the
+   *  initial GET and would hide the very form/actions the user needs to retry or fix. Cleared at
+   *  the start of the next attempt. */
+  readonly mutationError = signal<string | null>(null);
 
   /** Writable (not `computed`) — `bindVisibility()` calls `fieldsSignal.update(...)` to flip each
    *  field's `hidden` flag as `visibleWhen` conditions are evaluated against the live form. */
@@ -105,9 +109,16 @@ export class PmuFormReviewDetailComponent {
 
   /** Only populated when `formOption.hasReadOnlyRows` (Devolution Formula today) — a read-only
    *  per-ULB allocation table shown in place of the (always-empty, for this form) `questions`
-   *  field list, so PMU isn't approving/rejecting blind. */
+   *  field list, so PMU isn't approving/rejecting blind. Server-paginated — one page == one
+   *  backend request, same convention as `request-exemption-list.component.ts`. */
   readonly rows = signal<PmuDevolutionRow[]>([]);
   readonly isLoadingRows = signal(false);
+  readonly page = signal(1);
+  readonly total = signal(0);
+  readonly limit = 25;
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.limit)));
+  readonly hasPrev = computed(() => this.page() > 1);
+  readonly hasNext = computed(() => this.page() < this.totalPages());
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
@@ -136,7 +147,7 @@ export class PmuFormReviewDetailComponent {
           this.review.set(data);
           this.applyQuestions(data.questions ?? []);
           this.isLoading.set(false);
-          if (this.formOption.hasReadOnlyRows) this.loadRows(yearId);
+          if (this.formOption.hasReadOnlyRows) this.loadRows(yearId, 1);
         },
         error: (err: unknown) => {
           this.isLoading.set(false);
@@ -147,14 +158,16 @@ export class PmuFormReviewDetailComponent {
       });
   }
 
-  private loadRows(yearId: string): void {
+  private loadRows(yearId: string, page: number): void {
     this.isLoadingRows.set(true);
     this.reviewService
-      .getRows(this.formOption, this.stateId, yearId, this.resolveInstallment())
+      .getRows(this.formOption, this.stateId, yearId, this.resolveInstallment(), { page, limit: this.limit })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (rows) => {
-          this.rows.set(rows);
+        next: (result) => {
+          this.rows.set(result.rows);
+          this.page.set(result.page);
+          this.total.set(result.total);
           this.isLoadingRows.set(false);
         },
         error: () => {
@@ -162,6 +175,13 @@ export class PmuFormReviewDetailComponent {
           this.utilityService.triggerSnackbar('Unable to load the ULB-wise allocation rows.', 'snackbar-danger');
         },
       });
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages() || page === this.page() || this.isLoadingRows()) return;
+    const yearId = this.moduleService.yearId();
+    if (!yearId) return;
+    this.loadRows(yearId, page);
   }
 
   /** Reloads metadata after a mutation — never locally patches status/remarks; the reloaded
@@ -214,6 +234,7 @@ export class PmuFormReviewDetailComponent {
     const yearId = this.moduleService.yearId();
     if (!yearId) return;
 
+    this.mutationError.set(null);
     this.isApproving.set(true);
     this.reviewService
       .approveForm(this.formOption, this.stateId, yearId, this.resolveInstallment())
@@ -221,6 +242,7 @@ export class PmuFormReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isApproving.set(false);
+          this.utilityService.triggerSnackbar('Form approved.');
           this.reloadAfterMutation();
         },
         error: (err: unknown) => {
@@ -235,6 +257,7 @@ export class PmuFormReviewDetailComponent {
     const yearId = this.moduleService.yearId();
     if (!yearId) return;
 
+    this.mutationError.set(null);
     this.isRejecting.set(true);
     this.reviewService
       .rejectForm(this.formOption, this.stateId, yearId, remarks, this.resolveInstallment())
@@ -242,6 +265,7 @@ export class PmuFormReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isRejecting.set(false);
+          this.utilityService.triggerSnackbar('Form rejected.', 'snackbar-danger');
           this.reloadAfterMutation();
         },
         error: (err: unknown) => {
@@ -251,8 +275,14 @@ export class PmuFormReviewDetailComponent {
       });
   }
 
+  /** Reads the `_form`-keyed error message off the response (falling back to the generic
+   *  `message`) and surfaces it both as a persistent banner (`mutationError`, rendered above the
+   *  actions so it survives past a toast's auto-dismiss) and a toast — see
+   *  `extractFormLevelErrorMessage`'s own doc comment for why `_form` specifically was being lost
+   *  before this fix. */
   private applyMutationError(err: unknown, fallbackMessage: string): void {
-    const response = extractApiErrorResponse(err);
-    this.utilityService.triggerSnackbar(response?.message ?? fallbackMessage, 'snackbar-danger');
+    const message = extractFormLevelErrorMessage(err, fallbackMessage);
+    this.mutationError.set(message);
+    this.utilityService.triggerSnackbar(message, 'snackbar-danger');
   }
 }

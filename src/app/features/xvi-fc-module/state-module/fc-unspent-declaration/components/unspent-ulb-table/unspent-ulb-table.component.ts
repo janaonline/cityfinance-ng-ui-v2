@@ -21,6 +21,7 @@ import { resolveThemeClass } from '../../../../../../shared/components/confirm-d
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
+import { canStateEditRow } from '../../../../common/constants/form-status.constants';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
@@ -45,6 +46,10 @@ interface FcUnspentUlbRowViewModel {
   allocationAmount: number | null;
   allocationPerc: number | null;
   eligible: boolean | null;
+  /** True once PMU has approved this row (`rowStatus` fails `canStateEditRow`) — a brand-new,
+   *  never-saved row is never locked. Mixed-approval deadlock fix: an approved row must stay
+   *  read-only even while sibling rejected rows, and the form as a whole, remain editable. */
+  locked: boolean;
 }
 
 /** Resolves the single message to show for a control's current errors — a backend `apiErrors`
@@ -94,9 +99,17 @@ export function createFcUnspentUlbRowGroup(
   dynamicService: DynamicFormService,
   canEdit: boolean,
   rowEditFields: readonly ConditionalFieldConfig[],
-  existingRow?: { ulbId: string | null; unspentAmount: number | null; previousFcUnspentBalance: number | null },
+  existingRow?: {
+    ulbId: string | null;
+    unspentAmount: number | null;
+    previousFcUnspentBalance: number | null;
+    /** Omitted for a brand-new row (picker-driven `addRow()`) — never locked. */
+    rowStatus?: number | null;
+  },
 ): FcUnspentUlbRowGroup {
-  const readonly = !canEdit;
+  // A row PMU has already approved is locked even while the form overall is still editable
+  // (mixed-approval deadlock fix) — `canEdit` alone is no longer sufficient per-row.
+  const readonly = !canEdit || !canStateEditRow(existingRow?.rowStatus ?? null);
 
   const ulbIdConfig = requireRowFieldConfig(rowEditFields, 'ulbId');
   const unspentAmountConfig = requireRowFieldConfig(rowEditFields, 'unspentAmount');
@@ -253,6 +266,7 @@ export class UnspentUlbTableComponent {
         allocationAmount,
         allocationPerc,
         eligible: allocationPerc !== null ? allocationPerc <= threshold : null,
+        locked: !!saved && !canStateEditRow(saved.rowStatus),
       };
     });
   });
@@ -275,6 +289,7 @@ export class UnspentUlbTableComponent {
   }
 
   removeRow(index: number): void {
+    if (!this.canEdit() || this.rowViewModels()[index]?.locked) return;
     this.rows().removeAt(index);
   }
 

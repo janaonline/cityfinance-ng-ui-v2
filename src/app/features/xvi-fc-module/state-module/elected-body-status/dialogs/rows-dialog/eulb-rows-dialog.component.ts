@@ -18,6 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { debounceTime, distinctUntilChanged, merge, Subject, takeUntil } from 'rxjs';
 import { UtilityService } from '../../../../../../core/services/utility.service';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
+import { canStateEditRow } from '../../../../common/constants/form-status.constants';
 import { ConditionalFieldConfig, DynamicFormVisibilityService } from '../../../../dynamic-form-visibility.service';
 import { EulbStatusService } from '../../eulb-status.service';
 import {
@@ -178,12 +179,19 @@ export class EulbRowsDialogComponent implements OnInit {
     return this.rowEditFields();
   }
 
+  /** Whether this specific row can be edited — the dialog-wide `canEditRows` permission AND the
+   *  row's own PMU review status. Once PMU approves a row, it stays locked even while the form
+   *  overall (and other rows) remain editable (mixed-approval deadlock fix). */
+  canEditRow(row: EulbRow): boolean {
+    return this.canEditRows && canStateEditRow(row.rowStatus);
+  }
+
   /**
    * Puts the given row into edit mode and builds the edit form from the row-specific field list.
    * @param row - The row to edit.
    */
   startEdit(row: EulbRow): void {
-    if (!this.canEditRows) return;
+    if (!this.canEditRow(row)) return;
     this.editingRowId.set(row._id);
     this.buildEditForm(row);
   }
@@ -223,7 +231,8 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param rowId - The unique identifier of the row being saved.
    */
   saveRow(rowId: string): void {
-    if (!this.canEditRows) return;
+    const row = this.rows().find((r) => r._id === rowId);
+    if (!row || !this.canEditRow(row)) return;
     this.editForm.markAllAsTouched();
     this.editForm.updateValueAndValidity();
     if (this.editForm.invalid) return;
@@ -389,7 +398,7 @@ export class EulbRowsDialogComponent implements OnInit {
    * @param field - The field whose input should receive focus; must match a `data-eulb-edit-field` attribute value.
    */
   startEditAtField(row: EulbRow, field: string): void {
-    if (!this.canEditRows) return;
+    if (!this.canEditRow(row)) return;
     if (!this.hasCellError(row, field) || this.editingRowId() !== null) return;
     this.startEdit(row);
     setTimeout(() => {

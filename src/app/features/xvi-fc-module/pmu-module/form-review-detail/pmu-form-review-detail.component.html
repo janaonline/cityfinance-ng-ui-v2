@@ -39,6 +39,27 @@
         <div class="alert alert-danger m-0" role="alert"><b>Return Reason:</b> {{ rejectionRemarks() }}</div>
       }
 
+      @if (mutationError()) {
+        <div class="alert alert-danger py-2 px-3 small mb-2" role="alert" data-cy="pmu-form-review-mutation-error">
+          {{ mutationError() }}
+        </div>
+      }
+
+      @if (visibleFields().length > 0) {
+        <form class="content-body">
+          @for (item of visibleFields(); track item.key; let isLast = $last) {
+            <div
+              class="my-2"
+              [class.border-bottom]="!isLast"
+              [class.border-secondary]="!isLast"
+              [class.border-opacity-25]="!isLast"
+            >
+              <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup()" mode="view"></app-dynamic-form>
+            </div>
+          }
+        </form>
+      }
+
       @if (formOption.hasReadOnlyRows) {
         <!-- Read-only — this form's PMU reviewer never mutates row data (whole-form reject only),
              so there's no checkbox/bulk-action UI here, unlike the row-level detail component. -->
@@ -94,21 +115,35 @@
               </tbody>
             </table>
           </div>
-        }
-      } @else if (visibleFields().length > 0) {
-        <form class="content-body">
-          @for (item of visibleFields(); track item.key; let isLast = $last) {
-            <div
-              class="my-2"
-              [class.border-bottom]="!isLast"
-              [class.border-secondary]="!isLast"
-              [class.border-opacity-25]="!isLast"
-            >
-              <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup()" mode="view"></app-dynamic-form>
+
+          @if (totalPages() > 1) {
+            <div class="d-flex align-items-center justify-content-end gap-2 small mt-2">
+              @if (isLoadingRows()) {
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+              }
+              <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasPrev() || isLoadingRows()"
+                (click)="goToPage(page() - 1)"
+                aria-label="Previous page"
+              >
+                &lsaquo; Prev
+              </button>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasNext() || isLoadingRows()"
+                (click)="goToPage(page() + 1)"
+                aria-label="Next page"
+              >
+                Next &rsaquo;
+              </button>
             </div>
           }
-        </form>
-      } @else {
+        }
+      } @else if (visibleFields().length === 0) {
         <p class="text-secondary small fst-italic mb-0">
           This form has no field-level data for PMU to review — its submitted data lives entirely in its per-ULB rows,
           already recorded at submission time.

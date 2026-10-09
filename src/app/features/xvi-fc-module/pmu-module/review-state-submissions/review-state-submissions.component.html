@@ -78,14 +78,17 @@
            than clarity once the Form Status dropdown went granular); [buckets]/[activeBucketKeyInput]/
            (bucketSelected) are commented out, not deleted, alongside their .ts-side wiring. -->
       <app-review-worklist
-        [rows]="filteredRows()"
+        [rows]="rows()"
         [columns]="columns()"
         [canActOn]="canActOn"
         [canOpenRow]="canOpenRow"
         [title]="worklistTitle()"
         [defaultSort]="defaultSort"
         [isLoading]="isTableLoading()"
+        [serverPage]="serverPage()"
         (reviewClicked)="onReview($event)"
+        (pageChange)="onWorklistPageChange($event)"
+        (sortChange)="onWorklistSortChange($event)"
       ></app-review-worklist>
     }
   </div>

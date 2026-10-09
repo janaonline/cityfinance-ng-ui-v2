@@ -6,7 +6,6 @@ import {
   themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { UtilityService } from '../../../../core/services/utility.service';
 
 const DEFAULT_APPROVE_CONFIRM_DIALOG: ConfirmDialogData = {
   title: 'Approve submission?',
@@ -21,9 +20,10 @@ const DEFAULT_APPROVE_CONFIRM_DIALOG: ConfirmDialogData = {
  * Generic approve/reject action bar for any reviewer role (PMU, MoHUA, ...) reviewing any of the
  * 5 state-level forms. Approve is confirmed via the same `ConfirmDialogService` pattern SFC's own
  * finalSubmit uses; reject's existing inline textarea + "Confirm Reject" button already IS the
- * confirmation gesture, so reject gets a snackbar only, no dialog. The parent still owns the
- * actual approve/reject HTTP calls and passes back `canApprove`/`canReject` from its own
- * permissions response — this component only gates/confirms the user's intent and notifies.
+ * confirmation gesture. Neither emits a success/failure toast itself — the parent owns the actual
+ * approve/reject HTTP call and shows the real toast once its result is known (a toast fired here,
+ * before that result exists, previously claimed success even when the call then failed). This
+ * component only gates/confirms the user's intent and emits.
  */
 @Component({
   selector: 'app-review-acknowledgment',
@@ -34,7 +34,6 @@ const DEFAULT_APPROVE_CONFIRM_DIALOG: ConfirmDialogData = {
 })
 export class ReviewAcknowledgmentComponent {
   private readonly confirmDialogService = inject(ConfirmDialogService);
-  private readonly utilityService = inject(UtilityService);
   private readonly destroyRef = inject(DestroyRef);
   /** Must be resolved in this field-initializer injection context — see themedDialogConfig's own doc. */
   private readonly dialogConfig = themedDialogConfig();
@@ -62,8 +61,10 @@ export class ReviewAcknowledgmentComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (!confirmed) return;
+        // No optimistic snackbar here — the parent's own HTTP result (not yet known at this point)
+        // decides success/failure and shows the real toast; an optimistic one here could claim
+        // success on a call that then fails, and visually stomp the real error toast that follows.
         this.approveClicked.emit();
-        this.utilityService.triggerSnackbar('Approved successfully');
       });
   }
 
@@ -80,8 +81,9 @@ export class ReviewAcknowledgmentComponent {
   onRejectConfirm(): void {
     const remarks = this.rejectRemarks().trim();
     if (!remarks || this.busy()) return;
+    // No optimistic snackbar here — see onApprove()'s own comment; the parent's HTTP result decides
+    // the real success/failure toast.
     this.rejectConfirmed.emit(remarks);
-    this.utilityService.triggerSnackbar('Rejected', 'snackbar-danger');
     this.showRejectInput.set(false);
     this.rejectRemarks.set('');
   }

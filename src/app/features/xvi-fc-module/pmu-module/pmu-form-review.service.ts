@@ -1,9 +1,16 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { PmuFormOption } from './pmu-review.config';
-import { PmuApiResponse, PmuDevolutionRow, PmuFormReviewData, PmuFormSubmitData } from './pmu-review.models';
+import {
+  PmuApiResponse,
+  PmuDevolutionRow,
+  PmuDevolutionRowsQuery,
+  PmuDevolutionRowsResult,
+  PmuFormReviewData,
+  PmuFormSubmitData,
+} from './pmu-review.models';
 
 function ensureSuccessfulResponse<T>(response: PmuApiResponse<T>): PmuApiResponse<T> {
   if (!response.success) {
@@ -41,10 +48,34 @@ export class PmuFormReviewService {
   }
 
   /** Read-only — only called when `form.hasReadOnlyRows` is true (Devolution Formula today). */
-  getRows(form: PmuFormOption, stateId: string, yearId: string, installment?: 1 | 2): Observable<PmuDevolutionRow[]> {
+  getRows(
+    form: PmuFormOption,
+    stateId: string,
+    yearId: string,
+    installment: 1 | 2 | undefined,
+    query: PmuDevolutionRowsQuery,
+  ): Observable<PmuDevolutionRowsResult> {
+    let params = new HttpParams();
+    if (query.page !== undefined) params = params.set('page', String(query.page));
+    if (query.limit !== undefined) params = params.set('limit', String(query.limit));
+
     return this.http
-      .get<PmuApiResponse<{ rows: PmuDevolutionRow[] }>>(this.buildUrl(form, stateId, yearId, installment, 'rows'))
-      .pipe(map((response) => ensureSuccessfulResponse(response).data?.rows ?? []));
+      .get<PmuApiResponse<{ rows: PmuDevolutionRow[] }>>(this.buildUrl(form, stateId, yearId, installment, 'rows'), {
+        params,
+      })
+      .pipe(
+        map((res) => {
+          const response = ensureSuccessfulResponse(res);
+          const rows = response.data?.rows ?? [];
+          const meta = response.meta ?? {};
+          return {
+            rows,
+            page: typeof meta['page'] === 'number' ? meta['page'] : (query.page ?? 1),
+            limit: typeof meta['limit'] === 'number' ? meta['limit'] : (query.limit ?? rows.length),
+            total: typeof meta['total'] === 'number' ? meta['total'] : rows.length,
+          };
+        }),
+      );
   }
 
   approveForm(
