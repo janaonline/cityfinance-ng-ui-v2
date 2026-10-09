@@ -157,8 +157,16 @@
   }
 }
 
+.identity-cell {
+  max-width: 16rem;
+}
+
+// Single-line values truncated with an ellipsis (full text is in the title tooltip).
 .identity-cell .cell-value {
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dates-cell .cell-value {
@@ -331,4 +339,41 @@
 
 .text-secondary {
   color: #94a3b8;
+}
+
+.job-id-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+
+  .cell-value {
+    flex: 1 1 auto;
+  }
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+
+  &:hover {
+    background: #dbeafe;
+  }
+
+  mat-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    font-size: 0.9rem;
+    line-height: 0.9rem;
+  }
 }

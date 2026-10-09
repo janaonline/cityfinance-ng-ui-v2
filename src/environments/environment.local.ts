@@ -7,7 +7,7 @@ export const environment = {
     // url2: 'https://dev.cityfinance.in/api/v2/', // For testing purpose
     url3: 'http://localhost:8000/',
   },
-  ui: { urlV1: 'http://localhost:4200', urlV2: 'http://localhost:8080' },
+  ui: { urlV1: 'http://localhost:4200/', urlV2: 'http://localhost:4300/' },
   blogUrl: 'https://blog.cityfinance.in',
   environment: 'local',
   isProduction: false,

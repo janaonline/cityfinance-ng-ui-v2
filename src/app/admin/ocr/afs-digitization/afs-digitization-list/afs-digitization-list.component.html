@@ -33,6 +33,19 @@
           <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
             <mat-icon>refresh</mat-icon>
           </button>
+          <button
+            type="button"
+            mat-icon-button
+            [disabled]="loading() || exporting()"
+            (click)="exportToExcel()"
+            title="Export filtered jobs to Excel"
+          >
+            @if (exporting()) {
+              <mat-icon>hourglass_empty</mat-icon>
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+          </button>
         </div>
       </div>
 
@@ -90,7 +103,27 @@
             <td mat-cell *matCellDef="let row">
               <div class="identity-cell">
                 <span class="cell-label">Job</span>
-                <span class="cell-value mono" [title]="row.jobId">{{ row.jobId }}</span>
+                <span class="job-id-row">
+                  <span class="cell-value mono" [title]="row.jobId">{{ row.jobId }}</span>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    [attr.title]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    (click)="copyValue('Job ID', row.jobId)"
+                  >
+                    <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="copy-btn"
+                    [attr.aria-label]="isCopied('Job Link', getJobLink(row.jobId)) ? 'Copied' : 'Copy link to this job'"
+                    [attr.title]="isCopied('Job Link', getJobLink(row.jobId)) ? 'Copied' : 'Copy link to this job'"
+                    (click)="copyValue('Job Link', getJobLink(row.jobId))"
+                  >
+                    <mat-icon>{{ isCopied('Job Link', getJobLink(row.jobId)) ? 'check' : 'link' }}</mat-icon>
+                  </button>
+                </span>
               </div>
               <div class="identity-cell">
                 <span class="cell-label">File</span>
