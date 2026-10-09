@@ -477,6 +477,8 @@
 }
 
 .sd-table-wrap {
+  position: relative;
+  min-height: 120px;
   overflow-x: auto;
   border-top: 1px solid var(--sd-line);
 }
@@ -717,5 +719,19 @@ mat-paginator {
 
   p {
     margin: 0;
+  }
+}
+
+// Shown over the table while a page, sort or search loads, so the previous rows stay visible underneath.
+.sd-table-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.6);
+
+  mat-progress-spinner {
+    --mat-progress-spinner-active-indicator-color: var(--color-primary, #12535c);
   }
 }

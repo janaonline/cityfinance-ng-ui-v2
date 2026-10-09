@@ -11,7 +11,7 @@
     <app-ov-briefing [rows]="rows()" [totals]="data.totals" (statusPick)="showStatus($event)" />
     <app-ov-states-glance #states [rows]="rows()" [(filter)]="stateFilter" />
   } @else if (loading()) {
-    <p class="ov-message" role="status">Loading the overview…</p>
+    <app-mohua-page-loader label="Loading the overview" />
   } @else {
     <div class="ov-message" role="alert">
       <p>{{ error() }}</p>

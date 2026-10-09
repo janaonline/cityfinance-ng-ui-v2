@@ -14,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute } from '@angular/router';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { findRouteParam } from '../route-params.util';
+import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
 import { OverviewBriefingComponent } from './briefing/overview-briefing.component';
 import { MohuaOverviewService } from './mohua-overview.service';
 import { OverviewData, StateStatus } from './overview.models';
@@ -26,7 +27,7 @@ const LOAD_ERROR = 'Could not load the overview. Please try again.';
   selector: 'app-mohua-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatButtonModule, OverviewBriefingComponent, OverviewStatesGlanceComponent],
+  imports: [MatButtonModule, MohuaPageLoaderComponent, OverviewBriefingComponent, OverviewStatesGlanceComponent],
   templateUrl: './overview.component.html',
   styleUrl: './overview.component.scss',
 })

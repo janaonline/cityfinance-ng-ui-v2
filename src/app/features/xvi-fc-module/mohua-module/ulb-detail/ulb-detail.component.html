@@ -188,7 +188,7 @@
       </div>
     </mat-card>
   } @else if (loading()) {
-    <p class="ud-message" role="status">Loading the ULB…</p>
+    <app-mohua-page-loader label="Loading the ULB" />
   } @else {
     <div class="ud-message" role="alert">
       <p>{{ error() }}</p>

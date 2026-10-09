@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -13,6 +14,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { formatCrore, StateStatus } from '../overview/overview.models';
+import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
 import { findRouteParam } from '../route-params.util';
 import { MohuaStateDetailService } from './mohua-state-detail.service';
 import { MohuaStateUlbsService } from './mohua-state-ulbs.service';
@@ -71,9 +73,11 @@ const ULB_FORM_ICON: Record<string, string> = {
     MatFormFieldModule,
     MatInputModule,
     MatPaginatorModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
     MatSortModule,
     MatTableModule,
+    MohuaPageLoaderComponent,
     RouterLink,
     RevealDirective,
     CountUpDirective,

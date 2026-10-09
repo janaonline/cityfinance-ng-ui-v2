@@ -9,6 +9,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { SlbReviewComponent } from '../../state-module/ulb-submissions/slb-review/slb-review.component';
 import { ReviewFormId, SYSTEM_CHECKS_CONTENT } from '../../state-module/ulb-submissions/ulb-submissions.models';
+import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
 import { findRouteParam } from '../route-params.util';
 import { MohuaStateDetailService } from '../state-detail/mohua-state-detail.service';
 import { RevealDirective } from '../state-detail/state-detail.directives';
@@ -72,6 +73,7 @@ function approvalOf(mohua: DecisionEntry | null | undefined, state: DecisionEntr
     MatCardModule,
     MatChipsModule,
     MatExpansionModule,
+    MohuaPageLoaderComponent,
     RouterLink,
     RevealDirective,
     SlbReviewComponent,

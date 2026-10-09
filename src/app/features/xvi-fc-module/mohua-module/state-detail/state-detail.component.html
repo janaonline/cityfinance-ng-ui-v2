@@ -156,7 +156,7 @@
         </button>
       </div>
 
-      <div class="sd-table-wrap">
+      <div class="sd-table-wrap" [attr.aria-busy]="ulbsLoading()">
         <table
           mat-table
           matSort
@@ -203,7 +203,9 @@
         </table>
 
         @if (ulbsLoading()) {
-          <p class="sd-empty" role="status">Loading ULBs…</p>
+          <div class="sd-table-loading" role="status" aria-label="Loading ULBs">
+            <mat-progress-spinner mode="indeterminate" [diameter]="32" />
+          </div>
         } @else if (ulbsError()) {
           <div class="sd-message sd-empty" role="alert">
             <p>{{ ulbsError() }}</p>
@@ -225,7 +227,7 @@
       />
     </mat-card>
   } @else if (loading()) {
-    <p class="sd-message" role="status">Loading the state…</p>
+    <app-mohua-page-loader label="Loading the state" />
   } @else {
     <div class="sd-message" role="alert">
       <p>{{ error() }}</p>
