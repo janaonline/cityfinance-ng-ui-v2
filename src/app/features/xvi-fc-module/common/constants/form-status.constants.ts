@@ -40,3 +40,10 @@ export function canStateEditRow(rowStatus: number | null | undefined): boolean {
     rowStatus == null || rowStatus === FORM_STATUS.RETURNED_BY_PMU || rowStatus === FORM_STATUS.RETURNED_BY_MOHUA
   );
 }
+
+/** True only while a row is awaiting PMU's own decision — distinct from `canStateEditRow`'s binary
+ *  edit-lock, which also locks a row once PMU has approved it (`UNDER_REVIEW_BY_MOHUA` and later).
+ *  Lets callers show a "Pending Review" badge instead of mislabeling an undecided row "Approved". */
+export function isRowPendingPmuDecision(rowStatus: number | null | undefined): boolean {
+  return rowStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU;
+}

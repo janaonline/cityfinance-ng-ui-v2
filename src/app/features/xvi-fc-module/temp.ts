@@ -177,4 +177,21 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
     topModel: [],
     bottomModel: [],
   }),
+
+  XVIFC_PMU: (yearId) => ({
+    topModel: [
+      {
+        label: 'XVI Financial Commission',
+        routerLink: ['/xvifc'],
+        icon: 'bi bi-bank',
+      },
+      { label: '_', separator: true },
+      buildMenuItem(
+        'Review State Submissions',
+        'bi bi-ui-checks-grid',
+        buildXvifcFeatureLink('XVIFC_PMU', MOCK_ENTITY_ID, yearId, 'review-state-submissions'),
+      ),
+    ],
+    bottomModel: [],
+  }),
 };

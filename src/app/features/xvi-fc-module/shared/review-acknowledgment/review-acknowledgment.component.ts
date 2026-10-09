@@ -82,8 +82,15 @@ export class ReviewAcknowledgmentComponent {
     const remarks = this.rejectRemarks().trim();
     if (!remarks || this.busy()) return;
     // No optimistic snackbar here — see onApprove()'s own comment; the parent's HTTP result decides
-    // the real success/failure toast.
+    // the real success/failure toast. Nor do we clear the input here — see resetReject()'s own doc:
+    // a failed reject must not lose the reviewer's typed remarks.
     this.rejectConfirmed.emit(remarks);
+  }
+
+  /** Parent calls this once its reject HTTP call actually succeeds — only then is it safe to close
+   *  the inline textarea and discard the typed remarks. Leaving them intact (and the input open)
+   *  across a failed attempt means the reviewer doesn't have to retype. */
+  resetReject(): void {
     this.showRejectInput.set(false);
     this.rejectRemarks.set('');
   }

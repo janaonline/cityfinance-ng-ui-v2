@@ -2,6 +2,7 @@ import { Component, DestroyRef, computed, effect, inject, signal, untracked } fr
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -135,6 +136,12 @@ export class ReviewStateSubmissionsComponent {
   readonly defaultSort: Sort = { active: 'submittedOn', direction: 'desc' };
   private readonly sort = signal<Sort>(this.defaultSort);
 
+  /** Tracks the in-flight worklist request so a filter/sort/page change that arrives before the
+   *  previous one resolves can cancel it — otherwise an older response can overwrite newer rows/
+   *  pagination/totals. Mirrors `dur.component.ts`'s/`upload-documents.component.ts`'s own
+   *  `pollingSub` pattern. */
+  private worklistSub: Subscription | null = null;
+
   /** Drives `<app-review-worklist>`'s server-driven paginator — see its own `serverPage` doc. */
   readonly serverPage = computed<ReviewWorklistServerPage>(() => ({
     pageIndex: this.page() - 1,
@@ -182,7 +189,8 @@ export class ReviewStateSubmissionsComponent {
 
     const basePath = pmuFormOption(this.selectedForm()).basePath;
     const sortField = sort.direction ? WORKLIST_SORT_FIELD[sort.active] : undefined;
-    this.worklistService
+    this.worklistSub?.unsubscribe();
+    this.worklistSub = this.worklistService
       .getWorklist(basePath, yearId, {
         stateId: this.selectedStateId() ?? undefined,
         status: this.selectedStatus() ?? undefined,

@@ -45,12 +45,19 @@
                   <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
                     {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
                   </span>
-                  @if (rowViewModels()[i].locked) {
+                  @if (rowViewModels()[i].approved) {
                     <span
                       class="badge rounded-pill bg-success-subtle text-success-emphasis small flex-shrink-0"
                       matTooltip="Approved by PMU — this row can no longer be edited."
                       matTooltipPosition="above"
                       >Approved</span
+                    >
+                  } @else if (rowViewModels()[i].locked) {
+                    <span
+                      class="badge rounded-pill bg-warning-subtle text-warning-emphasis small flex-shrink-0"
+                      matTooltip="Pending PMU review — this row can no longer be edited."
+                      matTooltipPosition="above"
+                      >Pending Review</span
                     >
                   }
                 </div>
