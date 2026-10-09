@@ -57,19 +57,31 @@ export class PmuFormReviewDetailComponent {
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
   private readonly form = this.route.snapshot.data['form'] as PmuReviewFormId;
+  /** Set by the MoHUA routes: the same screen, read-only (MoHUA views these forms, it never approves or returns them). */
+  readonly viewOnly = this.route.snapshot.data['viewOnly'] === true;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
   private readonly installment = this.route.snapshot.paramMap.get('installment');
 
   readonly formOption = pmuFormOption(this.form);
 
-  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => [
-    {
-      label: 'Review State Submissions',
-      routerLink: ['/xvifc', this.moduleService.yearId(), 'review-state-submissions'],
-      queryParams: { ...this.route.snapshot.queryParams, form: this.form },
-    },
-    { label: this.formOption.label },
-  ]);
+  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
+    const yearId = this.moduleService.yearId();
+    if (this.viewOnly) {
+      return [
+        { label: 'All States', routerLink: ['/xvifc', yearId, 'overview'] },
+        { label: this.stateName(), routerLink: ['/xvifc', yearId, 'review-state-submissions', this.stateId] },
+        { label: this.formOption.label },
+      ];
+    }
+    return [
+      {
+        label: 'Review State Submissions',
+        routerLink: ['/xvifc', yearId, 'review-state-submissions'],
+        queryParams: { ...this.route.snapshot.queryParams, form: this.form },
+      },
+      { label: this.formOption.label },
+    ];
+  });
 
   readonly review = signal<PmuFormReviewData | null>(null);
   readonly isLoading = signal(true);

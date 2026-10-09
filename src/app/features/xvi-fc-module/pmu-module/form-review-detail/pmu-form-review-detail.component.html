@@ -14,7 +14,11 @@
         <h1 class="page-title my-2">{{ formOption.label }}</h1>
 
         <p class="page-subtitle text-secondary mb-0">
-          Review the state's submitted {{ formOption.label }} form below, then approve or reject.
+          @if (viewOnly) {
+            Viewing the state's submitted {{ formOption.label }} form.
+          } @else {
+            Review the state's submitted {{ formOption.label }} form below, then approve or reject.
+          }
         </p>
       </div>
 

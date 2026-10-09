@@ -21,8 +21,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { RevealDirective } from '../../state-detail/state-detail.directives';
-import { formatCrore } from '../overview.placeholder';
-import { ClaimLetterStatus, STATE_FORMS, StateRow, StateStatus } from '../overview-states.placeholder';
+import { StateRow, StateStatus, formatCrore } from '../overview.models';
 
 export type StateFilter = StateStatus;
 type View = 'track' | 'list';
@@ -56,14 +55,12 @@ const LANES: Lane[] = [
   { label: 'Under MoHUA review', tone: 'orange' },
 ];
 
-// Ineligible states have no lane (-1): they are left off the track and still appear in the list view.
-const STATUS_STAGE: Record<StateStatus, number> = { ineligible: -1, notStarted: 0, progress: 1, review: 2 };
-const STATUS_TONE: Record<StateStatus, Tone> = { review: 'orange', progress: 'teal', notStarted: 'grey', ineligible: 'red' };
+const STATUS_STAGE: Record<StateStatus, number> = { notStarted: 0, progress: 1, review: 2 };
+const STATUS_TONE: Record<StateStatus, Tone> = { review: 'orange', progress: 'teal', notStarted: 'grey' };
 const STATUS_LABEL: Record<StateStatus, string> = {
   review: 'Under Review by MoHUA',
   progress: 'In Progress',
   notStarted: 'Not Started',
-  ineligible: 'Ineligible',
 };
 
 const TRACK_HEIGHT = 372;
@@ -71,8 +68,12 @@ const LANE_BOTTOM = 328;
 const LANE_TOP = 52;
 export const ROW_HEIGHT = 32;
 const GROUP_HEIGHT = 34;
-const CLAIM_ORDER = ['Approved', 'Waiting for review', 'Returned', 'In progress', 'Not started'];
-const LETTER_LABEL: Record<ClaimLetterStatus, string> = { review: 'under review', returned: 'returned', approved: 'approved' };
+/** List view bands, in display order. */
+const LIST_GROUPS: { status: StateStatus; label: string }[] = [
+  { status: 'review', label: 'Under MoHUA review' },
+  { status: 'progress', label: 'In progress' },
+  { status: 'notStarted', label: 'Not started' },
+];
 
 /** Spiral-packs circles (largest first) inside one lane, so none overlap. */
 function packCircles(
@@ -88,7 +89,8 @@ function packCircles(
       const dist = k * 0.3;
       const x = centre.x + dist * Math.cos(angle);
       const y = centre.y + dist * Math.sin(angle);
-      if (x - item.r < bounds.x0 || x + item.r > bounds.x1 || y - item.r < bounds.y0 || y + item.r > bounds.y1) continue;
+      if (x - item.r < bounds.x0 || x + item.r > bounds.x1 || y - item.r < bounds.y0 || y + item.r > bounds.y1)
+        continue;
       const clear = placed.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 >= (p.r + item.r + 4) ** 2);
       if (clear) spot = { x, y };
     }
@@ -97,7 +99,7 @@ function packCircles(
   return new Map(placed.map((p) => [p.code, { x: p.x, y: p.y, r: p.r }]));
 }
 
-/** "States at a glance": stage lanes with bubbles sized by allocation, a ULB-completion ranking, and a report card. */
+/** "States at a glance": stage lanes with bubbles sized by allocation, a stage-grouped list, and a report card. */
 @Component({
   selector: 'app-ov-states-glance',
   standalone: true,
@@ -126,14 +128,13 @@ export class OverviewStatesGlanceComponent {
 
   readonly view = signal<View>('track');
   readonly selectedCode = signal<string | null>(null);
-  readonly sortKey = signal<SortKey>('ulb');
+  readonly sortKey = signal<SortKey>('alloc');
   readonly search = signal('');
   readonly trackWidth = signal(0);
 
   private readonly viewBox = viewChild<ElementRef<HTMLElement>>('viewBox');
 
   readonly lanes = LANES;
-  readonly forms = STATE_FORMS;
   readonly formatCrore = formatCrore;
   readonly trackHeight = TRACK_HEIGHT;
   readonly views: { key: View; label: string }[] = [
@@ -171,17 +172,47 @@ export class OverviewStatesGlanceComponent {
   // ── Selection ──────────────────────────────────────────────────────────────
   readonly selected = computed<StateRow | null>(() => {
     const rows = this.rows();
-    return rows.find((r) => r.code === this.selectedCode()) ?? rows.find((r) => r.released) ?? rows[0] ?? null;
+    return (
+      rows.find((r) => r.code === this.selectedCode()) ??
+      this.firstUnderReview(rows) ??
+      rows.find((r) => r.status === 'progress') ??
+      rows[0] ??
+      null
+    );
   });
+
+  /** Default selection: the under-review state that got there first (rows without a date sort last); callers fall back to an in-progress state. */
+  private firstUnderReview(rows: StateRow[]): StateRow | undefined {
+    const since = (row: StateRow) => (row.underReviewSince ? Date.parse(row.underReviewSince) : Infinity);
+    return rows.filter((r) => r.status === 'review').sort((a, b) => since(a) - since(b))[0];
+  }
 
   // ── Filter chips ───────────────────────────────────────────────────────────
   readonly chips = computed(() => {
     const rows = this.rows();
     const count = (status: StateStatus) => rows.filter((r) => r.status === status).length;
     return [
-      { key: 'review' as StateFilter, label: STATUS_LABEL.review, count: count('review'), tone: 'orange' as Tone, round: false },
-      { key: 'progress' as StateFilter, label: STATUS_LABEL.progress, count: count('progress'), tone: 'teal' as Tone, round: false },
-      { key: 'notStarted' as StateFilter, label: STATUS_LABEL.notStarted, count: count('notStarted'), tone: 'grey' as Tone, round: false },
+      {
+        key: 'review' as StateFilter,
+        label: STATUS_LABEL.review,
+        count: count('review'),
+        tone: 'orange' as Tone,
+        round: false,
+      },
+      {
+        key: 'progress' as StateFilter,
+        label: STATUS_LABEL.progress,
+        count: count('progress'),
+        tone: 'teal' as Tone,
+        round: false,
+      },
+      {
+        key: 'notStarted' as StateFilter,
+        label: STATUS_LABEL.notStarted,
+        count: count('notStarted'),
+        tone: 'grey' as Tone,
+        round: false,
+      },
     ];
   });
 
@@ -197,40 +228,6 @@ export class OverviewStatesGlanceComponent {
   // ── Track view ─────────────────────────────────────────────────────────────
   stageOf(row: StateRow): number {
     return STATUS_STAGE[row.status];
-  }
-
-  /** Where a state's claim letter stands, derived from the row: received, ready to submit, or nothing yet. */
-  claim(row: StateRow): { label: string; tone: Tone } {
-    const letters = row.claimLetters;
-    if (letters.includes('review')) return { label: 'Waiting for review', tone: 'orange' };
-    if (letters.includes('returned')) return { label: 'Returned', tone: 'red' };
-    if (letters.length) return { label: 'Approved', tone: 'good' };
-    if (row.ulbsDone > 0) return { label: 'In progress', tone: 'teal' };
-    return { label: 'Not started', tone: 'grey' };
-  }
-
-  /** Letters per status, most urgent first (under review, returned, approved); statuses with none are left out. */
-  claimCounts(row: StateRow): { status: ClaimLetterStatus; n: number }[] {
-    return (Object.keys(LETTER_LABEL) as ClaimLetterStatus[])
-      .map((status) => ({ status, n: row.claimLetters.filter((l) => l === status).length }))
-      .filter((p) => p.n);
-  }
-
-  /** All three statuses with their counts (zeros included), for the list's claim letters column. */
-  claimAll(row: StateRow): { status: ClaimLetterStatus; n: number; label: string }[] {
-    return (Object.keys(LETTER_LABEL) as ClaimLetterStatus[]).map((status) => ({
-      status,
-      n: row.claimLetters.filter((l) => l === status).length,
-      label: status === 'review' ? 'review' : LETTER_LABEL[status],
-    }));
-  }
-
-  /** "2 letters · 1 under review, 1 approved"; empty when the state has none. */
-  claimSummary(row: StateRow): string {
-    const count = row.claimLetters.length;
-    if (!count) return '';
-    const parts = this.claimCounts(row).map((p) => `${p.n} ${LETTER_LABEL[p.status]}`);
-    return `${count} ${count === 1 ? 'letter' : 'letters'} · ${parts.join(', ')}`;
   }
 
   toneOf(row: StateRow): Tone {
@@ -249,7 +246,7 @@ export class OverviewStatesGlanceComponent {
 
   readonly laneCounts = computed(() => {
     const counts = LANES.map(() => 0);
-    for (const row of this.rows()) if (this.stageOf(row) >= 0) counts[this.stageOf(row)]++;
+    for (const row of this.rows()) counts[this.stageOf(row)]++;
     return counts;
   });
 
@@ -267,7 +264,7 @@ export class OverviewStatesGlanceComponent {
     if (!width) return [];
     const stages = this.laneStages;
     const laneW = width / Math.max(stages.length, 1);
-    const rows = this.rows().filter((r) => this.stageOf(r) >= 0);
+    const rows = this.rows();
 
     const cacheKey = `${width}-${rows.length}-${stages.join('')}`;
     let layout = this.layoutCache.get(cacheKey);
@@ -301,14 +298,14 @@ export class OverviewStatesGlanceComponent {
   // ── Ranked list ────────────────────────────────────────────────────────────
   readonly ranking = computed(() => {
     const key = this.sortKey();
-    const progress = (r: StateRow) => (r.ulbsTotal ? r.ulbsDone / r.ulbsTotal : 0);
+    const progress = (r: StateRow) => (r.ulbsDone !== null && r.ulbsTotal ? r.ulbsDone / r.ulbsTotal : 0);
     const sorted = [...this.rows()].sort((a, b) =>
       key === 'ulb' ? progress(b) - progress(a) || b.allocation - a.allocation : b.allocation - a.allocation,
     );
     return new Map(sorted.map((r, i) => [r.code, i]));
   });
 
-  /** List view: rows grouped under a band per claim-letter category, ranked within each group. */
+  /** List view: rows grouped under a band per stage, ranked within each group. */
   readonly listLayout = computed(() => {
     const ranking = this.ranking();
     const rows = this.rows();
@@ -316,8 +313,10 @@ export class OverviewStatesGlanceComponent {
     const numbers = new Map<string, number>();
     const heads: { label: string; count: number; top: number }[] = [];
     let y = 0;
-    for (const label of CLAIM_ORDER) {
-      const group = rows.filter((r) => this.claim(r).label === label).sort((a, b) => (ranking.get(a.code) ?? 0) - (ranking.get(b.code) ?? 0));
+    for (const { status, label } of LIST_GROUPS) {
+      const group = rows
+        .filter((r) => r.status === status)
+        .sort((a, b) => (ranking.get(a.code) ?? 0) - (ranking.get(b.code) ?? 0));
       if (!group.length) continue;
       heads.push({ label, count: group.length, top: y });
       y += GROUP_HEIGHT;
@@ -331,7 +330,7 @@ export class OverviewStatesGlanceComponent {
   });
 
   progressPercent(row: StateRow): number {
-    return row.ulbsTotal ? Math.round((row.ulbsDone / row.ulbsTotal) * 100) : 0;
+    return row.ulbsDone !== null && row.ulbsTotal ? Math.round((row.ulbsDone / row.ulbsTotal) * 100) : 0;
   }
 
   sortLabel(key: SortKey, label: string): string {
@@ -358,7 +357,7 @@ export class OverviewStatesGlanceComponent {
 
   subtitle(): string {
     return this.view() === 'track'
-      ? "Where each state stands on its own conditions. Bubble size shows the annual allocation. Click a state to preview it, then open View State to explore more."
-      : 'Claim letters and ULB progress for each state, grouped by where the claim stands. Pick a column heading to re-rank, or click a state to explore its data.';
+      ? 'Where each state stands on its own conditions. Bubble size shows the annual allocation. Click a state to preview it, then open View State to explore more.'
+      : 'Every state grouped by stage, with its ULB progress. Pick a column heading to re-rank, or click a state to explore its data.';
   }
 }

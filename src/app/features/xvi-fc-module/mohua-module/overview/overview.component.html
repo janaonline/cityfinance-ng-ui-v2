@@ -7,6 +7,15 @@
     <p class="ov-subtitle">XVI Finance Commission &mdash; Ministry of Housing and Urban Affairs</p>
   </header>
 
-  <app-ov-briefing [rows]="rows" (statusPick)="showStatus($event)" />
-  <app-ov-states-glance #states [rows]="rows" [(filter)]="stateFilter" />
+  @if (overview(); as data) {
+    <app-ov-briefing [rows]="rows()" [totals]="data.totals" (statusPick)="showStatus($event)" />
+    <app-ov-states-glance #states [rows]="rows()" [(filter)]="stateFilter" />
+  } @else if (loading()) {
+    <app-mohua-page-loader label="Loading the overview" />
+  } @else {
+    <div class="ov-message" role="alert">
+      <p>{{ error() }}</p>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
+    </div>
+  }
 </div>

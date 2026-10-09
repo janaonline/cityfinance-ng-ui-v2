@@ -3,26 +3,25 @@
     <div class="ob-pair">
       <div class="ob-stat-block">
         <span class="ob-eyebrow">Annual allocation</span>
-        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(figures.allocation)"></span>
+        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(totals().allocation)"></span>
       </div>
       <div class="ob-stat-block">
         <span class="ob-eyebrow">Instalment 1</span>
-        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(figures.instalment1)"></span>
+        <span class="ob-big ob-big--md" [appCountUp]="formatCrore(totals().instalment1)"></span>
       </div>
     </div>
-    <span class="ob-hint">Across {{ total() }} states · {{ figures.ulbsCovered.toLocaleString('en-IN') }} ULBs covered by Instalment 1</span>
+    <span class="ob-hint"
+      >Across {{ total() }} states · {{ totals().ulbsCovered.toLocaleString('en-IN') }} ULBs covered by Instalment
+      1</span
+    >
 
     <div class="ob-claims">
-      <span class="ob-eyebrow">Claims with MoHUA · {{ figures.claims.total.count }} claims, {{ formatCrore(figures.claims.total.amount) }}</span>
+      <span class="ob-eyebrow">Claims with MoHUA</span>
       <div class="ob-tiles">
-        @for (tile of tiles; track tile.label; let i = $index) {
+        @for (tile of claimTiles; track tile.label; let i = $index) {
           <div class="ob-tile" [style.--k]="i">
             <span class="ob-tile__label"><i class="bi {{ tile.icon }}" aria-hidden="true"></i>{{ tile.label }}</span>
-            <span class="ob-tile__amount" [appCountUp]="formatCrore(tile.amount)"></span>
-            <span class="ob-tile__note">{{ tile.claims }} · {{ tile.note }}</span>
-            @if (tile.needsAction) {
-              <mat-chip-set aria-label="Needs action"><mat-chip class="ob-need" highlighted>Needs action</mat-chip></mat-chip-set>
-            }
+            <span class="ob-soon">Coming soon</span>
           </div>
         }
       </div>

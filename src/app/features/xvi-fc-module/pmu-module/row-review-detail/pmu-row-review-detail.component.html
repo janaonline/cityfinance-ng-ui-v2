@@ -14,7 +14,11 @@
         <h1 class="page-title my-2">{{ formOption.label }}</h1>
 
         <p class="page-subtitle text-secondary mb-0">
-          Review the state's submitted {{ formOption.label }} form and per-ULB rows below, then approve or reject.
+          @if (viewOnly) {
+            Viewing the state's submitted {{ formOption.label }} form and per-ULB rows.
+          } @else {
+            Review the state's submitted {{ formOption.label }} form and per-ULB rows below, then approve or reject.
+          }
         </p>
       </div>
 
@@ -85,24 +89,26 @@
               <option [value]="option.label">{{ option.label }}</option>
             }
           </select>
-          <button
-            type="button"
-            matButton="outlined"
-            class="reject-btn flex-shrink-0 text-nowrap"
-            [disabled]="!canBulkReject() || isBulkMutating()"
-            (click)="startRejectSelectedRows()"
-          >
-            Reject Selected
-          </button>
-          <button
-            type="button"
-            matButton="outlined"
-            class="flex-shrink-0 text-nowrap"
-            [disabled]="!canBulkApprove() || isBulkMutating()"
-            (click)="approveSelectedRows()"
-          >
-            Approve Selected
-          </button>
+          @if (!viewOnly) {
+            <button
+              type="button"
+              matButton="outlined"
+              class="reject-btn flex-shrink-0 text-nowrap"
+              [disabled]="!canBulkReject() || isBulkMutating()"
+              (click)="startRejectSelectedRows()"
+            >
+              Reject Selected
+            </button>
+            <button
+              type="button"
+              matButton="outlined"
+              class="flex-shrink-0 text-nowrap"
+              [disabled]="!canBulkApprove() || isBulkMutating()"
+              (click)="approveSelectedRows()"
+            >
+              Approve Selected
+            </button>
+          }
         </div>
 
         @if (showSelectAllMatchingBanner()) {
@@ -140,7 +146,9 @@
             (matSortChange)="onSortChange($event)"
           >
             <colgroup>
-              <col class="pmu-rows-col-checkbox" />
+              @if (!viewOnly) {
+                <col class="pmu-rows-col-checkbox" />
+              }
               <col class="pmu-rows-col-ulb-name" />
               <col class="pmu-rows-col-census" />
               @if (showElectedBodyColumns) {
@@ -161,16 +169,18 @@
             </colgroup>
             <thead class="table-light border-bottom">
               <tr>
-                <th scope="col" class="ps-3">
-                  <input
-                    type="checkbox"
-                    class="form-check-input"
-                    [checked]="allReviewableSelected()"
-                    [disabled]="!reviewableRows().length"
-                    (change)="toggleSelectAll()"
-                    aria-label="Select all reviewable rows"
-                  />
-                </th>
+                @if (!viewOnly) {
+                  <th scope="col" class="ps-3">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="allReviewableSelected()"
+                      [disabled]="!reviewableRows().length"
+                      (change)="toggleSelectAll()"
+                      aria-label="Select all reviewable rows"
+                    />
+                  </th>
+                }
                 <th scope="col" class="small fw-semibold" mat-sort-header="ulbName">ULB Name</th>
                 <th scope="col" class="small fw-semibold">Census Code</th>
                 @if (showElectedBodyColumns) {
@@ -208,16 +218,18 @@
               } @else {
                 @for (row of rows(); track row._id) {
                   <tr>
-                    <td class="ps-3">
-                      <input
-                        type="checkbox"
-                        class="form-check-input"
-                        [checked]="isRowSelected(row)"
-                        [disabled]="!row.permissions.canApprove && !row.permissions.canReject"
-                        (change)="toggleRow(row)"
-                        [attr.aria-label]="'Select ' + row.ulbName"
-                      />
-                    </td>
+                    @if (!viewOnly) {
+                      <td class="ps-3">
+                        <input
+                          type="checkbox"
+                          class="form-check-input"
+                          [checked]="isRowSelected(row)"
+                          [disabled]="!row.permissions.canApprove && !row.permissions.canReject"
+                          (change)="toggleRow(row)"
+                          [attr.aria-label]="'Select ' + row.ulbName"
+                        />
+                      </td>
+                    }
                     <td class="small fw-semibold">{{ row.ulbName }}</td>
                     <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
                     @if (showElectedBodyColumns) {

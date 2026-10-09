@@ -13,11 +13,21 @@
   container: os / inline-size;
 }
 
-.os-tone--teal { --t: var(--color-primary, #12535c); }
-.os-tone--orange { --t: var(--clr-primary, #d9730d); }
-.os-tone--good { --t: #1d7a46; }
-.os-tone--red { --t: #c0322b; }
-.os-tone--grey { --t: #5f6f7c; }
+.os-tone--teal {
+  --t: var(--color-primary, #12535c);
+}
+.os-tone--orange {
+  --t: var(--clr-primary, #d9730d);
+}
+.os-tone--good {
+  --t: #1d7a46;
+}
+.os-tone--red {
+  --t: #c0322b;
+}
+.os-tone--grey {
+  --t: #5f6f7c;
+}
 
 // Progress bars take their colour from the surrounding tone.
 mat-progress-bar {
@@ -96,7 +106,9 @@ mat-button-toggle-group {
   gap: 10px;
   align-items: stretch;
 
-  &--solo { grid-template-columns: minmax(0, 1fr); }
+  &--solo {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .os-panel {
@@ -121,7 +133,9 @@ mat-button-toggle-group {
 
   flex: 1 1 320px;
 
-  .mdc-evolution-chip__text-label { font-size: 0.6875rem; }
+  .mdc-evolution-chip__text-label {
+    font-size: 0.6875rem;
+  }
 }
 
 .os-dot {
@@ -150,7 +164,10 @@ mat-button-toggle-group {
 
   font-size: 0.75rem;
 
-  .bi { padding-right: 10px; color: var(--color-primary, #12535c); }
+  .bi {
+    padding-right: 10px;
+    color: var(--color-primary, #12535c);
+  }
 }
 
 .os-view {
@@ -167,7 +184,9 @@ mat-button-toggle-group {
   font-size: 0.66rem;
   color: var(--os-muted);
 
-  .os-stage { padding: 1px 6px; }
+  .os-stage {
+    padding: 1px 6px;
+  }
 }
 
 // ── Track: lanes and bubbles ─────────────────────────────────────────────────
@@ -291,7 +310,7 @@ mat-button-toggle-group {
 .os-lhead,
 .os-row {
   display: grid;
-  grid-template-columns: 28px minmax(140px, 1fr) 210px 200px 90px 104px;
+  grid-template-columns: 28px minmax(130px, 1.2fr) minmax(90px, 0.7fr) minmax(170px, 1.3fr) minmax(90px, 0.7fr) 104px;
   gap: 16px;
   align-items: center;
   padding: 0 12px;
@@ -343,8 +362,6 @@ mat-button-toggle-group {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--os-muted);
-
-  .zero { opacity: 0.5; }
 }
 
 .os-group {
@@ -450,7 +467,8 @@ mat-button-toggle-group {
   font-variant-numeric: tabular-nums;
 
   mat-progress-bar {
-    width: 110px;
+    flex: 1;
+    max-width: 150px;
   }
 }
 
@@ -471,7 +489,9 @@ mat-button-toggle-group {
   color: var(--color-primary, #12535c);
   border: 1px solid color-mix(in srgb, var(--color-primary, #12535c) 55%, transparent);
   border-radius: 11px;
-  transition: background-color 0.15s, color 0.15s;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .os-row:hover .os-view-btn,
@@ -583,7 +603,9 @@ mat-button-toggle-group {
     color: var(--os-muted);
   }
 
-  li { position: relative; }
+  li {
+    position: relative;
+  }
 }
 
 .os-claim {
@@ -597,8 +619,6 @@ mat-button-toggle-group {
   background: color-mix(in srgb, var(--t) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--t) 30%, transparent);
   border-radius: 10px;
-
-
 }
 
 .os-claim__icon {
@@ -619,9 +639,14 @@ mat-button-toggle-group {
   min-width: 0;
   line-height: 1.25;
 
-  b { font-size: 0.72rem; }
-  small { font-size: 0.6rem; color: var(--os-muted); white-space: nowrap; }
-  .zero { opacity: 0.5; }
+  b {
+    font-size: 0.72rem;
+  }
+  small {
+    font-size: 0.6rem;
+    color: var(--os-muted);
+    white-space: nowrap;
+  }
 }
 
 .os-segs {
@@ -644,8 +669,12 @@ mat-button-toggle-group {
 }
 
 @keyframes os-grow {
-  from { transform: scaleX(0); }
-  to { transform: none; }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
 }
 
 .os-sr {
