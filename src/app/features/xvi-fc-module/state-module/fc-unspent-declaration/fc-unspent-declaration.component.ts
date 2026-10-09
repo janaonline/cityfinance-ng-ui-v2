@@ -65,7 +65,7 @@ const FC_UNSPENT_SUPPORTING_ACTION = {
   DOWNLOAD_DECLARATION: 'download-declaration',
 } as const;
 
-const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount)$/;
+const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount|previousFcUnspentBalance)$/;
 
 @Component({
   selector: 'app-fc-unspent-declaration',
@@ -207,29 +207,54 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   private readonly savedIsFcUnspent = signal<string | null>(null);
   readonly hasUnsavedBranchChange = computed(() => this.liveIsFcUnspent() !== this.savedIsFcUnspent());
 
-  /** Live `{ulbId, unspentAmount}` per row, bridged from `unspentUlbData.valueChanges` — direct copy
-   *  of `claim-letter-detail.component.ts`'s `rowValues` bridge, including the `?? null`
-   *  normalization (typed reactive forms report a group's value fields as possibly `undefined`). */
+  /** Live `{ulbId, unspentAmount, previousFcUnspentBalance}` per row, bridged from
+   *  `unspentUlbData.valueChanges` — direct copy of `claim-letter-detail.component.ts`'s `rowValues`
+   *  bridge, including the `?? null` normalization (typed reactive forms report a group's value
+   *  fields as possibly `undefined`). */
   private readonly liveUnspentRows = toSignal(
     this.unspentUlbData.valueChanges.pipe(
       startWith(this.unspentUlbData.getRawValue()),
       map((values) =>
-        values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null })),
+        values.map((value) => ({
+          ulbId: value.ulbId ?? null,
+          unspentAmount: value.unspentAmount ?? null,
+          previousFcUnspentBalance: value.previousFcUnspentBalance ?? null,
+        })),
       ),
     ),
-    { initialValue: [] as { ulbId: string | null; unspentAmount: number | null }[] },
+    {
+      initialValue: [] as {
+        ulbId: string | null;
+        unspentAmount: number | null;
+        previousFcUnspentBalance: number | null;
+      }[],
+    },
   );
-  /** True once any row's amount (or the row set itself) diverges from `savedUnspentUlbData()` —
-   *  same shape as `claim-letter-detail.component.ts`'s `hasUnsavedRowChanges`. Only meaningful on
-   *  the Yes branch, but harmless to compute regardless — nothing reads it while on the No branch
-   *  except `effectiveVisibleFields()`'s `fcUnspentDeclaration` case, which is itself hidden there. */
+  /** True once any row's amount/previous-balance (or the row set itself) diverges from
+   *  `savedUnspentUlbData()` — same shape as `claim-letter-detail.component.ts`'s
+   *  `hasUnsavedRowChanges`. Only meaningful on the Yes branch, but harmless to compute regardless —
+   *  nothing reads it while on the No branch except `effectiveVisibleFields()`'s
+   *  `fcUnspentDeclaration` case, which is itself hidden there. */
   readonly hasUnsavedRowChanges = computed(() => {
-    const savedAmountByUlbId = new Map(this.savedUnspentUlbData().map((row) => [row.ulbId, row.unspentAmount]));
-    const liveRows = this.liveUnspentRows().filter(
-      (row): row is { ulbId: string; unspentAmount: number } => row.ulbId !== null && row.unspentAmount !== null,
+    const savedByUlbId = new Map(
+      this.savedUnspentUlbData().map((row) => [
+        row.ulbId,
+        { unspentAmount: row.unspentAmount, previousFcUnspentBalance: row.previousFcUnspentBalance },
+      ]),
     );
-    if (liveRows.length !== savedAmountByUlbId.size) return true;
-    return liveRows.some((row) => savedAmountByUlbId.get(row.ulbId) !== row.unspentAmount);
+    const liveRows = this.liveUnspentRows().filter(
+      (row): row is { ulbId: string; unspentAmount: number; previousFcUnspentBalance: number } =>
+        row.ulbId !== null && row.unspentAmount !== null && row.previousFcUnspentBalance !== null,
+    );
+    if (liveRows.length !== savedByUlbId.size) return true;
+    return liveRows.some((row) => {
+      const saved = savedByUlbId.get(row.ulbId);
+      return (
+        saved === undefined ||
+        saved.unspentAmount !== row.unspentAmount ||
+        saved.previousFcUnspentBalance !== row.previousFcUnspentBalance
+      );
+    });
   });
 
   readonly isLoading = signal(false);
@@ -533,10 +558,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    * boolean at this boundary (`'yes' -> true`, `'no' -> false`, unanswered -> `null`) — the backend
    * DTO is strict-boolean and rejects the radio control's own `'yes'|'no'` string. Only the fields
    * relevant to the resolved branch are included; row values are whitelisted explicitly to
-   * `{ ulbId, unspentAmount }` rather than trusting `getRawValue()`'s shape wholesale, and rows with
-   * an incomplete selection are dropped. Backend-owned fields — `applicableFc`, `threshold`,
-   * Devolution dependency state, and each row's `ulbName`/`censusCode`/`sbCode`/`allocationAmount`/
-   * `allocationPerc`/`eligibility`/`rowStatus` — must never be read from client state on submit.
+   * `{ ulbId, unspentAmount, previousFcUnspentBalance }` rather than trusting `getRawValue()`'s shape
+   * wholesale, and rows with an incomplete selection are dropped. Backend-owned fields —
+   * `applicableFc`, `threshold`, Devolution dependency state, and each row's
+   * `ulbName`/`censusCode`/`sbCode`/`allocationAmount`/`allocationPerc`/`eligibility`/`rowStatus` —
+   * must never be read from client state on submit.
    */
   private buildPayload(): FcUnspentSavePayload {
     const rawData = this.visibilityService.getVisiblePayload(this.form, this.fields());
@@ -549,10 +575,16 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
       data.fcUnspentDeclaration = rawData['fcUnspentDeclaration'];
       data.checkboxConfirmation = rawData['checkboxConfirmation'] === true;
       data.unspentUlbData = this.unspentUlbData.controls
-        .filter((row) => row.controls.ulbId.value !== null && row.controls.unspentAmount.value !== null)
+        .filter(
+          (row) =>
+            row.controls.ulbId.value !== null &&
+            row.controls.unspentAmount.value !== null &&
+            row.controls.previousFcUnspentBalance.value !== null,
+        )
         .map((row) => ({
           ulbId: row.controls.ulbId.value as string,
           unspentAmount: row.controls.unspentAmount.value as number,
+          previousFcUnspentBalance: row.controls.previousFcUnspentBalance.value as number,
         }));
     }
 
@@ -697,7 +729,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   private buildErrorMapFromMessages(messages: readonly string[]): ApiErrorMap | undefined {
     if (!messages.length) return undefined;
 
-    const { claimed, unclaimed } = parseFieldPrefixedMessages(messages, ['ulbId', 'unspentAmount'], 'unspentUlbData');
+    const { claimed, unclaimed } = parseFieldPrefixedMessages(
+      messages,
+      ['ulbId', 'unspentAmount', 'previousFcUnspentBalance'],
+      'unspentUlbData',
+    );
     const errors: ApiErrorMap = {};
     for (const entry of claimed) {
       const key = entry.rowIndex !== null ? `unspentUlbData.${entry.rowIndex}.${entry.field}` : entry.field;
@@ -724,7 +760,8 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
 
   /**
    * Routes each backend error key to one of three destinations:
-   * - `unspentUlbData.<index>.<ulbId|unspentAmount>` → the matching row control, as `apiErrors`.
+   * - `unspentUlbData.<index>.<ulbId|unspentAmount|previousFcUnspentBalance>` → the matching row
+   *   control, as `apiErrors`.
    * - `_form` or bare `unspentUlbData` (whole-array errors) → `formLevelErrors`, shown in an alert.
    * - anything else → the matching dynamic-field control + its `validations` config (SFC pattern).
    */
@@ -741,7 +778,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
 
       const rowMatch = ROW_ERROR_KEY_PATTERN.exec(key);
       if (rowMatch) {
-        this.applyRowApiError(Number(rowMatch[1]), rowMatch[2] as 'ulbId' | 'unspentAmount', fieldErrors);
+        this.applyRowApiError(
+          Number(rowMatch[1]),
+          rowMatch[2] as 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
+          fieldErrors,
+        );
         continue;
       }
 
@@ -755,7 +796,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
 
   private applyRowApiError(
     rowIndex: number,
-    controlKey: 'ulbId' | 'unspentAmount',
+    controlKey: 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
     fieldErrors: ApiFieldError[],
   ): void {
     const row = this.unspentUlbData.controls[rowIndex];
@@ -907,19 +948,21 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     for (const row of this.unspentUlbData.controls) {
       const ulbIdControl = row.controls.ulbId;
       const unspentAmountControl = row.controls.unspentAmount;
+      const previousFcUnspentBalanceControl = row.controls.previousFcUnspentBalance;
 
       if (action === 'finalSubmit') {
-        if (ulbIdControl.invalid || unspentAmountControl.invalid) {
+        if (ulbIdControl.invalid || unspentAmountControl.invalid || previousFcUnspentBalanceControl.invalid) {
           valid = false;
           ulbIdControl.markAsTouched();
           unspentAmountControl.markAsTouched();
+          previousFcUnspentBalanceControl.markAsTouched();
         }
         continue;
       }
 
       // saveAsDraft: skip bare `required` errors (empty rows are allowed in a draft), but never
       // skip other errors such as a non-positive entered amount.
-      for (const control of [ulbIdControl, unspentAmountControl]) {
+      for (const control of [ulbIdControl, unspentAmountControl, previousFcUnspentBalanceControl]) {
         if (!control.errors) continue;
         for (const errorKey of Object.keys(control.errors)) {
           if (errorKey === 'required') continue;

@@ -1,0 +1,299 @@
+<div class="top-accent"></div>
+
+<section class="p-3 p-md-4">
+  <div class="content-stack d-flex flex-column gap-4">
+    <div class="row align-items-center justify-content-between">
+      <div class="col-auto">
+        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+
+        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+          <span class="text-secondary">16th Finance Commission</span>
+          &nbsp;&middot;&nbsp; {{ stateName }}
+        </div> -->
+
+        <h1 class="page-title my-2">{{ formOption.label }}</h1>
+
+        <p class="page-subtitle text-secondary mb-0">
+          Review the state's submitted {{ formOption.label }} form and per-ULB rows below, then approve or reject.
+        </p>
+      </div>
+
+      <!-- Form Status -->
+      <div class="col-auto">
+        <!-- <span class="text-secondary">Status:</span> -->
+        <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ statusLabel() }}</span>
+      </div>
+    </div>
+
+    <hr class="my-0 text-body-tertiary" />
+
+    @if (isLoading()) {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    } @else if (loadError()) {
+      <div class="alert alert-danger m-0" role="alert">{{ loadError() }}</div>
+    } @else {
+      <!-- Reject Reason -->
+      @if (rejectionRemarks()) {
+        <div class="alert alert-danger m-0" role="alert"><b>Return Reason:</b> {{ rejectionRemarks() }}</div>
+      }
+
+      @if (mutationError()) {
+        <div class="alert alert-danger py-2 px-3 small mb-2" role="alert" data-cy="pmu-row-review-mutation-error">
+          {{ mutationError() }}
+        </div>
+      }
+
+      @if (visibleFields().length > 0) {
+        <form class="content-body">
+          @for (item of visibleFields(); track item.key; let isLast = $last) {
+            <div
+              class="my-2"
+              [class.border-bottom]="!isLast"
+              [class.border-secondary]="!isLast"
+              [class.border-opacity-25]="!isLast"
+            >
+              <app-dynamic-form class="p-2 d-block" [field]="item" [group]="formGroup()" mode="view"></app-dynamic-form>
+            </div>
+          }
+        </form>
+      }
+
+      <div>
+        <h2 class="h6 fw-bold mb-1">ULB Rows</h2>
+        @if (datasetSize() > 0) {
+        <div class="my-2 d-flex align-items-center gap-2">
+          <input
+            type="text"
+            id="search_ulb"
+            class="form-control form-control-sm flex-grow-1"
+            placeholder="Census code or ULB name"
+            [value]="searchInputValue()"
+            (input)="onSearchInput($event)"
+            aria-label="Search ULB rows"
+          />
+          <select
+            class="form-select form-select-sm flex-shrink-0"
+            style="width: auto"
+            [value]="statusFilter()"
+            (change)="onStatusFilterChange($event)"
+            aria-label="Filter by status"
+          >
+            <option value="">All Statuses</option>
+            @for (option of statusFilterOptions; track option.label) {
+              <option [value]="option.label">{{ option.label }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            matButton="outlined"
+            class="reject-btn flex-shrink-0 text-nowrap"
+            [disabled]="!canBulkReject() || isBulkMutating()"
+            (click)="startRejectSelectedRows()"
+          >
+            Reject Selected
+          </button>
+          <button
+            type="button"
+            matButton="outlined"
+            class="flex-shrink-0 text-nowrap"
+            [disabled]="!canBulkApprove() || isBulkMutating()"
+            (click)="approveSelectedRows()"
+          >
+            Approve Selected
+          </button>
+        </div>
+
+        @if (showSelectAllMatchingBanner()) {
+          <div class="alert alert-info d-flex align-items-center justify-content-between gap-2 py-2 px-3 mb-2 small">
+            <span>All {{ rows().length }} rows on this page are selected.</span>
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" (click)="selectAllMatching()">
+              Select all {{ pendingTotal() }} matching rows
+            </button>
+          </div>
+        } @else if (selectionMode() === 'allMatching') {
+          <div class="alert alert-info d-flex align-items-center justify-content-between gap-2 py-2 px-3 mb-2 small">
+            <span>All {{ selectedCount() }} matching rows selected.</span>
+            <button
+              type="button"
+              class="btn btn-link btn-sm p-0 text-decoration-none"
+              (click)="cancelSelectAllMatching()"
+            >
+              Clear selection
+            </button>
+          </div>
+        }
+
+        @if (showMoneyColumns) {
+          <div class="d-flex justify-content-end mb-2">
+            <app-amount-display-toggle />
+          </div>
+        }
+
+        <div class="table-responsive overflow-y-hidden rounded-3 border">
+          <table
+            class="table table-sm table-hover align-middle mb-0 pmu-rows-table"
+            matSort
+            [matSortActive]="sort()?.active ?? ''"
+            [matSortDirection]="sort()?.direction ?? ''"
+            (matSortChange)="onSortChange($event)"
+          >
+            <colgroup>
+              <col class="pmu-rows-col-checkbox" />
+              <col class="pmu-rows-col-ulb-name" />
+              <col class="pmu-rows-col-census" />
+              @if (showElectedBodyColumns) {
+                <col class="pmu-rows-col-elected-status" />
+                <col class="pmu-rows-col-elected-date" />
+                <col class="pmu-rows-col-elected-date" />
+                <col class="pmu-rows-col-remarks" />
+              }
+              @if (showMoneyColumns) {
+                <col class="pmu-rows-col-amount" />
+                <col class="pmu-rows-col-amount" />
+                <col class="pmu-rows-col-amount" />
+              }
+              @if (showEligibility) {
+                <col class="pmu-rows-col-eligibility" />
+              }
+              <col class="pmu-rows-col-status" />
+            </colgroup>
+            <thead class="table-light border-bottom">
+              <tr>
+                <th scope="col" class="ps-3">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="allReviewableSelected()"
+                    [disabled]="!reviewableRows().length"
+                    (change)="toggleSelectAll()"
+                    aria-label="Select all reviewable rows"
+                  />
+                </th>
+                <th scope="col" class="small fw-semibold" mat-sort-header="ulbName">ULB Name</th>
+                <th scope="col" class="small fw-semibold">Census Code</th>
+                @if (showElectedBodyColumns) {
+                  <th scope="col" class="small fw-semibold">Elected Body Status</th>
+                  <th scope="col" class="small fw-semibold">Date on which the elected body is in place</th>
+                  <th scope="col" class="small fw-semibold">Date of Expiry</th>
+                  <th scope="col" class="small fw-semibold">Remarks</th>
+                }
+                @if (showMoneyColumns) {
+                  <th scope="col" class="small fw-semibold text-end">16th FC Allocation (in {{ unitSuffix() }})</th>
+                  <th scope="col" class="small fw-semibold text-end">FC Unspent Amount (in {{ unitSuffix() }})</th>
+                  <th scope="col" class="small fw-semibold text-end">
+                    Previous FC Unspent Balance (in {{ unitSuffix() }})
+                  </th>
+                }
+                @if (showEligibility) {
+                  <th scope="col" class="small fw-semibold">Eligibility</th>
+                }
+                <th scope="col" class="small fw-semibold pe-3" mat-sort-header="rowStatus">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (isLoadingRows()) {
+                <tr>
+                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                    <span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading rows…
+                  </td>
+                </tr>
+              } @else if (!rows().length) {
+                <tr>
+                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                    No rows found for the current filters.
+                  </td>
+                </tr>
+              } @else {
+                @for (row of rows(); track row._id) {
+                  <tr>
+                    <td class="ps-3">
+                      <input
+                        type="checkbox"
+                        class="form-check-input"
+                        [checked]="isRowSelected(row)"
+                        [disabled]="!row.permissions.canApprove && !row.permissions.canReject"
+                        (change)="toggleRow(row)"
+                        [attr.aria-label]="'Select ' + row.ulbName"
+                      />
+                    </td>
+                    <td class="small fw-semibold">{{ row.ulbName }}</td>
+                    <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
+                    @if (showElectedBodyColumns) {
+                      <td class="small">{{ row.electedBodyStatus || '-' }}</td>
+                      <td class="small text-nowrap">{{ formatRowDate(row.dateOfConstitution) }}</td>
+                      <td class="small text-nowrap">{{ formatRowDate(row.dateOfExpiry) }}</td>
+                      <td class="small">{{ row.remarks || '-' }}</td>
+                    }
+                    @if (showMoneyColumns) {
+                      <td class="small text-end" [title]="formatAmountExact(row.allocationAmount)">
+                        {{ formatAmount(row.allocationAmount) }}
+                      </td>
+                      <td class="small text-end" [title]="formatAmountExact(row.unspentAmount)">
+                        {{ formatAmount(row.unspentAmount) }}
+                      </td>
+                      <td class="small text-end" [title]="formatAmountExact(row.previousFcUnspentBalance)">
+                        {{ formatAmount(row.previousFcUnspentBalance) }}
+                      </td>
+                    }
+                    @if (showEligibility) {
+                      <td class="small">{{ eligibilityLabel(row) }}</td>
+                    }
+                    <td class="pe-3">
+                      <span [class]="'badge rounded-pill ' + rowBadgeClass(row)">{{ rowStatusLabel(row) }}</span>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (total() > 0) {
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2 small">
+            <span class="text-secondary">Showing {{ startIndex() }}–{{ endIndex() }} of {{ total() }} rows</span>
+            <div class="d-flex align-items-center gap-2">
+              @if (isLoadingRows()) {
+                <div class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></div>
+              }
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasPrev() || isLoadingRows()"
+                (click)="goToPage(page() - 1)"
+                aria-label="Previous page"
+              >
+                &lsaquo; Prev
+              </button>
+              <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasNext() || isLoadingRows()"
+                (click)="goToPage(page() + 1)"
+                aria-label="Next page"
+              >
+                Next &rsaquo;
+              </button>
+            </div>
+          </div>
+        }
+        } @else {
+          <p class="text-secondary small fst-italic mb-0">No ULB rows found for this submission.</p>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<app-review-acknowledgment
+  #ack
+  [canApprove]="canApprove()"
+  [canReject]="canReject()"
+  [busy]="isBusy()"
+  approveLabel="Approve Form"
+  rejectLabel="Reject Form"
+  (approveClicked)="onApprove()"
+  (rejectConfirmed)="onReject($event, ack)"
+></app-review-acknowledgment>

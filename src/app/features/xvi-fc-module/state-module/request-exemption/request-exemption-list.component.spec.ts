@@ -187,6 +187,25 @@ describe('RequestExemptionListComponent', () => {
     expect(cells[1].textContent?.trim()).toBe('-');
   });
 
+  it('renders "Entire State" for a whole-state row (ulb: null), and the Census Code column stays a dash', () => {
+    listSpy.and.returnValue(
+      of(
+        buildListResponse({
+          items: [
+            { ...sampleItem, _id: 'a', formId: 22, reasonForExemptionLabel: 'State Finance Commission extension/compliance', ulb: null },
+          ],
+        }),
+      ),
+    );
+
+    createComponent();
+    const ulbCell = fixture.nativeElement.querySelector('tbody tr td:nth-child(1)') as HTMLTableCellElement;
+    const censusCell = fixture.nativeElement.querySelector('tbody tr td:nth-child(2)') as HTMLTableCellElement;
+
+    expect(ulbCell.textContent?.trim()).toBe('Entire State');
+    expect(censusCell.textContent?.trim()).toBe('-');
+  });
+
   it("fetches the Reason dropdown's options from the backend, not a hardcoded list", () => {
     createComponent();
 

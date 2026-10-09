@@ -1,4 +1,3 @@
-import { DecimalPipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -22,12 +21,14 @@ import { resolveThemeClass } from '../../../../../../shared/components/confirm-d
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
+import { canStateEditRow, isRowPendingPmuDecision } from '../../../../common/constants/form-status.constants';
 import { FcUnspentUlbData, FcUnspentUlbOption } from '../../fc-unspent-declaration.models';
 import { UlbPickerDialogComponent, UlbPickerDialogData } from '../ulb-picker-dialog/ulb-picker-dialog.component';
 
 export interface FcUnspentUlbRowForm {
   ulbId: FormControl<string | null>;
   unspentAmount: FormControl<number | null>;
+  previousFcUnspentBalance: FormControl<number | null>;
 }
 
 export type FcUnspentUlbRowGroup = FormGroup<FcUnspentUlbRowForm>;
@@ -35,6 +36,7 @@ export type FcUnspentUlbRowGroup = FormGroup<FcUnspentUlbRowForm>;
 interface FcUnspentUlbRowValue {
   ulbId: string | null;
   unspentAmount: number | null;
+  previousFcUnspentBalance: number | null;
 }
 
 interface FcUnspentUlbRowViewModel {
@@ -44,6 +46,15 @@ interface FcUnspentUlbRowViewModel {
   allocationAmount: number | null;
   allocationPerc: number | null;
   eligible: boolean | null;
+  /** True once a row is no longer editable by the state — either PMU is still deciding on it, or
+   *  has already approved it (`rowStatus` fails `canStateEditRow`); a brand-new, never-saved row is
+   *  never locked. Mixed-approval deadlock fix: a locked row must stay read-only even while sibling
+   *  rejected rows, and the form as a whole, remain editable. */
+  locked: boolean;
+  /** True only once PMU has actually approved this row — as opposed to merely locked-pending (see
+   *  `isRowPendingPmuDecision`). Drives the "Approved" vs. "Pending Review" badge; `locked` alone
+   *  still drives the disabled inputs/remove button. */
+  approved: boolean;
 }
 
 /** Resolves the single message to show for a control's current errors — a backend `apiErrors`
@@ -66,12 +77,12 @@ function firstControlErrorText(control: AbstractControl, field: ConditionalField
 }
 
 /** The backend's GET response (`rowEditFields`) is the sole source of truth for `ulbId`/
- *  `unspentAmount` field config — no client-side fallback. A missing entry means
- *  `FC_UNSPENT_ROW_EDIT_FIELDS` doesn't define one of the two mandatory row fields, which is a
- *  backend/config bug that should surface loudly here rather than be silently papered over. */
+ *  `unspentAmount`/`previousFcUnspentBalance` field config — no client-side fallback. A missing
+ *  entry means `FC_UNSPENT_ROW_EDIT_FIELDS` doesn't define one of the mandatory row fields, which
+ *  is a backend/config bug that should surface loudly here rather than be silently papered over. */
 function requireRowFieldConfig(
   rowEditFields: readonly ConditionalFieldConfig[],
-  key: 'ulbId' | 'unspentAmount',
+  key: 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
 ): ConditionalFieldConfig {
   const field = rowEditFields.find((f) => f.key === key);
   if (!field) {
@@ -93,21 +104,40 @@ export function createFcUnspentUlbRowGroup(
   dynamicService: DynamicFormService,
   canEdit: boolean,
   rowEditFields: readonly ConditionalFieldConfig[],
-  existingRow?: { ulbId: string | null; unspentAmount: number | null },
+  existingRow?: {
+    ulbId: string | null;
+    unspentAmount: number | null;
+    previousFcUnspentBalance: number | null;
+    /** Omitted for a brand-new row (picker-driven `addRow()`) — never locked. */
+    rowStatus?: number | null;
+  },
 ): FcUnspentUlbRowGroup {
-  const readonly = !canEdit;
+  // A row PMU has already approved is locked even while the form overall is still editable
+  // (mixed-approval deadlock fix) — `canEdit` alone is no longer sufficient per-row.
+  const readonly = !canEdit || !canStateEditRow(existingRow?.rowStatus ?? null);
 
   const ulbIdConfig = requireRowFieldConfig(rowEditFields, 'ulbId');
   const unspentAmountConfig = requireRowFieldConfig(rowEditFields, 'unspentAmount');
+  const previousFcUnspentBalanceConfig = requireRowFieldConfig(rowEditFields, 'previousFcUnspentBalance');
 
   const ulbIdField = { ...ulbIdConfig, value: existingRow?.ulbId ?? null, readonly };
   const unspentAmountField = { ...unspentAmountConfig, value: existingRow?.unspentAmount ?? null, readonly };
+  const previousFcUnspentBalanceField = {
+    ...previousFcUnspentBalanceConfig,
+    value: existingRow?.previousFcUnspentBalance ?? null,
+    readonly,
+  };
 
   const group = new FormGroup<FcUnspentUlbRowForm>({
     ulbId: dynamicService.createContorl(ulbIdField, false, ulbIdField.readonly) as FormControl<string | null>,
     unspentAmount: dynamicService.createContorl(unspentAmountField, false, unspentAmountField.readonly) as FormControl<
       number | null
     >,
+    previousFcUnspentBalance: dynamicService.createContorl(
+      previousFcUnspentBalanceField,
+      false,
+      previousFcUnspentBalanceField.readonly,
+    ) as FormControl<number | null>,
   });
 
   // Clear a server-injected `apiErrors` entry as soon as the user edits that control — mirrors
@@ -129,7 +159,6 @@ export function createFcUnspentUlbRowGroup(
   selector: 'app-unspent-ulb-table',
   imports: [
     ReactiveFormsModule,
-    DecimalPipe,
     MatButtonModule,
     MatTooltipModule,
     InfoIconComponent,
@@ -189,9 +218,11 @@ export class UnspentUlbTableComponent {
    *  change-detection-reactive, and this also fires on structural `push`/`removeAt` changes. */
   private readonly rowValues = toSignal(
     toObservable(this.rows).pipe(
-      switchMap((formArray) => formArray.valueChanges.pipe(startWith(formArray.value))),
-      map((values): FcUnspentUlbRowValue[] =>
-        values.map((value) => ({ ulbId: value.ulbId ?? null, unspentAmount: value.unspentAmount ?? null })),
+      switchMap((formArray) =>
+        formArray.valueChanges.pipe(
+          startWith(formArray.getRawValue()),
+          map(() => formArray.getRawValue() as FcUnspentUlbRowValue[]),
+        ),
       ),
     ),
     { initialValue: [] as FcUnspentUlbRowValue[] },
@@ -231,6 +262,8 @@ export class UnspentUlbTableComponent {
           ? (value.unspentAmount / allocationAmount) * 100
           : null;
 
+      const locked = !!saved && !canStateEditRow(saved.rowStatus);
+
       return {
         ulbName,
         censusCode,
@@ -238,6 +271,8 @@ export class UnspentUlbTableComponent {
         allocationAmount,
         allocationPerc,
         eligible: allocationPerc !== null ? allocationPerc <= threshold : null,
+        locked,
+        approved: locked && !isRowPendingPmuDecision(saved?.rowStatus),
       };
     });
   });
@@ -252,6 +287,7 @@ export class UnspentUlbTableComponent {
           createFcUnspentUlbRowGroup(this.dynamicService, this.canEdit(), this.rowEditFields(), {
             ulbId: option.ulbId,
             unspentAmount: null,
+            previousFcUnspentBalance: null,
           }),
         );
       }
@@ -259,6 +295,7 @@ export class UnspentUlbTableComponent {
   }
 
   removeRow(index: number): void {
+    if (!this.canEdit() || this.rowViewModels()[index]?.locked) return;
     this.rows().removeAt(index);
   }
 
@@ -268,7 +305,10 @@ export class UnspentUlbTableComponent {
    * which only touches a control when its current error actually blocks the attempted save/submit
    * (e.g. a bare `required` on an untouched draft row is never touched, so never shown here either).
    */
-  rowFieldErrorText(row: FcUnspentUlbRowGroup, field: 'ulbId' | 'unspentAmount'): string | null {
+  rowFieldErrorText(
+    row: FcUnspentUlbRowGroup,
+    field: 'ulbId' | 'unspentAmount' | 'previousFcUnspentBalance',
+  ): string | null {
     const control = row.controls[field];
     if (!control.touched) return null;
 

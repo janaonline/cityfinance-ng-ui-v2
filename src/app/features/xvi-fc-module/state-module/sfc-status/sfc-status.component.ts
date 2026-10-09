@@ -24,6 +24,8 @@ import {
   CanComponentDeactivate,
   warnBeforeUnloadWhenDirty,
 } from '../../../../core/guards/unsaved-changes.guard';
+import { ExemptionNoticeComponent } from '../../shared/exemption-notice/exemption-notice.component';
+import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { SfcStatusService } from './sfc-status.service';
 import {
   ApiErrorMap,
@@ -36,6 +38,11 @@ import {
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
+/** When state requests a whole-state exemption for SFC Status, below are the possible statuses -
+ *  mirrors ulb-forms/upload-documents' DiscretionaryExemptionStatus for the same discretionary
+ *  Request Exemption flow, applied here to the whole-state (ulb: null) branch instead. */
+type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+
 @Component({
   selector: 'app-sfc-status',
   imports: [
@@ -45,6 +52,7 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
     PreLoaderComponent,
     MatButtonModule,
     FormProgressComponent,
+    ExemptionNoticeComponent,
   ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
@@ -83,6 +91,37 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+
+  // A discretionary whole-state Request Exemption entry against SFC Status, if any — see
+  // DiscretionaryExemptionStatus's own doc-comment.
+  readonly exemptionStatus = signal<DiscretionaryExemptionStatus>(null);
+  readonly exemptionMohuaRemarks = signal<string | null>(null);
+
+  /** MoHUA-approved discretionary exemption — SFC Status's real currentFormStatus is never
+   *  touched by the approval (a pure display overlay), so this is the only signal for it. */
+  readonly isExempted = computed(() => this.exemptionStatus() === 'APPROVED');
+
+  /** True while the exemption request is pending review, or already approved — both states
+   *  mean the state must not be able to save/submit SFC Status (mirrors the backend's
+   *  assertNotBlockedByExemption guard on saveDraft/finalSubmit). */
+  readonly formLocked = computed(() => this.exemptionStatus() === 'PENDING' || this.isExempted());
+
+  readonly lockedBannerMessage = computed(() =>
+    this.exemptionStatus() === 'PENDING'
+      ? 'Your state has filed a discretionary exemption request for SFC Status, pending MoHUA review. No submission is needed until it is decided.'
+      : null,
+  );
+
+  /** Rejection never locks the form; shown only while the form is still untouched (NOT_STARTED) —
+   *  once the state has resumed work (IN_PROGRESS or later), the live status governs instead. */
+  readonly exemptionRejectedNotice = computed(() => {
+    if (this.exemptionStatus() !== 'REJECTED') return null;
+    if (this.currentFormStatus() !== FORM_STATUS.NOT_STARTED) return null;
+    const remarks = this.exemptionMohuaRemarks();
+    return remarks
+      ? `Your state's discretionary exemption request for SFC Status was rejected by MoHUA. ${remarks}`
+      : "Your state's discretionary exemption request for SFC Status was rejected by MoHUA.";
+  });
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
@@ -139,6 +178,8 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
           this.fields.set(data.questions);
           this.stateName.set(data.stateName);
           this.actors.set(data.actors);
+          this.exemptionStatus.set(data.exemptionStatus);
+          this.exemptionMohuaRemarks.set(data.exemptionMohuaRemarks);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -207,7 +248,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
         });
     }
 
-    if (!this.canEdit()) {
+    if (!this.canEdit() || this.formLocked()) {
       this.form.disable({ emitEvent: false });
     }
 

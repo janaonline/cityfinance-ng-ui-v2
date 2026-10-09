@@ -15,11 +15,7 @@ import { UnspentUlbTableComponent } from './components/unspent-ulb-table/unspent
 import { FcUnspentDeclarationComponent } from './fc-unspent-declaration.component';
 import { FcUnspentDeclarationService } from './fc-unspent-declaration.service';
 import { FcUnspentUlbOptionsCacheService } from './fc-unspent-ulb-options-cache.service';
-import {
-  FcUnspentDeclarationData,
-  FcUnspentSavePayload,
-  FcUnspentUlbData,
-} from './fc-unspent-declaration.models';
+import { FcUnspentDeclarationData, FcUnspentSavePayload, FcUnspentUlbData } from './fc-unspent-declaration.models';
 
 /** `form` is built dynamically (`fb.group({})`), so `.get()` isn't statically typed — narrow it here for tests. */
 function isFcUnspentControl(component: FcUnspentDeclarationComponent): FormControl<string | null> {
@@ -279,6 +275,20 @@ const ROW_EDIT_FIELDS: ConditionalFieldConfig[] = [
       { name: 'max', validator: 1000, message: 'Unspent amount cannot exceed 1000.' },
     ],
   },
+  {
+    key: 'previousFcUnspentBalance',
+    label: 'Previous FC Unspent Balance',
+    formFieldType: 'number',
+    validations: [
+      { name: 'required', validator: null, message: 'Previous FC unspent balance is required.' },
+      {
+        name: 'min',
+        validator: Number.MIN_VALUE,
+        message: 'Previous FC unspent balance must be greater than zero.',
+      },
+      { name: 'max', validator: 1000, message: 'Previous FC unspent balance cannot exceed 1000.' },
+    ],
+  },
 ];
 
 const UNSPENT_ULB_ROWS: FcUnspentUlbData[] = [
@@ -290,8 +300,10 @@ const UNSPENT_ULB_ROWS: FcUnspentUlbData[] = [
     ulbName: 'Sample Municipal Corporation',
     allocationAmount: 20,
     unspentAmount: 1.5,
+    previousFcUnspentBalance: 0.5,
     allocationPerc: 7.5,
     eligibility: true,
+    rowStatus: null,
   },
   {
     slNo: 2,
@@ -301,8 +313,10 @@ const UNSPENT_ULB_ROWS: FcUnspentUlbData[] = [
     ulbName: 'Sample Municipal Council',
     allocationAmount: 8,
     unspentAmount: 1.2,
+    previousFcUnspentBalance: 0.4,
     allocationPerc: 15,
     eligibility: false,
+    rowStatus: null,
   },
 ];
 
@@ -722,12 +736,12 @@ describe('FcUnspentDeclarationComponent', () => {
     expect(payload.stateId).toBe('state-test-id');
     expect(payload.yearId).toBe('year-test-id');
     expect(payload.data.unspentUlbData).toEqual([
-      { ulbId: '66a000000000000000000001', unspentAmount: 1.5 },
-      { ulbId: '66a000000000000000000002', unspentAmount: 1.2 },
+      { ulbId: '66a000000000000000000001', unspentAmount: 1.5, previousFcUnspentBalance: 0.5 },
+      { ulbId: '66a000000000000000000002', unspentAmount: 1.2, previousFcUnspentBalance: 0.4 },
     ]);
   });
 
-  it('drops incomplete rows from the payload instead of sending null ulbId/unspentAmount', () => {
+  it('drops incomplete rows from the payload instead of sending null ulbId/unspentAmount/previousFcUnspentBalance', () => {
     spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
     const saveDraftSpy = spyOn(fcUnspentService, 'saveDraft').and.returnValue(of(undefined));
     component.unspentUlbData.controls[1].controls.ulbId.setValue(null);
@@ -735,7 +749,9 @@ describe('FcUnspentDeclarationComponent', () => {
     component.onSubmit('saveAsDraft');
 
     const payload = saveDraftSpy.calls.mostRecent().args[0] as FcUnspentSavePayload;
-    expect(payload.data.unspentUlbData).toEqual([{ ulbId: '66a000000000000000000001', unspentAmount: 1.5 }]);
+    expect(payload.data.unspentUlbData).toEqual([
+      { ulbId: '66a000000000000000000001', unspentAmount: 1.5, previousFcUnspentBalance: 0.5 },
+    ]);
   });
 
   it('excludes backend-owned dependency/row-review fields from the payload — only whitelisted keys are sent', () => {
@@ -748,7 +764,7 @@ describe('FcUnspentDeclarationComponent', () => {
     const dataKeys = Object.keys(payload.data).sort();
     expect(dataKeys).toEqual(['checkboxConfirmation', 'fcUnspentDeclaration', 'isFcUnspent', 'unspentUlbData']);
     for (const row of payload.data.unspentUlbData ?? []) {
-      expect(Object.keys(row).sort()).toEqual(['ulbId', 'unspentAmount']);
+      expect(Object.keys(row).sort()).toEqual(['previousFcUnspentBalance', 'ulbId', 'unspentAmount']);
     }
   });
 
@@ -1107,7 +1123,9 @@ describe('FcUnspentDeclarationComponent', () => {
     }
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob, fileName: null }));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(
+        of({ blob, fileName: null }),
+      );
       saveAsSpy = spyOn(FileSaver, 'saveAs');
     });
 
@@ -1204,9 +1222,7 @@ describe('FcUnspentDeclarationComponent', () => {
       function findAction() {
         const field = scenarioComponent.effectiveVisibleFields().find((f) => f.key === 'fcDeclaration');
         const block = field?.supportingContent?.find((b) => b.type === 'actions');
-        return block && block.type === 'actions'
-          ? block.actions.find((a) => a.id === 'download-template')
-          : undefined;
+        return block && block.type === 'actions' ? block.actions.find((a) => a.id === 'download-template') : undefined;
       }
 
       scenarioComponent.onSupportingAction({ fieldKey: 'fcDeclaration', actionId: 'download-template' });
@@ -1359,7 +1375,7 @@ describe('FcUnspentDeclarationComponent', () => {
       expect(scenarioComponent.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeTrue();
     });
 
-    it('disables fcUnspentDeclaration\'s action when only a row amount changed (branch unchanged)', () => {
+    it("disables fcUnspentDeclaration's action when only a row amount changed (branch unchanged)", () => {
       component.unspentUlbData.controls[0].controls.unspentAmount.setValue(999);
 
       const action = findAction(component, 'fcUnspentDeclaration', 'download-declaration');
@@ -1385,9 +1401,7 @@ describe('FcUnspentDeclarationComponent', () => {
 
   describe('savedUnspentUlbData synthetic control', () => {
     it("initializes from the GET response's unspentUlbData", () => {
-      expect(getFormControl<FcUnspentUlbData[]>(component, 'savedUnspentUlbData').value).toEqual(
-        UNSPENT_ULB_ROWS,
-      );
+      expect(getFormControl<FcUnspentUlbData[]>(component, 'savedUnspentUlbData').value).toEqual(UNSPENT_ULB_ROWS);
     });
 
     it('shows fcUnspentDeclaration when isFcUnspent is yes and rows were saved (mock default)', () => {
@@ -1403,9 +1417,7 @@ describe('FcUnspentDeclarationComponent', () => {
 
       expect(getFormControl<FcUnspentUlbData[]>(scenarioComponent, 'savedUnspentUlbData').value).toEqual([]);
       expect(scenarioComponent.fields().find((f) => f.key === 'fcUnspentDeclaration')?.hidden).toBeTrue();
-      expect(
-        scenarioComponent.effectiveVisibleFields().some((f) => f.key === 'fcUnspentDeclaration'),
-      ).toBeFalse();
+      expect(scenarioComponent.effectiveVisibleFields().some((f) => f.key === 'fcUnspentDeclaration')).toBeFalse();
     });
 
     it('hides fcUnspentDeclaration on the No branch (unaffected — driven by the unchanged isFcUnspent condition)', () => {
@@ -1447,6 +1459,7 @@ describe('FcUnspentDeclarationComponent', () => {
         new FormGroup({
           ulbId: new FormControl<string | null>(UNSPENT_ULB_ROWS[0].ulbId),
           unspentAmount: new FormControl<number | null>(5),
+          previousFcUnspentBalance: new FormControl<number | null>(2),
         }),
       );
       scenarioFixture.detectChanges();
@@ -1467,7 +1480,9 @@ describe('FcUnspentDeclarationComponent', () => {
     let downloadSpy: jasmine.Spy;
 
     beforeEach(() => {
-      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(of({ blob: new Blob(), fileName: null }));
+      downloadSpy = spyOn(fcUnspentService, 'downloadDeclarationDocument').and.returnValue(
+        of({ blob: new Blob(), fileName: null }),
+      );
     });
 
     it('does not call the service for fcDeclaration while the branch is unsaved', () => {
@@ -1514,9 +1529,7 @@ describe('FcUnspentDeclarationComponent', () => {
       downloadSpy.and.returnValue(
         throwError(() =>
           blobApiErrorResponse('Validation failed.', {
-            fcUnspentDeclaration: [
-              { field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' },
-            ],
+            fcUnspentDeclaration: [{ field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' }],
           }),
         ),
       );
@@ -1540,9 +1553,7 @@ describe('FcUnspentDeclarationComponent', () => {
       downloadSpy.and.returnValue(
         throwError(() =>
           blobApiErrorResponse('Validation failed.', {
-            fcUnspentDeclaration: [
-              { field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' },
-            ],
+            fcUnspentDeclaration: [{ field: 'fcUnspentDeclaration', code: 'noRows', message: 'No ULB rows found...' }],
           }),
         ),
       );
@@ -1562,7 +1573,9 @@ describe('FcUnspentDeclarationComponent', () => {
 
     it('clears a stale error from a previous failed download once a new download attempt starts', async () => {
       downloadSpy.and.returnValue(
-        throwError(() => blobApiErrorResponse('Validation failed.', { _form: [{ message: 'stale error', code: 'branchNotChosen' }] })),
+        throwError(() =>
+          blobApiErrorResponse('Validation failed.', { _form: [{ message: 'stale error', code: 'branchNotChosen' }] }),
+        ),
       );
       component.onSupportingAction({ fieldKey: 'fcUnspentDeclaration', actionId: 'download-declaration' });
       await waitUntil(() => component.formLevelErrors().length > 0);

@@ -1,0 +1,36 @@
+@if (canApprove() || canReject()) {
+  <div class="acknowledgement">
+    <div class="acknowledgement-inner">
+      @if (showRejectInput()) {
+        <textarea
+          class="form-control form-control-sm reject-remarks"
+          rows="1"
+          placeholder="Reason for rejection..."
+          [value]="rejectRemarks()"
+          (input)="onRemarksInput($event)"
+        ></textarea>
+        <button type="button" matButton="outlined" [disabled]="busy()" (click)="onRejectCancel()">Cancel</button>
+        <button
+          type="button"
+          matButton="filled"
+          class="reject-confirm-btn"
+          [disabled]="!canConfirmReject() || busy()"
+          (click)="onRejectConfirm()"
+        >
+          <i class="bi bi-x-lg me-1"></i>Confirm Reject
+        </button>
+      } @else {
+        @if (canReject()) {
+          <button type="button" matButton="outlined" class="reject-btn" [disabled]="busy()" (click)="onRejectStart()">
+            <i class="bi bi-x-lg me-1"></i>{{ rejectLabel() }}
+          </button>
+        }
+        @if (canApprove()) {
+          <button type="button" matButton="filled" [disabled]="busy()" (click)="onApprove()">
+            <i class="bi bi-check-lg me-1"></i>{{ approveLabel() }}
+          </button>
+        }
+      }
+    </div>
+  </div>
+}

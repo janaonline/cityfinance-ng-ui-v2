@@ -1,0 +1,93 @@
+@if (bucketCounts().length) {
+  <div class="bucket-cards mb-4">
+    @for (bucket of bucketCounts(); track bucket.key) {
+      <button
+        type="button"
+        class="card shadow-sm bucket-card"
+        [class.bucket-card--active]="activeBucketKey() === bucket.key"
+        (click)="selectBucket(bucket.key)"
+      >
+        <div class="card-body py-2 px-3">
+          <div class="">
+            <span class="bucket-card__count h5 mb-0">{{ bucket.count }}</span> &middot;
+            <span class="bucket-card__percent text-secondary">{{ bucket.percent }}% of {{ rows().length }}</span>
+          </div>
+          <div class="bucket-card__label">{{ bucket.label }}</div>
+        </div>
+      </button>
+    }
+  </div>
+}
+
+<div class="card shadow-sm worklist-card">
+  <div class="card-body p-0">
+    @if (title()) {
+      <h2 class="h6 fw-bold p-3 border-bottom border-3 border-success m-0">{{ title() }}</h2>
+    }
+    <div class="table-responsive">
+      @if (isLoading()) {
+        <div class="d-flex justify-content-center align-items-center py-5">
+          <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+          <span class="small text-secondary">Loading submissions…</span>
+        </div>
+      } @else if (!pagedRows().length) {
+        <p class="text-center text-secondary py-5 mb-0">No submissions found for the selected filters.</p>
+      } @else {
+        <table
+          mat-table
+          [dataSource]="pagedRows()"
+          matSort
+          [matSortActive]="sort()?.active ?? ''"
+          [matSortDirection]="sort()?.direction ?? ''"
+          (matSortChange)="onSortChange($event)"
+          class="w-100"
+        >
+          @for (col of columns(); track col.key) {
+            <ng-container [matColumnDef]="col.key">
+              @if (col.sortValue) {
+                <th mat-header-cell *matHeaderCellDef [mat-sort-header]="col.key">{{ col.header }}</th>
+              } @else {
+                <th mat-header-cell *matHeaderCellDef>{{ col.header }}</th>
+              }
+              <td mat-cell *matCellDef="let row">
+                @if (col.badgeClass) {
+                  <span [class]="'badge rounded-pill ' + col.badgeClass(row)">{{ col.cell(row) }}</span>
+                } @else {
+                  {{ col.cell(row) }}
+                }
+              </td>
+            </ng-container>
+          }
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef>Action</th>
+            <td mat-cell *matCellDef="let row">
+              <button
+                type="button"
+                style="min-width: 100px"
+                [matButton]="isActionableRow(row) ? 'filled' : 'outlined'"
+                class="row-action-btn"
+                [disabled]="!isOpenableRow(row)"
+                (click)="reviewClicked.emit(row)"
+              >
+                {{ actionLabelFor(row) }}
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+        </table>
+      }
+    </div>
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions()"
+      (page)="onPageChange($event)"
+      aria-label="Select page of submissions"
+    ></mat-paginator>
+  </div>
+</div>
