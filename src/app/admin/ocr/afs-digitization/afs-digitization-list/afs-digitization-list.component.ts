@@ -143,13 +143,13 @@ export class AfsDigitizationListComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'completed':
-        return 'status-badge--completed';
+        return 'bg-success-subtle text-success-emphasis';
       case 'failed':
-        return 'status-badge--failed';
+        return 'bg-danger-subtle text-danger-emphasis';
       case 'processing':
-        return 'status-badge--processing';
+        return 'bg-warning-subtle text-warning-emphasis';
       default:
-        return 'status-badge--queued';
+        return 'bg-secondary-subtle text-secondary-emphasis';
     }
   }
 
