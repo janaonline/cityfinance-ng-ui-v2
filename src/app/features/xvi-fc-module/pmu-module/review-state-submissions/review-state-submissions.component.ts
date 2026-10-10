@@ -171,7 +171,7 @@ export class ReviewStateSubmissionsComponent {
 
   private loadStates(): void {
     this.stateService
-      .getStates()
+      .getStates(true)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => this.states.set(res.data ?? []),
