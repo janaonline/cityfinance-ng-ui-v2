@@ -38,6 +38,7 @@ import {
   SubmitType,
 } from './gtc.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 /** Action id emitted by the download-template supporting-content button. Not tied to one field
@@ -55,6 +56,7 @@ const GTC_ACTION_DOWNLOAD_TEMPLATE = 'download-template';
     MatButtonModule,
     MatTooltipModule,
     FormProgressComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './gtc.component.html',
   styleUrl: './gtc.component.scss',
@@ -72,6 +74,8 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   readonly installment = signal<GtcInstallment>(1);
   readonly installmentAccess = signal<GtcInstallmentAccess | null>(null);
@@ -173,6 +177,7 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
           this.fields.set(data.questions);
           this.stateName.set(data.stateName);
           this.actors.set(data.actors);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.installmentAccess.set(data.installmentAccess ?? null);
           this.createFormControls();
           this.isLoading.set(false);

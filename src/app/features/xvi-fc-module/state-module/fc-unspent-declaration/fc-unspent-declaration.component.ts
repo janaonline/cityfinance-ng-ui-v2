@@ -31,6 +31,7 @@ import {
   FormProgressComponent,
   FormStatusValue,
 } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import {
   createFcUnspentUlbRowGroup,
   FcUnspentUlbRowGroup,
@@ -77,6 +78,7 @@ const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount|prev
     FormProgressComponent,
     UnspentUlbTableComponent,
     AmountDisplayToggleComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './fc-unspent-declaration.component.html',
   styleUrl: './fc-unspent-declaration.component.scss',
@@ -104,6 +106,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   readonly applicableFc = signal<FcUnspentApplicableFc>('14TH_FC');
   readonly applicableFcLabel = computed(() => (this.applicableFc() === '15TH_FC' ? '15th' : '14th'));
   readonly actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
+  readonly mohuaRemarks = signal<string | null>(null);
 
   /** Raw saved-row snapshot from the preview response (ulbName/censusCode/sbCode/allocationAmount),
    *  kept alongside the editable FormArray so the table can render already-saved rows without ever
@@ -345,6 +350,8 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
           this.stateName.set(data.stateName);
           this.applicableFc.set(data.applicableFc);
           this.actors.set(data.actors);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
+          this.mohuaRemarks.set(data.mohuaRemarks ?? null);
           this.threshold.set(data.threshold);
           this.currentFormStatus.set(data.currentFormStatus);
           this.canEdit.set(data.permissions.canEdit);

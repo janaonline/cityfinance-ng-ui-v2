@@ -36,6 +36,7 @@ import {
   SubmitType,
 } from './sfc-status.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 /** When state requests a whole-state exemption for SFC Status, below are the possible statuses -
@@ -53,6 +54,7 @@ type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
     MatButtonModule,
     FormProgressComponent,
     ExemptionNoticeComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
@@ -70,6 +72,8 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -180,6 +184,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
           this.actors.set(data.actors);
           this.exemptionStatus.set(data.exemptionStatus);
           this.exemptionMohuaRemarks.set(data.exemptionMohuaRemarks);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.createFormControls();
           this.isLoading.set(false);
         },

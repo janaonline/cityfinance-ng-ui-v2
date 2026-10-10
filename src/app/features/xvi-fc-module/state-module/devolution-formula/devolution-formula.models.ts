@@ -144,6 +144,8 @@ export interface DevolutionFormResponseData {
   installmentAccess?: DevolutionInstallmentAccess;
   instructions?: unknown[];
   meta?: { version: number };
+  pmuRemarks?: string | null;
+  mohuaRemarks?: string | null;
 }
 
 // ─── Payloads ─────────────────────────────────────────────────────────────────
