@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
+import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -237,21 +237,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
     });
 
     // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
-    const awardPeriodControl = this.form.get('awardPeriod');
-    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
-    if (awardPeriodControl && durationControl) {
-      awardPeriodControl.valueChanges
-        .pipe(
-          startWith(awardPeriodControl.value),
-          map((v) => getYearRangeDuration(v)),
-          distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef),
-          takeUntil(this.formSubscriptionsTeardown$),
-        )
-        .subscribe((duration) => {
-          durationControl.setValue(duration, { emitEvent: true });
-        });
-    }
+    bindAwardPeriodDurationDerivation(this.form, this.destroyRef, this.formSubscriptionsTeardown$);
 
     if (!this.canEdit() || this.formLocked()) {
       this.form.disable({ emitEvent: false });
