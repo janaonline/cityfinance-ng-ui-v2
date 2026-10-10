@@ -58,7 +58,7 @@ export class PmuFormReviewDetailComponent {
 
   private readonly form = this.route.snapshot.data['form'] as PmuReviewFormId;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
-  private readonly installment = this.route.snapshot.paramMap.get('installment');
+  readonly installment = this.route.snapshot.paramMap.get('installment');
 
   readonly formOption = pmuFormOption(this.form);
 
