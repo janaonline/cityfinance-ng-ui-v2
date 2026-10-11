@@ -26,23 +26,30 @@ export interface StatusHistoryPage {
 /** What a reviewer table supplies per row: fetch the first page (no cursor) or the next one. */
 export type StatusHistoryLoader = (cursor?: string) => Observable<StatusHistoryPage>;
 
-/** Timeline dot colour (Bootstrap background class) for a status — same palette semantics as the
- *  worklist's status pills: neutral before review, warning while awaiting a reviewer, danger on a
- *  return, success once past PMU. */
-export function statusHistoryDotClass(toStatus: number): string {
+/** Semantic colour of a status, shared by the history dialog's timeline dots and the overview cards'
+ *  top borders so the two always match: neutral before review, warning while awaiting a reviewer,
+ *  danger on a return, success once past PMU. The value is a Bootstrap theme-colour name. */
+export type StatusAccent = 'secondary' | 'warning' | 'danger' | 'success';
+
+export function statusHistoryAccent(toStatus: number): StatusAccent {
   switch (toStatus) {
     case FORM_STATUS.RETURNED_BY_STATE:
     case FORM_STATUS.RETURNED_BY_PMU:
     case FORM_STATUS.RETURNED_BY_MOHUA:
-      return 'bg-danger';
+      return 'danger';
     case FORM_STATUS.UNDER_REVIEW_BY_STATE:
     case FORM_STATUS.UNDER_REVIEW_BY_PMU:
-      return 'bg-warning';
+      return 'warning';
     case FORM_STATUS.UNDER_REVIEW_BY_MOHUA:
     case FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA:
     case FORM_STATUS.APPROVED_BY_STATE:
-      return 'bg-success';
+      return 'success';
     default:
-      return 'bg-secondary';
+      return 'secondary';
   }
+}
+
+/** Timeline dot colour (Bootstrap background class) for a status — see `statusHistoryAccent`. */
+export function statusHistoryDotClass(toStatus: number): string {
+  return `bg-${statusHistoryAccent(toStatus)}`;
 }

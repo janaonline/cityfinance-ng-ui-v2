@@ -1,24 +1,3 @@
-@if (bucketCounts().length) {
-  <div class="bucket-cards mb-4">
-    @for (bucket of bucketCounts(); track bucket.key) {
-      <button
-        type="button"
-        class="card shadow-sm bucket-card"
-        [class.bucket-card--active]="activeBucketKey() === bucket.key"
-        (click)="selectBucket(bucket.key)"
-      >
-        <div class="card-body py-2 px-3">
-          <div class="">
-            <span class="bucket-card__count h5 mb-0">{{ bucket.count }}</span> &middot;
-            <span class="bucket-card__percent text-secondary">{{ bucket.percent }}% of {{ rows().length }}</span>
-          </div>
-          <div class="bucket-card__label">{{ bucket.label }}</div>
-        </div>
-      </button>
-    }
-  </div>
-}
-
 <div class="card shadow-sm worklist-card">
   <div class="card-body p-0">
     @if (title()) {

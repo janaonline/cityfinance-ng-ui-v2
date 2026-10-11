@@ -51,6 +51,21 @@
             </mat-autocomplete>
           </mat-form-field>
 
+          <!-- Installment filter (GTC / Devolution Formula only) - disabled until Installment 2 ships.
+               Until then the page always uses Installment 1 (see DEFAULT_INSTALLMENT in the .ts) and the
+               API already accepts `installment`. To enable: uncomment this block, add 'installment' to
+               the query params in onReview()/resolveInitialFilters() if it should survive a drill-in.
+          @if (isInstallmentScoped()) {
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter-field">
+              <mat-label>Installment</mat-label>
+              <mat-select formControlName="installment">
+                <mat-option [value]="1">Installment 1</mat-option>
+                <mat-option [value]="2">Installment 2</mat-option>
+              </mat-select>
+            </mat-form-field>
+          }
+          -->
+
           <div class="d-flex align-items-center gap-2 filter-field">
             <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always" class="flex-grow-1">
               <mat-label>Form Status</mat-label>
@@ -74,9 +89,12 @@
         </div>
       </fieldset>
 
-      <!-- TODO: Clean up card — the 4 bucket cards are disabled for now (causing more confusion
-           than clarity once the Form Status dropdown went granular); [buckets]/[activeBucketKeyInput]/
-           (bucketSelected) are commented out, not deleted, alongside their .ts-side wiring. -->
+      <app-status-summary-cards
+        [heading]="overviewHeading()"
+        [cards]="summaryCards()"
+        [loading]="isSummaryLoading()"
+      ></app-status-summary-cards>
+
       <app-review-worklist
         [rows]="rows()"
         [columns]="columns()"

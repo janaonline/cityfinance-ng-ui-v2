@@ -47,7 +47,7 @@ type SelectionMode = 'explicit' | 'allMatching';
 
 /** A row's own `rowStatus` is a different domain than a form's `currentFormStatus` (never
  *  NOT_STARTED/IN_PROGRESS, but can be `null` for a never-touched/pre-PMU row, or `ACTION_REQUIRED`
- *  — neither of which `pmuStatusBucket` (form-level) was built to handle; reusing it here silently
+ *  — neither of which a form-level status grouping handles; reusing one here silently
  *  collapsed both into "Approved", which was the bug. This is deliberately its own exhaustive
  *  mapping, not a form-level reuse — mirrors the bucket names the backend's own
  *  `getRowSummary`/`EulbPmuRowSummary` already established (`active`/`updatePending`/`rejected`/
