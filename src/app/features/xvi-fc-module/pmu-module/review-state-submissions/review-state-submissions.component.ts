@@ -15,6 +15,7 @@ import { UtilityService } from '../../../../core/services/utility.service';
 import { IState } from '../../../../core/models/state/state';
 import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
+import { FormStatusHistoryService } from '../../shared/status-history/form-status-history.service';
 import {
   // TODO: Clean up card — restore `ReviewWorklistBucket` once the bucket cards come back (see the
   // commented-out `buckets`/`activeBucketKey`/`onBucketSelected` below).
@@ -97,6 +98,7 @@ export class ReviewStateSubmissionsComponent {
   private readonly utilityService = inject(UtilityService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly worklistService = inject(PmuWorklistService);
+  private readonly historyService = inject(FormStatusHistoryService);
 
   readonly formOptions = PMU_FORM_OPTIONS;
   readonly formStatusOptions = PMU_FORM_STATUS_OPTIONS;
@@ -253,6 +255,9 @@ export class ReviewStateSubmissionsComponent {
   readonly isInstallmentScoped = computed(() => pmuFormOption(this.selectedForm()).installmentScoped);
 
   readonly columns = computed<ReviewWorklistColumn<PmuWorklistRow>[]>(() => {
+    // Captured per computation so a row's history call always uses the form its worklist was loaded for.
+    const form = this.selectedForm();
+    const formLabel = pmuFormOption(form).label;
     const base: ReviewWorklistColumn<PmuWorklistRow>[] = [
       { key: 'stateName', header: 'State', cell: (r) => r.stateName, sortValue: (r) => r.stateName },
     ];
@@ -272,6 +277,14 @@ export class ReviewStateSubmissionsComponent {
         header: 'Status',
         cell: (r) => pmuStatusLabel(r.currentFormStatus),
         badgeClass: (r) => pmuStatusBadgeClass(r.currentFormStatus),
+        // `NOT_STARTED` rows are synthesized (no document), so there is no history to fetch.
+        historyLoader: (r) => {
+          const yearId = this.moduleService.yearId();
+          if (!yearId || r.currentFormStatus === FORM_STATUS.NOT_STARTED) return null;
+          return (cursor?: string) => this.historyService.getHistory(form, r.stateId, yearId, r.installment, cursor);
+        },
+        historyHeading: (r) =>
+          [r.stateName, formLabel, r.installment ? `Installment ${r.installment}` : null].filter(Boolean).join(' · '),
       },
     );
     return base;

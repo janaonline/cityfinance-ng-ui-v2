@@ -3,6 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { StatusHistoryPillComponent } from '../status-history/status-history-pill.component';
+import { StatusHistoryLoader } from '../status-history/status-history.models';
 
 export interface ReviewWorklistColumn<T> {
   key: string;
@@ -10,6 +12,12 @@ export interface ReviewWorklistColumn<T> {
   cell: (row: T) => string;
   /** When set, the cell renders as a pill badge with this class instead of plain text. */
   badgeClass?: (row: T) => string;
+  /** Badge columns only. When set, a row this returns a loader for renders its pill as a button that
+   *  opens the status-history dialog (history is fetched each time the dialog opens); rows it returns `null`
+   *  for (nothing to show yet) keep the plain pill. Role-neutral — each reviewer table supplies its own. */
+  historyLoader?: (row: T) => StatusHistoryLoader | null;
+  /** Header line of that history dialog, e.g. "Gujarat · GTC · Installment 1". */
+  historyHeading?: (row: T) => string;
   /** When set, the column header gets a clickable mat-sort-header, sorted by this raw value. */
   sortValue?: (row: T) => string | number;
 }
@@ -44,7 +52,7 @@ const PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
 @Component({
   selector: 'app-review-worklist',
   standalone: true,
-  imports: [MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule],
+  imports: [MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule, StatusHistoryPillComponent],
   templateUrl: './review-worklist.component.html',
   styleUrl: './review-worklist.component.scss',
 })
