@@ -52,9 +52,9 @@
           </mat-form-field>
 
           <div class="d-flex align-items-center gap-2 filter-field">
-            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-grow-1">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always" class="flex-grow-1">
               <mat-label>Form Status</mat-label>
-              <mat-select formControlName="status">
+              <mat-select formControlName="status" placeholder="All Statuses" aria-label="Form Status">
                 <mat-option [value]="null">All Statuses</mat-option>
                 @for (option of formStatusOptions; track option.value) {
                   <mat-option [value]="option.value">{{ option.label }}</mat-option>
