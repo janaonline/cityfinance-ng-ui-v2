@@ -1,0 +1,26 @@
+<section [attr.aria-label]="heading() || 'Status overview'">
+  @if (heading()) {
+    <h2 class="summary-heading">{{ heading() }}</h2>
+  }
+
+  <div class="summary-grid" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      @for (placeholder of placeholders; track placeholder) {
+        <div class="summary-card summary-card--placeholder" aria-hidden="true">
+          <div class="placeholder-line placeholder-line--label"></div>
+          <div class="placeholder-line placeholder-line--value"></div>
+        </div>
+      }
+    } @else {
+      @for (card of cards(); track card.key) {
+        <div class="summary-card" [class]="'summary-card--' + card.accent">
+          <div class="summary-card__label">{{ card.label }}</div>
+          <div class="summary-card__body">
+            <span class="summary-card__value">{{ card.value }}</span>
+            <span class="summary-card__sub">{{ card.subText }}</span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</section>

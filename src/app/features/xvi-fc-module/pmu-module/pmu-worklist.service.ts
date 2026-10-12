@@ -2,7 +2,18 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { WorklistStatusSummary } from '../shared/status-summary-cards/status-summary-cards.models';
 import { PmuApiResponse, PmuWorklistQuery, PmuWorklistResult, PmuWorklistRow } from './pmu-review.models';
+
+const EMPTY_SUMMARY: WorklistStatusSummary = {
+  total: 0,
+  statesInScope: 0,
+  notStarted: 0,
+  inProgress: 0,
+  underReview: { mohua: 0, pmu: 0 },
+  returned: { mohua: 0, pmu: 0 },
+  acknowledged: 0,
+};
 
 function ensureSuccessfulResponse<T>(response: PmuApiResponse<T>): PmuApiResponse<T> {
   if (!response.success) {
@@ -23,6 +34,7 @@ export class PmuWorklistService {
   getWorklist(basePath: string, yearId: string, query: PmuWorklistQuery): Observable<PmuWorklistResult> {
     let params = new HttpParams();
     if (query.stateId) params = params.set('stateId', query.stateId);
+    if (query.installment !== undefined) params = params.set('installment', String(query.installment));
     if (query.status !== undefined) params = params.set('status', String(query.status));
     if (query.sortBy) params = params.set('sortBy', query.sortBy);
     if (query.sortDir) params = params.set('sortDir', query.sortDir);
@@ -31,15 +43,17 @@ export class PmuWorklistService {
 
     return this.http
       .get<
-        PmuApiResponse<{ rows: PmuWorklistRow[] }>
+        PmuApiResponse<{ rows: PmuWorklistRow[]; summary: WorklistStatusSummary }>
       >(`${environment.api.url2}${basePath}worklist/${yearId}`, { params })
       .pipe(
         map((res) => {
           const response = ensureSuccessfulResponse(res);
           const rows = response.data?.rows ?? [];
+          const summary = response.data?.summary ?? EMPTY_SUMMARY;
           const meta = response.meta ?? {};
           return {
             rows,
+            summary,
             page: typeof meta['page'] === 'number' ? meta['page'] : (query.page ?? 1),
             limit: typeof meta['limit'] === 'number' ? meta['limit'] : (query.limit ?? rows.length),
             total: typeof meta['total'] === 'number' ? meta['total'] : rows.length,

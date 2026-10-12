@@ -1,0 +1,1 @@
+export const REVIEW_REMARKS_MAX_LENGTH = 1000;

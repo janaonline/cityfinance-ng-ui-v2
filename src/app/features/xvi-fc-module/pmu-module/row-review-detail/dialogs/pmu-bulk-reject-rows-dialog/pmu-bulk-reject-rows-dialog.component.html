@@ -19,10 +19,16 @@
   <textarea
     id="pmu-bulk-reject-remarks"
     class="form-control"
-    [class.is-invalid]="showRequiredError"
+    [class.is-invalid]="showRequiredError || remarks.invalid"
+    [attr.maxlength]="remarksMaxLength"
+    aria-required="true"
     rows="3"
     [formControl]="remarks"
   ></textarea>
+  <div class="small text-secondary text-end mt-1" aria-live="polite">{{ remarks.value.length }}/{{ remarksMaxLength }}</div>
+  @if (remarks.hasError('maxlength')) {
+    <div class="invalid-feedback d-block">Remarks must not exceed {{ remarksMaxLength }} characters.</div>
+  }
   @if (showRequiredError) {
     <div class="invalid-feedback d-block">Remarks are required.</div>
   }

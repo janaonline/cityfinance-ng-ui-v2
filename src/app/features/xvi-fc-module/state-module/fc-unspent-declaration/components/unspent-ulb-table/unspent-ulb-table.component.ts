@@ -197,6 +197,9 @@ export class UnspentUlbTableComponent {
   readonly applicableFcLabel = input.required<string>();
   /** Frontend eligibility preview threshold, sourced from the backend — never hardcoded here. */
   readonly threshold = input.required<number>();
+  /** False when the design year's form is independent of Devolution: no allocation column is shown. */
+  readonly showAllocation = input(true);
+  readonly columnCount = computed(() => (this.showAllocation() ? 7 : 6));
   readonly stateId = input.required<string>();
   readonly yearId = input.required<string>();
   /** Backend-supplied field metadata for the ulbId/unspentAmount controls (DB-driven
@@ -291,12 +294,16 @@ export class UnspentUlbTableComponent {
           }),
         );
       }
+      // `push` never marks the array dirty on its own; a picked ULB is an unsaved change (a draft now
+      // persists it even with empty amounts), so the leave-page guard must see it.
+      this.rows().markAsDirty();
     });
   }
 
   removeRow(index: number): void {
     if (!this.canEdit() || this.rowViewModels()[index]?.locked) return;
     this.rows().removeAt(index);
+    this.rows().markAsDirty();
   }
 
   /**

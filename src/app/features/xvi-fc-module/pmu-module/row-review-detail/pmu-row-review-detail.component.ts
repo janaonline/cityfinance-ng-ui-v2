@@ -47,7 +47,7 @@ type SelectionMode = 'explicit' | 'allMatching';
 
 /** A row's own `rowStatus` is a different domain than a form's `currentFormStatus` (never
  *  NOT_STARTED/IN_PROGRESS, but can be `null` for a never-touched/pre-PMU row, or `ACTION_REQUIRED`
- *  — neither of which `pmuStatusBucket` (form-level) was built to handle; reusing it here silently
+ *  — neither of which a form-level status grouping handles; reusing one here silently
  *  collapsed both into "Approved", which was the bug. This is deliberately its own exhaustive
  *  mapping, not a form-level reuse — mirrors the bucket names the backend's own
  *  `getRowSummary`/`EulbPmuRowSummary` already established (`active`/`updatePending`/`rejected`/
@@ -150,12 +150,25 @@ export class PmuRowReviewDetailComponent {
    *  condition as `showEligibility` today, kept as its own named flag since the two are
    *  conceptually distinct (eligibility vs. money), not because the underlying check differs. */
   readonly showMoneyColumns = this.showEligibility;
+  /** The 16th FC Allocation column only has data for Devolution-linked design years; for independent
+   *  (14th FC) years the backend stores no allocation, so the column is left out. */
+  readonly showAllocationColumn = computed(
+    () => this.showMoneyColumns && this.rows().some((r) => r.allocationAmount != null),
+  );
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
-  /** Loading/empty-state row's `colspan` — checkbox (not in view-only) + ULB Name + Census Code + Status (4), plus the
-   *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
-  readonly colSpan =
-    (this.viewOnly ? 3 : 4) + (this.showMoneyColumns ? 3 : 0) + (this.showEligibility ? 1 : 0) + (this.showElectedBodyColumns ? 4 : 0);
+  /** Loading/empty-state row's `colspan` — checkbox (not in view-only) + ULB Name + Census Code + Status (4, or 3 in
+   *  view-only), plus the 2 always-present money columns (Unspent/Previous Balance), the Allocation column when it
+   *  has data, and/or the Eligibility column and/or the 4 Elected Body columns when shown. A `computed` because the
+   *  Allocation column depends on the loaded rows. */
+  readonly colSpan = computed(
+    () =>
+      (this.viewOnly ? 3 : 4) +
+      (this.showMoneyColumns ? 2 : 0) +
+      (this.showAllocationColumn() ? 1 : 0) +
+      (this.showEligibility ? 1 : 0) +
+      (this.showElectedBodyColumns ? 4 : 0),
+  );
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
@@ -388,9 +401,7 @@ export class PmuRowReviewDetailComponent {
     if (!yearId) return;
 
     const statusFilter = this.statusFilter();
-    const rowStatus = statusFilter
-      ? STATUS_FILTER_OPTIONS.find((o) => o.label === statusFilter)?.statuses
-      : undefined;
+    const rowStatus = statusFilter ? STATUS_FILTER_OPTIONS.find((o) => o.label === statusFilter)?.statuses : undefined;
     const sort = this.sort();
 
     this.isLoadingRows.set(true);

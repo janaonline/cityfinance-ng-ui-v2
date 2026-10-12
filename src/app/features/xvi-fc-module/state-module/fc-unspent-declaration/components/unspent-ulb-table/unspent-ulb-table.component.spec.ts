@@ -127,6 +127,7 @@ interface SetupOptions {
   threshold?: number;
   rowEditFields?: readonly ConditionalFieldConfig[];
   blockingMessage?: string | null;
+  showAllocation?: boolean;
 }
 
 describe('UnspentUlbTableComponent', () => {
@@ -157,6 +158,7 @@ describe('UnspentUlbTableComponent', () => {
     fixture.componentRef.setInput('yearId', 'year-1');
     fixture.componentRef.setInput('rowEditFields', options.rowEditFields ?? TEST_ROW_EDIT_FIELDS);
     fixture.componentRef.setInput('blockingMessage', options.blockingMessage ?? null);
+    fixture.componentRef.setInput('showAllocation', options.showAllocation ?? true);
     fixture.detectChanges();
   }
 
@@ -194,6 +196,77 @@ describe('UnspentUlbTableComponent', () => {
 
     const rowEls = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(rowEls.length).toBe(2);
+  });
+
+  // `FormArray.push`/`removeAt` never mark an array dirty on their own, so without this the page's
+  // leave-page guard could not see a ULB that was added or removed without editing an amount.
+  describe('unsaved-change tracking for added/removed ULBs', () => {
+    it('marks the rows array dirty when ULBs are added through the picker', () => {
+      setupWithRows([]);
+      dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0], ULB_OPTIONS[1]]));
+      expect(rows.dirty).toBeFalse();
+
+      component.addRow();
+
+      expect(rows.length).toBe(2);
+      expect(rows.dirty).toBeTrue();
+    });
+
+    it('keeps the array clean when the picker is dismissed without choosing a ULB', () => {
+      setupWithRows([]);
+      dialog.open.and.returnValue(dialogRefReturning(undefined));
+
+      component.addRow();
+
+      expect(rows.length).toBe(0);
+      expect(rows.dirty).toBeFalse();
+    });
+
+    it('marks the rows array dirty when a row is removed', () => {
+      setupWithRows([
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+          previousFcUnspentBalance: null,
+        }),
+      ]);
+      expect(rows.dirty).toBeFalse();
+
+      component.removeRow(0);
+
+      expect(rows.length).toBe(0);
+      expect(rows.dirty).toBeTrue();
+    });
+  });
+
+  describe('allocation column (Devolution-linked vs independent design years)', () => {
+    const headerTexts = (): string[] =>
+      fixture.debugElement
+        .queryAll(By.css('thead th'))
+        .map((th) => (th.nativeElement as HTMLElement).textContent!.trim());
+
+    it('shows the 16th FC Allocation column by default (Devolution-linked years)', () => {
+      setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS)]);
+      expect(headerTexts().some((t) => t.startsWith('16th FC Allocation'))).toBeTrue();
+      expect(fixture.debugElement.queryAll(By.css('colgroup col')).length).toBe(7);
+    });
+
+    it('leaves the allocation column out when the design year is independent of Devolution', () => {
+      setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS)], {
+        showAllocation: false,
+      });
+      expect(headerTexts().some((t) => t.includes('Allocation'))).toBeFalse();
+      expect(fixture.debugElement.queryAll(By.css('colgroup col')).length).toBe(6);
+      // The same cells per row: one fewer data cell than the linked layout.
+      const cells = fixture.debugElement.queryAll(By.css('tbody tr:first-child td'));
+      expect(cells.length).toBe(6);
+    });
+
+    it('sizes the empty-state row to the visible columns', () => {
+      setupWithRows([], { showAllocation: false });
+      const emptyCell = fixture.debugElement.query(By.css('tbody td'));
+      expect((emptyCell.nativeElement as HTMLElement).getAttribute('colspan')).toBe('6');
+    });
   });
 
   it('shows an empty-state row when there are no rows', () => {

@@ -5,7 +5,9 @@
         <col class="col-slno" />
         <col class="col-ulb" />
         <col class="col-code" />
-        <col class="col-alloc" />
+        @if (showAllocation()) {
+          <col class="col-alloc" />
+        }
         <col class="col-unspent" />
         <col class="col-prev-unspent" />
         <!-- <col class="col-pct" /> -->
@@ -17,7 +19,9 @@
           <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
           <th scope="col" class="text-center small fw-semibold">ULB</th>
           <th scope="col" class="text-center small fw-semibold">Census Code</th>
-          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in {{ unitSuffix() }})</th>
+          @if (showAllocation()) {
+            <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in {{ unitSuffix() }})</th>
+          }
           <th scope="col" class="text-center small fw-semibold">
             {{ applicableFcLabel() }} FC Unspent (in {{ canEdit() ? '₹' : unitSuffix() }})
           </th>
@@ -32,7 +36,7 @@
       <tbody>
         @if (rows().controls.length === 0) {
           <tr>
-            <td colspan="7" class="text-center text-secondary small py-3">No ULBs added yet.</td>
+            <td [attr.colspan]="columnCount()" class="text-center text-secondary small py-3">No ULBs added yet.</td>
           </tr>
         }
         @for (row of rows().controls; track row; let i = $index) {
@@ -79,12 +83,14 @@
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
-            <td
-              class="small text-end pe-3 text-secondary"
-              [title]="formatAmountExact(rowViewModels()[i].allocationAmount)"
-            >
-              {{ formatAmount(rowViewModels()[i].allocationAmount) }}
-            </td>
+            @if (showAllocation()) {
+              <td
+                class="small text-end pe-3 text-secondary"
+                [title]="formatAmountExact(rowViewModels()[i].allocationAmount)"
+              >
+                {{ formatAmount(rowViewModels()[i].allocationAmount) }}
+              </td>
+            }
             <td class="text-end pe-3">
               @if (canEdit() && !rowViewModels()[i].locked) {
                 @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
