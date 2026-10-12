@@ -25,7 +25,6 @@ import { StateRow, StateStatus, formatCrore } from '../overview.models';
 
 export type StateFilter = StateStatus;
 type View = 'track' | 'list';
-type SortKey = 'ulb' | 'alloc';
 type Tone = 'orange' | 'teal' | 'grey' | 'red' | 'good';
 
 interface Lane {
@@ -128,7 +127,6 @@ export class OverviewStatesGlanceComponent {
 
   readonly view = signal<View>('track');
   readonly selectedCode = signal<string | null>(null);
-  readonly sortKey = signal<SortKey>('alloc');
   readonly search = signal('');
   readonly trackWidth = signal(0);
 
@@ -296,19 +294,20 @@ export class OverviewStatesGlanceComponent {
   }
 
   // ── Ranked list ────────────────────────────────────────────────────────────
+  /** Fixed order: largest annual allocation first (the list is not user-sortable). */
   readonly ranking = computed(() => {
-    const key = this.sortKey();
-    const progress = (r: StateRow) => (r.ulbsDone !== null && r.ulbsTotal ? r.ulbsDone / r.ulbsTotal : 0);
-    const sorted = [...this.rows()].sort((a, b) =>
-      key === 'ulb' ? progress(b) - progress(a) || b.allocation - a.allocation : b.allocation - a.allocation,
-    );
+    const sorted = [...this.rows()].sort((a, b) => b.allocation - a.allocation);
     return new Map(sorted.map((r, i) => [r.code, i]));
   });
 
-  /** List view: rows grouped under a band per stage, ranked within each group. */
+  /** The list shows only the states that match the search / stage filter. (The track view keeps every bubble
+   *  and dims the non-matching ones instead.) */
+  readonly listRows = computed(() => this.rows().filter((r) => this.matches(r)));
+
+  /** List view: matching rows grouped under a band per stage, ranked within each group. */
   readonly listLayout = computed(() => {
     const ranking = this.ranking();
-    const rows = this.rows();
+    const rows = this.listRows();
     const tops = new Map<string, number>();
     const numbers = new Map<string, number>();
     const heads: { label: string; count: number; top: number }[] = [];
@@ -331,10 +330,6 @@ export class OverviewStatesGlanceComponent {
 
   progressPercent(row: StateRow): number {
     return row.ulbsDone !== null && row.ulbsTotal ? Math.round((row.ulbsDone / row.ulbsTotal) * 100) : 0;
-  }
-
-  sortLabel(key: SortKey, label: string): string {
-    return this.sortKey() === key ? `${label} ↓` : label;
   }
 
   // ── Handlers ───────────────────────────────────────────────────────────────

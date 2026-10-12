@@ -129,27 +129,17 @@
               <span>#</span>
               <span>State</span>
               <span>Claim letters</span>
-              <button type="button" [attr.aria-pressed]="sortKey() === 'ulb'" (click)="sortKey.set('ulb')">
-                {{ sortLabel('ulb', 'ULB progress') }}
-              </button>
-              <button
-                type="button"
-                class="r"
-                [attr.aria-pressed]="sortKey() === 'alloc'"
-                (click)="sortKey.set('alloc')"
-              >
-                {{ sortLabel('alloc', 'Allocation') }}
-              </button>
+              <span>ULB progress</span>
+              <span class="r">Allocation</span>
               <span></span>
             </div>
             <div class="os-rows" [style.height.px]="listLayout().height">
               @for (head of listLayout().heads; track head.label) {
                 <div class="os-group" [style.top.px]="head.top">States — {{ head.label }} ({{ head.count }})</div>
               }
-              @for (row of rows(); track row.code; let i = $index) {
+              @for (row of listRows(); track row.code; let i = $index) {
                 <a
                   class="os-row os-tone--{{ toneOf(row) }}"
-                  [class.off]="!matches(row)"
                   [routerLink]="['../review-state-submissions', row.stateId]"
                   [attr.aria-label]="'View ' + row.name"
                   [style.top.px]="listLayout().tops.get(row.code)"
@@ -169,6 +159,9 @@
                 </a>
               }
             </div>
+            @if (!listRows().length) {
+              <p class="os-empty" role="status">No state matches your search.</p>
+            }
           </div>
         </div>
       }
@@ -179,7 +172,6 @@
         <span>Bubble size is annual allocation.</span>
         <span>Earlier stages on the left, closer to release on the right</span>
       } @else {
-        <span>Ranked within each stage; click a heading to change the ranking</span>
         <span>Click a state to explore its data</span>
       }
     </div>

@@ -102,7 +102,13 @@ export class UlbDetailComponent {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
-  readonly ulbName = computed(() => this.forms()?.audited.data?.ulbName ?? this.forms()?.slb.data?.ulbName ?? '');
+  /** Looked up by id, so it shows even for a ULB that has not started any form (those have no record to read it from). */
+  private readonly lookedUpName = signal('');
+
+  readonly ulbName = computed(
+    () =>
+      this.lookedUpName() || (this.forms()?.audited.data?.ulbName ?? this.forms()?.slb.data?.ulbName ?? ''),
+  );
   readonly ulbCode = computed(() => this.forms()?.audited.data?.ulbCode ?? null);
 
   readonly tabs = computed<FormTab[]>(() => {
@@ -187,6 +193,10 @@ export class UlbDetailComponent {
         return forms.slb.data?.actualYearLabel ? `FY ${forms.slb.data.actualYearLabel}` : '';
     }
   });
+
+  /** "What the system checked" describes the checks run when the ULB submitted the form, so it only appears for a
+   *  form that is submitted (the green-tick rule, owned by the API) and whose content is on screen. */
+  readonly showChecks = computed(() => !!this.selectedTab()?.done && this.hasRecord() && !this.selectedFailed());
 
   readonly checks = computed(() => {
     const content = SYSTEM_CHECKS_CONTENT[this.selectedKey()];
@@ -273,8 +283,17 @@ export class UlbDetailComponent {
 
   readonly paneSubtitle = computed(() => {
     if (this.selectedKey() === 'PFMS_BANK_ACCOUNT') return 'Account number is masked · read-only';
-    const count = this.documents().length;
-    return `${this.yearLabel()} · ${count} ${count === 1 ? 'document' : 'documents'} · read-only`.replace(/^ · /, '');
+    // "N of M uploaded" is only meaningful once the ULB has a record for this form. Before that the panel says it has
+    // not been submitted, so no count is shown (the Audited form alone would otherwise claim its 8 configured slots
+    // while DUR, which has no record, claimed 0).
+    const documents = this.documents();
+    const parts = [this.yearLabel()];
+    if (this.hasRecord() && documents.length) {
+      parts.push(`${documents.filter((doc) => doc.uploadedAt).length} of ${documents.length} uploaded`);
+    }
+    parts.push('read-only');
+    const text = parts.filter(Boolean).join(' · ');
+    return text.charAt(0).toUpperCase() + text.slice(1);
   });
 
   readonly bank = computed(() => this.forms()?.bank.data ?? null);
@@ -283,6 +302,7 @@ export class UlbDetailComponent {
   constructor() {
     this.load();
     this.loadStateName();
+    this.loadUlbName();
   }
 
   load(): void {
@@ -350,6 +370,15 @@ export class UlbDetailComponent {
       .getDetail(this.stateId(), yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (detail) => this.stateName.set(detail.state.name), error: () => undefined });
+  }
+
+  private loadUlbName(): void {
+    if (!this.ulbId()) return;
+
+    this.formsService
+      .getUlbName(this.ulbId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((name) => this.lookedUpName.set(name));
   }
 
   private readStoredYearId(): string {

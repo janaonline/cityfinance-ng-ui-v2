@@ -19,7 +19,8 @@ export type NavRoleName =
   | 'XVIFC'
   | 'PARTNER'
   | 'PMU'
-  | 'XVIFC_PMU';
+  | 'XVIFC_PMU'
+  | 'XVIFC_DOE';
 
 export type NavAppKey = 'ui' | 'ssr' | 'v2';
 export type NavHostApp = NavAppKey | 'external';
@@ -171,7 +172,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     // would hit every admin sub-page). Same rule on 'blog' below; Dashboard stays visible there.
     visibility: {
       hideWhenRoleOnRoute: {
-        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
+        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU', 'XVIFC_DOE'],
         routePrefixes: ['/xvifc', '/xvifc-form'],
       },
       hideOnRoutePrefixes: ['/admin/xvi-fc-review'],
@@ -187,7 +188,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     visibility: {
       // Same rule as Resources above.
       hideWhenRoleOnRoute: {
-        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
+        roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU', 'XVIFC_DOE'],
         routePrefixes: ['/xvifc', '/xvifc-form'],
       },
       hideOnRoutePrefixes: ['/admin/xvi-fc-review'],
@@ -204,8 +205,8 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     groupDefaultLabel: 'My Forms',
     visibility: {
       requiresAuth: true,
-      // XVIFC/XVIFC_PMU have no visible 'ulb-forms' members; hide the entire "My Forms" group, not just this entry.
-      excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU'],
+      // XVIFC/XVIFC_PMU/XVIFC_DOE have no visible 'ulb-forms' members; hide the entire "My Forms" group, not just this entry.
+      excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC', 'XVIFC_PMU', 'XVIFC_DOE'],
     },
   },
   {
@@ -234,7 +235,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     visibility: {
       requiresAuth: true,
       readonlyGated: true,
-      excludeRoles: ['ULB', 'STATE_DASHBOARD', 'XVIFC', 'XVIFC_STATE', 'XVIFC_PMU'],
+      excludeRoles: ['ULB', 'STATE_DASHBOARD', 'XVIFC', 'XVIFC_STATE', 'XVIFC_PMU', 'XVIFC_DOE'],
     },
   },
   {

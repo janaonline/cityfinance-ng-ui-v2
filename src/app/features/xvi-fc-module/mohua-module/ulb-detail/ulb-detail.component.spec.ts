@@ -87,7 +87,7 @@ const forms = {
 } as unknown as UlbFormsData;
 
 describe('UlbDetailComponent', () => {
-  let formsService: { load: jasmine.Spy };
+  let formsService: { load: jasmine.Spy; getUlbName: jasmine.Spy };
 
   const create = () => {
     const paramMap = convertToParamMap({ stateId: 'state-1', ulbId: 'ulb-1', yearId: 'year-1' });
@@ -113,7 +113,23 @@ describe('UlbDetailComponent', () => {
   };
 
   beforeEach(() => {
-    formsService = { load: jasmine.createSpy('load').and.returnValue(of(forms)) };
+    formsService = {
+      load: jasmine.createSpy('load').and.returnValue(of(forms)),
+      getUlbName: jasmine.createSpy('getUlbName').and.returnValue(of('')),
+    };
+  });
+
+  it('shows the looked-up name for a ULB that has no form record to read it from', () => {
+    formsService.load.and.returnValue(
+      of({ ...forms, audited: { data: null, failed: false }, slb: { data: null, failed: false } }),
+    );
+    formsService.getUlbName.and.returnValue(of('Agra Municipal Corporation'));
+
+    const fixture = create();
+
+    expect(formsService.getUlbName).toHaveBeenCalledOnceWith('ulb-1');
+    expect(fixture.componentInstance.ulbName()).toBe('Agra Municipal Corporation');
+    expect(fixture.nativeElement.querySelector('.ud-title')?.textContent).toContain('Agra Municipal Corporation');
   });
 
   it('loads the ULB for the ids in the route and fills in the header and breadcrumb', () => {
@@ -124,6 +140,41 @@ describe('UlbDetailComponent', () => {
     expect(fixture.componentInstance.ulbCode()).toBe('800123');
     expect(fixture.componentInstance.stateName()).toBe('Rajasthan');
     expect(fixture.nativeElement.querySelector('.ud-crumb')?.textContent).toContain('Rajasthan');
+  });
+
+  it('counts uploaded documents out of the form’s documents, and shows no count before a record exists', () => {
+    const component = create().componentInstance;
+
+    // Audited has a record: 2 of its 3 configured documents are uploaded.
+    expect(component.paneSubtitle()).toBe('FY 2024-25 · 2 of 3 uploaded · read-only');
+
+    // Provisional and DUR have no record: no count (neither "N documents" nor "0 documents").
+    component.selectTab('PROVISIONAL_STATEMENTS');
+    expect(component.paneSubtitle()).toBe('FY 2025-26 · read-only');
+    component.selectTab('DUR');
+    expect(component.paneSubtitle()).not.toMatch(/\d/);
+  });
+
+  it('shows "What the system checked" only for a submitted form that has content on screen', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    const panel = () => fixture.nativeElement.querySelector('.ud-checks');
+
+    // Audited and PFMS are submitted (ticked by the API).
+    expect(component.showChecks()).toBeTrue();
+    expect(panel()).not.toBeNull();
+    component.selectTab('PFMS_BANK_ACCOUNT');
+    fixture.detectChanges();
+    expect(component.showChecks()).toBeTrue();
+
+    // Provisional has no record, and SLB is not submitted — nothing was checked, so nothing to show.
+    component.selectTab('PROVISIONAL_STATEMENTS');
+    fixture.detectChanges();
+    expect(component.showChecks()).toBeFalse();
+    expect(panel()).toBeNull();
+    component.selectTab('SERVICE_LEVEL_BENCHMARKS');
+    fixture.detectChanges();
+    expect(component.showChecks()).toBeFalse();
   });
 
   it("takes each tab's status text and tick from the API, not from local rules", () => {
