@@ -6,10 +6,13 @@
       <div class="col-auto">
         <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
 
-        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+        <div class="text-uppercase fw-semibold mt-3 mb-1 custom-font-size-7">
           <span class="text-secondary">16th Finance Commission</span>
-          &nbsp;&middot;&nbsp; {{ stateName }}
-        </div> -->
+          &nbsp;&middot;&nbsp; {{ stateName() }}
+          @if (installment) {
+            &nbsp;&middot;&nbsp; Installment {{ installment }}
+          }
+        </div>
 
         <h1 class="page-title my-2">{{ formOption.label }}</h1>
 
@@ -191,7 +194,7 @@
                   </th>
                 }
                 @if (showEligibility) {
-                  <th scope="col" class="small fw-semibold">Eligibility</th>
+                  <th scope="col" class="small fw-semibold text-center">Eligibility</th>
                 }
                 <th scope="col" class="small fw-semibold pe-3" mat-sort-header="rowStatus">Status</th>
               </tr>
@@ -244,7 +247,7 @@
                       </td>
                     }
                     @if (showEligibility) {
-                      <td class="small">{{ eligibilityLabel(row) }}</td>
+                      <td class="small text-center">{{ eligibilityLabel(row) }}</td>
                     }
                     <td class="pe-3">
                       <span [class]="'badge rounded-pill ' + rowBadgeClass(row)">{{ rowStatusLabel(row) }}</span>

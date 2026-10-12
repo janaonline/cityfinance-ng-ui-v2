@@ -141,6 +141,7 @@ export class PmuRowReviewDetailComponent {
 
   private readonly form = this.route.snapshot.data['form'] as PmuReviewFormId;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
+  readonly installment = this.route.snapshot.paramMap.get('installment');
 
   readonly formOption = pmuFormOption(this.form);
   readonly showEligibility = hasEligibilityColumn(this.form);
@@ -210,6 +211,7 @@ export class PmuRowReviewDetailComponent {
    *  doc comment. */
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
+  readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly statusLabel = computed(() => pmuStatusLabel(this.review()?.currentFormStatus ?? 0));
   readonly statusBadgeClass = computed(() => pmuStatusBadgeClass(this.review()?.currentFormStatus ?? 0));
   /** Only shown while the form is currently Returned — see the form-level detail component's own
