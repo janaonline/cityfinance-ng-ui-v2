@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import FileSaver from 'file-saver';
-import { Subject, finalize, from, map, startWith, takeUntil } from 'rxjs';
+import { Subject, distinctUntilChanged, finalize, from, map, skip, startWith, takeUntil } from 'rxjs';
 import { CanComponentDeactivate, warnBeforeUnloadWhenDirty } from '../../../../core/guards/unsaved-changes.guard';
 import { UtilityService } from '../../../../core/services/utility.service';
 import {
@@ -16,7 +16,7 @@ import { ConfirmDialogService } from '../../../../shared/components/confirm-dial
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
-import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../shared/dynamic-form/field.interface';
+import { FieldSupportingActionEvent } from '../../../../shared/dynamic-form/field.interface';
 import { withSupportingActionState } from '../../../../shared/dynamic-form/supporting-action-state';
 import {
   ConditionalFieldConfig,
@@ -44,11 +44,17 @@ import {
   ApiErrorResponse,
   ApiFieldError,
   FcUnspentApplicableFc,
+  FcUnspentPolicy,
   FcUnspentDevolutionDependency,
   FcUnspentSaveData,
   FcUnspentSavePayload,
   FcUnspentUlbData,
 } from './fc-unspent-declaration.models';
+
+const DEFAULT_POLICY: FcUnspentPolicy = {
+  devolutionLinked: true,
+  eligibilityRule: { type: 'MAX_PERCENT_OF_ALLOCATION', thresholdPercent: 10 },
+};
 
 const DEFAULT_DEPENDENCY: FcUnspentDevolutionDependency = {
   devolutionStatus: null,
@@ -65,6 +71,12 @@ const FC_UNSPENT_SUPPORTING_ACTION = {
   DOWNLOAD_TEMPLATE: 'download-template',
   DOWNLOAD_DECLARATION: 'download-declaration',
 } as const;
+
+/** Label the download action shows while the screen holds changes the server has not seen yet: clicking it
+ *  saves the draft first, so the generated document always matches what is on screen. */
+const SAVE_AND_DOWNLOAD_LABEL = 'Save & download the declaration';
+const INCOMPLETE_ROWS_MESSAGE =
+  'Enter the unspent and previous balances for every ULB before downloading the declaration.';
 
 const ROW_ERROR_KEY_PATTERN = /^unspentUlbData\.(\d+)\.(ulbId|unspentAmount|previousFcUnspentBalance)$/;
 
@@ -102,6 +114,11 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   private readonly ulbOptionsCache = inject(FcUnspentUlbOptionsCacheService);
 
   readonly threshold = signal(10);
+  /** Defaults to today's Devolution-linked behaviour until (or unless) the backend sends a policy. */
+  readonly policy = signal<FcUnspentPolicy>(DEFAULT_POLICY);
+  /** Allocation columns/figures only exist when the design year's form is linked to Devolution. */
+  readonly showAllocation = computed(() => this.policy().devolutionLinked);
+  readonly noUnspentAllowed = computed(() => this.policy().eligibilityRule.type === 'NO_UNSPENT_ALLOWED');
   readonly stateName = signal('');
   readonly applicableFc = signal<FcUnspentApplicableFc>('14TH_FC');
   readonly applicableFcLabel = computed(() => (this.applicableFc() === '15TH_FC' ? '15th' : '14th'));
@@ -114,10 +131,6 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
    *  kept alongside the editable FormArray so the table can render already-saved rows without ever
    *  needing to open the ULB picker. */
   readonly savedUnspentUlbData = signal<readonly FcUnspentUlbData[]>([]);
-  /** Drives the save-prompt banner: fcUnspentDeclaration's backend visibleWhen hides the whole
-   *  field (not just its download action) until at least one row is saved, which also hides that
-   *  field's own in-field "save your changes" message along with it — this banner fills that gap. */
-  readonly hasSavedUnspentRows = computed(() => this.savedUnspentUlbData().length > 0);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -128,62 +141,38 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
   /**
-   * `visibleFields()` with the branch-appropriate download action's `loading`/`loadingLabel`
-   * overridden from `isDownloadingDeclaration()` (spinner while a request is in flight — one shared
-   * signal suffices since `fcDeclaration`/`fcUnspentDeclaration` are mutually exclusive by branch,
-   * no need for EULB's per-action split), and `disabled` (+ description swapped to explain why, via
-   * `withDownloadActionState`) while the relevant unsaved-state signal above is true — the document
-   * endpoint only ever reflects saved data. Bound in the template in place of `visibleFields()`.
+   * `visibleFields()` with the branch-appropriate download action's state overridden (see
+   * `withDownloadActionState`): a spinner while a request is in flight (one shared signal suffices
+   * since `fcDeclaration`/`fcUnspentDeclaration` are mutually exclusive by branch, no need for EULB's
+   * per-action split), and a "Save & download" label while the screen holds changes the server has not
+   * seen — the document endpoint only ever reflects saved data, so that click saves the draft first
+   * (`requestDeclarationDownload`). Bound in the template in place of `visibleFields()`.
    */
   readonly effectiveVisibleFields = computed<ConditionalFieldConfig[]>(() =>
     this.visibleFields().map((field) => {
       if (field.key === 'fcDeclaration') {
-        return this.withDownloadActionState(
-          field,
-          FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE,
-          this.hasUnsavedBranchChange(),
-        );
+        return this.withDownloadActionState(field, FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE);
       }
       if (field.key === 'fcUnspentDeclaration') {
-        return this.withDownloadActionState(
-          field,
-          FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION,
-          this.hasUnsavedBranchChange() || this.hasUnsavedRowChanges(),
-        );
+        return this.withDownloadActionState(field, FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION);
       }
       return field;
     }),
   );
 
-  private withDownloadActionState(
-    field: ConditionalFieldConfig,
-    actionId: string,
-    disabledDueToUnsavedChanges: boolean,
-  ): ConditionalFieldConfig {
-    const withActionState = withSupportingActionState(field, [
+  private withDownloadActionState(field: ConditionalFieldConfig, actionId: string): ConditionalFieldConfig {
+    const needsSave = this.needsSaveBeforeDownload();
+    return withSupportingActionState(field, [
       {
         actionId,
-        disabled: disabledDueToUnsavedChanges || undefined,
+        // Locked only while a save is running (a second click must not start another) or when there is
+        // something to save but this user cannot save a draft right now.
+        disabled: this.isSubmitting() || (needsSave && !this.canSaveDraft()) || undefined,
         loading: this.isDownloadingDeclaration(),
         loadingLabel: 'Downloading declaration…',
+        label: needsSave && this.canSaveDraft() ? SAVE_AND_DOWNLOAD_LABEL : undefined,
       },
     ]);
-
-    if (!disabledDueToUnsavedChanges) return withActionState;
-
-    return {
-      ...withActionState,
-      supportingContent: withActionState.supportingContent?.map(
-        (block): FieldSupportingContent =>
-          block.type === 'actions'
-            ? {
-                ...block,
-                description: 'Save your changes as a draft before downloading the declaration.',
-                descriptionTone: 'danger',
-              }
-            : block,
-      ),
-    };
   }
 
   readonly unspentUlbData = new FormArray<FcUnspentUlbRowGroup>([]);
@@ -198,13 +187,12 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   // ─── Unsaved-state tracking for the download actions ────────────────────────
   // `GET .../fc-unspent-declaration-document` only ever reflects the last-*saved* isFcUnspent/
   // unspentUlbData — never the current in-browser form state, which is only persisted on Save
-  // Draft/Final Submit. Downloading while either has changed since load would silently generate
-  // the wrong (stale) document, so both download actions are disabled via `effectiveVisibleFields`
-  // while either signal below is true — mirrors `claim-letter-detail.component.ts`'s
-  // `hasUnsavedRowChanges`/`effectiveSignedClaimFileField` pattern exactly, including *why* these
-  // are plain signals bridged from `valueChanges` rather than a `computed()` reading `.dirty`:
-  // Angular's `dirty` getter isn't itself signal-reactive, so a `computed()` referencing it would
-  // never re-run when it changes.
+  // Draft/Final Submit. So when either signal below says the screen differs from what is saved, the
+  // download action saves the draft first (`requestDeclarationDownload`), which is what keeps the
+  // generated document in step with the screen — mirrors `claim-letter-detail.component.ts`'s
+  // `hasUnsavedRowChanges` pattern, including *why* these are plain signals bridged from
+  // `valueChanges` rather than a `computed()` reading `.dirty`: Angular's `dirty` getter isn't
+  // itself signal-reactive, so a `computed()` referencing it would never re-run when it changes.
   /** The radio's live value, updated on every `valueChanges` emission. */
   private readonly liveIsFcUnspent = signal<string | null>(null);
   /** The radio's value as of the last successful load/save (`reloadForm()` re-runs `loadForm()`,
@@ -247,9 +235,16 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
         { unspentAmount: row.unspentAmount, previousFcUnspentBalance: row.previousFcUnspentBalance },
       ]),
     );
+    // A row counts as soon as a ULB is picked: a draft persists ULB-only rows (empty amounts stay `null`),
+    // so a row with no amounts yet is part of the saved set, not noise to ignore.
     const liveRows = this.liveUnspentRows().filter(
-      (row): row is { ulbId: string; unspentAmount: number; previousFcUnspentBalance: number } =>
-        row.ulbId !== null && row.unspentAmount !== null && row.previousFcUnspentBalance !== null,
+      (
+        row,
+      ): row is {
+        ulbId: string;
+        unspentAmount: number | null;
+        previousFcUnspentBalance: number | null;
+      } => row.ulbId !== null,
     );
     if (liveRows.length !== savedByUlbId.size) return true;
     return liveRows.some((row) => {
@@ -272,6 +267,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   readonly canEdit = signal(false);
   readonly canSaveDraft = signal(false);
   readonly canFinalSubmit = signal(false);
+
   readonly currentFormStatus = signal<FormStatusValue>(FORM_STATUS.NOT_STARTED);
   readonly formStatus = computed<FormStatusValue>(() => this.currentFormStatus());
 
@@ -353,6 +349,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
           this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.mohuaRemarks.set(data.mohuaRemarks ?? null);
           this.threshold.set(data.threshold);
+          this.policy.set(data.policy ?? DEFAULT_POLICY);
           this.currentFormStatus.set(data.currentFormStatus);
           this.canEdit.set(data.permissions.canEdit);
           this.canSaveDraft.set(data.permissions.canSaveDraft);
@@ -386,10 +383,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     this.form.addControl('unspentUlbData', this.unspentUlbData);
     this.hydrateUnspentUlbData(savedRows);
 
-    // Synthetic control bridging saved row data into the reactive form.
-    // Used by fcUnspentDeclaration.visibleWhen to check for saved rows, not live FormArray data.
-    // It reflects only persisted data and updates on loadForm()/reloadForm().
-    this.form.addControl('savedUnspentUlbData', this.fb.control(savedRows));
+    this.bindPickedUlbsControl();
 
     const isFcUnspentControl = this.form.get('isFcUnspent');
     const initialIsFcUnspentRaw: unknown = isFcUnspentControl?.value;
@@ -423,6 +417,45 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     if (!this.canEdit()) {
       this.form.disable({ emitEvent: false });
     }
+
+    // A freshly loaded form is clean. `unspentUlbData` is one FormArray reused across reloads, so it can
+    // still carry `dirty` from the edits that were just saved — and the visibility pass above
+    // (`markAsPristine` on each hidden field) re-derives this new form's pristine state from its children,
+    // which would flip it to dirty and re-trigger the leave-page prompt right after a successful save.
+    // Resetting recursively also covers every row control.
+    this.form.markAsPristine();
+  }
+
+  /**
+   * Synthetic `savedUnspentUlbData` control (the key `fcUnspentDeclaration.visibleWhen` reads - it is not
+   * one of the form's own `FieldConfig` fields and is never sent). It follows the ULBs currently picked in
+   * the table, so the signed-declaration field (and its download action) appears as soon as a ULB is picked
+   * instead of only after a first save. That is safe because the download action itself saves the draft
+   * first (`requestDeclarationDownload`), and the backend's draft/final validators already derive the same
+   * key from the rows in the request. The name is kept because the stored formJson condition uses it.
+   */
+  private bindPickedUlbsControl(): void {
+    const pickedUlbIds = (): string[] =>
+      this.unspentUlbData.controls
+        .map((row) => row.controls.ulbId.value)
+        .filter((ulbId): ulbId is string => ulbId !== null);
+    const asRows = (ulbIds: string[]) => ulbIds.map((ulbId) => ({ ulbId }));
+
+    const control = this.fb.control(asRows(pickedUlbIds()));
+    this.form.addControl('savedUnspentUlbData', control);
+
+    // Only re-evaluate visibility when the picked set changes, not on every amount keystroke. Seeded with the
+    // current set (then skipped) so the first edit after load is compared against it rather than always passing.
+    this.unspentUlbData.valueChanges
+      .pipe(
+        map(pickedUlbIds),
+        startWith(pickedUlbIds()),
+        distinctUntilChanged((a, b) => a.length === b.length && a.every((ulbId, i) => ulbId === b[i])),
+        skip(1),
+        takeUntilDestroyed(this.destroyRef),
+        takeUntil(this.formSubscriptionsTeardown$),
+      )
+      .subscribe((ulbIds) => control.setValue(asRows(ulbIds)));
   }
 
   private hydrateUnspentUlbData(rows: readonly FcUnspentUlbData[]): void {
@@ -434,19 +467,54 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   }
 
   onSupportingAction(event: FieldSupportingActionEvent): void {
-    if (event.fieldKey === 'fcDeclaration' && event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE) {
-      // Belt-and-suspenders alongside the UI-level `disabled` on the rendered button (see
-      // `effectiveVisibleFields`/`withDownloadActionState`) — the document endpoint only ever
-      // reflects saved data.
-      if (this.hasUnsavedBranchChange()) return;
+    const isDownload =
+      (event.fieldKey === 'fcDeclaration' && event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_TEMPLATE) ||
+      (event.fieldKey === 'fcUnspentDeclaration' &&
+        event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION);
+    if (isDownload) this.requestDeclarationDownload();
+  }
+
+  /** True when the screen holds a branch/ULB change the server has not seen. Only those change the generated
+   *  document (the file upload and the checkbox do not), so only they force a save before downloading. */
+  private needsSaveBeforeDownload(): boolean {
+    return this.hasUnsavedBranchChange() || (this.isYesBranch() && this.hasUnsavedRowChanges());
+  }
+
+  /**
+   * Single entry point for both branches' download action. The document endpoint only reflects saved data, so
+   * when the screen has unsaved branch/ULB changes this saves the draft first (no confirm dialog: clicking
+   * download is explicit intent, and a draft save is non-destructive) and downloads only after that save
+   * succeeds. A failed save downloads nothing, so a stale document can never be produced.
+   */
+  private requestDeclarationDownload(): void {
+    if (this.isDownloadingDeclaration() || this.isSubmitting()) return;
+    if (this.isYesBranch() && !this.everyUlbHasAmounts()) return;
+
+    if (!this.needsSaveBeforeDownload()) {
       this.downloadDeclarationDocument();
-    } else if (
-      event.fieldKey === 'fcUnspentDeclaration' &&
-      event.actionId === FC_UNSPENT_SUPPORTING_ACTION.DOWNLOAD_DECLARATION
-    ) {
-      if (this.hasUnsavedBranchChange() || this.hasUnsavedRowChanges()) return;
-      this.downloadDeclarationDocument();
+      return;
     }
+
+    if (!this.canSaveDraft() || !this.passesClientValidation('saveAsDraft')) return;
+    this.submit('saveAsDraft', () => this.downloadDeclarationDocument());
+  }
+
+  /** The declaration table prints both figures for every ULB, so it can only be generated once each picked ULB
+   *  has both. Flags the empty fields on their rows and explains once. The backend refuses with `incompleteRows` too. */
+  private everyUlbHasAmounts(): boolean {
+    let complete = true;
+    for (const row of this.unspentUlbData.controls) {
+      for (const control of [row.controls.unspentAmount, row.controls.previousFcUnspentBalance]) {
+        if (control.value !== null) continue;
+        complete = false;
+        control.markAsTouched();
+      }
+    }
+    if (!complete) {
+      this.utilityService.triggerSnackbar(INCOMPLETE_ROWS_MESSAGE, 'snackbar-danger');
+      this.unspentUlbTable()?.refreshValidationDisplay();
+    }
+    return complete;
   }
 
   /**
@@ -486,6 +554,21 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   }
 
   onSubmit(action: SubmitType): void {
+    if (!this.passesClientValidation(action)) return;
+
+    const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
+
+    this.confirmDialogService
+      .confirm(dialogData, this.dialogConfig)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (confirmed) this.submit(action);
+      });
+  }
+
+  /** The client-side checks both Save and Final Submit (and Save & download) run before any request: marks
+   *  the offending controls touched and explains with one snackbar. Returns `true` when the request may go. */
+  private passesClientValidation(action: SubmitType): boolean {
     const flatFieldsValid = this.isValidForSubmitType(action);
     const tableValid = this.isUnspentUlbDataValidForSubmitType(action);
     const branchValid = action !== 'finalSubmit' || this.resolveIsFcUnspentBoolean() !== null;
@@ -502,20 +585,14 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
           : 'Please correct the errors in the form before saving as draft.',
         'snackbar-danger',
       );
-      return;
+      return false;
     }
 
-    const dialogData = action === 'finalSubmit' ? SUBMIT_CONFIRM_DIALOG_DEFAULTS : SAVE_AS_DRAFT_DIALOG_DEFAULTS;
-
-    this.confirmDialogService
-      .confirm(dialogData, this.dialogConfig)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((confirmed) => {
-        if (confirmed) this.submit(action);
-      });
+    return true;
   }
 
-  private submit(action: SubmitType): void {
+  /** `afterSave` runs once the request has succeeded (and the reload has been started) - used by Save & download. */
+  private submit(action: SubmitType, afterSave?: () => void): void {
     this.clearAllApiErrors();
 
     const payload = this.buildPayload();
@@ -534,6 +611,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
         );
         // Reload real state from the backend rather than manually patching status/rows/eligibility.
         this.reloadForm();
+        afterSave?.();
       },
       error: (err: unknown) => {
         console.error(
@@ -581,17 +659,15 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     } else if (isFcUnspent === true) {
       data.fcUnspentDeclaration = rawData['fcUnspentDeclaration'];
       data.checkboxConfirmation = rawData['checkboxConfirmation'] === true;
+      // Every picked ULB is sent, even with empty amounts (`null`) — dropping those rows is what used to
+      // wipe the selection on save. Completeness is enforced here for final submit (a row control's
+      // `required` error blocks it) and again by the backend.
       data.unspentUlbData = this.unspentUlbData.controls
-        .filter(
-          (row) =>
-            row.controls.ulbId.value !== null &&
-            row.controls.unspentAmount.value !== null &&
-            row.controls.previousFcUnspentBalance.value !== null,
-        )
+        .filter((row) => row.controls.ulbId.value !== null)
         .map((row) => ({
           ulbId: row.controls.ulbId.value as string,
-          unspentAmount: row.controls.unspentAmount.value as number,
-          previousFcUnspentBalance: row.controls.previousFcUnspentBalance.value as number,
+          unspentAmount: row.controls.unspentAmount.value,
+          previousFcUnspentBalance: row.controls.previousFcUnspentBalance.value,
         }));
     }
 
@@ -898,6 +974,9 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
     this.formSubscriptionsTeardown$.next();
     this.form = this.fb.group({});
     this.unspentUlbData.clear();
+    // `clear()` empties the array but keeps its dirty/touched flags; this instance is reused by the next load.
+    this.unspentUlbData.markAsPristine();
+    this.unspentUlbData.markAsUntouched();
     this.fields.set([]);
     this.rowEditFields.set([]);
     this.loadForm();

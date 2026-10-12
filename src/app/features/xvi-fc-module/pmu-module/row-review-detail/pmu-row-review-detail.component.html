@@ -6,10 +6,13 @@
       <div class="col-auto">
         <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
 
-        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+        <div class="text-uppercase fw-semibold mt-3 mb-1 custom-font-size-7">
           <span class="text-secondary">16th Finance Commission</span>
-          &nbsp;&middot;&nbsp; {{ stateName }}
-        </div> -->
+          &nbsp;&middot;&nbsp; {{ stateName() }}
+          @if (installment) {
+            &nbsp;&middot;&nbsp; Installment {{ installment }}
+          }
+        </div>
 
         <h1 class="page-title my-2">{{ formOption.label }}</h1>
 
@@ -158,7 +161,9 @@
                 <col class="pmu-rows-col-remarks" />
               }
               @if (showMoneyColumns) {
-                <col class="pmu-rows-col-amount" />
+                @if (showAllocationColumn()) {
+                  <col class="pmu-rows-col-amount" />
+                }
                 <col class="pmu-rows-col-amount" />
                 <col class="pmu-rows-col-amount" />
               }
@@ -190,14 +195,16 @@
                   <th scope="col" class="small fw-semibold">Remarks</th>
                 }
                 @if (showMoneyColumns) {
-                  <th scope="col" class="small fw-semibold text-end">16th FC Allocation (in {{ unitSuffix() }})</th>
+                  @if (showAllocationColumn()) {
+                    <th scope="col" class="small fw-semibold text-end">16th FC Allocation (in {{ unitSuffix() }})</th>
+                  }
                   <th scope="col" class="small fw-semibold text-end">FC Unspent Amount (in {{ unitSuffix() }})</th>
                   <th scope="col" class="small fw-semibold text-end">
                     Previous FC Unspent Balance (in {{ unitSuffix() }})
                   </th>
                 }
                 @if (showEligibility) {
-                  <th scope="col" class="small fw-semibold">Eligibility</th>
+                  <th scope="col" class="small fw-semibold text-center">Eligibility</th>
                 }
                 <th scope="col" class="small fw-semibold pe-3" mat-sort-header="rowStatus">Status</th>
               </tr>
@@ -205,13 +212,13 @@
             <tbody>
               @if (isLoadingRows()) {
                 <tr>
-                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                  <td [attr.colspan]="colSpan()" class="text-center py-4 text-secondary small">
                     <span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading rows…
                   </td>
                 </tr>
               } @else if (!rows().length) {
                 <tr>
-                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                  <td [attr.colspan]="colSpan()" class="text-center py-4 text-secondary small">
                     No rows found for the current filters.
                   </td>
                 </tr>
@@ -239,9 +246,11 @@
                       <td class="small">{{ row.remarks || '-' }}</td>
                     }
                     @if (showMoneyColumns) {
-                      <td class="small text-end" [title]="formatAmountExact(row.allocationAmount)">
-                        {{ formatAmount(row.allocationAmount) }}
-                      </td>
+                      @if (showAllocationColumn()) {
+                        <td class="small text-end" [title]="formatAmountExact(row.allocationAmount)">
+                          {{ formatAmount(row.allocationAmount) }}
+                        </td>
+                      }
                       <td class="small text-end" [title]="formatAmountExact(row.unspentAmount)">
                         {{ formatAmount(row.unspentAmount) }}
                       </td>
@@ -250,7 +259,7 @@
                       </td>
                     }
                     @if (showEligibility) {
-                      <td class="small">{{ eligibilityLabel(row) }}</td>
+                      <td class="small text-center">{{ eligibilityLabel(row) }}</td>
                     }
                     <td class="pe-3">
                       <span [class]="'badge rounded-pill ' + rowBadgeClass(row)">{{ rowStatusLabel(row) }}</span>

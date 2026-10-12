@@ -40,7 +40,7 @@ export const PMU_ROUTES: Routes = [
           import('./form-review-detail/pmu-form-review-detail.component').then((m) => m.PmuFormReviewDetailComponent),
       },
       {
-        path: 'devolution-formula-review/:stateId/:installment',
+        path: 'ulb-wise-allocation-review/:stateId/:installment',
         data: { form: 'DEVOLUTION_FORMULA', menuGroup: 'review-state-submissions' },
         loadComponent: () =>
           import('./form-review-detail/pmu-form-review-detail.component').then((m) => m.PmuFormReviewDetailComponent),
