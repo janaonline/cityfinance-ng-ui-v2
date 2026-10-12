@@ -158,11 +158,11 @@ export class PmuRowReviewDetailComponent {
   );
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
-  /** Loading/empty-state row's `colspan` — checkbox (not in view-only) + ULB Name + Census Code + Status (4), plus the
+  /** Loading/empty-state row's `colspan` — checkbox (not in view-only: 3 instead of 4) + ULB Name + Census Code + Status, plus the
    *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
   readonly colSpan = computed(
     () =>
-      4 +
+      (this.viewOnly ? 3 : 4) +
       (this.showMoneyColumns ? 2 : 0) +
       (this.showAllocationColumn() ? 1 : 0) +
       (this.showEligibility ? 1 : 0) +
@@ -224,7 +224,6 @@ export class PmuRowReviewDetailComponent {
    *  doc comment. */
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
-  readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly statusLabel = computed(() => pmuStatusLabel(this.review()?.currentFormStatus ?? 0));
   readonly statusBadgeClass = computed(() => pmuStatusBadgeClass(this.review()?.currentFormStatus ?? 0));
   /** Only shown while the form is currently Returned — see the form-level detail component's own

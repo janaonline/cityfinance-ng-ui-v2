@@ -81,7 +81,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
       expect(text(fixture)).toContain('Reject Selected');
       expect(text(fixture)).toContain('Approve Form');
       expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(2); // header + 1 row
-      expect(fixture.componentInstance.colSpan).toBe(4 + 4); // checkbox column + the 4 elected-body columns
+      expect(fixture.componentInstance.colSpan()).toBe(4 + 4); // checkbox column + the 4 elected-body columns
     });
 
     it('keeps the "then approve or reject" wording and the PMU breadcrumb', () => {
@@ -105,7 +105,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
       expect(text(fixture)).not.toContain('Approve Form');
       expect(text(fixture)).not.toContain('Reject Form');
       expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
-      expect(fixture.componentInstance.colSpan).toBe(3 + 4);
+      expect(fixture.componentInstance.colSpan()).toBe(3 + 4);
     });
 
     it('still shows the form and its rows', () => {

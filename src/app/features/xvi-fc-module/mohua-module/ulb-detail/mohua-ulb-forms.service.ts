@@ -34,6 +34,14 @@ export class MohuaUlbFormsService {
   private readonly uploadDocuments = inject(UploadDocumentsService);
   private readonly api = `${environment.api.url2}xvi-fc/`;
 
+  /** The ULB's own name. The forms can't supply it for a ULB that has not started any (no record to read it from). */
+  getUlbName(ulbId: string): Observable<string> {
+    return this.http.get<ApiEnvelope<{ ulbName: string }> | { ulbName: string }>(`${this.api}ulb/${ulbId}`).pipe(
+      map((response) => unwrapNullableResponse<{ ulbName: string }>(response)?.ulbName ?? ''),
+      catchError(() => of('')),
+    );
+  }
+
   load(ulbId: string, yearId: string): Observable<UlbFormsData> {
     const section = (name: 'auditedData' | 'unauditedData') =>
       safely(

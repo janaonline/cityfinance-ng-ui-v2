@@ -37,6 +37,26 @@ describe('MohuaUlbFormsService', () => {
 
   afterEach(() => httpMock.verify());
 
+  describe('getUlbName', () => {
+    it("reads the ULB's own name, which needs no form record", () => {
+      let name: string | undefined;
+      service.getUlbName(ULB).subscribe((value) => (name = value));
+
+      httpMock.expectOne(`${API}ulb/${ULB}`).flush({ success: true, data: { ulbName: 'Agra Municipal Corporation' } });
+
+      expect(name).toBe('Agra Municipal Corporation');
+    });
+
+    it('falls back to an empty name when the lookup fails', () => {
+      let name: string | undefined;
+      service.getUlbName(ULB).subscribe((value) => (name = value));
+
+      httpMock.expectOne(`${API}ulb/${ULB}`).flush('nope', { status: 404, statusText: 'Not Found' });
+
+      expect(name).toBe('');
+    });
+  });
+
   it('loads the five forms and the API-owned statuses in one go', () => {
     let result: UlbFormsData | undefined;
     service.load(ULB, YEAR).subscribe((value) => (result = value));
