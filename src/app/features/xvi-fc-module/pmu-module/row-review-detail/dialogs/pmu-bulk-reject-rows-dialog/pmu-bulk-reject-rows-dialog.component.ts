@@ -1,7 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { REVIEW_REMARKS_MAX_LENGTH } from '../../../../common/constants/review-remarks.constants';
 
 export interface PmuBulkRejectRowsDialogRow {
   ulbName: string;
@@ -41,7 +42,11 @@ export class PmuBulkRejectRowsDialogComponent {
   private readonly dialogRef = inject<MatDialogRef<PmuBulkRejectRowsDialogComponent, string | undefined>>(MatDialogRef);
   readonly data = inject<PmuBulkRejectRowsDialogData>(MAT_DIALOG_DATA);
 
-  readonly remarks = new FormControl('', { nonNullable: true });
+  readonly remarks = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.maxLength(REVIEW_REMARKS_MAX_LENGTH)],
+  });
+  readonly remarksMaxLength = REVIEW_REMARKS_MAX_LENGTH;
   readonly submitted = signal(false);
 
   /** Title/count source — `data.rows.length` in explicit mode, `data.matchingCount` in
@@ -58,7 +63,7 @@ export class PmuBulkRejectRowsDialogComponent {
   confirm(): void {
     this.submitted.set(true);
     const value = this.remarks.value.trim();
-    if (!value) return;
+    if (!value || this.remarks.invalid) return;
     this.dialogRef.close(value);
   }
 

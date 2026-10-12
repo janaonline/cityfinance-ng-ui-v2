@@ -4,14 +4,17 @@
   <div class="content-stack d-flex flex-column gap-4">
     <div class="row align-items-center justify-content-between">
       <div class="col-auto">
-        <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+        <app-xvifc-breadcrumb class="custom-font-size-6" [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
 
-        <!-- <div class="text-uppercase fw-semibold my-2 custom-font-size-7">
+        <div class="text-uppercase fw-semibold mt-3 mb-1 custom-font-size-7">
           <span class="text-secondary">16th Finance Commission</span>
-          &nbsp;&middot;&nbsp; {{ stateName }}
-        </div> -->
+          &nbsp;&middot;&nbsp; {{ stateName() }}
+          @if (installment) {
+            &nbsp;&middot;&nbsp; Installment {{ installment }}
+          }
+        </div>
 
-        <h1 class="page-title my-2">{{ formOption.label }}</h1>
+        <h1 class="page-title mb-2">{{ formOption.label }}</h1>
 
         <p class="page-subtitle text-secondary mb-0">
           @if (viewOnly) {

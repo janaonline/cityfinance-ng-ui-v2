@@ -38,6 +38,7 @@ import {
   FormProgressComponent,
   FormStatusValue,
 } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import {
   ApiErrorMap,
@@ -89,6 +90,7 @@ const DF_SUPPORTING_ACTION = {
     MatButtonModule,
     MatTooltipModule,
     FormProgressComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './devolution-formula.component.html',
   styleUrl: './devolution-formula.component.scss',
@@ -113,6 +115,9 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
   readonly stateName = signal('');
   readonly actors = signal<FormActor[]>([]);
   readonly formStatus = signal<FormStatusValue>(FORM_STATUS.NO_STATUS);
+
+  readonly pmuRemarks = signal<string | null>(null);
+  readonly mohuaRemarks = signal<string | null>(null);
 
   readonly installment = signal<DfInstallment>(1);
 
@@ -269,6 +274,8 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
+          this.mohuaRemarks.set(data.mohuaRemarks ?? null);
           this.validationSummary.set(data.validationSummary ?? null);
           this.grantAllocationSummary.set(data.grantAllocationSummary ?? null);
 
