@@ -143,6 +143,7 @@ export class PmuRowReviewDetailComponent {
   /** Set by the MoHUA routes: the same screen, read-only (MoHUA views these forms, it never approves or returns them). */
   readonly viewOnly = this.route.snapshot.data['viewOnly'] === true;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
+  readonly installment = this.route.snapshot.paramMap.get('installment');
 
   readonly formOption = pmuFormOption(this.form);
   readonly showEligibility = hasEligibilityColumn(this.form);
@@ -157,10 +158,8 @@ export class PmuRowReviewDetailComponent {
   );
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
-  /** Loading/empty-state row's `colspan` — checkbox (not in view-only) + ULB Name + Census Code + Status (4, or 3 in
-   *  view-only), plus the 2 always-present money columns (Unspent/Previous Balance), the Allocation column when it
-   *  has data, and/or the Eligibility column and/or the 4 Elected Body columns when shown. A `computed` because the
-   *  Allocation column depends on the loaded rows. */
+  /** Loading/empty-state row's `colspan` — checkbox (not in view-only: 3 instead of 4) + ULB Name + Census Code + Status, plus the
+   *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
   readonly colSpan = computed(
     () =>
       (this.viewOnly ? 3 : 4) +

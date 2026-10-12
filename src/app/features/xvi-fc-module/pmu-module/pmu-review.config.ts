@@ -44,9 +44,9 @@ export const PMU_FORM_OPTIONS: readonly PmuFormOption[] = [
   },
   {
     value: 'DEVOLUTION_FORMULA',
-    label: 'Devolution Formula',
+    label: 'ULB-wise Allocation',
     detailShape: 'FORM_LEVEL',
-    routeSegment: 'devolution-formula-review',
+    routeSegment: 'ulb-wise-allocation-review',
     basePath: 'xvi-fc/pmu/devolution-formula/',
     installmentScoped: true,
     hasReadOnlyRows: true,

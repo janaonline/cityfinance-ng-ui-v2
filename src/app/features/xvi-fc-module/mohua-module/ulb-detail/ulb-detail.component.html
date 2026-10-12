@@ -165,26 +165,28 @@
           }
         }
 
-        <mat-expansion-panel class="ud-checks" [expanded]="checksOpen()" (expandedChange)="checksOpen.set($event)">
-          <mat-expansion-panel-header>
-            <mat-panel-title
-              ><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title
-            >
-          </mat-expansion-panel-header>
-          <p class="ud-checks__caption">{{ checks().caption }}</p>
-          <h3>Checked automatically</h3>
-          <ul>
-            @for (item of checks().checked; track item) {
-              <li><i class="bi bi-check-lg ud-ok" aria-hidden="true"></i>{{ item }}</li>
-            }
-          </ul>
-          <h3>Not checked</h3>
-          <ul class="ud-no">
-            @for (item of checks().notChecked; track item) {
-              <li><i class="bi bi-circle" aria-hidden="true"></i>{{ item }}</li>
-            }
-          </ul>
-        </mat-expansion-panel>
+        @if (showChecks()) {
+          <mat-expansion-panel class="ud-checks" [expanded]="checksOpen()" (expandedChange)="checksOpen.set($event)">
+            <mat-expansion-panel-header>
+              <mat-panel-title
+                ><i class="bi bi-check-lg" aria-hidden="true"></i>&nbsp;What the system checked</mat-panel-title
+              >
+            </mat-expansion-panel-header>
+            <p class="ud-checks__caption">{{ checks().caption }}</p>
+            <h3>Checked automatically</h3>
+            <ul>
+              @for (item of checks().checked; track item) {
+                <li><i class="bi bi-check-lg ud-ok" aria-hidden="true"></i>{{ item }}</li>
+              }
+            </ul>
+            <h3>Not checked</h3>
+            <ul class="ud-no">
+              @for (item of checks().notChecked; track item) {
+                <li><i class="bi bi-circle" aria-hidden="true"></i>{{ item }}</li>
+              }
+            </ul>
+          </mat-expansion-panel>
+        }
       </div>
     </mat-card>
   } @else if (loading()) {
