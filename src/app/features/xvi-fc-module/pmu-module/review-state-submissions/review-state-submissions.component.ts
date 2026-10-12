@@ -195,7 +195,8 @@ export class ReviewStateSubmissionsComponent {
     const installment = this.isInstallmentScoped() ? this.selectedInstallment() : undefined;
     // The cards only change with the scope (form/state/installment), never with status, page or sort.
     const summaryScope = `${this.selectedForm()}|${this.selectedStateId() ?? ''}|${installment ?? ''}`;
-    if (summaryScope !== this.loadedSummaryScope) this.isSummaryLoading.set(true);
+    const isNewSummaryScope = summaryScope !== this.loadedSummaryScope;
+    if (isNewSummaryScope) this.isSummaryLoading.set(true);
     const sortField = sort.direction ? WORKLIST_SORT_FIELD[sort.active] : undefined;
     this.worklistSub?.unsubscribe();
     this.worklistSub = this.worklistService
@@ -225,6 +226,8 @@ export class ReviewStateSubmissionsComponent {
           this.isPageLoading.set(false);
           this.isTableLoading.set(false);
           this.isSummaryLoading.set(false);
+          // Don't reveal the previous scope's stale counts on a scope-changing failure.
+          if (isNewSummaryScope) this.summary.set(null);
           this.utilityService.triggerSnackbar('Unable to load the worklist.', 'snackbar-danger');
         },
       });
