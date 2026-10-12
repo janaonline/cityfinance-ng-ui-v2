@@ -117,6 +117,7 @@ describe('DynamicFormComponent — supporting content integration', () => {
     const contentEls = fixture.debugElement.queryAll(
       By.directive(DynamicFieldSupportingContentComponent),
     );
+    expect(contentEls.length).toBe(2);
     contentEls.forEach((el) =>
       expect((el.componentInstance as DynamicFieldSupportingContentComponent).mode()).toBe('view'),
     );

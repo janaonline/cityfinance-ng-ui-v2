@@ -32,11 +32,20 @@ export class AppMenuItemComponent {
 
   /** Colored-dot severity for this item's route, if it has a pending ULB notification. */
   readonly badgeSeverity = computed(() => {
-    const routerLink = this.item().routerLink;
-    const lastSegment = Array.isArray(routerLink) ? routerLink[routerLink.length - 1] : routerLink;
-    if (typeof lastSegment !== 'string') return undefined;
-    return this.ulbNotifications.severityByRoute().get(lastSegment);
+    const key = this.routeKey(this.item().routerLink);
+    if (!key) return undefined;
+    return this.ulbNotifications.severityByRoute().get(key);
   });
+
+  /** Last path segment of a routerLink, array or string form. */
+  private routeKey(link: unknown[] | string | undefined): string | undefined {
+    if (Array.isArray(link)) {
+      const last = link.at(-1);
+      return typeof last === 'string' ? last : undefined;
+    }
+    if (typeof link !== 'string') return undefined;
+    return link.split('/').filter(Boolean).pop();
+  }
 
   /**
    * Emitted when any interactive element in this item is activated
@@ -72,9 +81,7 @@ export class AppMenuItemComponent {
   readonly isActiveViaMenuGroup = computed(() => {
     const group = this.currentMenuGroup();
     if (!group) return false;
-    const link = this.item().routerLink;
-    const ownKey = Array.isArray(link) ? link.at(-1) : link;
-    return ownKey === group;
+    return this.routeKey(this.item().routerLink) === group;
   });
 
   /** Tracks routerLinkActive via (isActiveChange), avoiding inconsistent reads of its mutable, non-signal isActive property across template bindings. */
