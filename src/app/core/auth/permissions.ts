@@ -25,6 +25,11 @@ export enum Permission {
   ISSUE_OFFICE_MEMORANDUM = 'ISSUE_OFFICE_MEMORANDUM',
   FINAL_SUBMIT_TO_DOE = 'FINAL_SUBMIT_TO_DOE',
 
+  // PMU actions — mirrors the MoHUA pair above, one stage earlier. DoE and MoHUA hold the REVIEW one only,
+  // as the read gate for the read-only form screens.
+  REVIEW_STATE_SUBMISSIONS_PMU = 'REVIEW_STATE_SUBMISSIONS_PMU',
+  APPROVE_STATE_SUBMISSIONS_PMU = 'APPROVE_STATE_SUBMISSIONS_PMU',
+
   // User management
   MANAGE_USERS = 'MANAGE_USERS',
   VIEW_MANAGED_USERS = 'VIEW_MANAGED_USERS',
@@ -33,6 +38,6 @@ export enum Permission {
   DELETE_MANAGED_USER = 'DELETE_MANAGED_USER',
 }
 
-export type Scope = 'ULB' | 'STATE' | 'MOHUA' | 'ADMIN';
+export type Scope = 'ULB' | 'STATE' | 'MOHUA' | 'ADMIN' | 'PMU' | 'DOE';
 
 export type AccessLevel = 'ADMIN' | 'EDITOR' | 'VIEWER';

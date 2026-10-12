@@ -278,8 +278,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       options.push({ id: 'PARTNER', label: 'Institutional', icon: 'institutional', biIcon: 'bi-building-check' });
     }
 
+    // DoE signs in to the 15th FC flow and, as a read-only copy of the MoHUA dashboard, to the 16th FC / XVIFC one.
+    const doeEnabled = is15thFC || is16thFC || type === 'XVIFC';
     options.push(
-      is15thFC
+      doeEnabled
         ? { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock' }
         : { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true },
     );

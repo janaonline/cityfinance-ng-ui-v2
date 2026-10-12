@@ -98,7 +98,7 @@
                   <th class="small fw-semibold text-end">Installment 1 (in {{ unitSuffix() }})</th>
                   <th class="small fw-semibold text-end">Installment 2 (in {{ unitSuffix() }})</th>
                   <th class="small fw-semibold text-end">Total Grant Allocation (in {{ unitSuffix() }})</th>
-                  <th class="small fw-semibold pe-3">Devolution Formula</th>
+                  <th class="small fw-semibold ps-3 pe-3">Devolution Formula</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,7 +116,7 @@
                     <td class="small text-end" [title]="formatAmountExact(row.totalGrantAllocation)">
                       {{ formatAmount(row.totalGrantAllocation) }}
                     </td>
-                    <td class="small text-secondary pe-3">{{ row.devolutionFormula }}</td>
+                    <td class="small text-secondary ps-3 pe-3">{{ row.devolutionFormula }}</td>
                   </tr>
                 }
               </tbody>

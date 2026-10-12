@@ -325,30 +325,8 @@ mat-button-toggle-group {
   color: var(--os-muted);
   border-bottom: 1px solid color-mix(in srgb, var(--color-primary, #12535c) 22%, transparent);
 
-  button {
-    justify-self: start;
-    padding: 4px 6px;
-    margin-left: -6px;
-    font: inherit;
-    color: inherit;
-    letter-spacing: inherit;
-    text-transform: inherit;
-    cursor: pointer;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-
-    &.r {
-      justify-self: end;
-      margin-right: -8px;
-      margin-left: 0;
-    }
-
-    &:hover,
-    &[aria-pressed='true'] {
-      color: var(--color-primary, #12535c);
-      background: color-mix(in srgb, var(--color-primary, #12535c) 10%, transparent);
-    }
+  .r {
+    justify-self: end;
   }
 }
 
@@ -412,14 +390,18 @@ mat-button-toggle-group {
     outline-offset: -2px;
   }
 
-  &.off {
-    opacity: 0.22;
-  }
-
   &:focus-visible {
     outline: 2px solid var(--color-primary, #12535c);
     outline-offset: -2px;
   }
+}
+
+.os-empty {
+  margin: 0;
+  padding: 24px 0;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant, #5f6368);
 }
 
 .os-rk {
