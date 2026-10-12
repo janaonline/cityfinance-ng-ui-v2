@@ -19,6 +19,7 @@ import {
 } from '../../dynamic-form-visibility.service';
 import { PmuReviewFormId, pmuFormOption, pmuStatusBadgeClass, pmuStatusLabel } from '../pmu-review.config';
 import { FORM_STATUS } from '../../common/constants/form-status.constants';
+import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { PmuDevolutionRow, PmuFormReviewData } from '../pmu-review.models';
 import { PmuFormReviewService } from '../pmu-form-review.service';
 import { extractApiErrorResponse, extractFormLevelErrorMessage } from '../pmu-review.utils';
@@ -60,7 +61,7 @@ export class PmuFormReviewDetailComponent {
   /** Set by the MoHUA routes: the same screen, read-only (MoHUA views these forms, it never approves or returns them). */
   readonly viewOnly = this.route.snapshot.data['viewOnly'] === true;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
-  private readonly installment = this.route.snapshot.paramMap.get('installment');
+  readonly installment = this.route.snapshot.paramMap.get('installment');
 
   readonly formOption = pmuFormOption(this.form);
 
@@ -240,6 +241,9 @@ export class PmuFormReviewDetailComponent {
       preserveHiddenValue: true,
       formTeardown$: this.formSubscriptionsTeardown$,
     });
+
+    // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
+    bindAwardPeriodDurationDerivation(this.formGroup(), this.destroyRef, this.formSubscriptionsTeardown$);
   }
 
   private resolveInstallment(): 1 | 2 | undefined {

@@ -1,4 +1,5 @@
 import { ConditionalFieldConfig } from '../dynamic-form-visibility.service';
+import { WorklistStatusSummary } from '../shared/status-summary-cards/status-summary-cards.models';
 
 // Generic envelope/error types mirror the backend's shared XviFcApiResponse / XviFcValidationErrorMap
 // — declared fresh here rather than imported from another module's models file, matching this
@@ -77,6 +78,8 @@ export interface PmuWorklistRow {
  *  today (`stateName`/`updatedAt`) — resolved server-side instead once `serverDriven` is wired up. */
 export interface PmuWorklistQuery {
   stateId?: string;
+  /** Only sent for installment-scoped forms (GTC, Devolution Formula); the backend ignores it elsewhere. */
+  installment?: number;
   status?: number;
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
@@ -86,6 +89,9 @@ export interface PmuWorklistQuery {
 
 export interface PmuWorklistResult {
   rows: PmuWorklistRow[];
+  /** Counts for the overview cards: over the whole scope (form, state, installment), not just this
+   *  page, and unaffected by the `status` filter. */
+  summary: WorklistStatusSummary;
   page: number;
   limit: number;
   total: number;
@@ -148,7 +154,7 @@ export interface PmuRow {
   eligibility?: boolean;
   /** Only present for FC Unspent rows — already returned by the backend today, just not
    *  previously surfaced on this type. */
-  allocationAmount?: number;
+  allocationAmount?: number | null;
   unspentAmount?: number;
   previousFcUnspentBalance?: number;
   /** Only present for FC Unspent rows — fallback display when `censusCode` is absent. */

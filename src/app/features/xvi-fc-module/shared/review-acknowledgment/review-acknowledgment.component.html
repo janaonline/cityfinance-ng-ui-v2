@@ -6,9 +6,14 @@
           class="form-control form-control-sm reject-remarks"
           rows="1"
           placeholder="Reason for rejection..."
+          aria-label="Reason for rejection"
+          [attr.maxlength]="remarksMaxLength"
           [value]="rejectRemarks()"
           (input)="onRemarksInput($event)"
         ></textarea>
+        <span class="small text-secondary remarks-count" aria-live="polite">
+          {{ rejectRemarks().length }}/{{ remarksMaxLength }}
+        </span>
         <button type="button" matButton="outlined" [disabled]="busy()" (click)="onRejectCancel()">Cancel</button>
         <button
           type="button"

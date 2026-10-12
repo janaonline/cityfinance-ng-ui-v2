@@ -83,26 +83,24 @@ export function hasElectedBodyColumns(form: PmuReviewFormId): boolean {
   return form === 'ELECTED_BODY';
 }
 
-export type PmuReviewStatus = 'Pending Review' | 'Approved' | 'Returned';
-
 /** The 7 statuses a PMU state-level form (SFC/GTC/Devolution/Elected Body/FC Unspent) can actually
  *  be in — EXEMPTED_ACKNOWLEDGED (12) is deliberately excluded: confirmed via grep that status is
  *  only ever set by the ULB-forms track's own Dynamic Year Access exemption flow, never by any of
  *  these 5 forms' own services, so it could never match a real row. Drives the Form Status
- *  dropdown on the worklist page, independent of the 3 bucket cards (see `pmuStatusBucket` below). */
+ *  dropdown on the worklist page. */
 export const PMU_FORM_STATUS_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
   { value: FORM_STATUS.NOT_STARTED, label: 'Not Started' },
   { value: FORM_STATUS.IN_PROGRESS, label: 'In Progress' },
+  { value: FORM_STATUS.UNDER_REVIEW_BY_PMU, label: 'Under Review by PMU' },
   { value: FORM_STATUS.UNDER_REVIEW_BY_MOHUA, label: 'Under Review by MoHUA' },
+  { value: FORM_STATUS.RETURNED_BY_PMU, label: 'Returned by PMU' },
   { value: FORM_STATUS.RETURNED_BY_MOHUA, label: 'Returned by MoHUA' },
   { value: FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA, label: 'Acknowledged by MoHUA' },
-  { value: FORM_STATUS.UNDER_REVIEW_BY_PMU, label: 'Under Review by PMU' },
-  { value: FORM_STATUS.RETURNED_BY_PMU, label: 'Returned by PMU' },
 ];
 
 /** Precise, granular status label for a raw `currentFormStatus` — used anywhere the exact status
  *  must be shown (the worklist table's Status column, both detail pages' status pill), as opposed
- *  to `pmuStatusBucket`'s lossy 3-way collapse used only by the bucket cards. */
+ *  to the overview cards' coarser grouping. */
 export function pmuStatusLabel(currentFormStatus: number): string {
   return PMU_FORM_STATUS_OPTIONS.find((o) => o.value === currentFormStatus)?.label ?? 'Unknown';
 }
@@ -117,20 +115,4 @@ export function pmuStatusBadgeClass(currentFormStatus: number): string {
   if (currentFormStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU) return 'bg-warning-subtle text-warning-emphasis';
   if (currentFormStatus === FORM_STATUS.RETURNED_BY_PMU) return 'bg-danger-subtle text-danger-emphasis';
   return 'bg-success-subtle text-success-emphasis';
-}
-
-/** Maps a real numeric `currentFormStatus`/`rowStatus` to PMU's own 3-bucket view, used only by the
- *  worklist page's bucket cards (Pending Review/Approved/Returned) and the row-level badge (whose
- *  own `rowStatus` is never actually `NOT_STARTED`/`IN_PROGRESS` — a row only exists once its
- *  parent form has been finally submitted). PMU has no status of its own once approved — an
- *  approved form/row lands directly on `UNDER_REVIEW_BY_MOHUA` (5), and may later move to
- *  `RETURNED_BY_MOHUA` (6) or `SUBMISSION_ACKNOWLEDGED_BY_MOHUA` (7) — all three read as "Approved"
- *  from PMU's own point of view. Returns `null` for `NOT_STARTED`/`IN_PROGRESS` — a state that
- *  hasn't even reached PMU's queue yet doesn't belong to any of the 3 named buckets, so it only
- *  ever counts toward Total. */
-export function pmuStatusBucket(currentFormStatus: number): PmuReviewStatus | null {
-  if (currentFormStatus === FORM_STATUS.NOT_STARTED || currentFormStatus === FORM_STATUS.IN_PROGRESS) return null;
-  if (currentFormStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU) return 'Pending Review';
-  if (currentFormStatus === FORM_STATUS.RETURNED_BY_PMU) return 'Returned';
-  return 'Approved';
 }

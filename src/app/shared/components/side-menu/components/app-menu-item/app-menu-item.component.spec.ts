@@ -274,3 +274,74 @@ describe('AppMenuItemComponent', () => {
     expect(fixture.nativeElement.querySelector('.menu-item-badge')).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// menuGroup matching — keeps a worklist item highlighted on sibling detail routes
+// ---------------------------------------------------------------------------
+
+describe('AppMenuItemComponent — menuGroup matching', () => {
+  let fixture: ComponentFixture<AppMenuItemComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [
+        AppMenuItemComponent,
+        HttpClientTestingModule,
+        RouterTestingModule.withRoutes([
+          {
+            path: 'xvifc/:yearId/section-a',
+            component: DummyPageComponent,
+            data: { menuGroup: 'section-a' },
+          },
+          {
+            path: 'xvifc/:yearId/section-a-detail/:id',
+            component: DummyPageComponent,
+            data: { menuGroup: 'section-a' },
+          },
+          { path: 'xvifc/:yearId/section-b', component: DummyPageComponent },
+        ]),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AppMenuItemComponent);
+  });
+
+  it('is active on its own worklist route', fakeAsync(() => {
+    setItem(fixture, { label: 'Section A', routerLink: ['/xvifc', 'year1', 'section-a'] });
+    const router = TestBed.inject(Router);
+
+    router.navigate(['/xvifc', 'year1', 'section-a']);
+    tick();
+    fixture.detectChanges();
+
+    const a = fixture.nativeElement.querySelector('a.menu-item') as HTMLAnchorElement;
+    expect(a.classList).toContain('active');
+    expect(a.getAttribute('aria-current')).toBe('page');
+  }));
+
+  it('stays active on a sibling detail route tagged with the same menuGroup', fakeAsync(() => {
+    setItem(fixture, { label: 'Section A', routerLink: ['/xvifc', 'year1', 'section-a'] });
+    const router = TestBed.inject(Router);
+
+    router.navigate(['/xvifc', 'year1', 'section-a-detail', '123']);
+    tick();
+    fixture.detectChanges();
+
+    const a = fixture.nativeElement.querySelector('a.menu-item') as HTMLAnchorElement;
+    expect(a.classList).toContain('active');
+    expect(a.getAttribute('aria-current')).toBe('page');
+  }));
+
+  it('is not active on an untagged, unrelated route', fakeAsync(() => {
+    setItem(fixture, { label: 'Section A', routerLink: ['/xvifc', 'year1', 'section-a'] });
+    const router = TestBed.inject(Router);
+
+    router.navigate(['/xvifc', 'year1', 'section-b']);
+    tick();
+    fixture.detectChanges();
+
+    const a = fixture.nativeElement.querySelector('a.menu-item') as HTMLAnchorElement;
+    expect(a.classList).not.toContain('active');
+    expect(a.getAttribute('aria-current')).toBeNull();
+  }));
+});

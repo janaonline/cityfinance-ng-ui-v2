@@ -40,6 +40,7 @@ export interface SfcStatusFormData {
    *  been filed — see DiscretionaryExemptionStatus in sfc-status.component.ts. */
   exemptionStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   exemptionMohuaRemarks: string | null;
+  pmuRemarks?: string | null;
 }
 
 export interface SfcStatusApiResponse {

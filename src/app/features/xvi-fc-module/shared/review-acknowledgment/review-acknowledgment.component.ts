@@ -5,6 +5,7 @@ import {
   ConfirmDialogData,
   themedDialogConfig,
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { REVIEW_REMARKS_MAX_LENGTH } from '../../common/constants/review-remarks.constants';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 const DEFAULT_APPROVE_CONFIRM_DIALOG: ConfirmDialogData = {
@@ -49,10 +50,14 @@ export class ReviewAcknowledgmentComponent {
   /** Emits the trimmed remarks once the reviewer confirms the inline reject textarea. */
   readonly rejectConfirmed = output<string>();
 
+  readonly remarksMaxLength = REVIEW_REMARKS_MAX_LENGTH;
   readonly showRejectInput = signal(false);
   readonly rejectRemarks = signal('');
 
-  readonly canConfirmReject = computed(() => this.rejectRemarks().trim().length > 0);
+  readonly canConfirmReject = computed(() => {
+    const len = this.rejectRemarks().trim().length;
+    return len > 0 && len <= REVIEW_REMARKS_MAX_LENGTH;
+  });
 
   onApprove(): void {
     if (!this.canApprove() || this.busy()) return;
