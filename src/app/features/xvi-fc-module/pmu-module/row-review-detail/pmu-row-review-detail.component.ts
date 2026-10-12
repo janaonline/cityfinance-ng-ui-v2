@@ -148,12 +148,23 @@ export class PmuRowReviewDetailComponent {
    *  condition as `showEligibility` today, kept as its own named flag since the two are
    *  conceptually distinct (eligibility vs. money), not because the underlying check differs. */
   readonly showMoneyColumns = this.showEligibility;
+  /** The 16th FC Allocation column only has data for Devolution-linked design years; for independent
+   *  (14th FC) years the backend stores no allocation, so the column is left out. */
+  readonly showAllocationColumn = computed(
+    () => this.showMoneyColumns && this.rows().some((r) => r.allocationAmount != null),
+  );
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
   /** Loading/empty-state row's `colspan` — checkbox + ULB Name + Census Code + Status (4), plus the
    *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
-  readonly colSpan =
-    4 + (this.showMoneyColumns ? 3 : 0) + (this.showEligibility ? 1 : 0) + (this.showElectedBodyColumns ? 4 : 0);
+  readonly colSpan = computed(
+    () =>
+      4 +
+      (this.showMoneyColumns ? 2 : 0) +
+      (this.showAllocationColumn() ? 1 : 0) +
+      (this.showEligibility ? 1 : 0) +
+      (this.showElectedBodyColumns ? 4 : 0),
+  );
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
@@ -375,9 +386,7 @@ export class PmuRowReviewDetailComponent {
     if (!yearId) return;
 
     const statusFilter = this.statusFilter();
-    const rowStatus = statusFilter
-      ? STATUS_FILTER_OPTIONS.find((o) => o.label === statusFilter)?.statuses
-      : undefined;
+    const rowStatus = statusFilter ? STATUS_FILTER_OPTIONS.find((o) => o.label === statusFilter)?.statuses : undefined;
     const sort = this.sort();
 
     this.isLoadingRows.set(true);

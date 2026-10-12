@@ -154,7 +154,7 @@ export interface PmuRow {
   eligibility?: boolean;
   /** Only present for FC Unspent rows — already returned by the backend today, just not
    *  previously surfaced on this type. */
-  allocationAmount?: number;
+  allocationAmount?: number | null;
   unspentAmount?: number;
   previousFcUnspentBalance?: number;
   /** Only present for FC Unspent rows — fallback display when `censusCode` is absent. */
