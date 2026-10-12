@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
+import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -36,6 +36,7 @@ import {
   SubmitType,
 } from './sfc-status.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 /** When state requests a whole-state exemption for SFC Status, below are the possible statuses -
@@ -53,6 +54,7 @@ type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
     MatButtonModule,
     FormProgressComponent,
     ExemptionNoticeComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
@@ -70,6 +72,8 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -180,6 +184,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
           this.actors.set(data.actors);
           this.exemptionStatus.set(data.exemptionStatus);
           this.exemptionMohuaRemarks.set(data.exemptionMohuaRemarks);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -232,21 +237,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
     });
 
     // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
-    const awardPeriodControl = this.form.get('awardPeriod');
-    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
-    if (awardPeriodControl && durationControl) {
-      awardPeriodControl.valueChanges
-        .pipe(
-          startWith(awardPeriodControl.value),
-          map((v) => getYearRangeDuration(v)),
-          distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef),
-          takeUntil(this.formSubscriptionsTeardown$),
-        )
-        .subscribe((duration) => {
-          durationControl.setValue(duration, { emitEvent: true });
-        });
-    }
+    bindAwardPeriodDurationDerivation(this.form, this.destroyRef, this.formSubscriptionsTeardown$);
 
     if (!this.canEdit() || this.formLocked()) {
       this.form.disable({ emitEvent: false });

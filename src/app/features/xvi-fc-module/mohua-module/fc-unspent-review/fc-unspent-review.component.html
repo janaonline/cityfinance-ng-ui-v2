@@ -232,9 +232,13 @@
                 <th scope="col" class="small fw-semibold text-nowrap">#</th>
                 <th scope="col" class="small fw-semibold text-nowrap">Census/SB Code</th>
                 <th scope="col" class="small fw-semibold">ULB</th>
-                <th scope="col" class="small fw-semibold text-end text-nowrap">Allocation</th>
+                @if (showAllocationColumns()) {
+                  <th scope="col" class="small fw-semibold text-end text-nowrap">Allocation</th>
+                }
                 <th scope="col" class="small fw-semibold text-end text-nowrap">Unspent</th>
-                <th scope="col" class="small fw-semibold text-end text-nowrap">% of Alloc.</th>
+                @if (showAllocationColumns()) {
+                  <th scope="col" class="small fw-semibold text-end text-nowrap">% of Alloc.</th>
+                }
                 <th scope="col" class="small fw-semibold text-nowrap">Eligibility</th>
                 <th scope="col" class="small fw-semibold text-nowrap">Row Status</th>
                 <th scope="col" class="small fw-semibold">Rejection Remark</th>
@@ -243,21 +247,17 @@
             <tbody>
               @if (isLoadingRows()) {
                 <tr>
-                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-secondary small">
-                    Loading rows…
-                  </td>
+                  <td [attr.colspan]="tableColSpan()" class="text-center py-3 text-secondary small">Loading rows…</td>
                 </tr>
               } @else if (rowLoadError()) {
                 <tr>
-                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-danger small">
+                  <td [attr.colspan]="tableColSpan()" class="text-center py-3 text-danger small">
                     {{ rowLoadError() }}
                   </td>
                 </tr>
               } @else if (rows().length === 0) {
                 <tr>
-                  <td [attr.colspan]="canReviewRows() ? 10 : 9" class="text-center py-3 text-secondary small">
-                    No rows found.
-                  </td>
+                  <td [attr.colspan]="tableColSpan()" class="text-center py-3 text-secondary small">No rows found.</td>
                 </tr>
               } @else {
                 @for (row of rows(); track row._id) {
@@ -277,13 +277,17 @@
                     <td class="small text-secondary">{{ row.rowNumber }}</td>
                     <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
                     <td class="small">{{ row.ulbName }}</td>
-                    <td class="small text-end text-secondary" [title]="formatAmountExact(row.allocationAmount)">
-                      {{ formatAmount(row.allocationAmount) }}
-                    </td>
+                    @if (showAllocationColumns()) {
+                      <td class="small text-end text-secondary" [title]="formatAmountExact(row.allocationAmount)">
+                        {{ formatAmount(row.allocationAmount) }}
+                      </td>
+                    }
                     <td class="small text-end" [title]="formatAmountExact(row.unspentAmount)">
                       {{ formatAmount(row.unspentAmount) }}
                     </td>
-                    <td class="small text-end">{{ row.allocationPerc | number: '1.0-2' }}%</td>
+                    @if (showAllocationColumns()) {
+                      <td class="small text-end">{{ row.allocationPerc | number: '1.0-2' }}%</td>
+                    }
                     <td class="small">
                       @if (row.eligibility) {
                         <span class="badge text-bg-success small">Eligible</span>

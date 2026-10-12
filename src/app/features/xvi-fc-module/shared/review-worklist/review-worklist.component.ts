@@ -3,6 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { StatusHistoryPillComponent } from '../status-history/status-history-pill.component';
+import { StatusHistoryLoader } from '../status-history/status-history.models';
 
 export interface ReviewWorklistColumn<T> {
   key: string;
@@ -10,14 +12,14 @@ export interface ReviewWorklistColumn<T> {
   cell: (row: T) => string;
   /** When set, the cell renders as a pill badge with this class instead of plain text. */
   badgeClass?: (row: T) => string;
+  /** Badge columns only. When set, a row this returns a loader for renders its pill as a button that
+   *  opens the status-history dialog (history is fetched each time the dialog opens); rows it returns `null`
+   *  for (nothing to show yet) keep the plain pill. Role-neutral — each reviewer table supplies its own. */
+  historyLoader?: (row: T) => StatusHistoryLoader | null;
+  /** Header line of that history dialog, e.g. "Gujarat · GTC · Installment 1". */
+  historyHeading?: (row: T) => string;
   /** When set, the column header gets a clickable mat-sort-header, sorted by this raw value. */
   sortValue?: (row: T) => string | number;
-}
-
-export interface ReviewWorklistBucket<T> {
-  key: string;
-  label: string;
-  predicate: (row: T) => boolean;
 }
 
 /** Drives "server-driven" mode as one controlled object rather than several parallel inputs — see
@@ -37,21 +39,20 @@ const PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 15, 25, 50];
 
 /**
- * Generic cards+table review worklist, reused by every reviewer role's list page (PMU today, any
- * future role later) across every form — only the column/bucket config differs per form, never
- * this component's own code.
+ * Generic review worklist table, reused by every reviewer role's list page (PMU today, any
+ * future role later) across every form — only the column config differs per form, never this
+ * component's own code. The status overview cards above it live in `StatusSummaryCardsComponent`.
  */
 @Component({
   selector: 'app-review-worklist',
   standalone: true,
-  imports: [MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule],
+  imports: [MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule, StatusHistoryPillComponent],
   templateUrl: './review-worklist.component.html',
   styleUrl: './review-worklist.component.scss',
 })
 export class ReviewWorklistComponent<T> {
   readonly rows = input.required<T[]>();
   readonly columns = input.required<ReviewWorklistColumn<T>[]>();
-  readonly buckets = input<ReviewWorklistBucket<T>[]>([]);
   readonly reviewActionLabel = input('Review');
   readonly viewActionLabel = input('View');
   /** When omitted, every row is treated as actionable ("Review"/filled); when supplied, rows this
@@ -61,14 +62,10 @@ export class ReviewWorklistComponent<T> {
    *  open at all (as opposed to `canActOn`, which only changes the label/style for an existing,
    *  openable row). Omitted default: every row stays clickable. */
   readonly canOpenRow = input<((row: T) => boolean) | null>(null);
-  /** Heading rendered above the table, inside the same card, e.g. "SFC Status — All States". */
+  /** Heading rendered above the table, inside the same card, e.g. "SFC Status - All States". */
   readonly title = input<string | null>(null);
-  /** Controlled bucket selection — pass this (and listen to `bucketSelected`) when some other
-   *  control (e.g. a status dropdown) must stay in sync with the cards; omit for a page that only
-   *  ever uses the cards themselves. */
-  readonly activeBucketKeyInput = input<string | null>(null);
   /** When true, the table area shows a spinner instead of rows (e.g. while refetching after a
-   *  filter change) — bucket cards and the paginator stay mounted throughout. */
+   *  filter change) — the paginator stays mounted throughout. */
   readonly isLoading = input(false);
   /** Sort applied until the user clicks a column header themselves — e.g. `{active: 'submittedOn',
    *  direction: 'desc'}` for "latest first" by default. Omit for no default sort (today's
@@ -79,64 +76,38 @@ export class ReviewWorklistComponent<T> {
    *  component's own full local dataset. In this mode `pagedRows()` returns `rows()` directly,
    *  `total()` and the paginator's index/size/options all come from this object instead of being
    *  owned internally, and sort/page interactions are re-emitted via `sortChange`/`pageChange` for
-   *  the parent to refetch instead of being applied locally. Bucket cards are not supported
-   *  alongside this mode — no caller uses both today. `null` (the default): today's fully
+   *  the parent to refetch instead of being applied locally. `null` (the default): today's fully
    *  local/uncontrolled behavior, unchanged. */
   readonly serverPage = input<ReviewWorklistServerPage | null>(null);
 
   readonly reviewClicked = output<T>();
-  readonly bucketSelected = output<string>();
   /** Emitted instead of paginating locally when `serverPage` is set. */
   readonly pageChange = output<PageEvent>();
   /** Emitted instead of sorting locally when `serverPage` is set. */
   readonly sortChange = output<Sort>();
 
-  private readonly internalBucketKey = signal<string | null>(null);
   private readonly internalPageIndex = signal(0);
   private readonly internalPageSize = signal(PAGE_SIZE);
-  /** Controlled/uncontrolled, same shape as `activeBucketKey` below — `serverPage` wins when set. */
+  /** Controlled/uncontrolled, `serverPage` wins when set. */
   readonly pageIndex = computed(() => this.serverPage()?.pageIndex ?? this.internalPageIndex());
   readonly pageSize = computed(() => this.serverPage()?.pageSize ?? this.internalPageSize());
   readonly pageSizeOptions = computed(() => this.serverPage()?.pageSizeOptions ?? PAGE_SIZE_OPTIONS);
   private readonly userSort = signal<Sort | null>(null);
-  /** The caller's `defaultSort` applies until the user actually clicks a column header — same
-   *  controlled-falls-back-to-default shape as `activeBucketKey` below. Tracked the same way
-   *  regardless of mode, purely to drive the mat-sort header's active/direction display — with
+  /** The caller's `defaultSort` applies until the user actually clicks a column header — controlled-falls-back-to-default shape
+   *  as `pageIndex` above. Tracked the same way regardless of mode, purely to drive the mat-sort header's active/direction display — with
    *  `serverPage` set, the actual re-sorting of data happens on the backend, not via
    *  `filteredRows()` below. */
   readonly sort = computed(() => this.userSort() ?? this.defaultSort());
 
   readonly displayedColumns = computed(() => [...this.columns().map((c) => c.key), 'action']);
 
-  readonly bucketCounts = computed(() => {
-    const rows = this.rows();
-    const total = rows.length;
-    return this.buckets().map((bucket) => {
-      const count = rows.filter(bucket.predicate).length;
-      return { ...bucket, count, percent: total > 0 ? Math.round((count / total) * 100) : 0 };
-    });
-  });
-
-  /** The caller's `activeBucketKey` input wins when supplied (controlled mode); otherwise this
-   *  component tracks its own clicks (uncontrolled mode) — same default-to-first-bucket fallback
-   *  either way. */
-  readonly activeBucketKey = computed(
-    () => this.activeBucketKeyInput() ?? this.internalBucketKey() ?? this.buckets()[0]?.key ?? null,
-  );
-
-  private readonly bucketFilteredRows = computed(() => {
-    const bucketKey = this.activeBucketKey();
-    const bucket = this.buckets().find((b) => b.key === bucketKey);
-    return bucket ? this.rows().filter(bucket.predicate) : this.rows();
-  });
-
   readonly filteredRows = computed(() => {
     const sort = this.sort();
     const column = sort && sort.direction ? this.columns().find((c) => c.key === sort.active) : undefined;
-    if (!column?.sortValue) return this.bucketFilteredRows();
+    if (!column?.sortValue) return this.rows();
 
     const direction = sort!.direction === 'asc' ? 1 : -1;
-    return [...this.bucketFilteredRows()].sort((a, b) => {
+    return [...this.rows()].sort((a, b) => {
       const va = column.sortValue!(a);
       const vb = column.sortValue!(b);
       return va < vb ? -direction : va > vb ? direction : 0;
@@ -162,12 +133,6 @@ export class ReviewWorklistComponent<T> {
       if (this.serverPage()) return;
       this.internalPageIndex.set(0);
     });
-  }
-
-  selectBucket(key: string): void {
-    this.internalBucketKey.set(key);
-    this.bucketSelected.emit(key);
-    this.internalPageIndex.set(0);
   }
 
   onSortChange(sort: Sort): void {

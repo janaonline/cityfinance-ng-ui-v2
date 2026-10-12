@@ -158,7 +158,9 @@
                 <col class="pmu-rows-col-remarks" />
               }
               @if (showMoneyColumns) {
-                <col class="pmu-rows-col-amount" />
+                @if (showAllocationColumn()) {
+                  <col class="pmu-rows-col-amount" />
+                }
                 <col class="pmu-rows-col-amount" />
                 <col class="pmu-rows-col-amount" />
               }
@@ -190,7 +192,9 @@
                   <th scope="col" class="small fw-semibold">Remarks</th>
                 }
                 @if (showMoneyColumns) {
-                  <th scope="col" class="small fw-semibold text-end">16th FC Allocation (in {{ unitSuffix() }})</th>
+                  @if (showAllocationColumn()) {
+                    <th scope="col" class="small fw-semibold text-end">16th FC Allocation (in {{ unitSuffix() }})</th>
+                  }
                   <th scope="col" class="small fw-semibold text-end">FC Unspent Amount (in {{ unitSuffix() }})</th>
                   <th scope="col" class="small fw-semibold text-end">
                     Previous FC Unspent Balance (in {{ unitSuffix() }})
@@ -205,13 +209,13 @@
             <tbody>
               @if (isLoadingRows()) {
                 <tr>
-                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                  <td [attr.colspan]="colSpan()" class="text-center py-4 text-secondary small">
                     <span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading rows…
                   </td>
                 </tr>
               } @else if (!rows().length) {
                 <tr>
-                  <td [attr.colspan]="colSpan" class="text-center py-4 text-secondary small">
+                  <td [attr.colspan]="colSpan()" class="text-center py-4 text-secondary small">
                     No rows found for the current filters.
                   </td>
                 </tr>
@@ -239,9 +243,11 @@
                       <td class="small">{{ row.remarks || '-' }}</td>
                     }
                     @if (showMoneyColumns) {
-                      <td class="small text-end" [title]="formatAmountExact(row.allocationAmount)">
-                        {{ formatAmount(row.allocationAmount) }}
-                      </td>
+                      @if (showAllocationColumn()) {
+                        <td class="small text-end" [title]="formatAmountExact(row.allocationAmount)">
+                          {{ formatAmount(row.allocationAmount) }}
+                        </td>
+                      }
                       <td class="small text-end" [title]="formatAmountExact(row.unspentAmount)">
                         {{ formatAmount(row.unspentAmount) }}
                       </td>

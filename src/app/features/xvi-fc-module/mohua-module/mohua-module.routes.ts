@@ -82,11 +82,13 @@ export const MOHUA_ROUTES: Routes = [
       },
       {
         path: 'fc-unspent-review',
+        data: { menuGroup: 'fc-unspent-review' },
         loadComponent: () =>
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
       },
       {
         path: 'fc-unspent-review/:stateId',
+        data: { menuGroup: 'fc-unspent-review' },
         loadComponent: () =>
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
       },
