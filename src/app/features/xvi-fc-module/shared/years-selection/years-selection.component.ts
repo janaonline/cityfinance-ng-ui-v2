@@ -57,7 +57,8 @@ function resolveProfileRole(userRole: string): ProfileRole {
   const r = userRole.toUpperCase();
   if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'state';
   if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ulb';
-  if (r === 'MOHUA') return 'mohua';
+  // MoHUA, PMU and DoE are national roles with no state/ULB of their own — all take the 'mohua' flow.
+  if (r === 'MOHUA' || r === 'XVIFC_PMU' || r === 'XVIFC_DOE') return 'mohua';
   return 'state';
 }
 
@@ -66,6 +67,8 @@ function resolveRouteRole(userRole: string): Roles {
   if (r === 'STATE' || r === 'XVIFC_STATE' || r.startsWith('STATE-')) return 'STATE';
   if (r === 'ULB' || r === 'XVIFC' || r.startsWith('ULB-')) return 'ULB';
   if (r === 'MOHUA') return 'MOHUA';
+  if (r === 'XVIFC_PMU') return 'XVIFC_PMU';
+  if (r === 'XVIFC_DOE') return 'DOE';
   return 'STATE';
 }
 
@@ -170,8 +173,8 @@ export class YearsSelectionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // MOHUA has no entity scope — navigate directly to the year root
-    if (routeRole === 'MOHUA') {
+    // MOHUA, PMU and DOE have no entity scope — navigate directly to the year root
+    if (routeRole === 'MOHUA' || routeRole === 'XVIFC_PMU' || routeRole === 'DOE') {
       this.router.navigate(['/xvifc', yearId], { replaceUrl: true });
       return;
     }
