@@ -295,6 +295,9 @@
 }
 
 .sd-cond__pdf {
+  // The cards are equal height, but their content isn't (a card without a status chip is shorter), so pin the
+  // button to the bottom and every View button lines up.
+  margin-top: auto;
   --mat-button-outlined-container-height: 26px;
   --mat-button-outlined-label-text-size: 0.65rem;
   --mat-button-outlined-label-text-color: var(--color-primary, #12535c);

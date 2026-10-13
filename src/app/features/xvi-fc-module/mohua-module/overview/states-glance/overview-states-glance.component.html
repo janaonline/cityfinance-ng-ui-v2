@@ -18,21 +18,6 @@
 <div class="os-layout" [class.os-layout--solo]="view() === 'list'" appReveal [revealDelay]="60">
   <mat-card appearance="outlined" class="os-panel">
     <div class="os-tools">
-      @if (view() === 'track') {
-        <mat-chip-listbox
-          class="os-chips"
-          aria-label="Filter by stage"
-          [value]="filter()"
-          (change)="onChip($event.value)"
-        >
-          @for (c of chips(); track c.key) {
-            <mat-chip-option class="os-tone--{{ c.tone }}" [value]="c.key">
-              <i class="os-dot" [class.round]="c.round"></i>{{ c.label }} <b>{{ c.count }}</b>
-            </mat-chip-option>
-          }
-        </mat-chip-listbox>
-      }
-
       <mat-form-field class="os-search" appearance="outline" subscriptSizing="dynamic">
         <input
           matInput

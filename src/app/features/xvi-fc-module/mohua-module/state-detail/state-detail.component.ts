@@ -8,10 +8,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs';
+import { saveAs } from 'file-saver';
+import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { formatCrore, StateStatus } from '../overview/overview.models';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -23,10 +25,11 @@ import { CountUpDirective, RevealDirective } from './state-detail.directives';
 import { IconMotion, StatItem, Tone } from './state-detail.types';
 
 const PAGE_SIZE = 15;
-const ULB_COLUMNS = ['name', 'census', 'allocation', 'electedBody', 'audited', 'unaudited', 'pfms', 'slb', 'dur'];
+const ULB_COLUMNS = ['name', 'census', 'allocation', 'unspent', 'electedBody', 'audited', 'unaudited', 'pfms', 'slb', 'dur'];
 const SEARCH_DEBOUNCE_MS = 300;
 const LOAD_ERROR = 'Could not load this state. Please try again.';
 const ULBS_ERROR = 'Could not load the ULBs. Please try again.';
+const EXPORT_ERROR = 'Could not download the ULB-wise progress. Please try again.';
 const COMING_SOON = 'Coming soon';
 
 /** Route segments (after review-state-submissions/:stateId) of the read-only form screens, keyed by the API's form keys. */
@@ -90,6 +93,7 @@ export class StateDetailComponent {
   private readonly service = inject(MohuaStateDetailService);
   private readonly ulbsService = inject(MohuaStateUlbsService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snackBar = inject(MatSnackBar);
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
@@ -167,6 +171,7 @@ export class StateDetailComponent {
   readonly ulbTotal = signal(0);
   readonly ulbsLoading = signal(true);
   readonly ulbsError = signal<string | null>(null);
+  readonly exporting = signal(false);
 
   readonly searchTerm = signal('');
   readonly page = signal(1);
@@ -273,6 +278,28 @@ export class StateDetailComponent {
 
   onSearch(event: Event): void {
     this.searchInput$.next((event.target as HTMLInputElement).value);
+  }
+
+  /** Downloads the table (the current search and sort, every page) as an Excel file. */
+  exportUlbs(): void {
+    const ids = this.ulbIds;
+    if (!ids || this.exporting()) return;
+
+    this.exporting.set(true);
+    this.ulbsService
+      .exportUlbs(ids.stateId, ids.yearId, {
+        search: this.searchTerm(),
+        sortBy: this.sortActive(),
+        sortDir: this.sortDirection(),
+      })
+      .pipe(
+        finalize(() => this.exporting.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: ({ blob, fileName }) => saveAs(blob, fileName ?? `${this.data()?.state.name ?? 'state'}-ulb-progress.xlsx`),
+        error: () => this.snackBar.open(EXPORT_ERROR, 'Dismiss', { duration: 4000 }),
+      });
   }
 
   /** Clearing a sort (third click) falls back to the default: ULB name ascending. */
