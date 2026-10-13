@@ -36,6 +36,8 @@ export interface StateUlbRow {
   censusCode: string | null;
   /** Crore; null when the state has not uploaded a Devolution Formula. */
   allocation: number | null;
+  /** Crore: the ULB's FC Unspent balance from the state's declaration; null when it has no figure yet. */
+  unspentAmount: number | null;
   /** The elected-body status as uploaded by the state. */
   electedBody: string | null;
   forms: { audited: boolean; unaudited: boolean; pfms: boolean; slb: boolean; dur: boolean };

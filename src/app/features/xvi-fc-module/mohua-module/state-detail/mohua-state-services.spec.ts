@@ -73,6 +73,7 @@ describe('MohuaStateUlbsService', () => {
         name: 'Chirala',
         censusCode: '459816',
         allocation: 6.4,
+        unspentAmount: 1.2,
         electedBody: 'Constituted',
         forms: { audited: true, unaudited: false, pfms: true, slb: false, dur: true },
       },
@@ -109,5 +110,42 @@ describe('MohuaStateUlbsService', () => {
     const request = httpMock.expectOne((req) => req.url === `${BASE}state-1/year-1/ulbs`);
     expect(request.request.params.has('search')).toBeFalse();
     request.flush({ success: true, data: page });
+  });
+
+  describe('exportUlbs', () => {
+    it('asks for the whole table with the current search and sort (no paging), as a file', () => {
+      let result: { blob: Blob; fileName: string | null } | undefined;
+      service
+        .exportUlbs('state-1', 'year-1', { search: '  chirala ', sortBy: 'allocation', sortDir: 'desc' })
+        .subscribe((value) => (result = value));
+
+      const request = httpMock.expectOne((req) => req.url === `${BASE}state-1/year-1/ulbs/export`);
+      expect(request.request.method).toBe('GET');
+      expect(request.request.responseType).toBe('blob');
+      expect(request.request.params.get('sortBy')).toBe('allocation');
+      expect(request.request.params.get('sortDir')).toBe('desc');
+      expect(request.request.params.get('search')).toBe('chirala');
+      expect(request.request.params.has('page')).toBeFalse();
+      expect(request.request.params.has('limit')).toBeFalse();
+      request.flush(new Blob(['xlsx']), {
+        headers: { 'Content-Disposition': 'attachment; filename="tripura-ulb-progress_2026-10-13.xlsx"' },
+      });
+
+      expect(result?.fileName).toBe('tripura-ulb-progress_2026-10-13.xlsx');
+      expect(result?.blob.size).toBeGreaterThan(0);
+    });
+
+    it('reports no file name when the header is not exposed, leaving the caller to name it', () => {
+      let fileName: string | null | undefined;
+      service
+        .exportUlbs('state-1', 'year-1', { search: '', sortBy: 'ulbName', sortDir: 'asc' })
+        .subscribe((value) => (fileName = value.fileName));
+
+      const request = httpMock.expectOne((req) => req.url === `${BASE}state-1/year-1/ulbs/export`);
+      expect(request.request.params.has('search')).toBeFalse();
+      request.flush(new Blob(['xlsx']));
+
+      expect(fileName).toBeNull();
+    });
   });
 });

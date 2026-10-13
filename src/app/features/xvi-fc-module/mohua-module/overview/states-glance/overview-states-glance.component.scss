@@ -125,32 +125,6 @@ mat-button-toggle-group {
   margin-bottom: 8px;
 }
 
-.os-chips {
-  --mat-chip-container-height: 26px;
-  --mat-chip-label-text-size: 0.6875rem;
-  --mat-chip-label-text-size: 0.6875rem;
-  --mat-chip-container-height: 26px;
-
-  flex: 1 1 320px;
-
-  .mdc-evolution-chip__text-label {
-    font-size: 0.6875rem;
-  }
-}
-
-.os-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 5px;
-  background: var(--t);
-  border-radius: 3px;
-
-  &.round {
-    border-radius: 50%;
-  }
-}
-
 .os-search {
   flex: 0 1 220px;
   width: 100%;

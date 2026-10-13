@@ -54,6 +54,7 @@ const ulbs: StateUlbsPage = {
       name: 'Agartala Municipal Corporation',
       censusCode: '800001',
       allocation: 12.5,
+      unspentAmount: 3.4,
       electedBody: 'Constituted',
       forms: { audited: false, unaudited: false, pfms: true, slb: false, dur: true },
     },
@@ -104,6 +105,18 @@ describe('StateDetailComponent', () => {
     expect(fixture.componentInstance.stateName()).toBe('Tripura');
     expect(fixture.componentInstance.ulbs().length).toBe(1);
     expect(fixture.componentInstance.ulbTotal()).toBe(1);
+  });
+
+  it("shows each ULB's unspent balance beside its allocation", () => {
+    const fixture = create();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const headers = Array.from(el.querySelectorAll('.sd-table th')).map((th) => th.textContent?.trim());
+    expect(headers.indexOf('Unspent balance')).toBe(headers.indexOf('Allocation') + 1);
+
+    const cells = Array.from(el.querySelectorAll('.sd-table tbody tr:first-child td')).map((td) => td.textContent?.trim());
+    expect(cells).toContain('₹12.5 cr'); // allocation
+    expect(cells).toContain('₹3.4 cr'); // unspent balance
   });
 
   it('shows the real allocation, "--" for eligible, and "Coming soon" for every claim figure', () => {

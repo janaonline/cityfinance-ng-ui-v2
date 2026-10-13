@@ -29,7 +29,7 @@
   </div>
 
   <div class="ob-col">
-    <span class="ob-eyebrow">States moving towards a claim</span>
+    <span class="ob-eyebrow">State Progress Overview</span>
     <span class="ob-big">
       <span [appCountUp]="text(moving())"></span>
       <small>of {{ total() }}</small>
@@ -48,8 +48,12 @@
           <span>{{ b.label }}</span>
         </button>
       }
+      @for (label of upcomingStages; track label) {
+        <div class="ob-stat ob-stat--soon">
+          <b>Coming soon</b>
+          <span>{{ label }}</span>
+        </div>
+      }
     </div>
-
-    <span class="ob-hint ob-hint--end">Moving = under MoHUA review or in progress</span>
   </div>
 </mat-card>

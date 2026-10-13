@@ -78,7 +78,7 @@
     <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-claims">
       <div class="sd-panel__head">
         <h2 id="sd-h-claims">Claim Letters</h2>
-        <p>Raised by {{ d.state.name }} State DMA. Reviewed in Claims &amp; Submissions.</p>
+        <p>Claim letters submitted by the state.</p>
       </div>
       <div class="sd-claims__empty">
         <span class="sd-claims__empty-icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
@@ -91,7 +91,7 @@
     <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-forms">
       <div class="sd-panel__head">
         <h2 id="sd-h-forms">ULB Form Completion</h2>
-        <p>ULBs that have completed each form, out of the state's {{ d.ulbForms.totalUlbs }} ULBs.</p>
+        <p>Form completion status across the state's {{ d.ulbForms.totalUlbs }} ULBs.</p>
       </div>
       <div class="sd-rings">
         @for (form of ulbForms(); track form.key) {
@@ -121,7 +121,7 @@
     <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-ulb">
       <div class="sd-panel__head">
         <h2 id="sd-h-ulb">ULB-wise Progress</h2>
-        <p>Each compliance shown separately. Click a ULB to see its individual form statuses.</p>
+        <p>Click on a ULB to view its form-wise status.</p>
       </div>
       <div class="sd-tools">
         <mat-form-field class="sd-search" appearance="outline" subscriptSizing="dynamic">
@@ -151,8 +151,20 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-icon-button type="button" class="sd-export" disabled aria-label="Export" title="Not available yet">
-          <i class="bi bi-download" aria-hidden="true"></i>
+        <button
+          mat-icon-button
+          type="button"
+          class="sd-export"
+          aria-label="Download ULB-wise progress as Excel"
+          title="Download as Excel"
+          [disabled]="exporting() || ulbsLoading() || !ulbTotal()"
+          (click)="exportUlbs()"
+        >
+          @if (exporting()) {
+            <mat-progress-spinner mode="indeterminate" [diameter]="18" aria-label="Preparing download" />
+          } @else {
+            <i class="bi bi-download" aria-hidden="true"></i>
+          }
         </button>
       </div>
 
@@ -180,6 +192,10 @@
           <ng-container matColumnDef="allocation">
             <th mat-header-cell *matHeaderCellDef mat-sort-header="allocation" class="sd-r">Allocation</th>
             <td mat-cell *matCellDef="let ulb" class="sd-r">{{ formatCrore(ulb.allocation) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="unspent">
+            <th mat-header-cell *matHeaderCellDef class="sd-r">Unspent balance</th>
+            <td mat-cell *matCellDef="let ulb" class="sd-r">{{ formatCrore(ulb.unspentAmount) }}</td>
           </ng-container>
           <ng-container matColumnDef="electedBody">
             <th mat-header-cell *matHeaderCellDef>Elected body</th>
