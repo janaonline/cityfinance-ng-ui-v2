@@ -35,6 +35,9 @@ export class OverviewBriefingComponent {
     { label: 'Approved', icon: 'bi-shield-check' },
   ];
 
+  /** Later stages of a state's journey that have no data yet — shown as "Coming soon" cards beside the status counts. */
+  readonly upcomingStages = ['Recommended to DoE', 'Released by DoE'];
+
   private readonly counts = computed(() => {
     const counts: Record<StateStatus, number> = { review: 0, progress: 0, notStarted: 0 };
     for (const row of this.rows()) counts[row.status]++;

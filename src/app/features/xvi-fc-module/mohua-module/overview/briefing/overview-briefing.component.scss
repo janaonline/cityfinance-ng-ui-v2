@@ -159,6 +159,8 @@
 .ob-buttons {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  // Every row as tall as the tallest card, so all five cards are the same size whatever their label length.
+  grid-auto-rows: 1fr;
   gap: 8px;
 }
 
@@ -195,6 +197,19 @@
   span {
     font-size: 0.625rem;
     color: #cfe3e5;
+  }
+
+  // Not a filter: a stage with no data yet, so it is not interactive.
+  &--soon {
+    cursor: default;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    b {
+      font-size: 0.8rem;
+    }
   }
 }
 

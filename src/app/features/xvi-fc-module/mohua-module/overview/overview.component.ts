@@ -74,9 +74,10 @@ export class MohuaOverviewComponent {
       });
   }
 
-  /** A status button in the briefing band filters the states section and brings it into view. */
+  /** A status button in the briefing band filters the states section and brings it into view; pressing the active one
+   *  again clears the filter (there is no other control for it). */
   showStatus(status: StateStatus): void {
-    this.stateFilter.set(status);
+    this.stateFilter.update((current) => (current === status ? null : status));
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     this.statesSection()?.nativeElement.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   }

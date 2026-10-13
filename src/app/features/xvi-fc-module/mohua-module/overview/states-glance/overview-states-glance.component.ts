@@ -14,7 +14,6 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -109,7 +108,6 @@ function packCircles(
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,
-    MatChipsModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressBarModule,
@@ -184,35 +182,6 @@ export class OverviewStatesGlanceComponent {
     const since = (row: StateRow) => (row.underReviewSince ? Date.parse(row.underReviewSince) : Infinity);
     return rows.filter((r) => r.status === 'review').sort((a, b) => since(a) - since(b))[0];
   }
-
-  // ── Filter chips ───────────────────────────────────────────────────────────
-  readonly chips = computed(() => {
-    const rows = this.rows();
-    const count = (status: StateStatus) => rows.filter((r) => r.status === status).length;
-    return [
-      {
-        key: 'review' as StateFilter,
-        label: STATUS_LABEL.review,
-        count: count('review'),
-        tone: 'orange' as Tone,
-        round: false,
-      },
-      {
-        key: 'progress' as StateFilter,
-        label: STATUS_LABEL.progress,
-        count: count('progress'),
-        tone: 'teal' as Tone,
-        round: false,
-      },
-      {
-        key: 'notStarted' as StateFilter,
-        label: STATUS_LABEL.notStarted,
-        count: count('notStarted'),
-        tone: 'grey' as Tone,
-        round: false,
-      },
-    ];
-  });
 
   inFilter(row: StateRow): boolean {
     const filter = this.filter();
@@ -337,11 +306,6 @@ export class OverviewStatesGlanceComponent {
     this.selectedCode.set(code);
   }
 
-  /** mat-chip-listbox emits the chosen chip's key, or nothing when the chosen chip is clicked again. */
-  onChip(key: StateFilter | undefined): void {
-    this.filter.set(key ?? null);
-  }
-
   onSearch(event: Event): void {
     this.search.set((event.target as HTMLInputElement).value);
   }
@@ -353,6 +317,6 @@ export class OverviewStatesGlanceComponent {
   subtitle(): string {
     return this.view() === 'track'
       ? 'Where each state stands on its own conditions. Bubble size shows the annual allocation. Click a state to preview it, then open View State to explore more.'
-      : 'Every state grouped by stage, with its ULB progress. Pick a column heading to re-rank, or click a state to explore its data.';
+      : 'View state-wise progress across grant stages and ULBs. Sort by column or select a state to view its details.';
   }
 }
