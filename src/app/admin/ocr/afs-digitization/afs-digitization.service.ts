@@ -95,7 +95,7 @@ export class AfsDigitizationService {
   ];
 
   submitDigitizationJob(
-    file: File,
+    source: File | string,
     geminiModel: string,
     ulbName?: string | null,
     financialYear?: string | null,
@@ -107,7 +107,12 @@ export class AfsDigitizationService {
     notes?: string | null,
   ) {
     const formData = new FormData();
-    formData.append('file', file);
+    // A string is an S3 path to a PDF already in the CityFinance bucket.
+    if (typeof source === 'string') {
+      formData.append('s3_path', source.trim());
+    } else {
+      formData.append('file', source);
+    }
     formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
     if (ulbName) formData.append('ulb_name', ulbName);

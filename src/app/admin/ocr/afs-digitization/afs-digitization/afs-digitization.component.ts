@@ -96,6 +96,9 @@ export class AfsDigitizationComponent implements OnInit {
   };
 
   selectedFile: File | null = null;
+  /** When true the PDF is read from S3 (`s3Path`) instead of a manual upload. */
+  useS3 = false;
+  readonly s3Path = this.fb.nonNullable.control('');
   readonly isSubmitting = signal(false);
   readonly jobs = signal<DigitizationJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
@@ -191,9 +194,27 @@ export class AfsDigitizationComponent implements OnInit {
     this.fileInput?.nativeElement.click();
   }
 
+  onSourceToggle(useS3: boolean): void {
+    this.useS3 = useS3;
+    // Only one source is ever sent, so drop whatever the hidden option held.
+    if (useS3) {
+      this.clearFile();
+    } else {
+      this.s3Path.reset();
+    }
+  }
+
+  hasSource(): boolean {
+    return this.useS3 ? !!this.s3Path.value.trim() : !!this.selectedFile;
+  }
+
   submit(): void {
-    if (!this.selectedFile) {
-      this.utilityService.swalPopup('File required', 'Please choose a PDF file.', 'error');
+    if (!this.hasSource()) {
+      this.utilityService.swalPopup(
+        this.useS3 ? 'S3 path required' : 'File required',
+        this.useS3 ? 'Please enter the S3 path of the PDF.' : 'Please choose a PDF file.',
+        'error',
+      );
       return;
     }
     if (this.form.invalid) {
@@ -214,12 +235,13 @@ export class AfsDigitizationComponent implements OnInit {
     } = this.form.getRawValue();
     const notesValue = notes.trim() || null;
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
-    const file = this.selectedFile;
+    const source: File | string = this.useS3 ? this.s3Path.value.trim() : this.selectedFile!;
+    const filename = typeof source === 'string' ? source.split('/').pop() || source : source.name;
     this.isSubmitting.set(true);
 
     this.digitizationService
       .submitDigitizationJob(
-        file,
+        source,
         geminiModel,
         ulbNameValue,
         financialYear,
@@ -235,7 +257,7 @@ export class AfsDigitizationComponent implements OnInit {
         next: (response) => {
           this.addJob({
             jobId: response.job_id,
-            filename: file.name,
+            filename,
             status: 'queued',
             message: response.message,
             progressStep: null,
@@ -246,6 +268,7 @@ export class AfsDigitizationComponent implements OnInit {
           });
           this.startPolling(response.job_id);
           this.clearFile();
+          this.s3Path.reset();
           this.form.controls.notes.reset();
         },
         error: (err) => {
