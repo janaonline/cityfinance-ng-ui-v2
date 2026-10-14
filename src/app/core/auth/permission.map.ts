@@ -88,8 +88,8 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
 };
 
 /**
- * Permissions for PMU users, keyed by accessLevel. Mirrors backend XVIFC_PMU_PERMISSIONS.
- * Only the Admin (Submitter) can approve or return a state submission; every level can open the forms.
+ * Permissions for PMU users, keyed by accessLevel. Mirrors backend MOHUA_PMU_PERMISSIONS.
+ * The Admin (Submitter) and the Editor (Reviewer) can approve or return a state submission; every level can open the forms.
  */
 export const PMU_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
   ADMIN: [
@@ -103,7 +103,12 @@ export const PMU_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
     Permission.UPDATE_MANAGED_USER,
     Permission.DELETE_MANAGED_USER,
   ],
-  EDITOR: [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS, Permission.REVIEW_STATE_SUBMISSIONS_PMU],
+  EDITOR: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
+    Permission.APPROVE_STATE_SUBMISSIONS_PMU,
+  ],
   VIEWER: [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS, Permission.REVIEW_STATE_SUBMISSIONS_PMU],
 };
 

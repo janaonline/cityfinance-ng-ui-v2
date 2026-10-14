@@ -33,6 +33,16 @@ export interface RolesTeamsConfig {
   emailPlaceholder: string;
   pageSubtitle: string;
   tableAriaLabel: string;
+  /** Heading above the editable team table — only set when other teams are listed beside it. */
+  teamTitle?: string;
+  /** Other teams listed read-only below the editable one (no add/edit/remove). */
+  readOnlyTeams?: { title: string; membersListPath: string }[];
+}
+
+export interface ReadOnlyTeam {
+  title: string;
+  members: TeamMember[];
+  status: 'loading' | 'ready' | 'error';
 }
 
 export const STATE_ROLES_CONFIG: RolesTeamsConfig = {
@@ -65,6 +75,8 @@ export const MOHUA_ROLES_CONFIG: RolesTeamsConfig = {
   emailPlaceholder: 'official@mohua.gov.in',
   pageSubtitle: 'Manage who has access to the MoHUA XVI FC workspace.',
   tableAriaLabel: 'MoHUA team members',
+  teamTitle: 'MoHUA team',
+  readOnlyTeams: [{ title: 'PMU team', membersListPath: 'users/pmu-members' }],
 };
 
 export const PMU_ROLES_CONFIG: RolesTeamsConfig = {
@@ -81,6 +93,8 @@ export const PMU_ROLES_CONFIG: RolesTeamsConfig = {
   emailPlaceholder: 'name@organisation.in',
   pageSubtitle: 'Manage who has access to the PMU XVI FC workspace.',
   tableAriaLabel: 'PMU team members',
+  teamTitle: 'PMU team',
+  readOnlyTeams: [{ title: 'MoHUA team', membersListPath: 'users/mohua-members' }],
 };
 
 export const DOE_ROLES_CONFIG: RolesTeamsConfig = {

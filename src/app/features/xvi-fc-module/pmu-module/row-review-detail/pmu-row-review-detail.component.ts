@@ -724,7 +724,7 @@ export class PmuRowReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isApproving.set(false);
-          this.utilityService.triggerSnackbar('Form approved.');
+          this.utilityService.triggerSnackbar('Form approved. Ready to generate claim letter.');
           this.reloadAfterMutation();
         },
         error: (err: unknown) => {
