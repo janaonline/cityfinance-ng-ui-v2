@@ -44,7 +44,7 @@ export class AuthPermissionService {
       base = STATE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else if (role === 'MoHUA') {
       base = MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
-    } else if (role === 'XVIFC_PMU') {
+    } else if (role === 'MOHUA_PMU') {
       base = PMU_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? PMU_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else if (role === 'XVIFC_DOE') {
       base = DOE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? DOE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
@@ -82,7 +82,7 @@ export class AuthPermissionService {
   }
 
   isPmuUser(): boolean {
-    return (this.role() as string | null) === 'XVIFC_PMU';
+    return (this.role() as string | null) === 'MOHUA_PMU';
   }
 
   /** DoE is a read-only copy of the MoHUA dashboard — nothing it can see is editable. */
