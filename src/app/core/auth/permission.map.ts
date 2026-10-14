@@ -88,7 +88,7 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
 };
 
 /**
- * Permissions for PMU users, keyed by accessLevel. Mirrors backend XVIFC_PMU_PERMISSIONS.
+ * Permissions for PMU users, keyed by accessLevel. Mirrors backend MOHUA_PMU_PERMISSIONS.
  * Only the Admin (Submitter) can approve or return a state submission; every level can open the forms.
  */
 export const PMU_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {

@@ -42,12 +42,12 @@ describe('AuthPermissionService — PMU and DoE', () => {
   });
 
   it('PMU: every level can read forms, only the admin can approve', () => {
-    service.setUser(userWith('XVIFC_PMU', 'VIEWER'));
+    service.setUser(userWith('MOHUA_PMU', 'VIEWER'));
     expect(service.isPmuUser()).toBeTrue();
     expect(service.hasPermission(Permission.REVIEW_STATE_SUBMISSIONS_PMU)).toBeTrue();
     expect(service.canApprovePmuSubmissions()).toBeFalse();
 
-    service.setUser(userWith('XVIFC_PMU', 'ADMIN'));
+    service.setUser(userWith('MOHUA_PMU', 'ADMIN'));
     expect(service.canApprovePmuSubmissions()).toBeTrue();
   });
 

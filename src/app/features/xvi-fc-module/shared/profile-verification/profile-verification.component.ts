@@ -38,7 +38,7 @@ const ROLE_MAP: Record<string, ProfileRole> = {
   ULB: 'ulb',
   XVIFC: 'ulb',
   MoHUA: 'mohua',
-  XVIFC_PMU: 'mohua',
+  MOHUA_PMU: 'mohua',
   XVIFC_DOE: 'mohua',
 };
 
@@ -48,7 +48,7 @@ const ROUTE_ROLE_MAP: Record<string, Roles> = {
   ULB: 'ULB',
   XVIFC: 'ULB',
   MoHUA: 'MOHUA',
-  XVIFC_PMU: 'XVIFC_PMU',
+  MOHUA_PMU: 'MOHUA_PMU',
   XVIFC_DOE: 'DOE',
 };
 

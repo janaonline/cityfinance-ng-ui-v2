@@ -22,7 +22,7 @@ export const FORM_STATUS = {
   /** Terminal, no-owner. Set automatically when a form is exempted for a genuinely new ULB
    *  (xvi-fc dynamic year access) — never a manual ULB/STATE/MoHUA action. */
   EXEMPTED_ACKNOWLEDGED: 12,
-  /** XVIFC_PMU Review feature (state-level forms only) */
+  /** MOHUA_PMU Review feature (state-level forms only) */
   UNDER_REVIEW_BY_PMU: 13,
   RETURNED_BY_PMU: 14,
 } as const satisfies Record<string, FormStatusType>;

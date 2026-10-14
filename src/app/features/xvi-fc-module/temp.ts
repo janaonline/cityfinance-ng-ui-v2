@@ -178,7 +178,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
     bottomModel: [],
   }),
 
-  XVIFC_PMU: (yearId) => ({
+  MOHUA_PMU: (yearId) => ({
     topModel: [
       {
         label: 'XVI Financial Commission',
@@ -189,7 +189,7 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
       buildMenuItem(
         'Review State Submissions',
         'bi bi-ui-checks-grid',
-        buildXvifcFeatureLink('XVIFC_PMU', MOCK_ENTITY_ID, yearId, 'review-state-submissions'),
+        buildXvifcFeatureLink('MOHUA_PMU', MOCK_ENTITY_ID, yearId, 'review-state-submissions'),
       ),
     ],
     bottomModel: [],
