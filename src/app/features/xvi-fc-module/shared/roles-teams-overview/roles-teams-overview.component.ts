@@ -24,7 +24,7 @@ import {
   noHtmlOrScript,
   noMongoOperators,
 } from '../../../../auth/validators/auth-security.validators';
-import { RolesTeamsConfig, SubRole, SUBROLE_LABEL, TeamMember } from './roles-teams-overview.models';
+import { ReadOnlyTeam, RolesTeamsConfig, SubRole, SUBROLE_LABEL, TeamMember } from './roles-teams-overview.models';
 
 interface PermissionRow {
   label: string;
@@ -118,6 +118,10 @@ export class RolesTeamsOverviewComponent implements OnInit {
 
   readonly permissionMatrix = signal<PermissionRow[]>([]);
   readonly pageSubtitle = this.config.pageSubtitle;
+  readonly teamTitle = this.config.teamTitle;
+  /** Other teams shown read-only beside this one (MoHUA <-> PMU); empty for every other role. */
+  readonly otherTeams = signal<ReadOnlyTeam[]>([]);
+  readonly readOnlyColumns = ['member', 'designation', 'role', 'status', 'lastActive'];
   readonly tableAriaLabel = this.config.tableAriaLabel;
 
   readonly tableColumns: TableColumn[] = [
@@ -338,6 +342,33 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.currentUserName.set(String(u['name'] ?? ''));
     this.loadMembers();
     this.loadPermissionMatrix();
+    this.loadOtherTeams();
+  }
+
+  private loadOtherTeams(): void {
+    const teams = this.config.readOnlyTeams ?? [];
+    this.otherTeams.set(teams.map((t) => ({ title: t.title, members: [], status: 'loading' })));
+
+    teams.forEach((team, index) => {
+      this.http
+        .get<{ success: boolean; data: TeamMember[] } | TeamMember[]>(`${this.baseUrl}${team.membersListPath}`)
+        .pipe(
+          map((r): TeamMember[] =>
+            'success' in r && Array.isArray((r as { data: unknown }).data)
+              ? (r as { success: boolean; data: TeamMember[] }).data
+              : (r as TeamMember[]),
+          ),
+          catchError(() => of(null)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((members) =>
+          this.otherTeams.update((all) =>
+            all.map((t, i) =>
+              i === index ? { ...t, members: members ?? [], status: members ? 'ready' : 'error' } : t,
+            ),
+          ),
+        );
+    });
   }
 
   private loadPermissionMatrix(): void {

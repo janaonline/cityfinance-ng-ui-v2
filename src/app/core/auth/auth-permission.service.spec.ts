@@ -41,14 +41,19 @@ describe('AuthPermissionService — PMU and DoE', () => {
     expect(service.hasPermission(Permission.MANAGE_USERS)).toBeFalse();
   });
 
-  it('PMU: every level can read forms, only the admin can approve', () => {
+  it('PMU: every level can read forms, admin and editor can approve, only the admin manages the team', () => {
     service.setUser(userWith('MOHUA_PMU', 'VIEWER'));
     expect(service.isPmuUser()).toBeTrue();
     expect(service.hasPermission(Permission.REVIEW_STATE_SUBMISSIONS_PMU)).toBeTrue();
     expect(service.canApprovePmuSubmissions()).toBeFalse();
 
+    service.setUser(userWith('MOHUA_PMU', 'EDITOR'));
+    expect(service.canApprovePmuSubmissions()).toBeTrue();
+    expect(service.hasPermission(Permission.MANAGE_USERS)).toBeFalse();
+
     service.setUser(userWith('MOHUA_PMU', 'ADMIN'));
     expect(service.canApprovePmuSubmissions()).toBeTrue();
+    expect(service.hasPermission(Permission.MANAGE_USERS)).toBeTrue();
   });
 
   it('an unknown role holds no permissions', () => {
