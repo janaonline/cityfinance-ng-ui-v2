@@ -95,23 +95,30 @@ export class AfsDigitizationService {
   ];
 
   submitDigitizationJob(
-    file: File,
+    source: File | string,
     geminiModel: string,
     ulbName?: string | null,
     financialYear?: string | null,
     docType?: string | null,
     enableValidation = true,
     enableArithmeticValidation = true,
-    ocrEngine: DigitizationOcrEngine = 'textract',
+    ocrEngine: DigitizationOcrEngine = 'gemini',
     enableDocumentClassification = true,
+    notes?: string | null,
   ) {
     const formData = new FormData();
-    formData.append('file', file);
+    // A string is an S3 path to a PDF already in the CityFinance bucket.
+    if (typeof source === 'string') {
+      formData.append('s3_path', source.trim());
+    } else {
+      formData.append('file', source);
+    }
     formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
+    if (notes) formData.append('notes', notes);
     formData.append('enable_validation', String(enableValidation));
     formData.append('enable_arithmetic_validation', String(enableArithmeticValidation));
     formData.append('enable_document_classification', String(enableDocumentClassification));
@@ -136,6 +143,13 @@ export class AfsDigitizationService {
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate-arithmetic`,
       formData,
+    );
+  }
+
+  updateDigitizationJobNotes(jobId: string, notes: string | null) {
+    return this.http.patch<DigitizationJobStatusResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/notes`,
+      { notes },
     );
   }
 
@@ -168,8 +182,40 @@ export class AfsDigitizationService {
     });
   }
 
+  /** URL that renders the job's file inline in the browser (PDF) — for links / window.open. */
+  getDigitizationFileViewUrl(jobId: string, fileType: 'pdf' | 'excel' = 'pdf'): string {
+    return `${environment.api.url3}afs-digitization/jobs/${jobId}/view/${fileType}`;
+  }
+
   downloadDigitizationPdf(jobId: string) {
     return this.http.get(environment.api.url3 + `afs-digitization/jobs/${jobId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  dumpDigitizationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    doc_type?: string;
+    ocr_engine?: DigitizationOcrEngine;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
+    if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'afs-digitization/jobs/dump', {
+      params: queryParams,
       responseType: 'blob',
     });
   }
@@ -179,6 +225,7 @@ export class AfsDigitizationService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
     date_from?: string;
     date_to?: string;
@@ -191,6 +238,7 @@ export class AfsDigitizationService {
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
     if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
