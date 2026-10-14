@@ -69,6 +69,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'forum',
+    loadChildren: () => import('./features/forum/forum.routes').then((m) => m.FORUM_ROUTES),
+    canActivate: [authGuard],
+  },
+  {
     path: 'xvifc',
     canActivate: [xvifcAuthGuard, xvifcEligibilityGuard],
     loadChildren: () =>
