@@ -1,0 +1,73 @@
+@use '@angular/material' as mat;
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  @include layout.form-layout;
+}
+
+.reject-confirm-btn {
+  --mat-button-filled-label-text-color: #fff;
+  --mat-button-filled-container-color: var(--bs-danger, #dc3545);
+}
+
+// "Reject Selected" is an outlined button, so it needs the outlined-button custom properties
+// (review-acknowledgment.component.scss's own `.reject-btn`) — `.reject-confirm-btn` above only
+// affects filled buttons and has no effect here.
+.reject-btn {
+  --mat-button-outlined-label-text-color: var(--bs-danger, #dc3545);
+  --mat-button-outlined-outline-color: var(--bs-danger, #dc3545);
+}
+
+// Matches the State-side row tables' own styling (e.g. unspent-ulb-table.component.scss,
+// eulb-rows-dialog.component.scss) — fixed layout so column widths are never pushed by content,
+// and a stable 48px row height.
+.pmu-rows-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.pmu-rows-col-checkbox {
+  width: 40px;
+}
+
+.pmu-rows-col-ulb-name {
+  width: 200px;
+}
+
+.pmu-rows-col-census {
+  width: 110px;
+}
+
+.pmu-rows-col-amount {
+  width: 130px;
+}
+
+.pmu-rows-col-eligibility {
+  width: 110px;
+}
+
+.pmu-rows-col-elected-status {
+  width: 130px;
+}
+
+.pmu-rows-col-elected-date {
+  width: 110px;
+}
+
+.pmu-rows-col-remarks {
+  width: 180px;
+}
+
+.pmu-rows-col-status {
+  width: 150px;
+}
+
+.pmu-rows-table td {
+  overflow: hidden;
+  vertical-align: middle;
+  height: 48px;
+}
+
+.pmu-rows-table tbody tr {
+  min-height: 48px;
+}

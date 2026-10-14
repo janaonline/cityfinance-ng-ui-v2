@@ -429,6 +429,50 @@ describe('DynamicFieldSupportingContentComponent', () => {
     });
   });
 
+  describe('mode gating', () => {
+    it('hides template-download items when mode="view"', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'template-download', label: 'Download template', url: '/assets/template.xlsx' } satisfies FieldSupportingContent,
+      ]);
+      componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('a'))).toBeNull();
+    });
+
+    it('hides actions items when mode="view"', () => {
+      componentRef.setInput('supportingContent', [
+        {
+          type: 'actions',
+          actions: [{ id: 'download-template', label: 'Download the GTC template' }],
+        } satisfies FieldSupportingContent,
+      ]);
+      componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Download the GTC template');
+    });
+
+    it('still shows template-download and actions items when mode="edit" (default)', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'template-download', label: 'Download template', url: '/assets/template.xlsx' },
+        { type: 'actions', actions: [{ id: 'download-template', label: 'Download the GTC template' }] },
+      ] satisfies FieldSupportingContent[]);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Download template');
+      expect(fixture.nativeElement.textContent).toContain('Download the GTC template');
+    });
+
+    it('still shows info and warning items when mode="view"', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'info', description: 'Info text' },
+        { type: 'warning', description: 'Warning text' },
+      ] satisfies FieldSupportingContent[]);
+      componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Info text');
+      expect(fixture.nativeElement.textContent).toContain('Warning text');
+    });
+  });
+
   describe('multiple items', () => {
     it('renders multiple content items in the same position', () => {
       componentRef.setInput('supportingContent', [

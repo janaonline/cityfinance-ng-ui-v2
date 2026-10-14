@@ -18,8 +18,8 @@ export interface TeamMember {
   email?: string;
 }
 
-/** Everything that differs between the STATE and MoHUA "Team & Roles" pages — supplied per
- *  route via route `data.rolesConfig`, so the same component/template serves both. */
+/** Everything that differs between the STATE, MoHUA, PMU and DoE "Team & Roles" pages — supplied per
+ *  route via route `data.rolesConfig`, so the same component/template serves all of them. */
 export interface RolesTeamsConfig {
   membersListPath: string;
   permissionMatrixPath: string;
@@ -33,6 +33,16 @@ export interface RolesTeamsConfig {
   emailPlaceholder: string;
   pageSubtitle: string;
   tableAriaLabel: string;
+  /** Heading above the editable team table — only set when other teams are listed beside it. */
+  teamTitle?: string;
+  /** Other teams listed read-only below the editable one (no add/edit/remove). */
+  readOnlyTeams?: { title: string; membersListPath: string }[];
+}
+
+export interface ReadOnlyTeam {
+  title: string;
+  members: TeamMember[];
+  status: 'loading' | 'ready' | 'error';
 }
 
 export const STATE_ROLES_CONFIG: RolesTeamsConfig = {
@@ -65,4 +75,40 @@ export const MOHUA_ROLES_CONFIG: RolesTeamsConfig = {
   emailPlaceholder: 'official@mohua.gov.in',
   pageSubtitle: 'Manage who has access to the MoHUA XVI FC workspace.',
   tableAriaLabel: 'MoHUA team members',
+  teamTitle: 'MoHUA team',
+  readOnlyTeams: [{ title: 'PMU team', membersListPath: 'users/pmu-members' }],
+};
+
+export const PMU_ROLES_CONFIG: RolesTeamsConfig = {
+  membersListPath: 'users/pmu-members',
+  permissionMatrixPath: 'users/pmu-permission-matrix',
+  invitePath: 'users/invite-pmu-member',
+  memberActionBasePath: 'users/pmu-members',
+  transferSubmitterPath: 'users/pmu-members/transfer-submitter',
+  defaultSubRole: 'VIEWER',
+  infoBannerText:
+    'PMU staff with existing access can sign in directly using their registered email ID and password. ' +
+    'To give access to a new team member, use <strong>Add Member</strong> below — ' +
+    'they will receive an email invitation to set up their login.',
+  emailPlaceholder: 'name@organisation.in',
+  pageSubtitle: 'Manage who has access to the PMU XVI FC workspace.',
+  tableAriaLabel: 'PMU team members',
+  teamTitle: 'PMU team',
+  readOnlyTeams: [{ title: 'MoHUA team', membersListPath: 'users/mohua-members' }],
+};
+
+export const DOE_ROLES_CONFIG: RolesTeamsConfig = {
+  membersListPath: 'users/doe-members',
+  permissionMatrixPath: 'users/doe-permission-matrix',
+  invitePath: 'users/invite-doe-member',
+  memberActionBasePath: 'users/doe-members',
+  transferSubmitterPath: 'users/doe-members/transfer-submitter',
+  defaultSubRole: 'VIEWER',
+  infoBannerText:
+    'DoE staff with existing access can sign in directly using their registered email ID and password. ' +
+    'To give access to a new team member, use <strong>Add Member</strong> below — ' +
+    'they will receive an email invitation to set up their login. DoE access is view-only.',
+  emailPlaceholder: 'official@expenditure.gov.in',
+  pageSubtitle: 'Manage who has access to the DoE XVI FC workspace.',
+  tableAriaLabel: 'DoE team members',
 };

@@ -19,10 +19,12 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'ulb-submissions',
+    data: { menuGroup: 'ulb-submissions' },
     loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
   },
   {
     path: 'ulb-submissions/:ulbId/review',
+    data: { menuGroup: 'ulb-submissions' },
     loadComponent: () =>
       import('./ulb-submissions/annual-account-review/annual-account-review.component').then(
         (m) => m.AnnualAccountReviewComponent,
@@ -53,18 +55,21 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'request-exemption/new',
+    data: { menuGroup: 'request-exemption' },
     loadComponent: () =>
       import('./request-exemption/new/request-exemption.component').then((m) => m.RequestExemptionComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-status',
+    data: { menuGroup: 'elected-body-status' },
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-post-update',
+    data: { menuGroup: 'elected-body-status' },
     loadComponent: () =>
       import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
         (m) => m.EulbPostUpdateComponent,
@@ -109,11 +114,13 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'register-ulb',
+    data: { menuGroup: 'ulb-list' },
     loadComponent: () => import('./ulb-list/register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'ulb-list',
+    data: { menuGroup: 'ulb-list' },
     loadComponent: () => import('./ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
   },
   {

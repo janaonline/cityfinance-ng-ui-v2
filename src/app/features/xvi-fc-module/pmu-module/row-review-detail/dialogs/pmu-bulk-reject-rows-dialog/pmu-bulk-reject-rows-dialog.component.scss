@@ -1,0 +1,7 @@
+// Same M3 custom-property override as review-acknowledgment.component.scss's own `.reject-confirm-btn`
+// — `color`/background overrides lose a specificity fight against Material's own
+// `.mat-mdc-unelevated-button:not(:disabled)` rule, so these custom properties are the reliable hook.
+.reject-confirm-btn {
+  --mat-button-filled-label-text-color: #fff;
+  --mat-button-filled-container-color: var(--bs-danger, #dc3545);
+}

@@ -28,9 +28,10 @@ export interface ClaimLetterUlbEligibilityTally {
  */
 export interface ClaimLetterEligibilitySource {
   formType: string;
-  /** Absent for the ULB-only criteria (SLB, Provisional, Audited) merged in from `ulbLevelCriteria`
-   *  at render time — they have no single state-wide pass/fail, so the checklist renders a neutral
-   *  icon and excludes them from the "all passing" computation when `result` is undefined. */
+  /** Absent for the ULB-only criteria (today: SLB, Provisional, Audited, Bank Account, DUR) merged
+   *  in from `ulbLevelCriteria` at render time — they have no single state-wide pass/fail, so the
+   *  checklist renders a neutral icon and excludes them from the "all passing" computation when
+   *  `result` is undefined. */
   result?: ClaimLetterEligibilityResult;
   reasonCode: string;
   /** Short human-readable name for this criterion (e.g. "Devolution Formula"). Falls back to a
@@ -47,8 +48,9 @@ export interface ClaimLetterEligibilitySource {
    * Falls back to displayDescription when unset. */
   checklistSummary?: string;
   /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
-   *  representing ULB-level data) and for the 3 ULB-only criteria merged in from `ulbLevelCriteria`.
-   *  Absent for pure state-form checks (SFC, Devolution), which have no per-ULB meaning. */
+   *  representing ULB-level data) and for the ULB-only criteria merged in from `ulbLevelCriteria`.
+   *  Absent for pure state-form checks (today: SFC, Devolution, GTC), which have no per-ULB
+   *  meaning. */
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
 }
 

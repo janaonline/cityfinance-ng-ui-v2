@@ -13,10 +13,15 @@
       <h1 class="page-title mb-2">Unspent {{ applicableFcLabel() }} FC Balance Declaration</h1>
 
       <p class="page-subtitle text-secondary mb-0">
-        The 16th FC installment being claimed must not exceed {{ threshold() }}% of the ULB's disclosed
-        {{ applicableFcLabel() }} Finance Commission unspent balance. If no ULB in your state holds any
-        {{ applicableFcLabel() }} FC unspent balance, you may certify that here by uploading a signed declaration
-        instead of collecting ULB-wise data.
+        @if (noUnspentAllowed()) {
+          A ULB that still holds any unspent {{ applicableFcLabel() }} Finance Commission balance is not eligible for
+          the 16th FC installment.
+        } @else {
+          The 16th FC installment being claimed must not exceed {{ threshold() }}% of the ULB's disclosed
+          {{ applicableFcLabel() }} Finance Commission unspent balance.
+        }
+        If no ULB in your state holds any {{ applicableFcLabel() }} FC unspent balance, you may certify that here by
+        uploading a signed declaration instead of collecting ULB-wise data.
       </p>
     </div>
 
@@ -38,6 +43,12 @@
         <app-form-progress formType="state" [formStatus]="formStatus()" [actors]="actors()"></app-form-progress>
         <hr class="my-0 text-body-tertiary" />
       }
+
+      <app-returned-reason-banner
+        [currentFormStatus]="formStatus()"
+        [pmuRemarks]="pmuRemarks()"
+        [mohuaRemarks]="mohuaRemarks()"
+      />
 
       @if (dependency().blockingMessage) {
         <div
@@ -92,27 +103,12 @@
                 [canEdit]="canEdit()"
                 [applicableFcLabel]="applicableFcLabel()"
                 [threshold]="threshold()"
+                [showAllocation]="showAllocation()"
                 [stateId]="stateId"
                 [yearId]="yearId"
                 [rowEditFields]="rowEditFields()"
                 [blockingMessage]="dependency().blockingMessage"
               ></app-unspent-ulb-table>
-
-              @if (!hasSavedUnspentRows()) {
-                <div
-                  class="alert alert-info small d-flex gap-2 mb-2"
-                  role="status"
-                  data-cy="fc-unspent-declaration-save-prompt"
-                >
-                  <i class="bi bi-info-circle-fill flex-shrink-0" aria-hidden="true"></i>
-                  @if (unspentUlbData.length === 0) {
-                    Add at least one ULB with an unspent balance, then save your draft to unlock the signed declaration
-                    upload.
-                  } @else {
-                    You have unsaved ULB-wise entries. Save your draft to unlock the signed declaration upload.
-                  }
-                </div>
-              }
             }
           </div>
         }

@@ -27,6 +27,8 @@ const minimalFormData: SfcStatusFormData = {
   permissions: { canView: true, canEdit: true, canFinalSubmit: false },
   instructions: [],
   meta: { version: 1 },
+  exemptionStatus: null,
+  exemptionMohuaRemarks: null,
 };
 
 describe('SfcStatusService', () => {

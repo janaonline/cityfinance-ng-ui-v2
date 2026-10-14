@@ -59,6 +59,7 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
   ADMIN: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
     Permission.REVIEW_STATE_SUBMISSIONS,
     Permission.SEND_REMINDERS_TO_STATES,
     Permission.REQUEST_INFO_FROM_STATES,
@@ -74,6 +75,7 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
   EDITOR: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
     Permission.REVIEW_STATE_SUBMISSIONS,
     Permission.SEND_REMINDERS_TO_STATES,
     Permission.REQUEST_INFO_FROM_STATES,
@@ -81,5 +83,55 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
   VIEWER: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
   ],
+};
+
+/**
+ * Permissions for PMU users, keyed by accessLevel. Mirrors backend MOHUA_PMU_PERMISSIONS.
+ * The Admin (Submitter) and the Editor (Reviewer) can approve or return a state submission; every level can open the forms.
+ */
+export const PMU_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+  ADMIN: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
+    Permission.APPROVE_STATE_SUBMISSIONS_PMU,
+    Permission.MANAGE_USERS,
+    Permission.VIEW_MANAGED_USERS,
+    Permission.CREATE_MANAGED_USER,
+    Permission.UPDATE_MANAGED_USER,
+    Permission.DELETE_MANAGED_USER,
+  ],
+  EDITOR: [
+    Permission.VIEW_STATUS_REPORTS,
+    Permission.VIEW_DASHBOARDS,
+    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
+    Permission.APPROVE_STATE_SUBMISSIONS_PMU,
+  ],
+  VIEWER: [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS, Permission.REVIEW_STATE_SUBMISSIONS_PMU],
+};
+
+/**
+ * Permissions for DoE users, keyed by accessLevel. Mirrors backend XVIFC_DOE_PERMISSIONS.
+ * DoE is a read-only copy of the MoHUA dashboard: nobody can approve, review-and-decide or edit anything;
+ * the Admin (Submitter) additionally manages the DoE team.
+ */
+const DOE_VIEW_PERMISSIONS: Permission[] = [
+  Permission.VIEW_STATUS_REPORTS,
+  Permission.VIEW_DASHBOARDS,
+  Permission.REVIEW_STATE_SUBMISSIONS_PMU,
+];
+
+export const DOE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+  ADMIN: [
+    ...DOE_VIEW_PERMISSIONS,
+    Permission.MANAGE_USERS,
+    Permission.VIEW_MANAGED_USERS,
+    Permission.CREATE_MANAGED_USER,
+    Permission.UPDATE_MANAGED_USER,
+    Permission.DELETE_MANAGED_USER,
+  ],
+  EDITOR: DOE_VIEW_PERMISSIONS,
+  VIEWER: DOE_VIEW_PERMISSIONS,
 };

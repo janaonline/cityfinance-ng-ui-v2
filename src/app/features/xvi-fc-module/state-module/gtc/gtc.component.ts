@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -38,6 +37,7 @@ import {
   SubmitType,
 } from './gtc.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 
 /** Action id emitted by the download-template supporting-content button. Not tied to one field
@@ -55,6 +55,7 @@ const GTC_ACTION_DOWNLOAD_TEMPLATE = 'download-template';
     MatButtonModule,
     MatTooltipModule,
     FormProgressComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './gtc.component.html',
   styleUrl: './gtc.component.scss',
@@ -72,6 +73,8 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   readonly installment = signal<GtcInstallment>(1);
   readonly installmentAccess = signal<GtcInstallmentAccess | null>(null);
@@ -173,6 +176,7 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
           this.fields.set(data.questions);
           this.stateName.set(data.stateName);
           this.actors.set(data.actors);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.installmentAccess.set(data.installmentAccess ?? null);
           this.createFormControls();
           this.isLoading.set(false);
@@ -189,7 +193,6 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
    * - Create form controls based on the field configurations and add them to the form
    * - Create a dependency index to map controller fields to their dependent fields for visibility
    * - Set up subscriptions for controller fields to update visibility of dependent fields
-   * - Derive awardPeriodDuration from awardPeriod so visibility rules can react to it
    * - Disable all controls when canEdit is false
    */
   createFormControls(): void {
@@ -224,23 +227,6 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
       preserveHiddenValue: true,
       formTeardown$: this.formSubscriptionsTeardown$,
     });
-
-    // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
-    const awardPeriodControl = this.form.get('awardPeriod');
-    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
-    if (awardPeriodControl && durationControl) {
-      awardPeriodControl.valueChanges
-        .pipe(
-          startWith(awardPeriodControl.value),
-          map((v) => getYearRangeDuration(v)),
-          distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef),
-          takeUntil(this.formSubscriptionsTeardown$),
-        )
-        .subscribe((duration) => {
-          durationControl.setValue(duration, { emitEvent: true });
-        });
-    }
 
     if (!this.canEdit()) {
       this.form.disable({ emitEvent: false });
