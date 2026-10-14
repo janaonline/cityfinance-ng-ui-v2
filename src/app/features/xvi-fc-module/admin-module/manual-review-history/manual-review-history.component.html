@@ -4,7 +4,8 @@
     <button
       type="button"
       class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
-      [disabled]="isExporting()"
+      [disabled]="isExporting() || !canExport()"
+      [title]="canExport() ? '' : 'Select a Form Type above to export — the two backends can\'t be merged into one spreadsheet'"
       (click)="exportToExcel()"
     >
       @if (isExporting()) {
@@ -15,6 +16,13 @@
       Download Excel
     </button>
   </div>
+
+  @if (!isLoading() && !loadError() && failedSources().length > 0) {
+    <div class="alert alert-warning py-2 px-3 mb-3" role="alert">
+      {{ failedSourcesLabel() }} could not be loaded right now — the list below may be incomplete.
+      <button type="button" class="btn btn-link btn-sm p-0 ms-1" (click)="loadRows()">Retry</button>
+    </div>
+  }
 
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
     <div class="text-uppercase text-muted small fw-semibold">Requested</div>
@@ -104,6 +112,15 @@
         </div>
 
         <div class="mb-2">
+          <label for="manual-review-history-form-type" class="form-label mb-1 d-block">Form type</label>
+          <select class="form-select" id="manual-review-history-form-type" formControlName="formType">
+            <option value="">All types</option>
+            <option value="ANNUAL_ACCOUNT">Annual Account</option>
+            <option value="DUR">DUR</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
           <label for="manual-review-history-status" class="form-label mb-1 d-block">Status</label>
           <select class="form-select" id="manual-review-history-status" formControlName="status">
             <option value="">All</option>
@@ -159,12 +176,23 @@
           <ng-container matColumnDef="ulbDocument">
             <th mat-header-cell *matHeaderCellDef>ULB &amp; Document</th>
             <td mat-cell *matCellDef="let row">
-              <div class="fw-bold">{{ row.ulbName ?? '—' }}</div>
-              <div class="text-muted small">
-                {{ row.stateName ?? '—' }} &middot; {{ sectionLabel(row.section) }} &middot; {{ row.year }}
+              <div class="fw-bold">
+                {{ row.ulbName ?? '—' }}
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">{{ formLabel(row) }}</span>
               </div>
               <div class="text-muted small">
-                @if (row.ocrJobId) {
+                {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }}
+              </div>
+              <div class="text-muted small">
+                @if (row.formType === 'DUR') {
+                  @if (row.fileUrl) {
+                    <a [href]="row.fileUrl" target="_blank" rel="noopener" class="text-muted" [title]="row.fileName ?? 'View file'">
+                      <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
+                    </a>
+                  } @else {
+                    <i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i>{{ row.docId }}
+                  }
+                } @else if (row.ocrJobId) {
                   <a
                     [href]="ocrDownloadUrl(row.ocrJobId)"
                     target="_blank"
@@ -227,16 +255,20 @@
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
               <div class="d-flex align-items-center flex-wrap gap-2">
-                <a class="btn btn-outline-secondary btn-sm text-nowrap" [routerLink]="['../manual-review-history', row.requestId]">
+                <a
+                  class="btn btn-outline-secondary btn-sm text-nowrap"
+                  [routerLink]="['../manual-review-history', row.requestId]"
+                  [queryParams]="{ formType: row.formType }"
+                >
                   View Details
                 </a>
                 @if (row.ocrJobId) {
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    routerLink="/ocr/validation"
+                    [routerLink]="row.formType === 'DUR' ? '/ocr/dur' : '/ocr/validation'"
                     [queryParams]="{ jobId: row.ocrJobId }"
                     target="_blank"
-                    title="View OCR job log"
+                    title="View job log"
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>

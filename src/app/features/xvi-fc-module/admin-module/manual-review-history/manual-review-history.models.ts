@@ -1,4 +1,4 @@
-import { AnnualAccountSectionKey, ApiResponse } from '../manual-review-queue/manual-review-queue.models';
+import { AnnualAccountSectionKey, ApiResponse, ManualReviewFormType } from '../manual-review-queue/manual-review-queue.models';
 
 export type ManualReviewRequestStatus = 'PENDING' | 'APPROVED' | 'RETURNED';
 
@@ -7,16 +7,21 @@ export interface ManualReviewActorInfo {
   name: string | null;
 }
 
-/** One row of GET /xvi-fc/annual-account/manual-review-history — sourced from
- *  xvifc_ac_manual_review_requests, so unlike the queue it covers every status, not just PENDING. */
+/** One row, merged from GET /xvi-fc/annual-account/manual-review-history and
+ *  GET /xvi-fc/dur/manual-review-history — same shape, tagged by formType. `formId` is the
+ *  Annual Account or DUR document's own _id (renamed from the backends' annualAccountId/durId at
+ *  the point they're fetched, see ManualReviewHistoryService). Unlike the queue, this covers every
+ *  status, not just PENDING. */
 export interface ManualReviewHistoryRow {
   requestId: string;
-  annualAccountId: string;
+  formType: ManualReviewFormType;
+  formId: string;
   ulbId: string;
   ulbName: string | null;
   ulbCode: string | null;
   stateName: string | null;
-  section: AnnualAccountSectionKey;
+  /** null for DUR rows — DUR has no audited/unaudited section concept. */
+  section: AnnualAccountSectionKey | null;
   year: string | null;
   docId: string;
   uploadId: string;
@@ -37,9 +42,17 @@ export interface ManualReviewHistoryRow {
   decisionNote: string | null;
 }
 
+/** Raw shape returned by each backend before it's tagged with formType/formId here. */
+export interface RawManualReviewHistoryRow extends Omit<ManualReviewHistoryRow, 'formType' | 'formId' | 'section'> {
+  annualAccountId?: string;
+  durId?: string;
+  section?: AnnualAccountSectionKey;
+}
+
 export interface ManualReviewHistoryQuery {
   page: number;
   pageSize: number;
+  formType?: ManualReviewFormType;
   search?: string;
   status?: ManualReviewRequestStatus;
   stateId?: string;
@@ -55,13 +68,19 @@ export interface ManualReviewHistoryResult {
   page: number;
   pageSize: number;
   rows: ManualReviewHistoryRow[];
+  /** Form types whose rows are incomplete this call — either the backend failed outright, or it
+   *  had more matching rows than the client's page cap could fetch (see
+   *  ManualReviewHistoryService.fetchAllRows). */
+  failedSources: ManualReviewFormType[];
 }
 
 export type ManualReviewHistoryStatsRange = 'today' | 'week' | 'all';
 
-/** GET /xvi-fc/annual-account/manual-review-history/stats — summary counts for the history page's
- *  REQUESTED time-range tabs. `overturnRateWarning` is computed server-side (needs >=5 decided
- *  requests) so the frontend never has to duplicate that sample-size threshold. */
+/** GET .../manual-review-history/stats — summary counts for the history page's REQUESTED
+ *  time-range tabs. `overturnRateWarning` is computed from the same >=5-decided threshold the
+ *  backend uses, so the frontend's "All types" merge (summing both backends' counts) stays
+ *  consistent with what either backend would report alone (see
+ *  ManualReviewHistoryService.mergeStats). */
 export interface ManualReviewHistoryStats {
   range: ManualReviewHistoryStatsRange;
   received: number;
@@ -74,4 +93,4 @@ export interface ManualReviewHistoryStats {
   overturnRateWarning: boolean;
 }
 
-export type { ApiResponse };
+export type { ApiResponse, ManualReviewFormType };

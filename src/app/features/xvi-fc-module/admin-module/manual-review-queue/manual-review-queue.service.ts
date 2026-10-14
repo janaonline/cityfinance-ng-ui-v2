@@ -42,18 +42,25 @@ export class ManualReviewQueueService {
   private readonly durBaseUrl = `${environment.api.url2}xvi-fc/dur/`;
 
   getQueue(query: ManualReviewQueueQuery): Observable<ManualReviewQueueResult> {
+    const empty = of({ rows: [], failed: false, truncated: false });
     return forkJoin([
-      this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
-      this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
+      query.formType && query.formType !== 'ANNUAL_ACCOUNT'
+        ? empty
+        : this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query.search),
+      query.formType && query.formType !== 'DUR' ? empty : this.fetchAllRows(this.durBaseUrl, 'DUR', query.search),
     ]).pipe(
       map(([annualAccount, dur]) => {
         const merged = [...annualAccount.rows, ...dur.rows].sort(
           (a, b) => new Date(a.manualReviewRequestedAt ?? 0).getTime() - new Date(b.manualReviewRequestedAt ?? 0).getTime(),
         );
         const start = (query.page - 1) * query.pageSize;
+        // A source lands here either because it errored outright, or because it had more rows
+        // than MAX_PAGES could fetch — both mean rows/total below are incomplete for it, so both
+        // surface through the same "may be incomplete" banner instead of the cap silently passing
+        // off a partial list as the whole queue.
         const failedSources: ManualReviewFormType[] = [
-          ...(annualAccount.failed ? (['ANNUAL_ACCOUNT'] as const) : []),
-          ...(dur.failed ? (['DUR'] as const) : []),
+          ...(annualAccount.failed || annualAccount.truncated ? (['ANNUAL_ACCOUNT'] as const) : []),
+          ...(dur.failed || dur.truncated ? (['DUR'] as const) : []),
         ];
         return {
           total: merged.length,
@@ -67,7 +74,9 @@ export class ManualReviewQueueService {
   }
 
   /** Pages through every matching row for one backend — a single page's `total` tells us how many
-   *  more pages exist, so the rest are fetched in parallel rather than guessed at or truncated.
+   *  more pages exist, so the rest are fetched in parallel rather than guessed at. Capped at
+   *  MAX_PAGES as a runaway-loop guard; `truncated` tells the caller when that cap actually cut
+   *  off real rows, so it isn't silently reported as a complete list (see getQueue's failedSources).
    *  Errors are caught here, per backend, so a failure on one side (network blip, 500, etc.) never
    *  fails the whole combined forkJoin in getQueue() and hides the other side's rows — it just
    *  contributes zero rows and reports itself in `failed`. */
@@ -75,7 +84,7 @@ export class ManualReviewQueueService {
     baseUrl: string,
     formType: ManualReviewFormType,
     search?: string,
-  ): Observable<{ rows: ManualReviewQueueRow[]; failed: boolean }> {
+  ): Observable<{ rows: ManualReviewQueueRow[]; failed: boolean; truncated: boolean }> {
     const params = (page: number) => {
       let p = new HttpParams().set('page', String(page)).set('pageSize', String(PAGE_SIZE));
       if (search) p = p.set('search', search);
@@ -87,22 +96,39 @@ export class ManualReviewQueueService {
     return fetchPage(1)
       .pipe(
         switchMap((first) => {
-          const totalPages = Math.min(Math.ceil(first.data.total / PAGE_SIZE), MAX_PAGES);
-          if (totalPages <= 1) return of(first.data.rows);
+          const realTotalPages = Math.ceil(first.data.total / PAGE_SIZE);
+          const totalPages = Math.min(realTotalPages, MAX_PAGES);
+          const truncated = realTotalPages > MAX_PAGES;
+          if (totalPages <= 1) return of({ rawRows: first.data.rows, truncated });
 
           const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
           return forkJoin(remainingPages.map((page) => fetchPage(page).pipe(map((r) => r.data.rows)))).pipe(
-            map((rest) => [first.data.rows, ...rest].flat()),
+            map((rest) => ({ rawRows: [first.data.rows, ...rest].flat(), truncated })),
           );
         }),
-        map((rawRows) => ({ rows: rawRows.map((row) => this.tagRow(row, formType)), failed: false })),
+        map(({ rawRows, truncated }) => ({
+          rows: rawRows.map((row) => this.tagRow(row, formType)),
+          failed: false,
+          truncated,
+        })),
       )
       .pipe(
         catchError((err) => {
           console.error(`[manual-review-queue] failed to load ${formType} rows`, err);
-          return of({ rows: [], failed: true });
+          return of({ rows: [], failed: true, truncated: false });
         }),
       );
+  }
+
+  /** DUR-only: streams the document straight from S3 via an authenticated, non-expiring endpoint
+   *  (no signed-URL token) — Annual Account rows keep using the v3 vendor's own download route
+   *  instead (see ManualReviewQueueComponent.ocrDownloadUrl). */
+  downloadDurDocument(row: Pick<ManualReviewQueueRow, 'formId' | 'docId' | 'uploadId'>): Observable<Blob> {
+    const params = new HttpParams().set('uploadId', row.uploadId);
+    return this.http.get(`${this.durBaseUrl}${row.formId}/documents/${row.docId}/download`, {
+      params,
+      responseType: 'blob',
+    });
   }
 
   decide(row: Pick<ManualReviewQueueRow, 'formType' | 'formId' | 'section' | 'docId'>, payload: ManualReviewDecisionPayload): Observable<void> {

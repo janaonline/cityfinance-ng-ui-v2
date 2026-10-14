@@ -255,8 +255,8 @@ const POLL_INTERVAL_MS = 5000;
 const MAX_PDF_PAGES = 1000;
 /** Mirrors the backend's MAX_POST_REJECTION_ATTEMPTS (annual-account-status-access.util.ts). */
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
-/** Mirrors the backend's POST_REJECTION_COOLDOWN_DAYS (annual-account-status-access.util.ts). */
-const MANUAL_REVIEW_COOLDOWN_DAYS = 7;
+/** Mirrors the backend's POST_REJECTION_COOLDOWN_HOURS (annual-account-status-access.util.ts). */
+const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 /** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 
@@ -466,7 +466,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   }
 
   readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
-  readonly manualReviewCooldownDays = MANUAL_REVIEW_COOLDOWN_DAYS;
+  readonly manualReviewCooldownHours = MANUAL_REVIEW_COOLDOWN_HOURS;
   readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
 
   /** Whether the "Request Manual Review" button itself should show — covers both the original

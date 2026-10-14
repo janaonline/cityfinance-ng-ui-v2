@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, ValidatorFn } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -22,7 +22,7 @@ import { IULB } from '../../../../core/models/ulb';
 import { CommonService } from '../../../../core/services/common.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { OcrService, SelectOption } from '../../ocr.service';
-import { DurJobTracker, DurValidationResult } from '../dur-models';
+import { DurGrantType, DurJobTracker, DurValidationResult } from '../dur-models';
 
 interface GeminiPricing {
   inputPerM: number;
@@ -71,14 +71,24 @@ export class DurValidateComponent implements OnInit {
     { value: '2023-24', label: '2023-24' },
   ];
 
+  readonly grantTypes: Array<{ value: DurGrantType; label: string }> = [
+    { value: 'tied', label: 'Tied' },
+    { value: 'untied', label: 'Untied' },
+  ];
+
   readonly form = this.fb.group({
-    model: this.fb.nonNullable.control('gemini-3.1-pro-preview'),
+    model: this.fb.nonNullable.control('gemini-3.5-flash-lite'),
     financialYear: this.fb.control<string | null>(null),
+    grantType: this.fb.control<DurGrantType | null>(null, Validators.required),
     ulb: this.fb.control<IULB | string | null>(null, this.ulbSelectionValidator()),
   });
 
   selectedFile: File | null = null;
+  /** When true the PDF is read from S3 (`s3Path`) instead of a manual upload. */
+  useS3 = false;
+  readonly s3Path = this.fb.nonNullable.control('');
   readonly isSubmitting = signal(false);
+  readonly downloadingJobId = signal<string | null>(null);
   readonly jobs = signal<DurJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
   readonly filteredUlbs = signal<IULB[]>([]);
@@ -126,9 +136,24 @@ export class DurValidateComponent implements OnInit {
     this.fileInput?.nativeElement.click();
   }
 
+  onSourceToggle(useS3: boolean): void {
+    this.useS3 = useS3;
+    // Only one source is ever sent, so drop whatever the hidden option held.
+    if (useS3) {
+      this.clearFile();
+    } else {
+      this.s3Path.reset();
+    }
+  }
+
+  hasSource(): boolean {
+    return this.useS3 ? !!this.s3Path.value.trim() : !!this.selectedFile;
+  }
+
   submit(): void {
-    if (!this.selectedFile) {
-      this.utilityService.swalPopup('File required', 'Please choose a scanned DUR PDF.', 'error');
+    if (!this.hasSource()) {
+      const message = this.useS3 ? 'Please enter the S3 path of the DUR PDF.' : 'Please choose a scanned DUR PDF.';
+      this.utilityService.swalPopup(this.useS3 ? 'S3 path required' : 'File required', message, 'error');
       return;
     }
     if (this.form.invalid) {
@@ -136,17 +161,18 @@ export class DurValidateComponent implements OnInit {
       return;
     }
 
-    const { model, financialYear } = this.form.getRawValue();
-    const file = this.selectedFile;
+    const { model, financialYear, grantType } = this.form.getRawValue();
+    const source: File | string = this.useS3 ? this.s3Path.value.trim() : this.selectedFile!;
+    const filename = typeof source === 'string' ? source.split('/').pop() || source : source.name;
     this.isSubmitting.set(true);
     this.ocrService
-      .submitDurValidationJob(file, this.selectedUlb(), financialYear, model)
+      .submitDurValidationJob(source, this.selectedUlb(), financialYear, model, grantType)
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
           this.addJob({
             jobId: response.job_id,
-            filename: file.name,
+            filename,
             status: 'queued',
             message: response.message,
             progressStep: null,
@@ -157,9 +183,30 @@ export class DurValidateComponent implements OnInit {
           });
           this.startPolling(response.job_id);
           this.clearFile();
+          this.s3Path.reset();
         },
         error: (err) => {
           this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
+        },
+      });
+  }
+
+  downloadPdf(job: DurJobTracker): void {
+    this.downloadingJobId.set(job.jobId);
+    this.ocrService
+      .downloadDurJobFile(job.jobId)
+      .pipe(finalize(() => this.downloadingJobId.set(null)))
+      .subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = /\.pdf$/i.test(job.filename) ? job.filename : `${job.filename}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        error: () => {
+          this.utilityService.swalPopup('Download failed', 'Could not download the DUR PDF.', 'error');
         },
       });
   }
@@ -190,6 +237,52 @@ export class DurValidateComponent implements OnInit {
     if (matched === true) return 'bi-check-circle-fill';
     if (matched === false) return 'bi-x-circle-fill';
     return 'bi-dash-circle';
+  }
+
+  /**
+   * Turns a `failed_checks` entry from the API (`<code>: <detail>`) into a plain-English sentence.
+   * Unrecognised codes are returned unchanged.
+   */
+  describeFailedCheck(raw: string): string {
+    const sep = raw.indexOf(':');
+    const code = (sep === -1 ? raw : raw.slice(0, sep)).trim();
+    const detail = sep === -1 ? '' : raw.slice(sep + 1).trim();
+    const pair = /^expected '(.*)', extracted '(.*)'$/s.exec(detail);
+    const expected = pair?.[1] ?? '';
+    // The backend sends 'None' when nothing could be read from the document.
+    const extracted = pair && pair[2] !== 'None' && pair[2] !== '' ? pair[2] : null;
+
+    switch (code) {
+      case 'ulb_name_mismatch': {
+        // The expected ULB is sent as "name|slug|keywords"; only the name reads well in a sentence.
+        const expectedUlb = expected.split('|')[0].trim();
+        return extracted
+          ? `The ULB in the document is "${extracted}", but "${expectedUlb}" was expected.`
+          : `The ULB name could not be read from the document; "${expectedUlb}" was expected.`;
+      }
+      case 'financial_year_mismatch':
+        return extracted
+          ? `The financial year in the document is ${extracted}, but ${expected} was expected.`
+          : `The financial year could not be read from the document; ${expected} was expected.`;
+      case 'grant_type_mismatch': {
+        const withArticle = (type: string) => `${type === 'untied' ? 'an' : 'a'} ${type}`;
+        return extracted
+          ? `The document is ${withArticle(extracted)} grant DUR, but ${withArticle(expected)} grant DUR was expected.`
+          : `The grant type (tied or untied) could not be found in the document; ${expected} was expected.`;
+      }
+      case 'format_invalid':
+        return `The document does not follow the Annexure-VI DUR format. ${detail}`.trim();
+      case 'signature_missing':
+        return 'No handwritten signature was found on any page of the document.';
+      case 'signature_undetermined':
+        return 'The signature could not be confidently detected. Please check the scan manually.';
+      case 'seal_missing':
+        return 'No seal or stamp was found on any page of the document.';
+      case 'seal_undetermined':
+        return 'The seal could not be confidently detected. Please check the scan manually.';
+      default:
+        return raw;
+    }
   }
 
   formatDateTime(d: string | null): string {

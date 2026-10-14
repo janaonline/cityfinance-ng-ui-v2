@@ -2,11 +2,19 @@
   <h3 class="fw-bold my-4">Manual Review Queue</h3>
 
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
-    <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end">
+    <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end gap-2">
       <div class="mb-2">
         <label for="manual-review-queue-search" class="visually-hidden">Search</label>
         <input type="search" class="form-control" id="manual-review-queue-search"
           placeholder="Search by ULB name or code" formControlName="search" />
+      </div>
+      <div class="mb-2">
+        <label for="manual-review-queue-form-type" class="visually-hidden">Form type</label>
+        <select class="form-select" id="manual-review-queue-form-type" formControlName="formType">
+          <option value="">All types</option>
+          <option value="ANNUAL_ACCOUNT">Annual Account</option>
+          <option value="DUR">DUR</option>
+        </select>
       </div>
     </form>
     <div class="d-flex align-items-center gap-2 mb-2">
@@ -53,8 +61,14 @@
               <div class="text-muted small">
                 {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }} &middot;
                 {{ row.docId }} &middot;
-                @if (row.jobId) {
-                <a [href]="ocrDownloadUrl(row.jobId, row.formType)" class="ms-1 text-muted" target="_blank" rel="noopener"
+                @if (row.formType === 'DUR') {
+                <button type="button" class="btn btn-link p-0 border-0 ms-1 align-baseline"
+                  [disabled]="isDownloading(row)" [title]="row.fileName ?? 'View file'"
+                  (click)="onDownloadFile(row)">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                </button>
+                } @else if (row.jobId) {
+                <a [href]="ocrDownloadUrl(row.jobId)" class="ms-1 text-muted" target="_blank" rel="noopener"
                   [title]="row.fileName ?? 'View file'">
                   <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
                 </a>
@@ -110,9 +124,27 @@
                   >
                     <i class="bi bi-eye"></i> Log
                   </a>
+                }
+                @if (row.formType === 'DUR') {
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
+                    [disabled]="isDownloading(row)"
+                    (click)="onDownloadFile(row)"
+                    title="Download the uploaded document"
+                  >
+                    @if (isDownloading(row)) {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    } @else {
+                    <i class="bi bi-download"></i>
+                    }
+                    Download
+                  </button>
+                } @else if (row.jobId) {
                   <a
                     class="btn btn-outline-secondary btn-sm text-nowrap d-inline-flex align-items-center gap-1"
-                    [href]="ocrDownloadUrl(row.jobId, row.formType)"
+                    [href]="ocrDownloadUrl(row.jobId)"
+                    target="_blank"
                     title="Download the job's file"
                   >
                     <i class="bi bi-download"></i> Download

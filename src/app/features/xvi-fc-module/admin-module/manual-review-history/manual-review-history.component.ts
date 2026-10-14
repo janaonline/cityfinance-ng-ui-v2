@@ -13,7 +13,7 @@ import { StateService } from '../../../../core/services/state/state.service';
 import { IState } from '../../../../core/models/state/state';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
-import { AnnualAccountSectionKey } from '../manual-review-queue/manual-review-queue.models';
+import { AnnualAccountSectionKey, ManualReviewFormType } from '../manual-review-queue/manual-review-queue.models';
 import {
   ManualReviewHistoryRow,
   ManualReviewHistoryStats,
@@ -27,6 +27,16 @@ const ROWS_PAGE_SIZE = 20;
 const SECTION_LABEL: Record<AnnualAccountSectionKey, string> = {
   auditedData: 'Audited',
   unauditedData: 'Provisional',
+};
+
+const DUR_DOC_LABEL: Record<string, string> = {
+  tiedGrant: 'Tied Grant',
+  untiedGrant: 'Untied Grant',
+};
+
+const FORM_TYPE_LABEL: Record<ManualReviewFormType, string> = {
+  ANNUAL_ACCOUNT: 'Annual Account',
+  DUR: 'DUR',
 };
 
 const STATUS_LABEL: Record<ManualReviewRequestStatus, string> = {
@@ -74,6 +84,9 @@ export class ManualReviewHistoryComponent implements OnInit {
   readonly loadError = signal<string | null>(null);
   readonly states = signal<IState[]>([]);
   readonly isExporting = signal(false);
+  /** Non-empty when one backend (Annual Account and/or DUR) failed to load this time — the rows
+   *  shown are still whatever the other backend(s) returned successfully, not a full failure. */
+  readonly failedSources = signal<ManualReviewFormType[]>([]);
 
   /** Bumped on every loadRows() call so a late-arriving stale response can be told apart from the latest one. */
   private requestId = 0;
@@ -99,6 +112,7 @@ export class ManualReviewHistoryComponent implements OnInit {
 
   readonly filterForm = this.fb.group({
     search: [''],
+    formType: [''],
     status: [''],
     stateId: [''],
     requestedFrom: [''],
@@ -118,11 +132,41 @@ export class ManualReviewHistoryComponent implements OnInit {
     ['status', 'stateId', 'requestedFrom', 'requestedTo', 'breachedOnly'].forEach((controlName) => {
       this.filterForm.get(controlName)?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.applyFilters());
     });
+
+    // Form Type also drives the stat cards — otherwise the cards would always show a merged total
+    // while the table beneath shows just one form type, which reads as inconsistent.
+    this.filterForm.controls.formType.valueChanges
+      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.applyFilters();
+        this.loadStats();
+      });
   }
 
   private applyFilters(): void {
     this.page.set(1);
     this.loadRows();
+  }
+
+  private currentFormType(): ManualReviewFormType | undefined {
+    return (this.filterForm.getRawValue().formType || undefined) as ManualReviewFormType | undefined;
+  }
+
+  formLabel(row: ManualReviewHistoryRow): string {
+    return FORM_TYPE_LABEL[row.formType];
+  }
+
+  failedSourcesLabel(): string {
+    return this.failedSources()
+      .map((f) => FORM_TYPE_LABEL[f])
+      .join(' and ');
+  }
+
+  /** Section label for Annual Account rows, DUR document label for DUR rows — mirrors
+   *  ManualReviewQueueComponent.docLabel. */
+  docLabel(row: ManualReviewHistoryRow): string {
+    if (row.formType === 'DUR') return DUR_DOC_LABEL[row.docId] ?? row.docId;
+    return row.section ? SECTION_LABEL[row.section] : row.docId;
   }
 
   setStatsRange(range: ManualReviewHistoryStatsRange): void {
@@ -136,7 +180,7 @@ export class ManualReviewHistoryComponent implements OnInit {
     this.statsError.set(null);
 
     this.service
-      .getStats(this.statsRange())
+      .getStats(this.statsRange(), this.currentFormType())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (stats) => {
@@ -148,10 +192,6 @@ export class ManualReviewHistoryComponent implements OnInit {
           this.statsError.set('Unable to load review stats.');
         },
       });
-  }
-
-  sectionLabel(section: AnnualAccountSectionKey): string {
-    return SECTION_LABEL[section];
   }
 
   statusLabel(status: ManualReviewRequestStatus): string {
@@ -184,6 +224,7 @@ export class ManualReviewHistoryComponent implements OnInit {
   private currentFilters() {
     const raw = this.filterForm.getRawValue();
     return {
+      formType: this.currentFormType(),
       search: raw.search?.trim() || undefined,
       status: (raw.status as ManualReviewRequestStatus) || undefined,
       stateId: raw.stateId || undefined,
@@ -211,6 +252,7 @@ export class ManualReviewHistoryComponent implements OnInit {
           }
           this.rows.set(result.rows);
           this.total.set(result.total);
+          this.failedSources.set(result.failedSources);
           this.isLoading.set(false);
         },
         error: () => {
@@ -229,11 +271,13 @@ export class ManualReviewHistoryComponent implements OnInit {
 
   /** Excel dump of every row matching the current filters, ignoring pagination. */
   exportToExcel(): void {
-    if (this.isExporting()) return;
+    const formType = this.currentFormType();
+    if (this.isExporting() || !formType) return;
     this.isExporting.set(true);
 
+    const { formType: _formType, ...filters } = this.currentFilters();
     this.service
-      .downloadDump(this.currentFilters())
+      .downloadDump(formType, filters)
       .pipe(finalize(() => this.isExporting.set(false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (blob) => {
@@ -246,7 +290,15 @@ export class ManualReviewHistoryComponent implements OnInit {
       });
   }
 
-  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed. */
+  /** Export requires a specific Form Type — merging two backends' Excel workbooks isn't practical
+   *  client-side, so the button is disabled until "All types" is narrowed down. */
+  canExport(): boolean {
+    return !!this.currentFormType();
+  }
+
+  /** Direct download link for the OCR job's source file — a plain URL, no auth header needed.
+   *  Annual Account only: the vendor never built an equivalent route for DUR jobs, which is why
+   *  DUR rows use `row.fileUrl` (our own signed download) in the template instead. */
   ocrDownloadUrl(ocrJobId: string): string {
     return `${environment.api.url3}ocr-validation/jobs/${ocrJobId}/download`;
   }

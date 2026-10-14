@@ -78,6 +78,15 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>State</mat-label>
+              <mat-select formControlName="state">
+                @for (s of states; track s.value) {
+                <mat-option [value]="s.value">{{ s.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Audit type</mat-label>
               <mat-select formControlName="auditType">
                 @for (at of auditTypes; track at.value) {
@@ -456,8 +465,8 @@
                       <tbody>
                         @if (job.result.processing_time_seconds !== null) {
                         <tr>
-                          <td class="text-secondary fw-medium ps-0" style="width: 45%">Total Time</td>
-                          <td class="fw-medium pe-0">
+                          <td class="text-secondary fw-bold fs-6 ps-0" style="width: 45%">Total Time</td>
+                          <td class="fw-bold fs-6 pe-0">
                             {{ job.result.processing_time_seconds | number: '1.1-1' }} s
                           </td>
                         </tr>

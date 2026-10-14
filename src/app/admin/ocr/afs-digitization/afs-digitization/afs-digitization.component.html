@@ -1,0 +1,692 @@
+<div class="wrapper app-wrapper container-fluid">
+  <section class="digitization-page">
+    <!-- Hero -->
+    <div class="hero-card text-white rounded-4 p-4">
+      <h1 class="h4 mb-2">AFS Digitization</h1>
+      <p class="small opacity-75 mb-0 lh-base">
+        Upload a scanned ULB financial-statement PDF. Amazon Textract extracts tables and key/value pairs into an
+        Excel workbook (<strong>confidence score</strong>), then Gemini re-reads the source PDF and cross-checks
+        every extracted value (<strong>accuracy score</strong>). Optionally, Gemini also checks the arithmetic of the
+        digitized output — totals tally, assets equal liabilities, and sign/zero/numeric rules
+        (<strong>arithmetic assessment</strong>) — and identifies each document in the PDF with its page range,
+        flagging merged or duplicate documents (<strong>detected document type</strong>).
+      </p>
+    </div>
+
+    <!-- Upload form -->
+    <mat-card class="upload-card">
+      <mat-card-content>
+        <form [formGroup]="form" class="upload-form">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>OCR engine</mat-label>
+              <mat-select formControlName="ocrEngine">
+                @for (e of ocrEngines; track e.value) {
+                  <mat-option [value]="e.value">{{ e.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini cross-check model</mat-label>
+              <mat-select formControlName="geminiModel">
+                @for (m of geminiModels; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.geminiModel.invalid && form.controls.geminiModel.touched) {
+                <mat-error>Model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Document type (optional)</mat-label>
+              <mat-select formControlName="docType">
+                @for (dt of documentTypes; track dt.value) {
+                  <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Financial year (optional)</mat-label>
+              <mat-select formControlName="financialYear">
+                @for (y of financialYears; track y.value) {
+                  <mat-option [value]="y.value">{{ y.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>ULB name (optional)</mat-label>
+              <input type="text" matInput formControlName="ulbName" placeholder="Search ULB name or code"
+                autocomplete="off" [matAutocomplete]="ulbAuto" />
+              <mat-autocomplete #ulbAuto="matAutocomplete" [displayWith]="displayUlbName"
+                (optionSelected)="onUlbSelected($event)">
+                @for (ulb of filteredUlbs(); track ulb._id) {
+                <mat-option [value]="ulb">{{ ulb.name }} ({{ ulb.code }})</mat-option>
+                }
+                @if (ulbSearchInProgress()) {
+                <mat-option disabled>Searching...</mat-option>
+                } @else if (form.controls.ulbName.value && filteredUlbs().length === 0) {
+                <mat-option disabled>No matching ULB found.</mat-option>
+                }
+              </mat-autocomplete>
+              @if (selectedUlb()) {
+              <mat-hint>{{ selectedUlb()?.code }}</mat-hint>
+              } @else if (
+              (form.controls.ulbName.value ?? '').toString().length > 0 &&
+              (form.controls.ulbName.value ?? '').toString().length < 2 ) {
+              <mat-hint>Type at least 2 characters to search.</mat-hint>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini validation</mat-label>
+              <mat-select formControlName="enableValidation">
+                <mat-option [value]="true">Enabled — cross-check with Gemini now</mat-option>
+                <mat-option [value]="false">Disabled — OCR only (validate later)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini Arithmetic Validations</mat-label>
+              <mat-select formControlName="enableArithmeticValidation">
+                <mat-option [value]="true">Enabled — check totals, balances &amp; amounts now</mat-option>
+                <mat-option [value]="false">Disabled — skip (run later)</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Gemini Document Classification</mat-label>
+              <mat-select formControlName="enableDocumentClassification">
+                <mat-option [value]="true">Enabled — detect document types &amp; page ranges</mat-option>
+                <mat-option [value]="false">Disabled — skip</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="notes-field">
+              <mat-label>Notes (optional)</mat-label>
+              <textarea matInput formControlName="notes" rows="2" [maxlength]="maxNotesLength"
+                placeholder="Anything worth remembering about this upload"></textarea>
+              <mat-hint align="end">{{ form.controls.notes.value.length }} / {{ maxNotesLength }}</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <!-- Source: S3 path or manual upload -->
+          <mat-checkbox class="source-toggle" color="primary" [checked]="useS3" (change)="onSourceToggle($event.checked)">
+            Use S3 path (PDF already in the CityFinance bucket)
+          </mat-checkbox>
+
+          @if (useS3) {
+          <mat-form-field appearance="outline" class="s3-path-field">
+            <mat-label>S3 path</mat-label>
+            <input matInput [formControl]="s3Path" placeholder="objects/abc.pdf" />
+            <mat-hint>Object key, s3:// URI or the full S3 URL of the PDF.</mat-hint>
+          </mat-form-field>
+          } @else {
+          <!-- File picker -->
+          <div class="file-picker">
+            <input #fileInput class="file-input-hidden" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
+
+            <button type="button" class="file-drop-box" (click)="openFilePicker()">
+              @if (selectedFile) {
+                <span class="file-box-name">{{ selectedFile.name }}</span>
+                <span class="file-box-meta">Click to replace</span>
+              } @else {
+                <span class="file-box-placeholder">Click to choose a scanned financial-statement PDF</span>
+                <span class="file-box-meta">Single file only</span>
+              }
+            </button>
+
+            <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB.</p>
+          </div>
+          }
+
+          <!-- Actions -->
+          <div class="actions">
+            @if (useS3) {
+            <button mat-stroked-button type="button" (click)="s3Path.reset()">Clear Path</button>
+            } @else {
+            <button mat-stroked-button type="button" (click)="clearFile()">Clear</button>
+            }
+            <button mat-flat-button color="primary" type="button"
+              [disabled]="!hasSource() || form.invalid || isSubmitting()" (click)="submit()">
+              @if (isSubmitting()) {
+                Submitting...
+              } @else {
+                Digitize PDF
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Jobs section -->
+    @if (hasJobs()) {
+      <div class="jobs-list">
+        <div class="jobs-header">
+          <h2 class="jobs-title">Digitization Jobs</h2>
+        </div>
+
+        @for (job of jobs(); track job.jobId) {
+          <mat-card class="job-card" [class.job-card--completed]="job.status === 'completed'"
+            [class.job-card--failed]="job.status === 'failed'">
+            <mat-card-content>
+              <div class="job-header">
+                <div class="job-header__info">
+                  <span class="status-chip" [class.status-chip--queued]="job.status === 'queued'"
+                    [class.status-chip--processing]="job.status === 'processing'"
+                    [class.status-chip--completed]="job.status === 'completed'"
+                    [class.status-chip--failed]="job.status === 'failed'">
+                    {{ getStatusLabel(job.status) }}
+                  </span>
+                  <span class="job-filename">{{ job.filename }}</span>
+                  <span class="job-id-chip">
+                    Job ID: {{ job.jobId }}
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      [attr.aria-label]="isCopied('Job ID', job.jobId) ? 'Copied' : 'Copy job ID'"
+                      [attr.title]="isCopied('Job ID', job.jobId) ? 'Copied' : 'Copy job ID'"
+                      (click)="copyValue('Job ID', job.jobId)"
+                    >
+                      <mat-icon>{{ isCopied('Job ID', job.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="copy-btn"
+                      [attr.aria-label]="isCopied('Job Link', getJobLink(job.jobId)) ? 'Copied' : 'Copy link to this job'"
+                      [attr.title]="isCopied('Job Link', getJobLink(job.jobId)) ? 'Copied' : 'Copy link to this job'"
+                      (click)="copyValue('Job Link', getJobLink(job.jobId))"
+                    >
+                      <mat-icon>{{ isCopied('Job Link', getJobLink(job.jobId)) ? 'check' : 'link' }}</mat-icon>
+                    </button>
+                  </span>
+                </div>
+                <div class="job-header__actions">
+                  @if (job.excelS3Key) {
+                    <button mat-stroked-button type="button" [disabled]="downloadingJobId() === job.jobId"
+                      (click)="downloadExcel(job)">
+                      @if (downloadingJobId() === job.jobId) { Downloading... } @else { Download Excel }
+                    </button>
+                  }
+                  <button mat-stroked-button type="button" [disabled]="downloadingPdfJobId() === job.jobId"
+                    (click)="downloadPdf(job)">
+                    @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
+                  </button>
+                  <button mat-stroked-button type="button" [disabled]="editingNotesJobId() === job.jobId"
+                    (click)="startEditNotes(job)">
+                    {{ job.notes ? 'Update Notes' : 'Add Notes' }}
+                  </button>
+                  @if (job.status === 'completed') {
+                    <button mat-stroked-button type="button" [disabled]="revalidatingJobId() === job.jobId"
+                      title="Re-run Gemini validation only — the Textract extraction is reused unchanged"
+                      (click)="revalidateJob(job)">
+                      @if (revalidatingJobId() === job.jobId) { Queuing... } @else { Rerun Validation }
+                    </button>
+                    <button mat-stroked-button type="button" [disabled]="revalidatingArithmeticJobId() === job.jobId"
+                      title="Re-run Gemini arithmetic validations only — Textract and the cross-check are reused unchanged"
+                      (click)="revalidateArithmetic(job)">
+                      @if (revalidatingArithmeticJobId() === job.jobId) { Queuing... } @else { Rerun Arithmetic }
+                    </button>
+                    <button mat-stroked-button type="button" [disabled]="regeneratingJobId() === job.jobId"
+                      title="Rebuild the Excel workbook from the stored result — no Textract/Gemini calls"
+                      (click)="regenerateExcel(job)">
+                      @if (regeneratingJobId() === job.jobId) { Regenerating... } @else { Regenerate Excel }
+                    </button>
+                  }
+                  <button mat-icon-button type="button" (click)="toggleResult(job.jobId)"
+                    [attr.aria-label]="job.showResult ? 'Collapse' : 'Expand'">
+                    <mat-icon>{{ job.showResult ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <p class="job-message">
+                {{ job.message }}
+                @if (job.status === 'processing' && job.progressStep) {
+                  <span class="job-progress-step"> — {{ job.progressStep }}</span>
+                }
+              </p>
+              @if (editingNotesJobId() === job.jobId) {
+                <div class="notes-editor">
+                  <mat-form-field appearance="outline" class="notes-editor__field">
+                    <mat-label>Notes</mat-label>
+                    <textarea matInput [formControl]="notesDraft" rows="3" [maxlength]="maxNotesLength"
+                      placeholder="Anything worth remembering about this upload"></textarea>
+                    <mat-hint align="end">{{ notesDraft.value.length }} / {{ maxNotesLength }}</mat-hint>
+                  </mat-form-field>
+                  <div class="notes-editor__actions">
+                    <button mat-stroked-button type="button" [disabled]="savingNotesJobId() === job.jobId"
+                      (click)="cancelEditNotes()">Cancel</button>
+                    <button mat-flat-button color="primary" type="button"
+                      [disabled]="savingNotesJobId() === job.jobId || notesDraft.invalid" (click)="saveNotes(job)">
+                      @if (savingNotesJobId() === job.jobId) { Saving... } @else { Save Notes }
+                    </button>
+                  </div>
+                </div>
+              } @else if (job.notes) {
+                <p class="job-notes"><span class="job-notes__label">Notes:</span> {{ job.notes }}</p>
+              }
+
+              @if (job.showResult && job.result) {
+                <div class="job-result">
+                  <!-- Score cards -->
+                  <div class="score-cards">
+                    <div class="score-card">
+                      <span class="score-card__label">Confidence Score ({{ ocrEngineLabel(job.result.ocr_engine) }})</span>
+                      <span class="score-card__value" [ngClass]="getScoreClass(job.result.confidence_score)">
+                        {{ job.result.confidence_score !== null ? (job.result.confidence_score | number: '1.0-1') + '%' : '—' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Accuracy Score (Gemini cross-check)</span>
+                      <span class="score-card__value" [ngClass]="getScoreClass(job.result.accuracy_score)">
+                        {{ job.result.accuracy_score !== null ? (job.result.accuracy_score | number: '1.0-1') + '%' : '—' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Overall Assessment</span>
+                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.overall_assessment)">
+                        {{ job.result.overall_assessment ?? 'UNVERIFIED' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Arithmetic Assessment (Gemini)</span>
+                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.arithmetic_assessment)">
+                        {{ job.result.arithmetic_assessment ?? 'NOT RUN' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Detected Document Type (Gemini)</span>
+                      <span class="assessment-badge" [ngClass]="getDocumentTypeClass(job.result.detected_document_type)">
+                        {{ documentTypeLabel(job.result.detected_document_type) }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Extraction summary -->
+                  <div class="summary-grid">
+                    <div class="summary-item">
+                      <span class="summary-item__label">Pages</span>
+                      <span class="summary-item__value">{{ job.result.ocr_extraction.page_count }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">File Size</span>
+                      <span class="summary-item__value">{{ formatFileSize(job.result.file_size_bytes) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Tables Extracted</span>
+                      <span class="summary-item__value">{{ job.result.ocr_extraction.tables.length }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">OCR Engine</span>
+                      <span class="summary-item__value">{{ ocrEngineLabel(job.result.ocr_engine) }}</span>
+                    </div>
+                    @if (job.result.ocr_engine === 'textract') {
+                      <div class="summary-item">
+                        <span class="summary-item__label">Key-Value Pairs</span>
+                        <span class="summary-item__value">{{ job.result.ocr_extraction.key_value_pairs.length }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-item__label">Low-Confidence Blocks</span>
+                        <span class="summary-item__value">
+                          {{ job.result.ocr_extraction.low_confidence_block_count }} / {{ job.result.ocr_extraction.total_block_count }}
+                        </span>
+                      </div>
+                    }
+                    @if (job.result.gemini_validation) {
+                      <div class="summary-item">
+                        <span class="summary-item__label">Gemini Fields Checked</span>
+                        <span class="summary-item__value">{{ job.result.gemini_validation.total_fields_checked }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-item__label">Matched / Mismatched</span>
+                        <span class="summary-item__value">
+                          {{ job.result.gemini_validation.matched_fields }} / {{ job.result.gemini_validation.mismatched_fields }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Task timings -->
+                  <div class="usage-section">
+                    <h5>Task Timings</h5>
+                    <div class="summary-grid">
+                      @for (t of getTaskTimings(job.result); track t.label) {
+                        <div class="summary-item" [class.summary-item--total]="t.label === 'Total'">
+                          <span class="summary-item__label">{{ t.label }}</span>
+                          @let duration = formatDuration(t.seconds);
+                          <span class="summary-item__value">
+                            {{ duration.main }}
+                            @if (duration.exact) {
+                              <span class="summary-item__sub">({{ duration.exact }})</span>
+                            }
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  @if (job.result.gemini_validation?.summary) {
+                    <p class="gemini-summary">{{ job.result.gemini_validation?.summary }}</p>
+                  }
+
+                  <!-- Mismatches -->
+                  @if (job.result.gemini_validation && mismatchedChecks(job.result.gemini_validation.field_checks).length > 0) {
+                    <div class="mismatches">
+                      <h5>Mismatches Found ({{ mismatchedChecks(job.result.gemini_validation.field_checks).length }})</h5>
+                      <table class="mismatch-table">
+                        <thead>
+                          <tr>
+                            <th>Location</th>
+                            <th>Extracted</th>
+                            <th>Source (PDF)</th>
+                            <th>Note</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (check of mismatchedChecks(job.result.gemini_validation.field_checks); track $index) {
+                            <tr>
+                              <td>{{ check.location }}</td>
+                              <td>{{ check.extracted_value ?? '—' }}</td>
+                              <td>{{ check.source_value ?? '—' }}</td>
+                              <td>{{ check.note ?? '—' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  <!-- Document classification -->
+                  @if (job.result.document_classification; as classification) {
+                    <div class="usage-section">
+                      <h5>
+                        Documents in this PDF ({{ classification.document_count }})
+                        @if (classification.multiple_documents_detected) {
+                          <span class="assessment-badge assessment--warning">Multiple documents detected</span>
+                        }
+                        @if (classification.duplicate_documents_detected) {
+                          <span class="assessment-badge assessment--fail">Duplicate detected</span>
+                        }
+                      </h5>
+                      @if (classification.segments.length > 0) {
+                        <table class="segment-table">
+                          <thead>
+                            <tr>
+                              <th>Document Type</th>
+                              <th>Pages</th>
+                              <th>Title</th>
+                              <th>Duplicate</th>
+                              <th>Confidence</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (seg of classification.segments; track $index) {
+                              <tr [class.segment-row--duplicate]="seg.is_duplicate">
+                                <td>{{ documentTypeLabel(seg.document_type) }}</td>
+                                <td>{{ formatPageRange(seg.start_page, seg.end_page) }}</td>
+                                <td>{{ seg.title ?? '—' }}</td>
+                                <td>{{ seg.is_duplicate ? 'Yes' : 'No' }}</td>
+                                <td>{{ seg.confidence !== null ? (seg.confidence * 100 | number: '1.0-0') + '%' : '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      }
+                      @if (classification.unclassified_pages.length > 0) {
+                        <p class="gemini-summary">
+                          Unclassified pages: {{ classification.unclassified_pages.join(', ') }}
+                        </p>
+                      }
+                    </div>
+
+                    @if (classification.summary) {
+                      <p class="gemini-summary">{{ classification.summary }}</p>
+                    }
+                  }
+
+                  <!-- Arithmetic validations -->
+                  @if (job.result.arithmetic_validation; as arithmetic) {
+                    <div class="usage-section">
+                      <h5>
+                        Arithmetic Validations
+                        ({{ arithmetic.passed_checks }} passed / {{ arithmetic.failed_checks }} failed
+                        / {{ arithmetic.not_applicable_checks }} n/a
+                        @if (arithmetic.detected_doc_type) { · detected {{ arithmetic.detected_doc_type }} })
+                      </h5>
+                      @if (arithmetic.failed_checks > 0) {
+                        <p class="gemini-summary">
+                          @if (arithmetic.pdf_used) {
+                            Failures: {{ arithmetic.source_document_failures }} in the source document
+                            (figures match the PDF) · {{ arithmetic.digitization_failures }} from digitization
+                            (figures differ from the PDF).
+                          } @else {
+                            Source PDF not used — failures are not attributed to source vs digitization.
+                          }
+                        </p>
+                      }
+                      <div class="summary-grid">
+                        @for (r of ruleResultEntries(arithmetic.rule_results); track r.rule) {
+                          <div class="summary-item">
+                            <span class="summary-item__label">{{ r.label }}</span>
+                            <span class="assessment-badge" [ngClass]="getAssessmentClass(r.result)">
+                              {{ r.result.replace('_', ' ') }}
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    @if (arithmetic.summary) {
+                      <p class="gemini-summary">{{ arithmetic.summary }}</p>
+                    }
+
+                    @if (failedArithmeticChecks(arithmetic.checks).length > 0) {
+                      <div class="mismatches">
+                        <h5>Arithmetic Failures ({{ failedArithmeticChecks(arithmetic.checks).length }})</h5>
+                        <table class="mismatch-table">
+                          <thead>
+                            <tr>
+                              <th>Rule</th>
+                              <th>Location</th>
+                              <th>Reported</th>
+                              <th>Computed / Compared</th>
+                              <th>Difference</th>
+                              <th>Error Source</th>
+                              <th>Note</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (check of failedArithmeticChecks(arithmetic.checks); track $index) {
+                              <tr>
+                                <td>{{ ruleLabel(check.rule) }}</td>
+                                <td>{{ check.location || '—' }}</td>
+                                <td>{{ check.reported_value ?? check.raw_value ?? '—' }}</td>
+                                <td>{{ check.computed_value ?? '—' }}</td>
+                                <td>{{ check.difference ?? '—' }}</td>
+                                <td>{{ errorSourceLabel(check) }}</td>
+                                <td>{{ check.note ?? check.description ?? '—' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
+                  }
+
+                  @if (job.result.error_messages.length) {
+                    <div class="error-messages">
+                      <h5>Notes</h5>
+                      <ul>
+                        @for (msg of job.result.error_messages; track $index) {
+                          <li>{{ msg }}</li>
+                        }
+                      </ul>
+                    </div>
+                  }
+
+                  <!-- Usage (Textract + Gemini) -->
+                  <div class="row g-3">
+                    <div class="col-lg-4">
+                    <div class="usage-section">
+                      <h5>{{ ocrEngineLabel(job.result.ocr_engine) }} Usage</h5>
+                      <div class="usage-steps-grid">
+                        <div class="usage-step-card">
+                          <div class="usage-step-header">
+                            <div class="usage-step-title">ocr_extraction</div>
+                            <div class="usage-step-model">{{ job.result.ocr_extraction.feature_types.join(' + ') }}</div>
+                          </div>
+
+                          <div class="usage-token-row">
+                            <span class="usage-token-label">Pages Billed</span>
+                            <span class="usage-token-value">{{ job.result.ocr_extraction.page_count }}</span>
+                          </div>
+
+                          @if (job.result.ocr_extraction.cost_usd !== null) {
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">Est. Cost</span>
+                              <span class="usage-cost-value">
+                                ~${{ job.result.ocr_extraction.cost_usd.toFixed(4) }}
+                                <span class="usage-cost-inr">(₹{{ job.result.ocr_extraction.price_inr!.toFixed(2) }})</span>
+                              </span>
+                            </div>
+                            <p class="usage-cost-formula">
+                              {{ job.result.ocr_extraction.page_count }} pages × ${{ (job.result.ocr_extraction.cost_usd / job.result.ocr_extraction.page_count).toFixed(4) }}/page
+                            </p>
+                          } @else {
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">Est. Cost</span>
+                              <span class="usage-cost-na">Pricing N/A</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  @let usageSteps = getUsageSteps(job.result);
+                  @if (usageSteps.length) {
+                    <div class="col-lg-8">
+                      <div class="usage-section">
+                        <h5>Token Usage</h5>
+                        <div class="usage-steps-grid">
+                          @for (step of usageSteps; track step.name) {
+                          <div class="usage-step-card">
+                            <div class="usage-step-header">
+                              <div class="usage-step-title">{{ formatKey(step.name) }}</div>
+                              @if (step.model) {
+                                <div class="usage-step-model">{{ step.model }}</div>
+                              }
+                            </div>
+
+                            <div class="usage-token-row">
+                              <span class="usage-token-label">Prompt</span>
+                              <span class="usage-token-value">{{ step.promptTokens ?? '—' }}</span>
+                            </div>
+                            <div class="usage-token-row">
+                              <span class="usage-token-label">Output</span>
+                              <span class="usage-token-value">{{ step.candidatesTokens ?? '—' }}</span>
+                            </div>
+                            <div class="usage-token-row">
+                              <span class="usage-token-label">Thoughts</span>
+                              <span class="usage-token-value">{{ step.thoughtsTokens ?? 0 }}</span>
+                            </div>
+                            <div class="usage-token-row usage-token-row--total">
+                              <span class="usage-token-label">Total</span>
+                              <span class="usage-token-value">{{ step.totalTokens ?? '—' }}</span>
+                            </div>
+
+                            @if (step.promptDetails.length) {
+                              <div class="usage-modality-row">
+                                @for (d of step.promptDetails; track d.modality) {
+                                  <span class="usage-modality-chip">{{ d.modality }}: {{ d.token_count }}</span>
+                                }
+                              </div>
+                            }
+
+                            @if (step.estimatedCostUsd !== null) {
+                              <div class="usage-cost-row">
+                                <span class="usage-cost-label">Est. Cost</span>
+                                <span class="usage-cost-value">
+                                  ~${{ step.estimatedCostUsd.toFixed(6) }}
+                                  <span class="usage-cost-inr">(₹{{ step.estimatedCostInr!.toFixed(4) }})</span>
+                                </span>
+                              </div>
+                              <p class="usage-cost-formula">
+                                ({{ step.promptTokens ?? 0 }} × ${{ step.pricing!.inputPerM }}/M +
+                                {{ step.candidatesTokens ?? 0 }} × ${{ step.pricing!.outputPerM }}/M{{
+                                  (step.thoughtsTokens ?? 0) > 0
+                                    ? ' + ' + step.thoughtsTokens + ' × $' + step.pricing!.thinkingPerM + '/M'
+                                    : ''
+                                }}) ÷ 1,000,000
+                              </p>
+                            } @else {
+                              <div class="usage-cost-row">
+                                <span class="usage-cost-label">Est. Cost</span>
+                                <span class="usage-cost-na">Pricing N/A</span>
+                              </div>
+                            }
+                          </div>
+                          }
+                        </div>
+
+                        @if (usageSteps.length > 1) {
+                          @let usageTotal = getUsageTotal(usageSteps);
+                          <div class="usage-total-card">
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Thought tokens</span>
+                              <span class="usage-token-value">{{ usageTotal.thoughtsTokens }}</span>
+                            </div>
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Total tokens</span>
+                              <span class="usage-token-value">{{ usageTotal.totalTokens }}</span>
+                            </div>
+                            <div class="usage-cost-row">
+                              <span class="usage-cost-label">All Gemini calls — Est. cost</span>
+                              @if (usageTotal.costUsd !== null) {
+                                <span class="usage-cost-value">
+                                  ~${{ usageTotal.costUsd.toFixed(6) }}
+                                  <span class="usage-cost-inr">(₹{{ usageTotal.costInr!.toFixed(4) }})</span>
+                                </span>
+                              } @else {
+                                <span class="usage-cost-na">Pricing N/A</span>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                  @let totalCost = getJobTotalCost(job.result);
+                  <div class="usage-total-card job-total-cost">
+                    <div class="usage-cost-row">
+                      <span class="usage-cost-label">Total Cost (OCR + Gemini)</span>
+                      <span class="job-total-cost__value">
+                        {{ totalCost.complete ? '' : '≥ ' }}₹{{ totalCost.inr | number: '1.2-2' }}
+                      </span>
+                    </div>
+                    <p class="usage-cost-formula">
+                      {{ totalCost.parts }}
+                      @if (!totalCost.complete) { · some pricing unavailable, total is a lower bound }
+                    </p>
+                  </div>
+
+                  <p class="job-timing">
+                    Processed in {{ job.result.processing_time_seconds | number: '1.1-1' }}s
+                    · Job ID: <span class="job-id">{{ job.jobId }}</span>
+                  </p>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+    }
+  </section>
+</div>

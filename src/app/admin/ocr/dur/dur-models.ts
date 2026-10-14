@@ -6,9 +6,12 @@ export interface DurJobSubmitResponse {
   message: string;
 }
 
+export type DurGrantType = 'tied' | 'untied';
+
 export interface DurExpectedFields {
   ulb_name: string | null;
   financial_year: string | null;
+  grant_type: DurGrantType | null;
 }
 
 export interface DurExtraction {
@@ -16,6 +19,7 @@ export interface DurExtraction {
   ulb_name: string | null;
   financial_year: string | null;
   grant_financial_year: string | null;
+  grant_type: DurGrantType | null;
   is_dur_format: boolean | null;
   format_issues: string[];
   signature_present: boolean | null;
@@ -26,8 +30,10 @@ export interface DurExtraction {
 export interface DurChecks {
   ulb_name_match: boolean | null;
   financial_year_match: boolean | null;
+  grant_type_match: boolean | null;
   format_valid: boolean | null;
   signature_present: boolean | null;
+  seal_present: boolean | null;
   overall_valid: boolean;
 }
 

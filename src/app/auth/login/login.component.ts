@@ -543,7 +543,9 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
-    this.loginService.loadRecaptchaScript();
+    // Fresh Google client on every visit — one left over from before a login/logout round trip
+    // hands back blank tokens ("reCAPTCHA verification failed").
+    this.loginService.resetRecaptcha();
     this.loginService.showRecaptchaBadge();
   }
 
@@ -556,8 +558,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.loginService.hideRecaptchaBadge();
-    this.grantEnvelopeChart?.destroy();
-    this.scrollRevealObserver?.disconnect();
+    this.loginService.teardownRecaptcha();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────
@@ -742,8 +743,14 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           const user = this.loginService.extractUser(res) ?? this.loginService.getCurrentUser();
           void this.loginService.navigateAfterLogin(user, this.typeKey());
         },
-        error: (err: { error?: { message?: string } }) => {
-          const message = err?.error?.message;
+        error: (err: { error?: { message?: string }; message?: string }) => {
+          // err.error.message is an HttpErrorResponse from the backend; err.message is a plain
+          // Error thrown client-side (e.g. RecaptchaService.execute()'s blank-token rejection,
+          // once retry(1) in signInWithPassword has also given up) — check both.
+          const message = err?.error?.message ?? err?.message;
+          // Every failure (bad credentials or a reCAPTCHA failure) gets a fresh Google client for
+          // the next attempt, instead of asking the same possibly-stuck one again.
+          this.loginService.resetRecaptcha();
           // Cantonment-Board ULBs get sent straight to the dedicated not-eligible page instead of an inline error.
           if (message === 'Cantonment boards are not eligible for XVIFC') {
             void this.router.navigate(['/xvifc-not-eligible']);

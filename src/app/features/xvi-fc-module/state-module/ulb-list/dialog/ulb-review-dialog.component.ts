@@ -70,6 +70,8 @@ export class UlbReviewDialogComponent {
   ) {
     this.fields = this.buildFields(this.data.ulb);
     this.gazetteFile = normalizeUploadedFileMetadata(this.data.ulb.gazetteNotificationFile);
+    this.showYearAccess =
+      !this.data.ulb.isExistingUser && new UserUtility().getLoggedInUserDetails()?.role === 'ADMIN';
     if (this.showYearAccess) this.loadYearAccess();
   }
 
@@ -80,10 +82,11 @@ export class UlbReviewDialogComponent {
    * Also ADMIN-only: `GET/PATCH master/ulb/:id/year-access` are `@Roles([Role.ADMIN])` on the
    * backend - a STATE user (who can also open this dialog via "View") would otherwise get a 403
    * the moment the dialog tries to fetch it.
+   * Computed once in the constructor (not a getter) - the ULB and logged-in role are fixed for
+   * the dialog's lifetime, and a getter here would be re-evaluated by the template on every
+   * change-detection cycle, re-instantiating UserUtility each time.
    */
-  get showYearAccess(): boolean {
-    return !this.data.ulb.isExistingUser && new UserUtility().getLoggedInUserDetails()?.role === 'ADMIN';
-  }
+  readonly showYearAccess: boolean;
 
   /** Mirrors the Register ULB page's field set (see DEFAULT_ULB_REGISTER_SECTIONS server-side) — not the full Ulb schema. */
   private buildFields(ulb: IUlbMaster): IReviewField[] {

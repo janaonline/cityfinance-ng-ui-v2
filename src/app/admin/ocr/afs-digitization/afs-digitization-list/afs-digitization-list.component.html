@@ -1,0 +1,363 @@
+<div class="wrapper app-wrapper container-fluid">
+  <section class="digitization-list-page">
+    <!-- Hero -->
+    <div class="hero-card text-white rounded-4 px-4 py-4">
+      <h3 class="h4 mb-1">AFS Digitization Jobs</h3>
+      <p class="small opacity-75 mb-0">Browse past digitization jobs, filter by status or ULB, and download the generated Excel workbooks.</p>
+    </div>
+
+    <!-- Quick nav -->
+    <div class="card-grid">
+      <article class="d-flex align-items-center justify-content-between gap-3 bg-white border rounded-3 p-3 px-md-4">
+        <div>
+          <h2 class="h6 mb-1">New Digitization</h2>
+          <p class="small text-body-secondary mb-0">Upload a scanned financial-statement PDF and start a new Textract + Gemini digitization job.</p>
+        </div>
+        <a class="btn btn-outline-primary flex-shrink-0" routerLink="/ocr/afs-digitization/upload">New Job</a>
+      </article>
+    </div>
+
+    <!-- List section -->
+    <section class="bg-white border rounded-3 p-3 p-md-4">
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+        <div>
+          <h2 class="h5 mb-1">Jobs</h2>
+          <p class="small text-body-secondary mb-0">Filter by status, filename, or ULB name and paginate through all jobs.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+          @if (loading()) {
+            <span class="small text-body-secondary">Loading...</span>
+          } @else {
+            <span class="small text-body-secondary">{{ totalItems }} result{{ totalItems === 1 ? '' : 's' }}</span>
+          }
+          <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
+            <mat-icon>refresh</mat-icon>
+          </button>
+          <button
+            type="button"
+            mat-icon-button
+            [disabled]="loading() || exporting()"
+            (click)="exportToExcel()"
+            title="Export filtered jobs to Excel"
+          >
+            @if (exporting()) {
+              <mat-icon>hourglass_empty</mat-icon>
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <form [formGroup]="filterForm" class="filter-grid">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            @for (opt of statusOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Filename</mat-label>
+          <input matInput formControlName="filename" placeholder="Search filename" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>ULB Name</mat-label>
+          <input matInput formControlName="ulbName" placeholder="Search ULB name" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Financial Year</mat-label>
+          <mat-select formControlName="financialYear">
+            <mat-option value="">All</mat-option>
+            @for (fy of financialYearOptions; track fy.value) {
+              <mat-option [value]="fy.value">{{ fy.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Document Type</mat-label>
+          <mat-select formControlName="docType">
+            <mat-option value="">All</mat-option>
+            @for (dt of docTypeOptions; track dt.value) {
+              <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Date From</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="dateFrom" />
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Date To</mat-label>
+          <input matInput [matDatepicker]="toPicker" formControlName="dateTo" />
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+
+        <div class="d-flex align-items-center gap-2 pt-1">
+          <button type="button" mat-flat-button color="primary" (click)="applyFilters()">Apply</button>
+          <button type="button" mat-stroked-button (click)="resetFilters()">Reset</button>
+        </div>
+      </form>
+
+      <!-- Table -->
+      <div class="table-responsive border rounded-2">
+        <table mat-table [dataSource]="dataSource" class="val-table w-100">
+          <ng-container matColumnDef="jobAndFile">
+            <th mat-header-cell *matHeaderCellDef>Job / File</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="identity-cell d-flex flex-column gap-1">
+                <span class="d-flex align-items-center gap-1">
+                  <a
+                    class="small fw-medium font-monospace text-truncate flex-grow-1"
+                    routerLink="/ocr/afs-digitization/upload"
+                    [queryParams]="{ jobId: row.jobId }"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="'Open job ' + row.jobId + ' in a new tab'"
+                    >{{ row.jobId }}</a
+                  >
+                  <button
+                    type="button"
+                    class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    [attr.aria-label]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    [attr.title]="isCopied('Job ID', row.jobId) ? 'Copied' : 'Copy job ID'"
+                    (click)="copyValue('Job ID', row.jobId)"
+                  >
+                    <mat-icon>{{ isCopied('Job ID', row.jobId) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                  <button
+                    type="button"
+                    class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    [attr.aria-label]="isCopied('Job Link', getJobLink(row.jobId)) ? 'Copied' : 'Copy link to this job'"
+                    [attr.title]="isCopied('Job Link', getJobLink(row.jobId)) ? 'Copied' : 'Copy link to this job'"
+                    (click)="copyValue('Job Link', getJobLink(row.jobId))"
+                  >
+                    <mat-icon>{{ isCopied('Job Link', getJobLink(row.jobId)) ? 'check' : 'link' }}</mat-icon>
+                  </button>
+                </span>
+                <span class="d-flex align-items-center gap-1">
+                  <a
+                    class="small fw-medium text-truncate flex-grow-1"
+                    [href]="getPdfViewUrl(row.jobId)"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="'Open ' + row.filename + ' in a new tab'"
+                    >{{ row.filename }}</a
+                  >
+                  @if (row.hasExcel) {
+                    <button
+                      type="button"
+                      class="copy-btn btn btn-outline-success rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                      aria-label="Download Excel"
+                      title="Download Excel"
+                      [disabled]="downloadingJobId() === row.jobId"
+                      (click)="downloadExcel(row)"
+                    >
+                      <mat-icon [class.spin-icon]="downloadingJobId() === row.jobId">{{
+                        downloadingJobId() === row.jobId ? 'hourglass_empty' : 'table_chart'
+                      }}</mat-icon>
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    [attr.aria-label]="isCopied('Filename', row.filename) ? 'Copied' : 'Copy filename'"
+                    [attr.title]="isCopied('Filename', row.filename) ? 'Copied' : 'Copy filename'"
+                    (click)="copyValue('Filename', row.filename)"
+                  >
+                    <mat-icon>{{ isCopied('Filename', row.filename) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                </span>
+                <span class="small fw-medium">{{ row.pageCount ?? '—' }} pg · {{ row.fileSizeLabel }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill" [ngClass]="getStatusClass(row.status)">{{ row.status | titlecase }}</span>
+                <span class="small fst-italic text-body-secondary text-nowrap" [title]="'Gemini model: ' + row.geminiModel">OCR: {{ row.ocrEngine | titlecase }}</span>
+                @if (row.status === 'failed' && row.errorMessage !== '—') {
+                  <button
+                    type="button"
+                    class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    [attr.aria-label]="isCopied('Error', row.errorMessage) ? 'Copied' : 'Copy error message'"
+                    [attr.title]="isCopied('Error', row.errorMessage) ? 'Copied' : 'Copy error message'"
+                    (click)="copyValue('Error', row.errorMessage)"
+                  >
+                    <mat-icon>{{ isCopied('Error', row.errorMessage) ? 'check' : 'content_copy' }}</mat-icon>
+                  </button>
+                }
+              </div>
+              @if (row.detectedDocumentType !== '—') {
+                <div class="mt-1" title="Detected document type">
+                  <span class="badge rounded-pill"
+                    [ngClass]="row.multipleDocumentsDetected ? 'bg-warning-subtle text-warning-emphasis' : 'bg-secondary-subtle text-secondary-emphasis'">
+                    {{ row.detectedDocumentType }}
+                  </span>
+                </div>
+              }
+              @if (row.progressStep !== '—' && row.progressStep.toLowerCase() !== row.status.toLowerCase()) {
+                <p class="small fst-italic text-body-secondary mt-1 mb-0">{{ row.progressStep }}</p>
+              }
+              @if (row.status === 'failed' && row.errorMessage !== '—') {
+                <p class="error-text small text-danger text-break mt-1 mb-0" [title]="row.errorMessage">{{ row.errorMessage }}</p>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="scores">
+            <th mat-header-cell *matHeaderCellDef>Scores</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex flex-column gap-1">
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Confidence</span>
+                  <span class="small fw-medium" [ngClass]="getScoreClass(row.confidenceScore)">
+                    {{ row.confidenceScore !== null ? (row.confidenceScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Accuracy</span>
+                  <span class="small fw-medium" [ngClass]="getScoreClass(row.accuracyScore)">
+                    {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="cost">
+            <th mat-header-cell *matHeaderCellDef>OCR Cost</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="small fw-medium">
+                {{ row.ocrPriceInr !== null ? '₹' + (row.ocrPriceInr | number: '1.2-2') : '—' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="expected">
+            <th mat-header-cell *matHeaderCellDef>Expected</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="expected-cell d-flex flex-column gap-1">
+                @if (row.expectedUlbName !== '—') {
+                  <div title="ULB"><span class="small fw-medium">{{ row.expectedUlbName }}</span></div>
+                }
+                @if (row.expectedFinancialYear !== '—') {
+                  <div title="Financial year"><span class="small fw-medium">{{ row.expectedFinancialYear }}</span></div>
+                }
+                @if (row.expectedDocType !== '—') {
+                  <div title="Document type"><span class="small fw-medium">{{ row.expectedDocType }}</span></div>
+                }
+                @if (row.notes) {
+                  <div class="notes-line" [title]="row.notes">
+                    <span class="small text-uppercase text-body-secondary me-1">Notes</span><span class="small fw-medium">{{ row.notes }}</span>
+                  </div>
+                }
+                @if (row.expectedUlbName === '—' && row.expectedFinancialYear === '—' && row.expectedDocType === '—' && !row.notes) {
+                  <span class="text-body-tertiary">—</span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="dates">
+            <th mat-header-cell *matHeaderCellDef>
+              <button type="button" class="sort-header-btn" (click)="toggleSortOrder()">
+                Dates
+                <mat-icon class="sort-icon">{{ sortOrder() === 'desc' ? 'arrow_downward' : 'arrow_upward' }}</mat-icon>
+              </button>
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex flex-column gap-1 text-nowrap">
+                <div><span class="small text-uppercase text-body-secondary me-1">Created</span><span class="small fw-medium">{{ row.createdAt }}</span></div>
+                @if (row.completedAt !== '—') {
+                  <div><span class="small text-uppercase text-body-secondary me-1">Done</span><span class="small fw-medium">{{ row.completedAt }}</span></div>
+                }
+                @if (row.elapsed !== '—') {
+                  <div><span class="small text-uppercase text-body-secondary me-1">{{ row.elapsedLabel }}</span><span class="small fw-medium">{{ row.elapsed }}</span></div>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex justify-content-center">
+                <button type="button" mat-icon-button [matMenuTriggerFor]="actionMenu" aria-label="More actions" title="More actions">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  @if (row.hasExcel) {
+                    <button mat-menu-item [disabled]="downloadingJobId() === row.jobId" (click)="downloadExcel(row)">
+                      <mat-icon [class.spin-icon]="downloadingJobId() === row.jobId">{{ downloadingJobId() === row.jobId ? 'hourglass_empty' : 'table_chart' }}</mat-icon>
+                      <span>Download Excel</span>
+                    </button>
+                  }
+                  <button mat-menu-item [disabled]="downloadingPdfJobId() === row.jobId" (click)="downloadPdf(row)">
+                    <mat-icon [class.spin-icon]="downloadingPdfJobId() === row.jobId">{{ downloadingPdfJobId() === row.jobId ? 'hourglass_empty' : 'picture_as_pdf' }}</mat-icon>
+                    <span>Download source PDF</span>
+                  </button>
+                  @if (row.status === 'completed') {
+                    <button
+                      mat-menu-item
+                      [disabled]="revalidatingJobId() === row.jobId"
+                      (click)="revalidateJob(row)"
+                      title="Re-run Gemini validation only (Textract extraction is reused)"
+                    >
+                      <mat-icon [class.spin-icon]="revalidatingJobId() === row.jobId">{{ revalidatingJobId() === row.jobId ? 'hourglass_empty' : 'fact_check' }}</mat-icon>
+                      <span>Re-validate</span>
+                    </button>
+                    <button
+                      mat-menu-item
+                      [disabled]="regeneratingJobId() === row.jobId"
+                      (click)="regenerateExcel(row)"
+                      title="Rebuild the Excel workbook from the stored result (no Textract/Gemini calls)"
+                    >
+                      <mat-icon [class.spin-icon]="regeneratingJobId() === row.jobId">{{ regeneratingJobId() === row.jobId ? 'hourglass_empty' : 'refresh' }}</mat-icon>
+                      <span>Regenerate Excel</span>
+                    </button>
+                  }
+                </mat-menu>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center text-body-secondary p-4" [attr.colspan]="displayedColumns.length">
+              @if (loading()) {
+                Loading jobs...
+              } @else {
+                No digitization jobs found. Adjust filters or submit a new job.
+              }
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalItems"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        showFirstLastButtons
+        (page)="onPageChange($event)"
+      />
+    </section>
+  </section>
+</div>

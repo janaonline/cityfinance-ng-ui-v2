@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../environments/environment';
@@ -152,4 +152,30 @@ describe('AutocompleteComponent', () => {
     httpMock.expectNone(() => true);
     expect(component.results()).toEqual([]);
   }));
+
+  it('shows the mat-error once the real control is invalid and touched, even though searchCtrl itself has no validators', () => {
+    const group = new FormGroup({ ulb: new FormControl(null, Validators.required) });
+    setup(
+      createField({ validations: [{ name: 'required', message: 'ULB is required.' }] as any }),
+      group,
+    );
+
+    group.controls['ulb'].markAsTouched();
+    fixture.detectChanges();
+
+    const matError: HTMLElement = fixture.nativeElement.querySelector('mat-error');
+    expect(matError?.textContent?.trim()).toBe('ULB is required.');
+  });
+
+  it('shows no mat-error while the real control is untouched', () => {
+    const group = new FormGroup({ ulb: new FormControl(null, Validators.required) });
+    setup(
+      createField({ validations: [{ name: 'required', message: 'ULB is required.' }] as any }),
+      group,
+    );
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('mat-error')).toBeNull();
+  });
 });

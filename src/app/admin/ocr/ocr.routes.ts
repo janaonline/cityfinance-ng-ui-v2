@@ -54,17 +54,18 @@ export const OCR_ROUTES: Route[] = [
   {
     path: 'auditor-report-list',
     loadComponent: () =>
-      import('./auditor-report-list/auditor-report-list.component').then(
-        (mod) => mod.AuditorReportListComponent,
-      ),
+      import('./auditor-report-list/auditor-report-list.component').then((mod) => mod.AuditorReportListComponent),
   },
   {
     path: 'dur',
-    loadComponent: () =>
-      import('./dur/dur-validate/dur-validate.component').then((mod) => mod.DurValidateComponent),
+    loadComponent: () => import('./dur/dur-validate/dur-validate.component').then((mod) => mod.DurValidateComponent),
   },
   {
     path: 'dur-list',
     loadComponent: () => import('./dur/dur-list/dur-list.component').then((mod) => mod.DurListComponent),
+  },
+  {
+    path: 'afs-digitization',
+    loadChildren: () => import('./afs-digitization/afs-digitization.routes').then((mod) => mod.AFS_DIGITIZATION_ROUTES),
   },
 ];

@@ -2,6 +2,7 @@ import { Component, DestroyRef, Input, OnChanges, OnInit, SimpleChanges, inject,
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap } from 'rxjs';
 import { FieldConfig, FieldRemoteSearchConfig } from '../../field.interface';
@@ -62,6 +63,7 @@ interface AutocompleteOption {
       <input
         matInput
         [formControl]="searchCtrl"
+        [errorStateMatcher]="errorStateMatcher"
         [matAutocomplete]="auto"
         [placeholder]="field.placeholder || 'Search...'"
         [attr.data-cy]="field.key ? field.key + '-test' : null"
@@ -101,6 +103,15 @@ export class AutocompleteComponent implements OnInit, OnChanges {
   readonly searchCtrl = new FormControl<string>('', { nonNullable: true });
   readonly results = signal<AutocompleteOption[]>([]);
   readonly loading = signal(false);
+
+  /** searchCtrl (bound to matInput) has no validators of its own, so Material's default error
+   *  gating never fires - this reads the real group control instead. */
+  readonly errorStateMatcher: ErrorStateMatcher = {
+    isErrorState: (): boolean => {
+      const control = this.group?.get(this.field?.key);
+      return !!control && control.invalid && (control.touched || control.dirty);
+    },
+  };
 
   validations: any[] = [];
   /** The label text last committed to the real control via a genuine selection — used by
