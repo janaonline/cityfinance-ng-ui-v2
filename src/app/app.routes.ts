@@ -13,8 +13,7 @@ export const routes: Routes = [
   // },
   {
     path: 'xvifc-form',
-    loadComponent: () =>
-      import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
+    loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
     canActivate: [authGuard],
   },
   {
@@ -42,8 +41,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    loadComponent: () =>
-      import('./features/landing/landing.component').then((m) => m.LandingComponent),
+    loadComponent: () => import('./features/landing/landing.component').then((m) => m.LandingComponent),
   },
   // {
   //     path: '',
@@ -57,8 +55,7 @@ export const routes: Routes = [
   },
   {
     path: 'map',
-    loadComponent: () =>
-      import('./shared/components/map/map.component').then((m) => m.MapComponent),
+    loadComponent: () => import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
     path: 'afs-dashboard',
@@ -67,13 +64,14 @@ export const routes: Routes = [
   },
   {
     path: 'afs-old-dashboard',
-    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    loadComponent: () =>
+      import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
     canActivate: [authGuard],
   },
-
   {
     path: 'ocr',
     loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
+    canActivate: [authGuard],
   },
   {
     path: 'events-dashboard',
@@ -83,8 +81,7 @@ export const routes: Routes = [
   {
     path: 'xvifc',
     canActivate: [xvifcAuthGuard, xvifcEligibilityGuard],
-    loadChildren: () =>
-      import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
+    loadChildren: () => import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
     // Keep this route outside /xvifc to avoid a redirect loop with xvifcEligibilityGuard.
@@ -94,9 +91,7 @@ export const routes: Routes = [
     // "Log out" button, which is a safe no-op without a session.
     path: 'xvifc-not-eligible',
     loadComponent: () =>
-      import('./features/xvi-fc-module/shared/not-eligible/not-eligible.component').then(
-        (m) => m.NotEligibleComponent,
-      ),
+      import('./features/xvi-fc-module/shared/not-eligible/not-eligible.component').then((m) => m.NotEligibleComponent),
   },
   {
     path: 'auth',
