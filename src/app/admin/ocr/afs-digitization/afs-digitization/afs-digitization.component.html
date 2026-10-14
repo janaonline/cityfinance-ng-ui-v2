@@ -1,9 +1,9 @@
-<div class="wrapper app-wrapper">
+<div class="wrapper app-wrapper container-fluid">
   <section class="digitization-page">
     <!-- Hero -->
-    <div class="hero-card">
-      <h1>AFS Digitization</h1>
-      <p class="subcopy">
+    <div class="hero-card text-white rounded-4 p-4">
+      <h1 class="h4 mb-2">AFS Digitization</h1>
+      <p class="small opacity-75 mb-0 lh-base">
         Upload a scanned ULB financial-statement PDF. Amazon Textract extracts tables and key/value pairs into an
         Excel workbook (<strong>confidence score</strong>), then Gemini re-reads the source PDF and cross-checks
         every extracted value (<strong>accuracy score</strong>). Optionally, Gemini also checks the arithmetic of the
@@ -104,8 +104,27 @@
                 <mat-option [value]="false">Disabled — skip</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <mat-form-field appearance="outline" class="notes-field">
+              <mat-label>Notes (optional)</mat-label>
+              <textarea matInput formControlName="notes" rows="2" [maxlength]="maxNotesLength"
+                placeholder="Anything worth remembering about this upload"></textarea>
+              <mat-hint align="end">{{ form.controls.notes.value.length }} / {{ maxNotesLength }}</mat-hint>
+            </mat-form-field>
           </div>
 
+          <!-- Source: S3 path or manual upload -->
+          <mat-checkbox class="source-toggle" color="primary" [checked]="useS3" (change)="onSourceToggle($event.checked)">
+            Use S3 path (PDF already in the CityFinance bucket)
+          </mat-checkbox>
+
+          @if (useS3) {
+          <mat-form-field appearance="outline" class="s3-path-field">
+            <mat-label>S3 path</mat-label>
+            <input matInput [formControl]="s3Path" placeholder="objects/abc.pdf" />
+            <mat-hint>Object key, s3:// URI or the full S3 URL of the PDF.</mat-hint>
+          </mat-form-field>
+          } @else {
           <!-- File picker -->
           <div class="file-picker">
             <input #fileInput class="file-input-hidden" type="file" accept="application/pdf" (change)="onFileSelected($event)" />
@@ -122,12 +141,17 @@
 
             <p class="file-note">Accepted format: PDF. Max {{ maxFileSizeMb }} MB.</p>
           </div>
+          }
 
           <!-- Actions -->
           <div class="actions">
+            @if (useS3) {
+            <button mat-stroked-button type="button" (click)="s3Path.reset()">Clear Path</button>
+            } @else {
             <button mat-stroked-button type="button" (click)="clearFile()">Clear</button>
+            }
             <button mat-flat-button color="primary" type="button"
-              [disabled]="!selectedFile || form.invalid || isSubmitting()" (click)="submit()">
+              [disabled]="!hasSource() || form.invalid || isSubmitting()" (click)="submit()">
               @if (isSubmitting()) {
                 Submitting...
               } @else {
@@ -192,6 +216,10 @@
                     (click)="downloadPdf(job)">
                     @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
                   </button>
+                  <button mat-stroked-button type="button" [disabled]="editingNotesJobId() === job.jobId"
+                    (click)="startEditNotes(job)">
+                    {{ job.notes ? 'Update Notes' : 'Add Notes' }}
+                  </button>
                   @if (job.status === 'completed') {
                     <button mat-stroked-button type="button" [disabled]="revalidatingJobId() === job.jobId"
                       title="Re-run Gemini validation only — the Textract extraction is reused unchanged"
@@ -222,6 +250,26 @@
                   <span class="job-progress-step"> — {{ job.progressStep }}</span>
                 }
               </p>
+              @if (editingNotesJobId() === job.jobId) {
+                <div class="notes-editor">
+                  <mat-form-field appearance="outline" class="notes-editor__field">
+                    <mat-label>Notes</mat-label>
+                    <textarea matInput [formControl]="notesDraft" rows="3" [maxlength]="maxNotesLength"
+                      placeholder="Anything worth remembering about this upload"></textarea>
+                    <mat-hint align="end">{{ notesDraft.value.length }} / {{ maxNotesLength }}</mat-hint>
+                  </mat-form-field>
+                  <div class="notes-editor__actions">
+                    <button mat-stroked-button type="button" [disabled]="savingNotesJobId() === job.jobId"
+                      (click)="cancelEditNotes()">Cancel</button>
+                    <button mat-flat-button color="primary" type="button"
+                      [disabled]="savingNotesJobId() === job.jobId || notesDraft.invalid" (click)="saveNotes(job)">
+                      @if (savingNotesJobId() === job.jobId) { Saving... } @else { Save Notes }
+                    </button>
+                  </div>
+                </div>
+              } @else if (job.notes) {
+                <p class="job-notes"><span class="job-notes__label">Notes:</span> {{ job.notes }}</p>
+              }
 
               @if (job.showResult && job.result) {
                 <div class="job-result">

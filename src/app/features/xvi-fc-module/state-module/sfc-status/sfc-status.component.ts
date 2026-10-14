@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, distinctUntilChanged, map, startWith, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
-import { getYearRangeDuration } from '../../../../core/validators/year-range.validator';
+import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
@@ -24,6 +24,8 @@ import {
   CanComponentDeactivate,
   warnBeforeUnloadWhenDirty,
 } from '../../../../core/guards/unsaved-changes.guard';
+import { ExemptionNoticeComponent } from '../../shared/exemption-notice/exemption-notice.component';
+import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { SfcStatusService } from './sfc-status.service';
 import {
   ApiErrorMap,
@@ -34,7 +36,13 @@ import {
   SubmitType,
 } from './sfc-status.models';
 import { FormActor, FormProgressComponent, FormStatusValue } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
+
+/** When state requests a whole-state exemption for SFC Status, below are the possible statuses -
+ *  mirrors ulb-forms/upload-documents' DiscretionaryExemptionStatus for the same discretionary
+ *  Request Exemption flow, applied here to the whole-state (ulb: null) branch instead. */
+type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
 
 @Component({
   selector: 'app-sfc-status',
@@ -45,6 +53,8 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
     PreLoaderComponent,
     MatButtonModule,
     FormProgressComponent,
+    ExemptionNoticeComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './sfc-status.component.html',
   styleUrl: './sfc-status.component.scss',
@@ -62,6 +72,8 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
   private moduleService = inject(XvifcModuleService);
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -83,6 +95,37 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
 
   readonly canEdit = computed(() => this.permissions().canEdit);
   readonly canFinalSubmit = computed(() => this.permissions().canFinalSubmit);
+
+  // A discretionary whole-state Request Exemption entry against SFC Status, if any — see
+  // DiscretionaryExemptionStatus's own doc-comment.
+  readonly exemptionStatus = signal<DiscretionaryExemptionStatus>(null);
+  readonly exemptionMohuaRemarks = signal<string | null>(null);
+
+  /** MoHUA-approved discretionary exemption — SFC Status's real currentFormStatus is never
+   *  touched by the approval (a pure display overlay), so this is the only signal for it. */
+  readonly isExempted = computed(() => this.exemptionStatus() === 'APPROVED');
+
+  /** True while the exemption request is pending review, or already approved — both states
+   *  mean the state must not be able to save/submit SFC Status (mirrors the backend's
+   *  assertNotBlockedByExemption guard on saveDraft/finalSubmit). */
+  readonly formLocked = computed(() => this.exemptionStatus() === 'PENDING' || this.isExempted());
+
+  readonly lockedBannerMessage = computed(() =>
+    this.exemptionStatus() === 'PENDING'
+      ? 'Your state has filed a discretionary exemption request for SFC Status, pending MoHUA review. No submission is needed until it is decided.'
+      : null,
+  );
+
+  /** Rejection never locks the form; shown only while the form is still untouched (NOT_STARTED) —
+   *  once the state has resumed work (IN_PROGRESS or later), the live status governs instead. */
+  readonly exemptionRejectedNotice = computed(() => {
+    if (this.exemptionStatus() !== 'REJECTED') return null;
+    if (this.currentFormStatus() !== FORM_STATUS.NOT_STARTED) return null;
+    const remarks = this.exemptionMohuaRemarks();
+    return remarks
+      ? `Your state's discretionary exemption request for SFC Status was rejected by MoHUA. ${remarks}`
+      : "Your state's discretionary exemption request for SFC Status was rejected by MoHUA.";
+  });
 
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
   /** Tracks error codes injected per field by the most recent failed API response. */
@@ -139,6 +182,9 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
           this.fields.set(data.questions);
           this.stateName.set(data.stateName);
           this.actors.set(data.actors);
+          this.exemptionStatus.set(data.exemptionStatus);
+          this.exemptionMohuaRemarks.set(data.exemptionMohuaRemarks);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
           this.createFormControls();
           this.isLoading.set(false);
         },
@@ -191,23 +237,9 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
     });
 
     // Derive awardPeriodDuration from awardPeriod so visibility rules can react to it.
-    const awardPeriodControl = this.form.get('awardPeriod');
-    const durationControl = this.form.get('awardPeriodDuration') as FormControl<number | null> | null;
-    if (awardPeriodControl && durationControl) {
-      awardPeriodControl.valueChanges
-        .pipe(
-          startWith(awardPeriodControl.value),
-          map((v) => getYearRangeDuration(v)),
-          distinctUntilChanged(),
-          takeUntilDestroyed(this.destroyRef),
-          takeUntil(this.formSubscriptionsTeardown$),
-        )
-        .subscribe((duration) => {
-          durationControl.setValue(duration, { emitEvent: true });
-        });
-    }
+    bindAwardPeriodDurationDerivation(this.form, this.destroyRef, this.formSubscriptionsTeardown$);
 
-    if (!this.canEdit()) {
+    if (!this.canEdit() || this.formLocked()) {
       this.form.disable({ emitEvent: false });
     }
 

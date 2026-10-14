@@ -1,0 +1,25 @@
+// Fade-and-rise used by RevealDirective (it adds `rv`, then `in` once the element scrolls into view).
+// Included by each overview section's own stylesheet, since component styles are encapsulated.
+@mixin reveal {
+  .rv {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 0.55s ease,
+      transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--d, 0ms);
+
+    &.in {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rv {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+}

@@ -15,6 +15,12 @@ export const FORM_STATUS = {
   UNDER_REVIEW_BY_MOHUA: 5,
   RETURNED_BY_MOHUA: 6,
   SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 7,
+  /** PMU Review feature (state-level forms only) — PMU reviews before MoHUA does, but only while a
+   *  decision is pending (13) or it rejects (14); approval has no status of its own and jumps
+   *  straight to MoHUA's own 5/6/7. That's why `STATE_STATUS_LABEL` below aliases 13/14 to MoHUA's
+   *  own labels instead of introducing a separate "PMU" term the state-facing UI never had before. */
+  UNDER_REVIEW_BY_PMU: 13,
+  RETURNED_BY_PMU: 14,
 } as const;
 
 // ─── Public API types ─────────────────────────────────────────────────────────
@@ -54,12 +60,14 @@ const IP_DONE: FormStatusStep = { label: 'In Progress', state: 'done' };
 // State form atoms
 // const MOHUA_SUBMIT_ACTIVE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'active' };
 const MOHUA_SUBMIT_DONE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'done' };
-const MOHUA_ACKNOWLEDGED: FormStatusStep = { label: 'Acknowledged by MoHUA', state: 'done' };
+const MOHUA_ACKNOWLEDGED: FormStatusStep = { label: 'Ready to generate claim letter', state: 'done' };
 const MOHUA_REJECTED: FormStatusStep = { label: 'Returned by MoHUA', state: 'error' };
+// PMU's return is shown to the state without naming PMU — just that it needs correcting.
+const PMU_RETURNED: FormStatusStep = { label: 'Returned for correction', state: 'error' };
 // Inactive (future/pending) atoms
 const IP_INACTIVE: FormStatusStep = { label: 'In Progress', state: 'inactive' };
 const MOHUA_SUBMIT_INACTIVE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'inactive' };
-const MOHUA_ACKNOWLEDGED_INACTIVE: FormStatusStep = { label: 'Acknowledged by MoHUA', state: 'inactive' };
+const MOHUA_ACKNOWLEDGED_INACTIVE: FormStatusStep = { label: 'Ready to generate claim letter', state: 'inactive' };
 const STATE_SUBMIT_INACTIVE: FormStatusStep = { label: 'Submitted to State', state: 'inactive' };
 const STATE_APPROVED_INACTIVE: FormStatusStep = { label: 'Approved by State', state: 'inactive' };
 const MOHUA_APPROVED_INACTIVE: FormStatusStep = { label: 'Approved by MoHUA', state: 'inactive' };
@@ -81,9 +89,13 @@ const STATUS_TONE_MAP: Readonly<Record<FormStatusValue, StatusTone>> = {
   5: 'primary',
   6: 'error',
   7: 'primary',
+  13: 'primary',
+  14: 'error',
 };
 
-/** Human-readable status pill labels for State forms. */
+/** Human-readable status pill labels for State forms. 13 (PMU Review feature) aliases 5's label — see
+ *  this file's `FORM_STATUS` doc comment for why. 14 is a PMU return and reads "Returned for correction",
+ *  never "Returned by MoHUA". */
 const STATE_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   0: 'Not Started',
   1: 'Not Started',
@@ -93,6 +105,8 @@ const STATE_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   5: 'Under Review by MoHUA',
   6: 'Returned by MoHUA',
   7: 'Acknowledged by MoHUA',
+  13: 'Under Review by MoHUA',
+  14: 'Returned for correction',
 };
 
 /** Human-readable status pill labels for ULB forms. */
@@ -105,6 +119,8 @@ const ULB_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   5: 'Approved by State',
   6: 'Returned by MoHUA',
   7: 'Approved by MoHUA',
+  13: 'In Progress', // Status not possible for ULB forms
+  14: 'In Progress', // Status not possible for ULB forms
 };
 
 /**
@@ -117,9 +133,11 @@ const STATE_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep
   2: [NS_DONE, IP_ACTIVE, MOHUA_SUBMIT_INACTIVE],
   3: [NS_DONE, IP_ACTIVE, MOHUA_SUBMIT_INACTIVE], // Status not possible
   4: [NS_DONE, IP_ACTIVE, MOHUA_SUBMIT_INACTIVE], // Status not possible
-  5: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED_INACTIVE],
+  5: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED], // PMU approved, now with MoHUA — claim letter can be generated
   6: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_REJECTED],
   7: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED],
+  13: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED_INACTIVE], // pending PMU's decision — not ready yet
+  14: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, PMU_RETURNED], // PMU Review feature
 };
 
 /** Ordered stepper steps for each numeric status on ULB forms. */
@@ -132,6 +150,8 @@ const ULB_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep[]
   5: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_ACTIVE, MOHUA_APPROVED_INACTIVE],
   6: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, MOHUA_REJECTED],
   7: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, MOHUA_APPROVED],
+  13: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
+  14: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
 };
 
 // ─── Pure helper functions ────────────────────────────────────────────────────

@@ -68,6 +68,7 @@ import {
   FormProgressComponent,
   FormStatusValue,
 } from '../../shared/form-progress/form-progress.component';
+import { ReturnedReasonBannerComponent } from '../../shared/returned-reason-banner/returned-reason-banner.component';
 
 /** Action IDs emitted by the dynamic form's `supportingContent` action buttons. */
 const EULB_SUPPORTING_ACTION = {
@@ -79,7 +80,14 @@ const EULB_SUPPORTING_ACTION = {
   DOWNLOAD_ELECTED_BODIES_LIST: 'download-elected-bodies-list',
 } as const;
 
+/** Mirrors the backend's authoritative `POST_SUBMISSION_UPDATE_ALLOWED_STATUSES`
+ *  (`xvi-fc-form-status-access.util.ts`) — kept in sync by hand, not imported, since this is a
+ *  frontend-only route guard/button-visibility check. Was missing `UNDER_REVIEW_BY_PMU`: once the
+ *  PMU Review feature retargeted `finalSubmit` to land there instead of `UNDER_REVIEW_BY_MOHUA`,
+ *  this button/page became unreachable for every form sitting in PMU's queue, even though the
+ *  backend already allowed it. */
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
+  FORM_STATUS.UNDER_REVIEW_BY_PMU,
   FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
   FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA,
 ];
@@ -99,6 +107,7 @@ export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
     MatButtonModule,
     FormProgressComponent,
     EulbStatusSummaryComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './elected-body-status.component.html',
   styleUrl: './elected-body-status.component.scss',
@@ -126,6 +135,8 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
 
   /** Current numeric form status; used by the form-progress card. */
   readonly formStatus = signal<FormStatusValue>(FORM_STATUS.NO_STATUS);
+
+  readonly pmuRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -281,6 +292,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
           this.validationSummary.set(data.validationSummary ?? null);
           this.statusSummary.set(data.statusSummary ?? null);
+          this.pmuRemarks.set(data.pmuRemarks ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
           this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);

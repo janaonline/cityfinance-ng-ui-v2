@@ -73,6 +73,12 @@
         <hr class="my-0 text-body-tertiary" />
       }
 
+      <app-returned-reason-banner
+        [currentFormStatus]="formStatus()"
+        [pmuRemarks]="pmuRemarks()"
+        [mohuaRemarks]="mohuaRemarks()"
+      />
+
       <form class="content-body" [formGroup]="form">
         @for (item of effectiveVisibleFields(); track item.key; let isLast = $last) {
           <div

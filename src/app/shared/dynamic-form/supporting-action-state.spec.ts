@@ -78,6 +78,20 @@ describe('withSupportingActionState', () => {
     expect(block.actions[0].loading).toBeTrue();
   });
 
+  it('overrides only the label of the matching action when a label patch is given', () => {
+    const download = buildAction({ id: 'download-template', label: 'Download the declaration' });
+    const other = buildAction({ id: 'other', label: 'Other' });
+    const field = buildField([{ type: 'actions', actions: [download, other] }]);
+
+    const result = withSupportingActionState(field, [{ actionId: 'download-template', label: 'Save & download' }]);
+
+    const block = result.supportingContent![0] as Extract<FieldSupportingContent, { type: 'actions' }>;
+    expect(block.actions[0].label).toBe('Save & download');
+    expect(block.actions[1].label).toBe('Other');
+    // The input is never mutated.
+    expect(download.label).toBe('Download the declaration');
+  });
+
   it('composes a disabled patch and a loading patch on different actions without either clobbering the other', () => {
     const preview = buildAction({ id: 'preview-template', label: 'Preview' });
     const download = buildAction({ id: 'download-template', label: 'Download' });

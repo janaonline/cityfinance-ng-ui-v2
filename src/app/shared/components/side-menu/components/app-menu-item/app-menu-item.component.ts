@@ -1,6 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output } from '@angular/core';
-import { RouterLinkActive, RouterModule } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLinkActive, RouterModule } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { UlbNotificationService } from '../../../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 import { MenuItem } from '../../models/menu.model';
 
@@ -13,6 +24,7 @@ import { MenuItem } from '../../models/menu.model';
 })
 export class AppMenuItemComponent {
   private readonly ulbNotifications = inject(UlbNotificationService);
+  private readonly router = inject(Router);
 
   readonly item = input.required<MenuItem>();
   readonly root = input<boolean>(false);
@@ -20,11 +32,20 @@ export class AppMenuItemComponent {
 
   /** Colored-dot severity for this item's route, if it has a pending ULB notification. */
   readonly badgeSeverity = computed(() => {
-    const routerLink = this.item().routerLink;
-    const lastSegment = Array.isArray(routerLink) ? routerLink[routerLink.length - 1] : routerLink;
-    if (typeof lastSegment !== 'string') return undefined;
-    return this.ulbNotifications.severityByRoute().get(lastSegment);
+    const key = this.routeKey(this.item().routerLink);
+    if (!key) return undefined;
+    return this.ulbNotifications.severityByRoute().get(key);
   });
+
+  /** Last path segment of a routerLink, array or string form. */
+  private routeKey(link: unknown[] | string | undefined): string | undefined {
+    if (Array.isArray(link)) {
+      const last = link.at(-1);
+      return typeof last === 'string' ? last : undefined;
+    }
+    if (typeof link !== 'string') return undefined;
+    return link.split('/').filter(Boolean).pop();
+  }
 
   /**
    * Emitted when any interactive element in this item is activated
@@ -40,6 +61,38 @@ export class AppMenuItemComponent {
 
   /** True when the item is disabled — blocks all interaction and removes it from tab order. */
   readonly isDisabled = computed(() => !!this.item().disabled);
+
+  private readonly currentMenuGroup = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.deepestMenuGroup()),
+    ),
+    { initialValue: this.deepestMenuGroup() },
+  );
+
+  /** Finds the deepest matched route and reads its merged data.menuGroup, shared by routes tagged with the same group via parent inheritance or individual configuration.*/
+  private deepestMenuGroup(): string | undefined {
+    let node = this.router.routerState.snapshot.root;
+    while (node.firstChild) node = node.firstChild;
+    return node.data['menuGroup'] as string | undefined;
+  }
+
+  /** True when the route's menuGroup matches this item's path segment, keeping worklist navigation active on sibling detail routes that routerLinkActive cannot detect. */
+  readonly isActiveViaMenuGroup = computed(() => {
+    const group = this.currentMenuGroup();
+    if (!group) return false;
+    return this.routeKey(this.item().routerLink) === group;
+  });
+
+  /** Tracks routerLinkActive via (isActiveChange), avoiding inconsistent reads of its mutable, non-signal isActive property across template bindings. */
+  private readonly nativeIsActive = signal(false);
+
+  onNativeActiveChange(isActive: boolean): void {
+    this.nativeIsActive.set(isActive);
+  }
+
+  /** Drives the active class and aria-current when either the link matches or its menuGroup is active. */
+  readonly isActive = computed(() => this.nativeIsActive() || this.isActiveViaMenuGroup());
 
   /**
    * Stable kebab-case ID for the submenu `<ul>`, referenced by the parent

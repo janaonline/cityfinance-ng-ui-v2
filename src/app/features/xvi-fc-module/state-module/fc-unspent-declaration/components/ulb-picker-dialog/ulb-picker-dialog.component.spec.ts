@@ -69,6 +69,25 @@ describe('UlbPickerDialogComponent', () => {
     return rows[index].query(By.css('[data-cy="ulb-picker-checkbox"]')).nativeElement as HTMLInputElement;
   }
 
+  // ─── Allocation column ─────────────────────────────────────────────────────
+
+  it('shows the Allocation column when the options carry an allocation (Devolution-linked years)', () => {
+    expect(component.hasAllocation()).toBeTrue();
+    const headers = fixture.debugElement.queryAll(By.css('thead th')).map((th) => (th.nativeElement as HTMLElement).textContent!.trim());
+    expect(headers.some((h) => h.startsWith('Allocation'))).toBeTrue();
+  });
+
+  it('leaves the Allocation column out when the backend sends no allocation (independent years)', () => {
+    component.options.set(options.map((o) => ({ ...o, allocationAmount: null })));
+    fixture.detectChanges();
+
+    expect(component.hasAllocation()).toBeFalse();
+    const headers = fixture.debugElement.queryAll(By.css('thead th')).map((th) => (th.nativeElement as HTMLElement).textContent!.trim());
+    expect(headers.some((h) => h.includes('Allocation'))).toBeFalse();
+    const firstRowCells = fixture.debugElement.queryAll(By.css('[data-cy="ulb-picker-row"]'))[0].queryAll(By.css('td'));
+    expect(firstRowCells.length).toBe(3);
+  });
+
   // ─── Loading / pagination / debounce (existing behavior, preserved) ────────
 
   it('requests page 1 with no search as soon as it opens', () => {

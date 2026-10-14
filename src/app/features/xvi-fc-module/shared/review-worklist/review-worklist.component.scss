@@ -1,0 +1,10 @@
+@use '../../styles/shared-layout' as layout;
+
+:host {
+  display: block;
+  @include layout.shared-mat-table;
+}
+
+.worklist-card {
+  border: 1px solid var(--bs-border-color, #dee2e6);
+}

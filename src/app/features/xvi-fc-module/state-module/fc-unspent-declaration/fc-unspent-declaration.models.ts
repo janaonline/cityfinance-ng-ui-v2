@@ -50,7 +50,8 @@ export interface FcUnspentUlbOption {
   censusCode: string | null;
   sbCode: string | null;
   ulbName: string;
-  allocationAmount: number;
+  /** `null` when the design year's policy is not Devolution-linked (14th FC years). */
+  allocationAmount: number | null;
 }
 
 /**
@@ -73,11 +74,12 @@ export interface FcUnspentUlbOptionsResult {
 }
 
 /**
- * One row of the unspent-ULB table. Only `ulbId` and `unspentAmount` are State-editable — the
- * rest, including `allocationPerc`/`eligibility`, are backend-owned. The frontend recomputes
- * `allocationPerc`/`eligibility` for preview only; the backend calculation remains authoritative.
- * `ulbName`/`censusCode`/`sbCode`/`allocationAmount` are a snapshot taken at save time — already-saved
- * rows must render from this snapshot directly, never by joining against `FcUnspentUlbOption[]`.
+ * One row of the unspent-ULB table. Only `ulbId`, `unspentAmount`, and `previousFcUnspentBalance`
+ * are State-editable — the rest, including `allocationPerc`/`eligibility`, are backend-owned. The
+ * frontend recomputes `allocationPerc`/`eligibility` for preview only; the backend calculation
+ * remains authoritative. `ulbName`/`censusCode`/`sbCode`/`allocationAmount` are a snapshot taken at
+ * save time — already-saved rows must render from this snapshot directly, never by joining against
+ * `FcUnspentUlbOption[]`.
  *
  * Row-level MoHUA review data (review state, rejection remarks, per-row editability, whether the
  * allocation changed after a Devolution resubmission, whether the row requires re-review) is
@@ -91,10 +93,19 @@ export interface FcUnspentUlbData {
   censusCode: string | null;
   sbCode: string | null;
   ulbName: string;
-  allocationAmount: number;
-  unspentAmount: number;
-  allocationPerc: number;
+  /** `null` when the design year's policy is not Devolution-linked. */
+  allocationAmount: number | null;
+  /** `null` while a draft row has not had this figure entered yet; always set once the form is submitted. */
+  unspentAmount: number | null;
+  /** `null` while a draft row has not had this figure entered yet; always set once the form is submitted. */
+  previousFcUnspentBalance: number | null;
+  /** `null` when the design year's policy is not Devolution-linked. */
+  allocationPerc: number | null;
   eligibility: boolean;
+  /** PMU row-review status — `null` pre-submission. Drives the per-row State edit lock
+   *  (`canStateEditRow`): once PMU approves a row (`UNDER_REVIEW_BY_MOHUA`+), it renders read-only
+   *  here even while the rest of the form stays editable (mixed-approval deadlock fix). */
+  rowStatus: FormStatusValue | null;
 }
 
 /**
@@ -102,20 +113,40 @@ export interface FcUnspentUlbData {
  * fetched separately and lazily (see `FcUnspentUlbOption`), only on real edit intent, so a No-branch
  * or read-only session never pulls a state's entire ULB list into memory.
  */
+/**
+ * How the backend decides a ULB row's eligibility for the design year. The backend is the only place
+ * the rule is evaluated; this is only used to word the page and to decide which columns to show.
+ * - `NO_UNSPENT_ALLOWED`: any unspent balance makes the ULB ineligible (no Devolution allocation involved).
+ * - `MAX_PERCENT_OF_ALLOCATION`: unspent as a % of the ULB's Devolution allocation must be within `thresholdPercent`.
+ */
+export type FcUnspentEligibilityRule =
+  | { type: 'NO_UNSPENT_ALLOWED' }
+  | { type: 'MAX_PERCENT_OF_ALLOCATION'; thresholdPercent: number };
+
+export interface FcUnspentPolicy {
+  /** True: the form is gated on / sourced from Devolution Formula and shows allocation figures. */
+  devolutionLinked: boolean;
+  eligibilityRule: FcUnspentEligibilityRule;
+}
+
 export interface FcUnspentDeclarationData {
   stateName: string;
   applicableFc: FcUnspentApplicableFc;
   threshold: number;
+  /** Optional so an older backend that does not send it keeps today's Devolution-linked behaviour. */
+  policy?: FcUnspentPolicy;
   currentFormStatus: FormStatusValue;
   permissions: FcUnspentPermissions;
   dependency: FcUnspentDevolutionDependency;
   actors: FormActor[];
   questions: ConditionalFieldConfig[];
   /** DB-driven metadata for the unspentUlbData row-table columns (ulbId, unspentAmount,
-   *  censusCode, sbCode, ulbName, allocationAmount, allocationPerc, eligibility) — mirrors
-   *  DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
+   *  previousFcUnspentBalance, censusCode, sbCode, ulbName, allocationAmount, allocationPerc,
+   *  eligibility) — mirrors DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
   rowEditFields?: ConditionalFieldConfig[];
   unspentUlbData: FcUnspentUlbData[];
+  pmuRemarks?: string | null;
+  mohuaRemarks?: string | null;
 }
 
 /**
@@ -135,9 +166,10 @@ export interface FcUnspentSaveData {
   /** Yes-branch only. Same shape/ownership as `fcDeclaration`, for the signed ULB-wise
    *  certification document instead of the nil-balance declaration. */
   fcUnspentDeclaration?: unknown;
-  /** Yes-branch only. Rows with an incomplete selection (no `ulbId` or no `unspentAmount`) are
-   *  dropped before sending — see buildPayload(). */
-  unspentUlbData?: { ulbId: string; unspentAmount: number }[];
+  /** Yes-branch only. A row without a `ulbId` is dropped before sending (see buildPayload()); a row with
+   *  an empty amount is sent with that amount as `null` so a draft keeps the selected ULB. Final submit
+   *  rejects any row still missing an amount. */
+  unspentUlbData?: { ulbId: string; unspentAmount: number | null; previousFcUnspentBalance: number | null }[];
   /** Yes-branch only. */
   checkboxConfirmation?: boolean;
 }

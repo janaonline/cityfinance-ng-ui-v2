@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Params, RouterLink } from '@angular/router';
 
 export interface XvifcBreadcrumbLink {
   label: string;
   /** Omitted on the trailing (current-page) crumb, which renders as plain text instead of a link. */
   routerLink?: readonly unknown[];
+  /** Forwarded verbatim to [queryParams] alongside routerLink — e.g. so a "back to list" crumb can
+   *  restore the list's previously-applied filters instead of resetting them. */
+  queryParams?: Params;
 }
 
 /**

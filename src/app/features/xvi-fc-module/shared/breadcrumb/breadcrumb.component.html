@@ -5,7 +5,7 @@
         @if (last || !link.routerLink) {
           <span aria-current="page">{{ link.label }}</span>
         } @else {
-          <a [routerLink]="link.routerLink">{{ link.label }}</a>
+          <a [routerLink]="link.routerLink" [queryParams]="link.queryParams">{{ link.label }}</a>
         }
       </li>
     }
