@@ -20,6 +20,8 @@ export interface DigitizationV3Info {
   isMismatch?: boolean;
   expectedDocType?: string;
   noOfPages?: number;
+  /** FastAPI job id (`job_id` from `POST /afs-digitization/jobs`) */
+  jobId?: string;
   summary?: string;
   error?: string;
   digitizedAt?: string;
