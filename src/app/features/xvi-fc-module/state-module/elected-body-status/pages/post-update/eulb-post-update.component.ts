@@ -25,6 +25,7 @@ import {
   warnBeforeUnloadWhenDirty,
 } from '../../../../../../core/guards/unsaved-changes.guard';
 import { PreLoaderComponent } from '../../../../../../shared/components/pre-loader/pre-loader.component';
+import { TruncatedTextComponent } from '../../../../../../shared/components/truncated-text/truncated-text.component';
 import { DynamicFormComponent } from '../../../../../../shared/dynamic-form/dynamic-form.component';
 import { isUploadedFileMetadata } from '../../../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
@@ -109,6 +110,7 @@ function isPostUpdateElectedBodyStatus(value: unknown): value is EulbPostSubmiss
     MatTooltipModule,
     MatButton,
     PreLoaderComponent,
+    TruncatedTextComponent,
     DynamicFormComponent,
     EulbEditableFieldCellComponent,
     EulbValidationBadgeComponent,

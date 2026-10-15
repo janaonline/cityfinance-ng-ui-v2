@@ -225,13 +225,13 @@
                         [attr.aria-label]="'Select ' + row.ulbName"
                       />
                     </td>
-                    <td class="small fw-semibold">{{ row.ulbName }}</td>
+                    <td class="small fw-semibold"><app-truncated-text [text]="row.ulbName" /></td>
                     <td class="small text-secondary text-nowrap">{{ row.censusCode ?? row.sbCode ?? '—' }}</td>
                     @if (showElectedBodyColumns) {
                       <td class="small">{{ row.electedBodyStatus || '-' }}</td>
                       <td class="small text-nowrap">{{ formatRowDate(row.dateOfConstitution) }}</td>
                       <td class="small text-nowrap">{{ formatRowDate(row.dateOfExpiry) }}</td>
-                      <td class="small">{{ row.remarks || '-' }}</td>
+                      <td class="small"><app-truncated-text [text]="row.remarks || '-'" mode="clamp" [lines]="3" /></td>
                     }
                     @if (showMoneyColumns) {
                       @if (showAllocationColumn()) {

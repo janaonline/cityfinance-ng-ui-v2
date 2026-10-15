@@ -16,6 +16,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { themedDialogConfig } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
+import { TruncatedTextComponent } from '../../../../shared/components/truncated-text/truncated-text.component';
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import {
   PmuBulkRejectRowsDialogComponent,
@@ -36,7 +37,7 @@ import {
 } from '../pmu-review.config';
 import { PmuBulkApprovePayload, PmuBulkRejectPayload, PmuFormReviewData, PmuRow } from '../pmu-review.models';
 import { PmuRowReviewService } from '../pmu-row-review.service';
-import { extractApiErrorResponse, extractFormLevelErrorMessage } from '../pmu-review.utils';
+import { extractApiErrorResponse, extractFormLevelErrorMessage, isLongSnackbarMessage } from '../pmu-review.utils';
 import { FORM_STATUS } from '../../common/constants/form-status.constants';
 
 /** One UI page == one backend page — matches the backend's own max page size, same "fixed limit
@@ -118,6 +119,7 @@ const STATUS_FILTER_OPTIONS: ReadonlyArray<{ label: Exclude<RowStatusBucket, 'No
     MatSortModule,
     PreLoaderComponent,
     AmountDisplayToggleComponent,
+    TruncatedTextComponent,
   ],
   templateUrl: './pmu-row-review-detail.component.html',
   styleUrl: './pmu-row-review-detail.component.scss',
@@ -754,6 +756,11 @@ export class PmuRowReviewDetailComponent {
   private applyMutationError(err: unknown, fallbackMessage: string): void {
     const message = extractFormLevelErrorMessage(err, fallbackMessage);
     this.mutationError.set(message);
-    this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+
+    // Long validation messages (e.g. "rowsAlreadyApproved", "rowsNotApprovable", "notPending")
+    // need more than 3s to read, so keep them open until manually closed.
+    // See isLongSnackbarMessage for the threshold.
+    const persistent = isLongSnackbarMessage(message);
+    this.utilityService.triggerSnackbar(message, 'snackbar-danger', { persistent });
   }
 }

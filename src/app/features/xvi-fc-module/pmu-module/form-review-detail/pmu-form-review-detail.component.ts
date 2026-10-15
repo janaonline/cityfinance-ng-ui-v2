@@ -11,6 +11,7 @@ import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../shared/brea
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
+import { TruncatedTextComponent } from '../../../../shared/components/truncated-text/truncated-text.component';
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import {
   ConditionalFieldConfig,
@@ -22,7 +23,7 @@ import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { PmuDevolutionRow, PmuFormReviewData } from '../pmu-review.models';
 import { PmuFormReviewService } from '../pmu-form-review.service';
-import { extractApiErrorResponse, extractFormLevelErrorMessage } from '../pmu-review.utils';
+import { extractApiErrorResponse, extractFormLevelErrorMessage, isLongSnackbarMessage } from '../pmu-review.utils';
 
 /**
  * One generic form-level PMU review detail, serving SFC Status / GTC / Devolution Formula — only
@@ -38,6 +39,7 @@ import { extractApiErrorResponse, extractFormLevelErrorMessage } from '../pmu-re
     XvifcBreadcrumbComponent,
     PreLoaderComponent,
     AmountDisplayToggleComponent,
+    TruncatedTextComponent,
   ],
   templateUrl: './pmu-form-review-detail.component.html',
   styleUrl: './pmu-form-review-detail.component.scss',
@@ -295,6 +297,11 @@ export class PmuFormReviewDetailComponent {
   private applyMutationError(err: unknown, fallbackMessage: string): void {
     const message = extractFormLevelErrorMessage(err, fallbackMessage);
     this.mutationError.set(message);
-    this.utilityService.triggerSnackbar(message, 'snackbar-danger');
+
+    // Keep long validation messages open until dismissed, as 3s isn't enough to read them.
+    // Use `isLongSnackbarMessage` for the threshold. Stay generic for future errors, like
+    // `rowsNotApprovable`, rather than assuming this component has none.
+    const persistent = isLongSnackbarMessage(message);
+    this.utilityService.triggerSnackbar(message, 'snackbar-danger', { persistent });
   }
 }
