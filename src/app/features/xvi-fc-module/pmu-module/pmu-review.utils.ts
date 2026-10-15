@@ -28,3 +28,11 @@ export function extractFormLevelErrorMessage(err: unknown, fallback: string): st
   const formErrors = response?.errors?.['_form'];
   return formErrors?.length ? formErrors.map((e) => e.message).join(' ') : (response?.message ?? fallback);
 }
+
+/** 80 chars separates short (56) from long (91) messages, based on the PMU mutation
+ * error audit. Longer messages automatically qualify without maintenance. */
+export const LONG_SNACKBAR_MESSAGE_THRESHOLD = 80;
+
+export function isLongSnackbarMessage(message: string): boolean {
+  return message.length > LONG_SNACKBAR_MESSAGE_THRESHOLD;
+}

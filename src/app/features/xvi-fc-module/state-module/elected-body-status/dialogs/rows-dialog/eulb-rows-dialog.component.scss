@@ -66,11 +66,10 @@ mat-dialog-content.eulb-rows-dialog-content {
   width: 84px;
 }
 
-// Stable row height and cell overflow — content never expands a fixed-layout column
+// Fixed column widths; row height can grow for expanded content (e.g. "Show more" Remarks).
 .eulb-rows-table td {
-  overflow: hidden;
   vertical-align: middle;
-  height: 48px;
+  min-height: 48px;
 }
 
 .eulb-rows-table tbody tr {
