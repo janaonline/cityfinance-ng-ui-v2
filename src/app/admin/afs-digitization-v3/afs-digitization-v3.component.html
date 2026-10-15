@@ -263,6 +263,17 @@
             <mat-icon>article</mat-icon>
             <span>{{ row.digitization.jobId ? 'View log' : 'No job yet' }}</span>
           </button>
+          @if (jobUrl(row); as url) {
+            <a mat-menu-item [href]="url" target="_blank" rel="noopener">
+              <mat-icon>open_in_new</mat-icon>
+              <span>View job</span>
+            </a>
+          } @else {
+            <button mat-menu-item type="button" disabled>
+              <mat-icon>open_in_new</mat-icon>
+              <span>View job</span>
+            </button>
+          }
         </ng-template>
       </mat-menu>
     </div>

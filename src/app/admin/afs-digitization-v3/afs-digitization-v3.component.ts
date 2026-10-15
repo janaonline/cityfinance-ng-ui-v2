@@ -25,6 +25,7 @@ import {
   DEFAULT_DOC_TYPE,
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
+import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import {
@@ -268,6 +269,14 @@ export class AfsDigitizationV3Component implements OnInit {
           this.notify(this.errorMessage(err, 'Could not queue files'));
         },
       });
+  }
+
+  /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
+  jobUrl(row: DigitizationV3Row): string | null {
+    const afsDigitizationJobId = row.digitization?.jobId;
+    if (!afsDigitizationJobId) return null;
+    const base = environment.ui.urlV2.replace(/\/+$/, '');
+    return `${base}/ocr/afs-digitization/upload?jobId=${encodeURIComponent(afsDigitizationJobId)}`;
   }
 
   /** "View log" in the row's three-dot menu: FastAPI's log for the job saved on the file. */
