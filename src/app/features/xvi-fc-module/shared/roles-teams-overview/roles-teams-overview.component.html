@@ -19,7 +19,7 @@
     </div>
 
     <!-- ══ Info Banner ════════════════════════════════════════════════════════════════ -->
-    @if (isSubmitter()) {
+    @if (isSubmitter() && infoBannerText) {
       <div class="info-banner d-flex align-items-start gap-2 rounded-3 px-3 py-3 mb-4 small">
         <i class="bi bi-info-circle-fill info-banner__icon flex-shrink-0" aria-hidden="true"></i>
         <span><strong>How access works:</strong> <span [innerHTML]="infoBannerText"></span></span>
