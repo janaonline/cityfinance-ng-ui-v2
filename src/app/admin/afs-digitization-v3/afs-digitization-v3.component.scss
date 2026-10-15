@@ -74,10 +74,6 @@
   white-space: nowrap;
 }
 
-.toolbar {
-  align-items: center;
-}
-
 /* Digitization filters at the bottom of the sidebar, stacked full width */
 .v3-filters {
   margin-top: 1rem;
@@ -89,25 +85,6 @@
   display: block;
   width: 100%;
   margin-bottom: 0.75rem;
-}
-
-.table-container {
-  position: relative;
-  overflow-x: auto;
-}
-
-.table-loader-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.6);
-  z-index: 5;
-}
-
-.select-col {
-  width: 3.5rem;
 }
 
 .badge {
@@ -146,4 +123,53 @@
 .chip-duplicate {
   background: #fdf0d5;
   color: #7a5200;
+}
+
+/* Table, same look as the AFS dashboard table */
+.table-wrapper {
+  padding-bottom: 1rem;
+}
+
+mat-card {
+  width: 100%;
+}
+
+.table-container {
+  position: relative;
+  max-height: 75vh;
+  overflow: auto;
+}
+
+.table-loader-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+
+.bordered-mat-table {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-collapse: collapse;
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell,
+  .mat-mdc-footer-cell {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .mat-mdc-header-cell:last-child,
+  .mat-mdc-cell:last-child,
+  .mat-mdc-footer-cell:last-child {
+    border-right: none;
+  }
+}
+/* Badge and icon stay on one line */
+.nowrap-cell {
+  white-space: nowrap;
 }

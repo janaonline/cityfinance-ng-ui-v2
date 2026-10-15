@@ -20,6 +20,8 @@ export interface DigitizationV3Info {
   isMismatch?: boolean;
   expectedDocType?: string;
   noOfPages?: number;
+  jobId?: string;
+  hasExcel?: boolean;
   summary?: string;
   error?: string;
   digitizedAt?: string;
@@ -35,6 +37,9 @@ export interface DigitizationV3Row {
   docType: string;
   pdfUrl: string | null;
   pdfUrlSigned: string | null;
+  /** From the annual account's PDF metadata; null until backfilled */
+  pdfPageCount: number | null;
+  pdfSizeBytes: number | null;
   digitizationV3: DigitizationV3Info;
 }
 

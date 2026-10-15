@@ -5,6 +5,7 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,6 +23,7 @@ import {
   DEFAULT_DOC_TYPE,
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
+import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import {
   AfsDigitizationV3Service,
@@ -55,6 +57,7 @@ interface MetricCard {
     CommonModule,
     FormsModule,
     MatButtonModule,
+    MatCardModule,
     MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
@@ -262,10 +265,24 @@ export class AfsDigitizationV3Component implements OnInit {
       });
   }
 
+  /** FastAPI streams the workbook for a digitized job. */
+  excelHref(row: DigitizationV3Row): string | null {
+    const v3 = row.digitizationV3;
+    return v3?.status === 'digitized' && v3.hasExcel && v3.jobId
+      ? `afs-digitization/jobs//excel`
+      : null;
+  }
+
   docLabel(key: string): string {
     return DOC_TYPE_LABELS[key] ?? key;
   }
 
+  formatBytes(bytes: number | null | undefined): string {
+    if (bytes == null) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
   pageRange(start: number, end: number): string {
     return start === end ? `p${start}` : `p${start}–${end}`;
   }
