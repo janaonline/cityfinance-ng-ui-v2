@@ -149,7 +149,7 @@
                   <a [href]="row.pdfUrlSigned" target="_blank" rel="noopener" [matTooltip]="docLabel(row.docType)">
                     <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
                   </a>
-                  @if (row.pdfPageCount ?? row.digitizationV3.noOfPages; as pages) {
+                  @if (row.pdfPageCount ?? row.digitization.noOfPages; as pages) {
                     <strong> {{ pages }} {{ pages === 1 ? 'page' : 'pages' }}</strong>
                   }
                   @if (row.pdfSizeBytes) {
@@ -166,10 +166,10 @@
               <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
                 <span
                   class="badge"
-                  [ngClass]="'status-' + row.digitizationV3.status"
-                  [matTooltip]="row.digitizationV3.error || ''"
+                  [ngClass]="'status-' + row.digitization.status"
+                  [matTooltip]="row.digitization.error || ''"
                 >
-                  {{ row.digitizationV3.status }}
+                  {{ row.digitization.status }}
                 </span>                @if (excelHref(row); as href) {
                   <a [href]="href" target="_blank" rel="noopener" class="ms-2" matTooltip="Download digitized Excel">
                     <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
@@ -181,8 +181,8 @@
             <ng-container matColumnDef="contents">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
               <td mat-cell *matCellDef="let row">
-                @if (row.digitizationV3.status === 'digitized') {
-                  @for (seg of row.digitizationV3.segments; track $index) {
+                @if (row.digitization.status === 'digitized') {
+                  @for (seg of row.digitization.segments; track $index) {
                     <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
                       {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
                     </span>
@@ -198,10 +198,10 @@
             <ng-container matColumnDef="flags">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Flags</th>
               <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
-                @if (row.digitizationV3.isConsolidated) {
+                @if (row.digitization.isConsolidated) {
                   <span class="badge bg-primary me-1">Consolidated</span>
                 }
-                @if (row.digitizationV3.isMismatch) {
+                @if (row.digitization.isMismatch) {
                   <span
                     class="badge bg-danger"
                     [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'"

@@ -40,7 +40,7 @@ export interface DigitizationV3Row {
   /** From the annual account's PDF metadata; null until backfilled */
   pdfPageCount: number | null;
   pdfSizeBytes: number | null;
-  digitizationV3: DigitizationV3Info;
+  digitization: DigitizationV3Info;
 }
 
 export interface DigitizationV3ListResponse {

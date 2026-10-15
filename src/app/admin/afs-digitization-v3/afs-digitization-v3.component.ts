@@ -163,13 +163,13 @@ export class AfsDigitizationV3Component implements OnInit {
 
   /** Only files that have a PDF and are not already queued, processing or digitized can be queued. */
   isSelectable(row: DigitizationV3Row): boolean {
-    const status = row.digitizationV3?.status;
+    const status = row.digitization?.status;
     return !!row.pdfUrl && status !== 'queued' && status !== 'processing' && status !== 'digitized';
   }
 
   disabledReason(row: DigitizationV3Row): string {
     if (!row.pdfUrl) return 'No PDF uploaded';
-    const status = row.digitizationV3?.status;
+    const status = row.digitization?.status;
     return status === 'queued' || status === 'processing' || status === 'digitized' ? `Already ${status}` : '';
   }
 
@@ -267,7 +267,7 @@ export class AfsDigitizationV3Component implements OnInit {
 
   /** FastAPI streams the workbook for a digitized job. */
   excelHref(row: DigitizationV3Row): string | null {
-    const v3 = row.digitizationV3;
+    const v3 = row.digitization;
     return v3?.status === 'digitized' && v3.hasExcel && v3.jobId
       ? `afs-digitization/jobs//excel`
       : null;
