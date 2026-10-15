@@ -23,7 +23,6 @@ import {
   DEFAULT_DOC_TYPE,
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
-import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import {
   AfsDigitizationV3Service,
@@ -263,14 +262,6 @@ export class AfsDigitizationV3Component implements OnInit {
           this.notify(this.errorMessage(err, 'Could not queue files'));
         },
       });
-  }
-
-  /** FastAPI streams the workbook for a digitized job. */
-  excelHref(row: DigitizationV3Row): string | null {
-    const v3 = row.digitization;
-    return v3?.status === 'digitized' && v3.hasExcel && v3.jobId
-      ? `afs-digitization/jobs//excel`
-      : null;
   }
 
   docLabel(key: string): string {

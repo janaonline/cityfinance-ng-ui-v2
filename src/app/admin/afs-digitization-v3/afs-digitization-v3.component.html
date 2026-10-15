@@ -170,8 +170,14 @@
                   [matTooltip]="row.digitization.error || ''"
                 >
                   {{ row.digitization.status }}
-                </span>                @if (excelHref(row); as href) {
-                  <a [href]="href" target="_blank" rel="noopener" class="ms-2" matTooltip="Download digitized Excel">
+                </span>                @if (row.excelUrlSigned) {
+                  <a
+                    [href]="row.excelUrlSigned"
+                    target="_blank"
+                    rel="noopener"
+                    class="ms-2"
+                    matTooltip="Download digitized Excel"
+                  >
                     <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
                   </a>
                 }
