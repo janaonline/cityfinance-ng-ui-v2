@@ -7,8 +7,10 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
@@ -24,6 +26,7 @@ import {
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
 import { FilterValues } from '../afs-dashboard/afs.service';
+import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import {
   AfsDigitizationV3Service,
   DigitizationV3Metrics,
@@ -58,8 +61,10 @@ interface MetricCard {
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
+    MatMenuModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
@@ -73,9 +78,10 @@ interface MetricCard {
 export class AfsDigitizationV3Component implements OnInit {
   private readonly api = inject(AfsDigitizationV3Service);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'contents', 'flags'];
+  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -262,6 +268,17 @@ export class AfsDigitizationV3Component implements OnInit {
           this.notify(this.errorMessage(err, 'Could not queue files'));
         },
       });
+  }
+
+  /** "View log" in the row's three-dot menu: FastAPI's log for the job saved on the file. */
+  viewLog(row: DigitizationV3Row): void {
+    const afsDigitizationJobId = row.digitization?.jobId;
+    if (!afsDigitizationJobId) return;
+    this.dialog.open(AfsDigitizationV3LogDialogComponent, {
+      width: '640px',
+      maxWidth: '95vw',
+      data: { ulbName: row.ulbName, afsDigitizationJobId },
+    });
   }
 
   docLabel(key: string): string {

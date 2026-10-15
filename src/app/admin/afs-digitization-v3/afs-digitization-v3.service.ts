@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export type DigitizationV3Status = 'not-digitized' | 'queued' | 'processing' | 'digitized' | 'failed';
@@ -76,6 +77,26 @@ export interface EnqueueSummary {
   failedToQueue: number;
 }
 
+/** FastAPI's log for one job (status, progress, error and warnings, timestamps). */
+export interface AfsDigitizationJobLog {
+  afsDigitizationJobId: string;
+  status: string;
+  progressStep: string | null;
+  message: string | null;
+  errorMessage: string | null;
+  warnings: string[];
+  filename: string | null;
+  ocrEngine: string | null;
+  geminiModel: string | null;
+  pageCount: number | null;
+  detectedDocumentType: string | null;
+  multipleDocumentsDetected: boolean | null;
+  ocrCostUsd: number | null;
+  createdAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
 /** Body accepted by every afs-digitization-v3 endpoint. */
 export interface DigitizationV3Query {
   yearId: string;
@@ -99,6 +120,12 @@ export class AfsDigitizationV3Service {
 
   list(query: DigitizationV3Query) {
     return this.http.post<DigitizationV3ListResponse>(`${this.base}/list`, query);
+  }
+
+  getJobLog(afsDigitizationJobId: string) {
+    return this.http
+      .get<{ success: boolean; data: AfsDigitizationJobLog }>(`${this.base}/jobs/${afsDigitizationJobId}/log`)
+      .pipe(map((res) => res.data));
   }
 
   enqueueByFilter(query: DigitizationV3Query) {
