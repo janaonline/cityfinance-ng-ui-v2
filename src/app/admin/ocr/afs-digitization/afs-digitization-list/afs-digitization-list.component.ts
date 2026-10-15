@@ -6,7 +6,9 @@ import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/p
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { saveAs } from 'file-saver';
 import { finalize } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
@@ -29,10 +31,13 @@ interface DigitizationListRow {
   expectedUlbName: string;
   expectedFinancialYear: string;
   expectedDocType: string;
+  notes: string;
   detectedDocumentType: string;
   multipleDocumentsDetected: boolean;
   createdAt: string;
   completedAt: string;
+  elapsed: string;
+  elapsedLabel: string;
 }
 
 @Component({
@@ -60,10 +65,8 @@ export class AfsDigitizationListComponent implements OnInit {
 
   readonly displayedColumns: string[] = [
     'jobAndFile',
-    'model',
     'status',
     'scores',
-    'detectedType',
     'cost',
     'expected',
     'dates',
@@ -78,11 +81,15 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'failed', label: 'Failed' },
   ];
 
+  readonly docTypeOptions = this.digitizationService.documentTypes;
+  readonly financialYearOptions = this.digitizationService.financialYears;
+
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
     filename: [''],
     ulbName: [''],
     financialYear: [''],
+    docType: [''],
     dateFrom: this.fb.control<Date | null>(null),
     dateTo: this.fb.control<Date | null>(null),
   });
@@ -90,6 +97,8 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly sortOrder = signal<'asc' | 'desc'>('desc');
   readonly dataSource = new MatTableDataSource<DigitizationListRow>([]);
   readonly loading = signal(false);
+  readonly exporting = signal(false);
+  readonly copiedKey = signal<string | null>(null);
   readonly downloadingJobId = signal<string | null>(null);
   readonly downloadingPdfJobId = signal<string | null>(null);
   readonly revalidatingJobId = signal<string | null>(null);
@@ -110,7 +119,15 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   resetFilters(): void {
-    this.filterForm.reset({ status: '', filename: '', ulbName: '', financialYear: '', dateFrom: null, dateTo: null });
+    this.filterForm.reset({
+      status: '',
+      filename: '',
+      ulbName: '',
+      financialYear: '',
+      docType: '',
+      dateFrom: null,
+      dateTo: null,
+    });
     this.pageIndex = 0;
     this.paginator?.firstPage();
     this.loadJobs();
@@ -136,13 +153,13 @@ export class AfsDigitizationListComponent implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'completed':
-        return 'status-badge--completed';
+        return 'bg-success-subtle text-success-emphasis';
       case 'failed':
-        return 'status-badge--failed';
+        return 'bg-danger-subtle text-danger-emphasis';
       case 'processing':
-        return 'status-badge--processing';
+        return 'bg-warning-subtle text-warning-emphasis';
       default:
-        return 'status-badge--queued';
+        return 'bg-secondary-subtle text-secondary-emphasis';
     }
   }
 
@@ -151,6 +168,64 @@ export class AfsDigitizationListComponent implements OnInit {
     if (score >= 90) return 'text-success';
     if (score >= 70) return 'text-warning';
     return 'text-danger';
+  }
+
+  exportToExcel(): void {
+    if (this.exporting()) return;
+    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
+    this.exporting.set(true);
+
+    this.digitizationService
+      .dumpDigitizationJobs({
+        status: status || undefined,
+        filename: filename.trim() || undefined,
+        ulb_name: ulbName.trim() || undefined,
+        financial_year: financialYear.trim() || undefined,
+        doc_type: docType || undefined,
+        sort_order: this.sortOrder(),
+        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
+        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
+      })
+      .pipe(finalize(() => this.exporting.set(false)))
+      .subscribe({
+        next: (blob) => {
+          const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
+          saveAs(blob, `afs_digitization_jobs_${timestamp}.xlsx`);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Export failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  copyValue(label: string, value: string): void {
+    if (!value || value === '—') return;
+
+    navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        const key = `${label}:${value}`;
+        this.copiedKey.set(key);
+        window.setTimeout(() => {
+          if (this.copiedKey() === key) this.copiedKey.set(null);
+        }, 1500);
+      })
+      .catch(() => {
+        this.utilityService.swalPopup('Copy failed', `Unable to copy ${label.toLowerCase()}. Please try again.`, 'error');
+      });
+  }
+
+  isCopied(label: string, value: string): boolean {
+    return this.copiedKey() === `${label}:${value}`;
+  }
+
+  getJobLink(jobId: string): string {
+    const base = environment.ui.urlV2.replace(/\/+$/, '');
+    return `${base}/ocr/afs-digitization/upload?jobId=${jobId}`;
   }
 
   downloadExcel(row: DigitizationListRow): void {
@@ -172,6 +247,10 @@ export class AfsDigitizationListComponent implements OnInit {
           this.utilityService.swalPopup('Download failed', 'Could not download the Excel file.', 'error');
         },
       });
+  }
+
+  getPdfViewUrl(jobId: string): string {
+    return this.digitizationService.getDigitizationFileViewUrl(jobId, 'pdf');
   }
 
   downloadPdf(row: DigitizationListRow): void {
@@ -245,7 +324,7 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, filename, ulbName, financialYear, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.digitizationService
@@ -254,6 +333,7 @@ export class AfsDigitizationListComponent implements OnInit {
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
         financial_year: financialYear.trim() || undefined,
+        doc_type: docType || undefined,
         sort_order: this.sortOrder(),
         date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
         date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
@@ -296,6 +376,7 @@ export class AfsDigitizationListComponent implements OnInit {
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',
       expectedDocType: job.expected?.doc_type || '—',
+      notes: job.notes || '',
       detectedDocumentType: job.detected_document_type
         ? (this.digitizationService.detectedDocumentTypeLabels[job.detected_document_type] ??
           job.detected_document_type)
@@ -303,11 +384,35 @@ export class AfsDigitizationListComponent implements OnInit {
       multipleDocumentsDetected: job.multiple_documents_detected === true,
       createdAt: this.formatDate(job.created_at),
       completedAt: this.formatDate(job.completed_at),
+      elapsed: this.formatElapsed(job),
+      elapsedLabel: job.status === 'completed' || job.status === 'failed' ? 'Took' : 'Running',
     };
   }
 
   private formatFileSize(bytes: number | null): string {
     return bytes === null ? '—' : `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
+  /** Duration of the latest run: started_at (reset on reruns) to completed_at, or to now if still running. */
+  private formatElapsed(job: DigitizationJobStatusResponse): string {
+    const start = this.parseUtc(job.started_at ?? job.created_at);
+    if (start === null) return '—';
+    const running = job.status === 'queued' || job.status === 'processing';
+    const end = running ? Date.now() : this.parseUtc(job.completed_at);
+    if (end === null || end < start) return '—';
+    const total = Math.round((end - start) / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+
+  private parseUtc(value?: string | null): number | null {
+    if (!value) return null;
+    const ms = Date.parse(/[Z+]/.test(value.slice(-6)) ? value : value + 'Z');
+    return Number.isNaN(ms) ? null : ms;
   }
 
   private formatDate(value?: string | null): string {

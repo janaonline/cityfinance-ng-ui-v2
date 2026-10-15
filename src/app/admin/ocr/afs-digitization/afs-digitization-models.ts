@@ -24,6 +24,7 @@ export interface DigitizationJobStatusResponse {
   enable_validation: boolean;
   enable_arithmetic_validation: boolean;
   expected: DigitizationExpectedFields | null;
+  notes: string | null;
   progress_step: string | null;
   error_message: string | null;
   confidence_score: number | null;
@@ -223,6 +224,7 @@ export interface DigitizationJobResultResponse {
   status: DigitizationStatus;
   filename: string;
   expected: DigitizationExpectedFields | null;
+  notes: string | null;
   progress_step: string | null;
   error_message: string | null;
   created_at: string | null;
@@ -250,5 +252,6 @@ export interface DigitizationJobTracker {
   progressStep: string | null;
   result: DigitizationResult | null;
   excelS3Key: string | null;
+  notes: string | null;
   showResult: boolean;
 }

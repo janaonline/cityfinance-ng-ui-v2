@@ -19,6 +19,7 @@ import {
 } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { IUlbSummary } from '../../../../core/models/ulb-summary';
+import { environment } from '../../../../../environments/environment';
 import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
@@ -66,6 +67,7 @@ export class AfsDigitizationComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
 
   readonly maxFileSizeMb = 50;
+  readonly maxNotesLength = 2000;
 
   readonly geminiModels = this.digitizationService.geminiModels;
   readonly ocrEngines = this.digitizationService.ocrEngines;
@@ -73,7 +75,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly financialYears = this.digitizationService.financialYears;
 
   readonly form = this.fb.group({
-    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('textract', Validators.required),
+    ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('gemini', Validators.required),
     geminiModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
     ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),
@@ -81,6 +83,7 @@ export class AfsDigitizationComponent implements OnInit {
     enableValidation: this.fb.nonNullable.control(true, Validators.required),
     enableArithmeticValidation: this.fb.nonNullable.control(true, Validators.required),
     enableDocumentClassification: this.fb.nonNullable.control(true, Validators.required),
+    notes: this.fb.nonNullable.control('', Validators.maxLength(this.maxNotesLength)),
   });
 
   private readonly arithmeticRuleLabels: Partial<Record<string, string>> = {
@@ -93,6 +96,9 @@ export class AfsDigitizationComponent implements OnInit {
   };
 
   selectedFile: File | null = null;
+  /** When true the PDF is read from S3 (`s3Path`) instead of a manual upload. */
+  useS3 = false;
+  readonly s3Path = this.fb.nonNullable.control('');
   readonly isSubmitting = signal(false);
   readonly jobs = signal<DigitizationJobTracker[]>([]);
   readonly hasJobs = computed(() => this.jobs().length > 0);
@@ -101,6 +107,9 @@ export class AfsDigitizationComponent implements OnInit {
   readonly revalidatingJobId = signal<string | null>(null);
   readonly revalidatingArithmeticJobId = signal<string | null>(null);
   readonly regeneratingJobId = signal<string | null>(null);
+  readonly editingNotesJobId = signal<string | null>(null);
+  readonly savingNotesJobId = signal<string | null>(null);
+  readonly notesDraft = this.fb.nonNullable.control('', Validators.maxLength(this.maxNotesLength));
   readonly copiedKey = signal<string | null>(null);
   readonly filteredUlbs = signal<IUlbSummary[]>([]);
   readonly ulbSearchInProgress = signal(false);
@@ -185,9 +194,27 @@ export class AfsDigitizationComponent implements OnInit {
     this.fileInput?.nativeElement.click();
   }
 
+  onSourceToggle(useS3: boolean): void {
+    this.useS3 = useS3;
+    // Only one source is ever sent, so drop whatever the hidden option held.
+    if (useS3) {
+      this.clearFile();
+    } else {
+      this.s3Path.reset();
+    }
+  }
+
+  hasSource(): boolean {
+    return this.useS3 ? !!this.s3Path.value.trim() : !!this.selectedFile;
+  }
+
   submit(): void {
-    if (!this.selectedFile) {
-      this.utilityService.swalPopup('File required', 'Please choose a PDF file.', 'error');
+    if (!this.hasSource()) {
+      this.utilityService.swalPopup(
+        this.useS3 ? 'S3 path required' : 'File required',
+        this.useS3 ? 'Please enter the S3 path of the PDF.' : 'Please choose a PDF file.',
+        'error',
+      );
       return;
     }
     if (this.form.invalid) {
@@ -204,14 +231,17 @@ export class AfsDigitizationComponent implements OnInit {
       enableValidation,
       enableArithmeticValidation,
       enableDocumentClassification,
+      notes,
     } = this.form.getRawValue();
+    const notesValue = notes.trim() || null;
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
-    const file = this.selectedFile;
+    const source: File | string = this.useS3 ? this.s3Path.value.trim() : this.selectedFile!;
+    const filename = typeof source === 'string' ? source.split('/').pop() || source : source.name;
     this.isSubmitting.set(true);
 
     this.digitizationService
       .submitDigitizationJob(
-        file,
+        source,
         geminiModel,
         ulbNameValue,
         financialYear,
@@ -220,22 +250,26 @@ export class AfsDigitizationComponent implements OnInit {
         enableArithmeticValidation,
         ocrEngine,
         enableDocumentClassification,
+        notesValue,
       )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
         next: (response) => {
           this.addJob({
             jobId: response.job_id,
-            filename: file.name,
+            filename,
             status: 'queued',
             message: response.message,
             progressStep: null,
             result: null,
             excelS3Key: null,
+            notes: notesValue,
             showResult: true,
           });
           this.startPolling(response.job_id);
           this.clearFile();
+          this.s3Path.reset();
+          this.form.controls.notes.reset();
         },
         error: (err) => {
           this.utilityService.swalPopup('Submission failed', this.parseApiError(err), 'error', true);
@@ -542,6 +576,32 @@ export class AfsDigitizationComponent implements OnInit {
       });
   }
 
+  startEditNotes(job: DigitizationJobTracker): void {
+    this.notesDraft.setValue(job.notes ?? '');
+    this.editingNotesJobId.set(job.jobId);
+  }
+
+  cancelEditNotes(): void {
+    this.editingNotesJobId.set(null);
+  }
+
+  saveNotes(job: DigitizationJobTracker): void {
+    if (this.savingNotesJobId() || this.notesDraft.invalid) return;
+    this.savingNotesJobId.set(job.jobId);
+    this.digitizationService
+      .updateDigitizationJobNotes(job.jobId, this.notesDraft.value.trim() || null)
+      .pipe(finalize(() => this.savingNotesJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, { notes: response.notes });
+          this.editingNotesJobId.set(null);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Update notes failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
   regenerateExcel(job: DigitizationJobTracker): void {
     if (this.regeneratingJobId()) return;
     this.regeneratingJobId.set(job.jobId);
@@ -594,7 +654,8 @@ export class AfsDigitizationComponent implements OnInit {
   }
 
   getJobLink(jobId: string): string {
-    return `${window.location.origin}/ocr/afs-digitization/upload?jobId=${jobId}`;
+    const base = environment.ui.urlV2.replace(/\/+$/, '');
+    return `${base}/ocr/afs-digitization/upload?jobId=${jobId}`;
   }
 
   private addJob(job: DigitizationJobTracker): void {
@@ -672,6 +733,7 @@ export class AfsDigitizationComponent implements OnInit {
           progressStep: status.progress_step,
           result: null,
           excelS3Key: status.excel_s3_key,
+          notes: status.notes,
           showResult: true,
         });
 

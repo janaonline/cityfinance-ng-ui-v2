@@ -24,7 +24,8 @@ function isStateUserRole(role: string): boolean {
 const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());
 const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole());
 const isMohuaRole: CanMatchFn = () => readUserRole().toUpperCase() === 'MOHUA';
-const isPmuRole: CanMatchFn = () => readUserRole().toUpperCase() === 'XVIFC_PMU';
+const isPmuRole: CanMatchFn = () => readUserRole().toUpperCase() === 'MOHUA_PMU';
+const isDoeRole: CanMatchFn = () => readUserRole().toUpperCase() === 'XVIFC_DOE';
 const isAdminRole: CanMatchFn = () => readUserRole().toUpperCase() === 'ADMIN';
 
 export const XVIFC_ROUTES: Routes = [
@@ -75,9 +76,15 @@ export const XVIFC_ROUTES: Routes = [
       {
         path: ':yearId',
         canMatch: [isPmuRole],
-        data: { role: 'XVIFC_PMU' },
+        data: { role: 'MOHUA_PMU' },
         loadChildren: () =>
           import('./pmu-module/pmu-module.routes').then((m) => m.PMU_ROUTES),
+      },
+      {
+        path: ':yearId',
+        canMatch: [isDoeRole],
+        data: { role: 'DOE' },
+        loadChildren: () => import('./doe-module/doe-module.routes').then((m) => m.DOE_ROUTES),
       },
       // Authenticated user with unsupported role, or unknown child path
       {

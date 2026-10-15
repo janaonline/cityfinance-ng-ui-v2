@@ -142,6 +142,8 @@ export class PmuRowReviewDetailComponent {
   private dependencyIndex: DependencyIndex<ConditionalFieldConfig> = new Map();
 
   private readonly form = this.route.snapshot.data['form'] as PmuReviewFormId;
+  /** Set by the MoHUA routes: the same screen, read-only (MoHUA views these forms, it never approves or returns them). */
+  readonly viewOnly = this.route.snapshot.data['viewOnly'] === true;
   private readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
   readonly installment = this.route.snapshot.paramMap.get('installment');
 
@@ -158,11 +160,11 @@ export class PmuRowReviewDetailComponent {
   );
   /** Gates the 4 Elected-Body-only columns (Status, the 2 dates, Remarks). */
   readonly showElectedBodyColumns = hasElectedBodyColumns(this.form);
-  /** Loading/empty-state row's `colspan` — checkbox + ULB Name + Census Code + Status (4), plus the
+  /** Loading/empty-state row's `colspan` — checkbox (not in view-only: 3 instead of 4) + ULB Name + Census Code + Status, plus the
    *  3 money columns and/or the Eligibility column and/or the 4 Elected Body columns when shown. */
   readonly colSpan = computed(
     () =>
-      4 +
+      (this.viewOnly ? 3 : 4) +
       (this.showMoneyColumns ? 2 : 0) +
       (this.showAllocationColumn() ? 1 : 0) +
       (this.showEligibility ? 1 : 0) +
@@ -184,16 +186,27 @@ export class PmuRowReviewDetailComponent {
     }
   }
 
-  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => [
-    {
-      label: 'Review State Submissions',
-      routerLink: ['/xvifc', this.moduleService.yearId(), 'review-state-submissions'],
-      queryParams: { ...this.route.snapshot.queryParams, form: this.form },
-    },
-    { label: this.formOption.label },
-  ]);
+  readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
+    const yearId = this.moduleService.yearId();
+    if (this.viewOnly) {
+      return [
+        { label: 'All States', routerLink: ['/xvifc', yearId, 'overview'] },
+        { label: this.stateName(), routerLink: ['/xvifc', yearId, 'review-state-submissions', this.stateId] },
+        { label: this.formOption.label },
+      ];
+    }
+    return [
+      {
+        label: 'Review State Submissions',
+        routerLink: ['/xvifc', yearId, 'review-state-submissions'],
+        queryParams: { ...this.route.snapshot.queryParams, form: this.form },
+      },
+      { label: this.formOption.label },
+    ];
+  });
 
   readonly review = signal<PmuFormReviewData | null>(null);
+  readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly isApproving = signal(false);
@@ -213,7 +226,6 @@ export class PmuRowReviewDetailComponent {
    *  doc comment. */
   readonly visibleFields = computed(() => this.visibilityService.getVisibleFields(this.fields()));
 
-  readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly statusLabel = computed(() => pmuStatusLabel(this.review()?.currentFormStatus ?? 0));
   readonly statusBadgeClass = computed(() => pmuStatusBadgeClass(this.review()?.currentFormStatus ?? 0));
   /** Only shown while the form is currently Returned — see the form-level detail component's own
@@ -714,7 +726,7 @@ export class PmuRowReviewDetailComponent {
       .subscribe({
         next: () => {
           this.isApproving.set(false);
-          this.utilityService.triggerSnackbar('Form approved.');
+          this.utilityService.triggerSnackbar('Form approved. Ready to generate claim letter.');
           this.reloadAfterMutation();
         },
         error: (err: unknown) => {

@@ -95,7 +95,7 @@ export type EulbEditableFieldCellControl =
                 [formControl]="editControl"
               ></textarea>
               <span class="eulb-remarks-counter" aria-live="polite">
-                {{ editControl?.value?.length ?? 0 }}/{{ remarksMaxLength }}
+                {{ editControl.value?.length ?? 0 }}/{{ remarksMaxLength }}
               </span>
             </div>
           }
