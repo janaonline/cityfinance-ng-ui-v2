@@ -1,0 +1,281 @@
+<div class="container-fluid px-4 pt-5 position-relative layout">
+  @if (showSideBar()) {
+    <button
+      type="button"
+      class="sidebar-overlay"
+      (click)="toggleSideBar(false)"
+      aria-label="Close sidebar overlay"
+      tabindex="0"
+    ></button>
+  }
+
+  <div id="filter-sidebar" class="sideBar" [class.sideBar_open]="showSideBar()">
+    <app-afs-filter (filtersChanged)="onFiltersChanged($event)"></app-afs-filter>
+
+    <!-- These apply as soon as a value is picked; they have no Apply button of their own -->
+    <section class="v3-filters" aria-label="Digitization filters">
+      <h6 class="fw-bold mb-3">Digitization</h6>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="digitizationV3Status" (selectionChange)="onPageFilterChanged()">
+          @for (o of statusOptions; track o.value) {
+            <mat-option [value]="o.value">{{ o.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Contents</mat-label>
+        <mat-select [(ngModel)]="contentFilter" (selectionChange)="onPageFilterChanged()">
+          <mat-option value="">All</mat-option>
+          <mat-option value="consolidated">Consolidated (more than one type)</mat-option>
+          <mat-option value="single">Single type</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Uploaded type</mat-label>
+        <mat-select [(ngModel)]="mismatchFilter" (selectionChange)="onPageFilterChanged()">
+          <mat-option value="">All</mat-option>
+          <mat-option value="mismatch">Mismatch</mat-option>
+          <mat-option value="match">Matches</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+  </div>
+
+  <div class="content">
+    <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
+
+    <div class="metric-grid">
+      @for (card of cards; track card.key) {
+        <div class="card metric-card shadow-sm">
+          <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
+          <div class="metric-text">
+            <span class="metric-value">{{ metricValue(card.key) }}</span>
+            <span class="metric-title">{{ card.title }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="table-wrapper mt-4">
+      <div class="row justify-content-between mb-2">
+        <h3 class="fw-bold col mb-0">City Documents</h3>
+
+        <div class="col text-end">
+          <button type="button" class="mx-2 btn btn-sm btn-outline-cfPrimary" (click)="toggleSideBar(true)">
+            Filters
+          </button>
+          <button
+            type="button"
+            class="mx-2 btn btn-sm btn-outline-cfPrimary"
+            [disabled]="loading() || queueing()"
+            (click)="reload()"
+          >
+            Reload
+          </button>
+          <button
+            type="button"
+            class="mx-2 btn btn-sm btn-outline-cfPrimary"
+            [disabled]="queueing() || loading() || selection.selected.length === 0"
+            (click)="queueSelected()"
+          >
+            Queue Selected ({{ selection.selected.length }})
+          </button>
+          <button
+            type="button"
+            class="mx-2 btn btn-sm btn-cfPrimary"
+            [disabled]="queueing() || loading() || totalCount() === 0"
+            (click)="queueAllMatching()"
+          >
+            @if (queueing()) {
+              <mat-spinner diameter="16" class="d-inline-block me-1" style="vertical-align: middle"></mat-spinner>
+              Queueing...
+            } @else {
+              Queue All Matching ({{ totalCount() }})
+            }
+          </button>
+        </div>
+      </div>
+
+      <mat-card class="shadow">
+        <div class="table-container mt-2">
+          @if (loading()) {
+            <div class="table-loader-overlay"><mat-spinner diameter="40"></mat-spinner></div>
+          }
+
+          <table mat-table [dataSource]="rows()" class="mat-elevation-z1 w-100 mat-elevation-z0 bordered-mat-table">
+            <ng-container matColumnDef="select">
+              <th mat-header-cell *matHeaderCellDef style="width: 40px">
+                <mat-checkbox
+                  aria-label="Select all queueable files on this page"
+                  [checked]="allPageSelected()"
+                  [indeterminate]="somePageSelected()"
+                  (change)="toggleAllOnPage()"
+                ></mat-checkbox>
+              </th>
+              <td mat-cell *matCellDef="let row">
+                <mat-checkbox
+                  [aria-label]="'Select ' + row.ulbName"
+                  [checked]="selection.isSelected(row.ulb)"
+                  [disabled]="!isSelectable(row) || queueing()"
+                  [matTooltip]="disabledReason(row)"
+                  (click)="$event.stopPropagation()"
+                  (change)="selection.toggle(row.ulb)"
+                ></mat-checkbox>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="state">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
+              <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="city">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>City</th>
+              <td mat-cell *matCellDef="let row">
+                <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="pdf">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 220px">
+                Uploaded PDF
+              </th>
+              <td mat-cell *matCellDef="let row" class="nowrap-cell">
+                @if (row.pdfUrlSigned) {
+                  <a [href]="row.pdfUrlSigned" target="_blank" rel="noopener" [matTooltip]="docLabel(row.docType)">
+                    <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  </a>
+                  @if (row.pdfPageCount ?? row.digitization.noOfPages; as pages) {
+                    <strong> {{ pages }} {{ pages === 1 ? 'page' : 'pages' }}</strong>
+                  }
+                  @if (row.pdfSizeBytes) {
+                    <span class="text-muted small"> · {{ formatBytes(row.pdfSizeBytes) }}</span>
+                  }
+                } @else {
+                  <span class="text-muted">No PDF</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
+                <span
+                  class="badge"
+                  [ngClass]="'status-' + row.digitization.status"
+                  [matTooltip]="row.digitization.error || ''"
+                >
+                  {{ row.digitization.status }}
+                </span>                @if (row.excelUrlSigned) {
+                  <a
+                    [href]="row.excelUrlSigned"
+                    target="_blank"
+                    rel="noopener"
+                    class="ms-2"
+                    matTooltip="Download digitized Excel"
+                  >
+                    <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
+                  </a>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="contents">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
+              <td mat-cell *matCellDef="let row">
+                @if (row.digitization.status === 'digitized') {
+                  @for (seg of row.digitization.segments; track $index) {
+                    <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
+                      {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
+                    </span>
+                  } @empty {
+                    <span class="text-muted">Nothing identified</span>
+                  }
+                } @else {
+                  <span class="text-muted">–</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="flags">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Flags</th>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
+                @if (row.digitization.isConsolidated) {
+                  <span class="badge bg-primary me-1">Consolidated</span>
+                }
+                @if (row.digitization.isMismatch) {
+                  <span
+                    class="badge bg-danger"
+                    [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'"
+                    >Mismatch</span
+                  >
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 56px"></th>
+              <td mat-cell *matCellDef="let row" class="text-center">
+                <button
+                  type="button"
+                  mat-icon-button
+                  aria-label="Row actions"
+                  [matMenuTriggerFor]="rowMenu"
+                  [matMenuTriggerData]="{ row: row }"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell text-center p-4" [attr.colspan]="displayedColumns.length">
+                {{ loading() ? 'Loading…' : 'No records match the filters' }}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="totalCount()"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          (page)="onPage($event)"
+          showFirstLastButtons
+        ></mat-paginator>
+      </mat-card>
+
+      <mat-menu #rowMenu="matMenu">
+        <ng-template matMenuContent let-row="row">
+          <button
+            mat-menu-item
+            type="button"
+            [disabled]="!row.digitization.jobId"
+            (click)="viewLog(row)"
+          >
+            <mat-icon>article</mat-icon>
+            <span>{{ row.digitization.jobId ? 'View log' : 'No job yet' }}</span>
+          </button>
+          @if (jobUrl(row); as url) {
+            <a mat-menu-item [href]="url" target="_blank" rel="noopener">
+              <mat-icon>open_in_new</mat-icon>
+              <span>View job</span>
+            </a>
+          } @else {
+            <button mat-menu-item type="button" disabled>
+              <mat-icon>open_in_new</mat-icon>
+              <span>View job</span>
+            </button>
+          }
+        </ng-template>
+      </mat-menu>
+    </div>
+  </div>
+</div>
