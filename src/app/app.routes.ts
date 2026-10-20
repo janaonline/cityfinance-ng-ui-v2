@@ -59,7 +59,7 @@ export const routes: Routes = [
   {
     path: 'ocr',
     loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   {
     path: 'events-dashboard',
