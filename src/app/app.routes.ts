@@ -51,6 +51,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'afs-digitization-v3',
+    loadComponent: () =>
+      import('./admin/afs-digitization-v3/afs-digitization-v3.component').then((m) => m.AfsDigitizationV3Component),
+    canActivate: [authGuard],
+  },
+  {
     path: 'afs-old-dashboard',
     loadComponent: () =>
       import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
