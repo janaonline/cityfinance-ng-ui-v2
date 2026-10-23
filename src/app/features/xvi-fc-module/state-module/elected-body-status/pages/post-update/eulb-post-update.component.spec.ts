@@ -363,7 +363,7 @@ describe('EulbPostUpdateComponent', () => {
     expect(
       fixture.debugElement.query(By.css('input[aria-label="Date on which the elected body is in place"]')),
     ).not.toBeNull();
-    expect(fixture.debugElement.query(By.css('input[aria-label="Remarks"]'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('textarea[aria-label="Remarks"]'))).not.toBeNull();
   });
 
   it('keeps editable field cells as native td elements without wrapper components', () => {
@@ -655,7 +655,7 @@ describe('EulbPostUpdateComponent', () => {
     component.validateChanges();
     fixture.detectChanges();
 
-    const remarksInput = fixture.debugElement.query(By.css('input[aria-label="Remarks"]'));
+    const remarksInput = fixture.debugElement.query(By.css('textarea[aria-label="Remarks"]'));
     expect(remarksInput.classes['is-invalid']).toBeTrue();
     expect(component.rowViewModels()[0].cellErrorText['remarks']).toBe('Remarks are too long.');
   });

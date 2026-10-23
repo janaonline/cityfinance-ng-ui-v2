@@ -63,9 +63,8 @@
 }
 
 .pmu-rows-table td {
-  overflow: hidden;
   vertical-align: middle;
-  height: 48px;
+  min-height: 48px;
 }
 
 .pmu-rows-table tbody tr {

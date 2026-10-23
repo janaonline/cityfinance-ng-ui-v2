@@ -12,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute } from '@angular/router';
+import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { findRouteParam } from '../route-params.util';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -35,6 +36,12 @@ export class MohuaOverviewComponent {
   private readonly service = inject(MohuaOverviewService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly permissions = inject(AuthPermissionService);
+
+  /** DoE shares this dashboard with MoHUA, so only its subtitle names the department. */
+  readonly organisationName = this.permissions.isDoeUser()
+    ? 'Department of Expenditure'
+    : 'Ministry of Housing and Urban Affairs';
 
   readonly yearLabel = signal<string>(this.readStored(XVIFC_LS_KEYS.selectedYearString));
   readonly overview = signal<OverviewData | null>(null);

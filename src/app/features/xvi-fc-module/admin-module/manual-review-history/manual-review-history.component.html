@@ -4,17 +4,21 @@
     <button
       type="button"
       class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1"
-      [disabled]="isExporting() || !canExport()"
-      [title]="canExport() ? '' : 'Select a Form Type above to export — the two backends can\'t be merged into one spreadsheet'"
-      (click)="exportToExcel()"
+      [matMenuTriggerFor]="exportMenu"
+      [disabled]="isExporting()"
     >
       @if (isExporting()) {
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       } @else {
-        <i class="bi bi-file-earmark-excel"></i>
+        <i class="bi bi-file-earmark-excel" aria-hidden="true"></i>
       }
       Download Excel
+      <i class="bi bi-chevron-down small" aria-hidden="true"></i>
     </button>
+    <mat-menu #exportMenu="matMenu" xPosition="before">
+      <button mat-menu-item type="button" (click)="exportToExcel('ANNUAL_ACCOUNT')">Download Annual Accounts</button>
+      <button mat-menu-item type="button" (click)="exportToExcel('DUR')">Download DUR</button>
+    </mat-menu>
   </div>
 
   @if (!isLoading() && !loadError() && failedSources().length > 0) {

@@ -39,11 +39,14 @@ import { PmuWorklistService } from '../pmu-worklist.service';
 
 /** The worklist's own row shape uses `updatedAt`, but the `mat-sort-header` for that column is
  *  keyed `submittedOn` (the column key, chosen for its header label) — this maps a clicked column
- *  back to the real backend field name `sortBy` expects. Only the 2 columns with `sortValue` set
- *  below are ever sortable at all. */
+ *  back to the real backend field name `sortBy` expects. Only the 3 columns with `sortValue` set
+ *  below are ever sortable at all. `daysPending` ("Pending Since") is derived entirely from
+ *  `updatedAt` (see `daysPendingLabel`), so it reuses the same backend field and sort direction
+ *  as `submittedOn` ("Last Updated") — ascending on either means oldest activity first. */
 const WORKLIST_SORT_FIELD: Partial<Record<string, string>> = {
   stateName: 'stateName',
   submittedOn: 'updatedAt',
+  daysPending: 'updatedAt',
 };
 
 /** Capped at the backend's own worklist page-size ceiling (`PMU_WORKLIST_PAGINATION_MAX_LIMIT`) —
@@ -285,7 +288,12 @@ export class ReviewStateSubmissionsComponent {
         cell: (r) => this.formatDate(r.updatedAt),
         sortValue: (r) => r.updatedAt ?? '',
       },
-      { key: 'daysPending', header: 'Pending Since', cell: (r) => this.daysPendingLabel(r) },
+      {
+        key: 'daysPending',
+        header: 'Pending Since',
+        cell: (r) => this.daysPendingLabel(r),
+        sortValue: (r) => r.updatedAt ?? '',
+      },
       {
         key: 'status',
         header: 'Status',
