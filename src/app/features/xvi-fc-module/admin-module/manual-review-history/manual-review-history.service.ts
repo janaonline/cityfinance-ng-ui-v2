@@ -138,8 +138,8 @@ export class ManualReviewHistoryService {
 
   /** Excel export of every row matching the current filters (unpaginated) — `page`/`pageSize` are
    *  accepted by the backend DTO but ignored by the dump endpoint, so they're omitted here.
-   *  Requires a specific Form Type: merging two backends' Excel workbooks into one client-side
-   *  isn't practical, so "All types" must be narrowed to one form before exporting. */
+   *  Each backend produces its own workbook (merging them client-side isn't practical), so the
+   *  caller picks one form per download. */
   downloadDump(
     formType: ManualReviewFormType,
     query: Omit<ManualReviewHistoryQuery, 'page' | 'pageSize' | 'formType'>,
