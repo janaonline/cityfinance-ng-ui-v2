@@ -29,7 +29,8 @@ export interface RolesTeamsConfig {
   transferSubmitterPath: string;
   /** Fallback subRole when the stored user has none yet. */
   defaultSubRole: SubRole;
-  infoBannerText: string;
+  /** "How access works" banner copy; omit to hide the banner for that role. */
+  infoBannerText?: string;
   emailPlaceholder: string;
   pageSubtitle: string;
   tableAriaLabel: string;
@@ -104,10 +105,6 @@ export const DOE_ROLES_CONFIG: RolesTeamsConfig = {
   memberActionBasePath: 'users/doe-members',
   transferSubmitterPath: 'users/doe-members/transfer-submitter',
   defaultSubRole: 'VIEWER',
-  infoBannerText:
-    'DoE staff with existing access can sign in directly using their registered email ID and password. ' +
-    'To give access to a new team member, use <strong>Add Member</strong> below — ' +
-    'they will receive an email invitation to set up their login. DoE access is view-only.',
   emailPlaceholder: 'official@expenditure.gov.in',
   pageSubtitle: 'Manage who has access to the DoE XVI FC workspace.',
   tableAriaLabel: 'DoE team members',
