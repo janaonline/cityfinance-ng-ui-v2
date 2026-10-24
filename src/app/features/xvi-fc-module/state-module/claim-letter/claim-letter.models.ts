@@ -1,4 +1,5 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import type { FormStatusValue } from '../../shared/form-progress/form-progress.component';
 
 /** Installment 2 stays schema-legal on the backend but is rejected server-side in V1 — this
  *  feature only ever sends/renders installment 1 (no selector shown to the State). */
@@ -52,6 +53,10 @@ export interface ClaimLetterEligibilitySource {
    *  Absent for pure state-form checks (today: SFC, Devolution, GTC), which have no per-ULB
    *  meaning. */
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
+  /** Backend-evaluated form status, used to show the current status on pass/fail icon hover.
+   *  Displayed via getCurrentStatusLabel('state', ...), never as a raw number or PMU/MoHUA distinction.
+   */
+  statusAtEvaluation?: FormStatusValue | null;
 }
 
 /** State-wide financial context, independent of any one batch — the `financialSummary` concepts
