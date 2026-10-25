@@ -1,0 +1,28 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.truncated-text__ellipsis {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.truncated-text__clamp {
+  display: block;
+}
+
+.truncated-text__clamp--collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--truncated-text-lines, 3);
+  overflow: hidden;
+}
+
+.truncated-text__toggle {
+  font-size: 0.75rem;
+  text-decoration: none;
+}
