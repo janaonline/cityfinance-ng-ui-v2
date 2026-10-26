@@ -48,6 +48,8 @@ export interface PmuPermissions {
   canRejectForm: boolean;
   /** Only present for Elected Body / FC Unspent (row-level forms). */
   canReviewRows?: boolean;
+  /** PMU may reverse its own approve/return — computed server-side (status 5/14, no claim letter started). */
+  canUndo?: boolean;
 }
 
 export interface PmuRowSummary {
@@ -198,9 +200,6 @@ export interface PmuRowsQuery {
   search?: string;
   page?: number;
   limit?: number;
-  /** One or more FORM_STATUS codes — e.g. the "Approved" status filter bucket spans 3 underlying
-   *  codes once MoHUA's own rows reviewer is involved (only reachable for FC Unspent). */
-  rowStatus?: number[];
   /** Only meaningful for FC Unspent — silently ignored by Elected Body's endpoint. */
   eligibility?: boolean;
   sortBy?: 'ulbName' | 'rowStatus';
@@ -212,53 +211,4 @@ export interface PmuRowsResult {
   page: number;
   limit: number;
   total: number;
-  /** Rows matching the current filter that are still awaiting PMU review — distinct from `total`
-   *  (every matching row regardless of status). Drives "select all N matching rows" so the count
-   *  reflects what a bulk action would actually pick up, not every row on the page. */
-  pendingTotal: number;
-}
-
-/** The same `search` filter `getRows()` applies — "select all N matching" always means the same
- *  thing the reviewer sees on screen, resolved server-side at execution time rather than the
- *  frontend enumerating every matching row id across pages first. */
-export interface PmuSelectAllMatchingFilter {
-  search?: string;
-}
-
-/** Exactly one of `rowIds` (explicit/manual selection) or `selectAllMatching` (every row matching
- *  a filter, resolved server-side) must be sent. `excludeRowIds` only applies alongside
- *  `selectAllMatching` — rows manually unchecked after selecting all. */
-export interface PmuBulkApprovePayload {
-  stateId: string;
-  yearId: string;
-  rowIds?: string[];
-  selectAllMatching?: PmuSelectAllMatchingFilter;
-  excludeRowIds?: string[];
-}
-
-export interface PmuRowRejection {
-  rowId: string;
-  rejectionRemark: string;
-}
-
-/** Same explicit-vs-selectAllMatching split as `PmuBulkApprovePayload`. `rejectionRemark` is only
- *  used (and required) in `selectAllMatching` mode — one shared remark applied to every resolved
- *  row, matching the bulk-reject dialog's single-remark UI; explicit mode carries its own
- *  per-row remark in `rows` instead. */
-export interface PmuBulkRejectPayload {
-  stateId: string;
-  yearId: string;
-  rows?: PmuRowRejection[];
-  selectAllMatching?: PmuSelectAllMatchingFilter;
-  excludeRowIds?: string[];
-  rejectionRemark?: string;
-}
-
-/** Response `data` shared by both bulk-approve and bulk-reject. */
-export interface PmuBulkActionData {
-  updatedRowCount: number;
-  rowSummary?: PmuRowSummary;
-  currentFormStatus: number;
-  currentFormStatusLabel: string;
-  parentAcknowledged: boolean;
 }

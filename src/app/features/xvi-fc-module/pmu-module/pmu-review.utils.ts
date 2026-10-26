@@ -1,4 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FORM_STATUS } from '../common/constants/form-status.constants';
 import { PmuApiErrorResponse } from './pmu-review.models';
 
 /** Normalizes either an Angular `HttpErrorResponse.error` body or a thrown `success:false` response
@@ -35,4 +37,31 @@ export const LONG_SNACKBAR_MESSAGE_THRESHOLD = 80;
 
 export function isLongSnackbarMessage(message: string): boolean {
   return message.length > LONG_SNACKBAR_MESSAGE_THRESHOLD;
+}
+
+export interface PmuUndoConfirmInput {
+  formLabel: string;
+  stateName: string;
+  /** The status being undone: 5 (approved onward to MoHUA) or 14 (returned). */
+  status: number;
+  /** Elected Body / FC Unspent: the undo also reopens every ULB row. */
+  hasRows: boolean;
+}
+
+/** Confirmation copy for "Undo" — always states the concrete outcome, per the project's dialog rule. */
+export function buildPmuUndoConfirm(input: PmuUndoConfirmInput): ConfirmDialogData {
+  const returned = input.status === FORM_STATUS.RETURNED_BY_PMU;
+  const effect = returned ? 'your return remark is cleared' : 'your approval is withdrawn';
+  const rows = input.hasRows
+    ? ' Every ULB row goes back to pending too, so all of them need to be reviewed again.'
+    : '';
+
+  return {
+    title: returned ? 'Undo your return?' : 'Undo your approval?',
+    message: `${input.formLabel} for ${input.stateName} goes back to Under Review by PMU and ${effect}.${rows} You can then approve or return it again.`,
+    confirmText: 'Yes, undo',
+    cancelText: 'No, keep it',
+    confirmButtonColor: 'warn',
+    icon: 'bi-arrow-counterclockwise',
+  };
 }
