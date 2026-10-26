@@ -5,29 +5,12 @@
   @include layout.form-layout;
 }
 
-.reject-confirm-btn {
-  --mat-button-filled-label-text-color: #fff;
-  --mat-button-filled-container-color: var(--bs-danger, #dc3545);
-}
-
-// "Reject Selected" is an outlined button, so it needs the outlined-button custom properties
-// (review-acknowledgment.component.scss's own `.reject-btn`) — `.reject-confirm-btn` above only
-// affects filled buttons and has no effect here.
-.reject-btn {
-  --mat-button-outlined-label-text-color: var(--bs-danger, #dc3545);
-  --mat-button-outlined-outline-color: var(--bs-danger, #dc3545);
-}
-
 // Matches the State-side row tables' own styling (e.g. unspent-ulb-table.component.scss,
 // eulb-rows-dialog.component.scss) — fixed layout so column widths are never pushed by content,
 // and a stable 48px row height.
 .pmu-rows-table {
   table-layout: fixed;
   width: 100%;
-}
-
-.pmu-rows-col-checkbox {
-  width: 40px;
 }
 
 .pmu-rows-col-ulb-name {

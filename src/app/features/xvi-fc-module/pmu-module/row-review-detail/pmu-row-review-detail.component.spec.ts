@@ -52,7 +52,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
           provide: PmuRowReviewService,
           useValue: {
             getReview: () => of(review(options.canAct)),
-            getRows: () => of({ rows: rows(options.canAct), page: 1, limit: 25, total: 1, pendingTotal: 1 }),
+            getRows: () => of({ rows: rows(options.canAct), page: 1, limit: 25, total: 1 }),
           },
         },
         {
@@ -73,15 +73,16 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
   const text = (fixture: ReturnType<typeof create>) => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   describe("PMU's own route (no viewOnly) is unchanged", () => {
-    it('keeps the approve and reject controls and the selection column', () => {
+    it('keeps the form-level approve and reject controls, with no row selection controls', () => {
       const fixture = create({ viewOnly: false, canAct: true });
 
       expect(fixture.componentInstance.viewOnly).toBeFalse();
-      expect(text(fixture)).toContain('Approve Selected');
-      expect(text(fixture)).toContain('Reject Selected');
       expect(text(fixture)).toContain('Approve Form');
-      expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(2); // header + 1 row
-      expect(fixture.componentInstance.colSpan()).toBe(4 + 4); // checkbox column + the 4 elected-body columns
+      expect(text(fixture)).toContain('Reject Form');
+      expect(text(fixture)).not.toContain('Approve Selected');
+      expect(text(fixture)).not.toContain('Reject Selected');
+      expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
+      expect(fixture.componentInstance.colSpan()).toBe(3 + 4); // ULB name + census code + status, plus the 4 elected-body columns
     });
 
     it('keeps the "then approve or reject" wording and the PMU breadcrumb', () => {
@@ -96,12 +97,10 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
   });
 
   describe("MoHUA's route (viewOnly) is read-only", () => {
-    it('hides every approve and reject control and the selection column', () => {
+    it('hides every approve and reject control', () => {
       const fixture = create({ viewOnly: true, canAct: false });
 
       expect(fixture.componentInstance.viewOnly).toBeTrue();
-      expect(text(fixture)).not.toContain('Approve Selected');
-      expect(text(fixture)).not.toContain('Reject Selected');
       expect(text(fixture)).not.toContain('Approve Form');
       expect(text(fixture)).not.toContain('Reject Form');
       expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
