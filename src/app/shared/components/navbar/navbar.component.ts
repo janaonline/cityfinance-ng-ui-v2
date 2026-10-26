@@ -221,7 +221,7 @@ export class NavbarComponent implements OnInit {
     return (
       this.isLoggedIn &&
       this.inRole([USER_TYPE.STATE, USER_TYPE.XVIFC_STATE]) &&
-      this._router.url.startsWith('/xvifc')
+      matchesAnyRoutePrefix(this._router.url, ['/xvifc'])
     );
   }
 
