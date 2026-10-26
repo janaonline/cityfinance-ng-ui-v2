@@ -5,9 +5,6 @@ import { environment } from '../../../../environments/environment';
 import { PmuFormOption } from './pmu-review.config';
 import {
   PmuApiResponse,
-  PmuBulkActionData,
-  PmuBulkApprovePayload,
-  PmuBulkRejectPayload,
   PmuFormReviewData,
   PmuFormSubmitData,
   PmuRow,
@@ -42,7 +39,6 @@ export class PmuRowReviewService {
     if (query.search) params = params.set('search', query.search);
     if (query.page !== undefined) params = params.set('page', String(query.page));
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
-    if (query.rowStatus?.length) params = params.set('rowStatus', query.rowStatus.join(','));
     if (query.eligibility !== undefined) params = params.set('eligibility', String(query.eligibility));
     if (query.sortBy !== undefined) params = params.set('sortBy', query.sortBy);
     if (query.sortDir !== undefined) params = params.set('sortDir', query.sortDir);
@@ -61,22 +57,9 @@ export class PmuRowReviewService {
             page: typeof meta['page'] === 'number' ? meta['page'] : (query.page ?? 1),
             limit: typeof meta['limit'] === 'number' ? meta['limit'] : (query.limit ?? rows.length),
             total: typeof meta['total'] === 'number' ? meta['total'] : rows.length,
-            pendingTotal: typeof meta['pendingTotal'] === 'number' ? meta['pendingTotal'] : rows.length,
           };
         }),
       );
-  }
-
-  bulkApproveRows(form: PmuFormOption, payload: PmuBulkApprovePayload): Observable<PmuBulkActionData> {
-    return this.http
-      .post<PmuApiResponse<PmuBulkActionData>>(`${environment.api.url2}${form.basePath}rows/approve`, payload)
-      .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuBulkActionData));
-  }
-
-  bulkRejectRows(form: PmuFormOption, payload: PmuBulkRejectPayload): Observable<PmuBulkActionData> {
-    return this.http
-      .post<PmuApiResponse<PmuBulkActionData>>(`${environment.api.url2}${form.basePath}rows/reject`, payload)
-      .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuBulkActionData));
   }
 
   approveForm(form: PmuFormOption, stateId: string, yearId: string): Observable<PmuFormSubmitData> {
@@ -84,6 +67,17 @@ export class PmuRowReviewService {
       .post<
         PmuApiResponse<PmuFormSubmitData>
       >(`${environment.api.url2}${form.basePath}${stateId}/${yearId}/approve`, {})
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
+  }
+
+  /** Reverses PMU's own approve/return — the form and every ULB row go back to Under Review by PMU. */
+  undoForm(form: PmuFormOption, stateId: string, yearId: string): Observable<PmuFormSubmitData> {
+    return this.http
+      .post<PmuApiResponse<PmuFormSubmitData>>(`${environment.api.url2}xvi-fc/pmu/undo`, {
+        type: form.value,
+        stateId,
+        yearId,
+      })
       .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
   }
 
