@@ -62,6 +62,8 @@ export class StateNotificationService {
   private readonly data = signal<StateNotificationsPayload | null>(null);
   private loadedKey: string | null = null;
   private loadedAt = 0;
+  /** Bumped on every load and on `clear()`; a response is applied only if its request is still current. */
+  private requestSeq = 0;
 
   readonly notifications = computed<UlbNotification[]>(() => {
     const payload = this.data();
@@ -104,9 +106,12 @@ export class StateNotificationService {
 
     const key = `${stateId}:${yearId}`;
     if (key === this.loadedKey && Date.now() - this.loadedAt < STALE_AFTER_MS) return;
+    // A different State/year must never show the previous one's items, even if this load fails.
+    if (key !== this.loadedKey) this.data.set(null);
     // Stamp first so concurrent navigations don't each fire a request.
     this.loadedKey = key;
     this.loadedAt = Date.now();
+    const seq = ++this.requestSeq;
 
     try {
       const response = await firstValueFrom(
@@ -115,14 +120,16 @@ export class StateNotificationService {
         ),
       );
       const payload = 'success' in response ? response.data : (response as StateNotificationsPayload);
-      if (payload) this.data.set(payload);
+      if (payload && seq === this.requestSeq) this.data.set(payload);
     } catch {
+      if (seq !== this.requestSeq) return;
       this.loadedAt = 0; // let the next navigation retry
     }
   }
 
   /** Drops everything on logout/role change so the next user never sees a stale bell. */
   clear(): void {
+    this.requestSeq++;
     this.data.set(null);
     this.loadedKey = null;
     this.loadedAt = 0;

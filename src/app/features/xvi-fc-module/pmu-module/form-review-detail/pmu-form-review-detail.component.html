@@ -40,17 +40,17 @@
         @if (canUndo() || isUndoing()) {
           <button
             type="button"
-            class="btn btn-outline-secondary btn-sm"
+            class="pmu-undo-btn"
             [disabled]="isBusy()"
             [attr.aria-busy]="isUndoing()"
             (click)="onUndo()"
             data-cy="pmu-form-review-undo"
           >
             @if (isUndoing()) {
-              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               Undoing…
             } @else {
-              <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
               {{ undoLabel() }}
             }
           </button>
