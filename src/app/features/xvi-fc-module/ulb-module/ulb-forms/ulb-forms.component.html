@@ -82,6 +82,7 @@
             @let effectiveStatus = resolveStatus(condition);
             @let submitted = isSubmitted();
             @let display = conditionStatusDisplay(condition);
+            @let stateValue = stateValueFor(condition);
             <div class="condition-row d-flex align-items-center gap-3 px-3 py-2">
               @if (display) {
                 @if (display.iconTier === 'success') {
@@ -109,7 +110,7 @@
 
               <div class="flex-grow-1 min-w-0">
                 <p class="condition-title fw-semibold mb-0">{{ condition.title }}</p>
-                <p class="condition-subtitle text-muted mb-0">{{ condition.subtitle }}</p>
+                <p class="condition-subtitle text-muted mb-0">{{ stateValue ? 'Filed by the State' : condition.subtitle }}</p>
               </div>
 
               @if (display) {
@@ -157,6 +158,8 @@
                     SUBMITTED
                   </span>
                 </div>
+              } @else if (stateValue) {
+                <span class="state-value-badge flex-shrink-0">{{ stateValue }}</span>
               } @else if (effectiveStatus === 'complete') {
                 <span class="no-action-badge flex-shrink-0">
                   <span class="no-action-dot" aria-hidden="true"></span>
