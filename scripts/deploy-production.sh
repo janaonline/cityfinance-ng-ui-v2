@@ -16,7 +16,7 @@
 # Abort on any error, on use of an unset variable, or if any command in a pipe fails.
 set -euo pipefail
 
-BRANCH="${BRANCH:-main}"            # branch to deploy
+BRANCH="${BRANCH:-production}"          # branch to deploy
 KEEP_RELEASES="${KEEP_RELEASES:-5}" # how many old releases to retain, for rollback
 
 # Resolve the repo root from this script's own location, so the script works
