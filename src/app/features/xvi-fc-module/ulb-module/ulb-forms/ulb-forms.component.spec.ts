@@ -241,6 +241,21 @@ describe('UlbFormsComponent', () => {
       expect(fixture.nativeElement.querySelector('.grant-band__amount').textContent).toMatch(/₹s?12,34,567/);
     });
 
+    it('tells the ULB to contact the State DMA when the elected body is Not Constituted', () => {
+      createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: 'Not Constituted' }) }) }));
+
+      const row = rowFor('Elected Body Status');
+      expect(row.textContent).toContain('Status: Not Constituted');
+      expect(row.textContent).toContain('If this information is incorrect, contact your State DMA');
+      expect(row.querySelector('.condition-subtitle--alert')).toBeTruthy();
+    });
+
+    it('shows no contact message when the elected body is Constituted', () => {
+      createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: 'Constituted' }) }) }));
+
+      expect(rowFor('Elected Body Status').textContent).not.toContain('contact your State DMA');
+    });
+
     it('stays on "Awaiting State Upload" when the form is visible but has no row for this ULB', () => {
       createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: null }) }) }));
 

@@ -105,6 +105,17 @@
   line-height: 1.3 !important;
 }
 
+// ── With a real allocation figure (not the long placeholder sentence) the amount is the headline ──
+::ng-deep app-overview-card.allocation-ready .hero-band__amount {
+  font-size: clamp(2rem, 4vw, 2.75rem) !important;
+  line-height: 1.1 !important;
+}
+
+::ng-deep app-overview-card.allocation-ready .grant-content__amount {
+  font-size: 1.75rem !important;
+  line-height: 1.2 !important;
+}
+
 // ── Hero chips: never overflow the container ──────────────────────────────────
 ::ng-deep app-overview-card .hero-chips {
   width: min(22rem, 100%) !important;

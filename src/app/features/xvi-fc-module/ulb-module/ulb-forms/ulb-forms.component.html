@@ -110,7 +110,14 @@
 
               <div class="flex-grow-1 min-w-0">
                 <p class="condition-title fw-semibold mb-0">{{ condition.title }}</p>
-                <p class="condition-subtitle text-muted mb-0">{{ stateValue ? 'Filed by the State' : condition.subtitle }}</p>
+                @if (isElectedBodyNotConstituted(condition)) {
+                  <p class="condition-subtitle condition-subtitle--alert mb-0">Status: {{ stateValue }}</p>
+                  <p class="condition-subtitle condition-subtitle--alert mb-0">
+                    If this information is incorrect, contact your State DMA
+                  </p>
+                } @else {
+                  <p class="condition-subtitle text-muted mb-0">{{ stateValue ? 'Filed by the State' : condition.subtitle }}</p>
+                }
               </div>
 
               @if (display) {
