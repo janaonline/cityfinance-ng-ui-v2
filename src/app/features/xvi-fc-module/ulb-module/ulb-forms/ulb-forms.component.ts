@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
-import { AnnualAccountStateService } from '../annual-account-state.service';
+import { AnnualAccountStateService, StateConditionData, StateConditionsData } from '../annual-account-state.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XviFcBudgetDocumentService } from './budget-document/xvi-fc-budget-document.service';
 import { BudgetDocumentResponse } from './budget-document/xvi-fc-budget-document.models';
@@ -44,6 +44,15 @@ interface ConditionGroup {
   deadline: string;
   conditions: Condition[];
 }
+
+/** Condition ids whose value the State supplies -> its key in the form-status API's `stateConditions`. */
+const STATE_CONDITION_KEYS: Readonly<Record<string, keyof StateConditionsData>> = {
+  'sfc-status': 'sfcStatus',
+  'elected-body': 'electedBody',
+  'unspent-balance': 'fcUnspent',
+};
+
+const INR = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
 
 /** Condition ids whose display is driven live by the numeric form_status_id (1–7) rather than the static config above. */
 const NUMERIC_STATUS_CONDITION_IDS = new Set(['audited-statement', 'provisional-statement', 'xvi-fc-bank-account', 'slb', 'dur']);
@@ -239,9 +248,13 @@ export class UlbFormsComponent implements OnInit {
   readonly grantBand = computed(() => {
     const details = this.ulbDetails();
     const year = details?.selectedYear ?? 'FY 2026-27';
+    const allocation = this.sectionFormStatus()?.stateConditions?.devolution;
     return {
       eyebrow: 'ESTIMATED GRANT',
-      amount: 'Allocation will be displayed once the State submits the ULB-wise allocation',
+      amount:
+        allocation?.visible && allocation.amount !== null
+          ? INR.format(allocation.amount)
+          : 'Allocation will be displayed once the State submits the ULB-wise allocation',
       tag: `${year}`,
       note: details ? `For ${details.ulbName}, ${details.stateName}` : '',
     };
@@ -388,12 +401,23 @@ export class UlbFormsComponent implements OnInit {
   // Returns the effective display status for a condition, overriding the static
   // value for the two upload conditions based on live API data.
   resolveStatus(condition: Condition): 'complete' | 'pending' | 'locked' | 'Awaiting State Upload' {
+    // A State-filed value on show is a met condition: green tick, and it counts towards the progress.
+    if (this.stateValueFor(condition)) return 'complete';
     const status = this.sectionFormStatus();
     if (status) {
       const display = this.conditionStatusDisplay(condition);
       if (display) return display.iconTier === 'success' ? 'complete' : 'pending';
     }
     return condition.status;
+  }
+
+  /** What the State filed for this condition, once it is under MoHUA review; null keeps the "Awaiting State Upload" badge. */
+  stateValueFor(condition: Condition): string | null {
+    const key = STATE_CONDITION_KEYS[condition.id];
+    const entry: StateConditionData | undefined = key ? this.sectionFormStatus()?.stateConditions?.[key] : undefined;
+    if (!entry?.visible) return null;
+    if (entry.amount !== null) return INR.format(entry.amount);
+    return entry.value || null;
   }
 
   isNumericStatusCondition(condition: Condition): boolean {
