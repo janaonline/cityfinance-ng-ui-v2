@@ -422,7 +422,7 @@ export class UlbFormsComponent implements OnInit {
 
   /** True when the State filed this ULB's elected body as "Not Constituted" — the row then tells the ULB whom to contact. */
   isElectedBodyNotConstituted(condition: Condition): boolean {
-    return condition.id === 'elected-body' && /^nots+constituted$/i.test(this.stateValueFor(condition)?.trim() ?? '');
+    return condition.id === 'elected-body' && /^not\s+constituted$/i.test(this.stateValueFor(condition)?.trim() ?? '');
   }
 
   isNumericStatusCondition(condition: Condition): boolean {
