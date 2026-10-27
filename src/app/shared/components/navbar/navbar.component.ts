@@ -15,7 +15,11 @@ import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
 import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 import { XVIFC_LS_KEYS } from '../../../features/xvi-fc-module/shared/years-selection/years-selection.component';
-import { UlbNotificationService } from '../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
+import { StateNotificationService } from '../../../features/xvi-fc-module/state-module/state-notification.service';
+import {
+  UlbNotification,
+  UlbNotificationService,
+} from '../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 import { NAV_MENU_ITEMS, NavMenuItem, matchesAnyRoutePrefix, resolveMenus } from './nav-menu.config';
 
 @Component({
@@ -29,6 +33,7 @@ export class NavbarComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly accessChecker = new AccessChecker();
   readonly ulbNotifications = inject(UlbNotificationService);
+  private readonly stateNotifications = inject(StateNotificationService);
 
   readonly ocrMenu = {
     name: 'OCR',
@@ -175,7 +180,10 @@ export class NavbarComponent implements OnInit {
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => this.refreshMenus());
+      .subscribe(() => {
+        this.refreshMenus();
+        this.refreshStateNotifications();
+      });
   }
 
   private isOcrRoute(): boolean {
@@ -191,14 +199,37 @@ export class NavbarComponent implements OnInit {
     this.initializeAccessChecking();
     this.refreshMenus();
 
-    if (this.showNotificationBell && this.user?.ulb) {
+    if (this.isLoggedIn && this.inRole([USER_TYPE.ULB]) && this.user?.ulb) {
       void this.ulbNotifications.ensureLoadedForUlb(String(this.user.ulb));
     }
+    if (!sessionState.isAuthenticated) this.stateNotifications.clear();
+    this.refreshStateNotifications();
   }
 
-  /** Bell + badge are ULB-only for now — no notification source exists yet for other roles. */
+  /** Bell + badge: ULB users everywhere, State users on the XVI-FC pages (State users of other grant
+   *  cycles share the STATE role, so they must not get an XVI-FC bell). No source exists for other roles. */
   get showNotificationBell(): boolean {
-    return this.isLoggedIn && this.inRole([USER_TYPE.ULB]);
+    return (this.isLoggedIn && this.inRole([USER_TYPE.ULB])) || this.isStateOnXviFc;
+  }
+
+  /** What the bell lists — whichever role's service applies (the other role's list is always empty). */
+  get bellNotifications(): UlbNotification[] {
+    return this.isStateOnXviFc ? this.stateNotifications.notifications() : this.ulbNotifications.notifications();
+  }
+
+  private get isStateOnXviFc(): boolean {
+    return (
+      this.isLoggedIn &&
+      this.inRole([USER_TYPE.STATE, USER_TYPE.XVIFC_STATE]) &&
+      matchesAnyRoutePrefix(this._router.url, ['/xvifc'])
+    );
+  }
+
+  /** Cheap and throttled inside the service, so it is safe to call on every navigation. */
+  private refreshStateNotifications(): void {
+    if (this.isStateOnXviFc && this.user?.state) {
+      void this.stateNotifications.refreshIfStale(String(this.user.state));
+    }
   }
 
   navigateToNotification(route: string): void {

@@ -36,14 +36,83 @@
     @include theme.grant-band-deco-small;
   }
 
+  // Round status icon — same look as the ULB forms page's `.condition-icon` (green tick, amber
+  // exclamation, pulsing orange ring for not-started / in-progress).
+  .condition-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+
+    &--success {
+      background: #15803d;
+      color: #ffffff;
+    }
+
+    &--warning {
+      background: #b45309;
+      color: #ffffff;
+    }
+
+    &--pending {
+      border: 2px solid #f97316;
+      background: #ffffff;
+      animation: pending-pulse 1.6s ease-in-out infinite;
+
+      &::after {
+        content: '';
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #f97316;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        animation: none;
+      }
+    }
+  }
+
   // Fixed width so every per-condition button.
+  // Same pill as the ULB forms page's action button: green by default, amber when returned.
   .condition-action-btn {
+    background: #15803d !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
+    min-height: 30px;
+    line-height: 30px;
+    padding: 0 14px !important;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(21, 128, 61, 0.25) !important;
     min-width: 7rem;
+
+    &--warning {
+      background: #b45309 !important;
+      box-shadow: 0 3px 10px rgba(180, 83, 9, 0.3) !important;
+    }
   }
 
   @media (max-width: 767.98px) {
     .condition-action-btn {
       width: 100%;
     }
+  }
+}
+
+@keyframes pending-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5);
+    border-color: #f97316;
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(249, 115, 22, 0);
+    border-color: rgba(249, 115, 22, 0.5);
   }
 }

@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   OverviewCardComponent,
   OverviewData,
 } from '../../shared/overview-card/overview-card.component';
 import { PageErrorStateComponent } from '../../shared/page-error-state/page-error-state.component';
+import { AnnualAccountStateService } from '../annual-account-state.service';
 import { UlbNotificationService } from '../ulb-notification.service';
 import { UlbOverviewService } from './overview-card.service';
 import { DisbursementColumn, DisbursementRow } from './overview-card.models';
@@ -30,6 +31,10 @@ const HAS_SEEN_VIDEO_KEY = 'hasSeenXvifcVideoWalkthrough';
 export class OverviewComponent implements OnInit {
   private readonly overviewService = inject(UlbOverviewService);
   private readonly ulbNotifications = inject(UlbNotificationService);
+  private readonly formStatus = inject(AnnualAccountStateService).formStatus;
+
+  /** True once a real allocation figure is on the card (not the long "will be displayed…" placeholder), so it can be set large. */
+  readonly hasAllocation = computed(() => typeof this.ulbOverviewData()?.totalAllocation === 'number');
 
   readonly videoWalkthroughUrl = VIDEO_WATCH_URL;
   readonly showVideoBanner = signal(false);
@@ -51,7 +56,20 @@ export class OverviewComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly hasError = signal(false);
 
-  ulbOverviewData: OverviewData | null = null;
+  private readonly baseOverviewData = signal<OverviewData | null>(null);
+
+  /** The card's data, with the ULB's allocation swapped in once the State's ULB-wise allocation is under MoHUA review. */
+  readonly ulbOverviewData = computed<OverviewData | null>(() => {
+    const base = this.baseOverviewData();
+    const allocation = this.formStatus()?.stateConditions?.devolution;
+    if (!base || !allocation?.visible || allocation.amount === null) return base;
+    const amount = allocation.amount;
+    return {
+      ...base,
+      totalAllocation: amount,
+      grantSections: base.grantSections.map((section) => (section.id === 'grantEstimate' ? { ...section, amount } : section)),
+    };
+  });
   disbursementColumns: DisbursementColumn[] = [];
   disbursementRows: DisbursementRow[] = [];
 
@@ -99,7 +117,7 @@ export class OverviewComponent implements OnInit {
 
     this.overviewService.getOverviewViewModel(this.ulbId).subscribe({
       next: ({ ulbOverviewData, disbursementColumns, disbursementRows }) => {
-        this.ulbOverviewData = ulbOverviewData;
+        this.baseOverviewData.set(ulbOverviewData);
         this.disbursementColumns = disbursementColumns;
         this.disbursementRows = disbursementRows;
         this.currentRequirementYear = disbursementColumns[0]?.label ?? 'FY 2026-27';

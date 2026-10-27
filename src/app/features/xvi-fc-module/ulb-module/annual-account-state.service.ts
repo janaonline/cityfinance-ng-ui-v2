@@ -3,6 +3,24 @@ import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
+/** One State-filed condition for this ULB. `value`/`amount` are null unless `visible` (the State's form is under MoHUA review). */
+export interface StateConditionData {
+  form_status: string;
+  form_status_id: number;
+  visible: boolean;
+  /** Text answer (SFC, Elected Body). */
+  value: string | null;
+  /** Whole rupees (FC Unspent, ULB-wise allocation). */
+  amount: number | null;
+}
+
+export interface StateConditionsData {
+  sfcStatus: StateConditionData;
+  electedBody: StateConditionData;
+  devolution: StateConditionData;
+  fcUnspent: StateConditionData;
+}
+
 export interface FormStatusData {
   annualAccountId: string | null;
   auditedData: { form_status: string; form_status_id: number };
@@ -23,6 +41,7 @@ export interface FormStatusData {
     form_status: string;
     form_status_id: number;
   };
+  stateConditions?: StateConditionsData | null;
 }
 
 const API = `${environment.api.url2}`;

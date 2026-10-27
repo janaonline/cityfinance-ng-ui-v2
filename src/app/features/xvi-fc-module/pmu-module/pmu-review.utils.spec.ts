@@ -1,5 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { extractApiErrorResponse, extractFormLevelErrorMessage, isLongSnackbarMessage } from './pmu-review.utils';
+import {
+  buildPmuUndoConfirm,
+  extractApiErrorResponse,
+  extractFormLevelErrorMessage,
+  isLongSnackbarMessage,
+} from './pmu-review.utils';
 
 function httpError(body: unknown): HttpErrorResponse {
   return new HttpErrorResponse({ error: body });
@@ -71,5 +76,24 @@ describe('isLongSnackbarMessage', () => {
   it('returns false right at the threshold (80 chars) and true just over it (81)', () => {
     expect(isLongSnackbarMessage('x'.repeat(80))).toBeFalse();
     expect(isLongSnackbarMessage('x'.repeat(81))).toBeTrue();
+  });
+});
+
+describe('buildPmuUndoConfirm', () => {
+  const base = { formLabel: 'SFC Status', stateName: 'Rajasthan', hasRows: false };
+
+  it('states the concrete outcome of undoing an approval', () => {
+    const dialog = buildPmuUndoConfirm({ ...base, status: 5 });
+    expect(dialog.title).toBe('Undo your approval?');
+    expect(dialog.message).toBe(
+      'SFC Status for Rajasthan goes back to Under Review by PMU and your approval is withdrawn. You can then approve or return it again.',
+    );
+  });
+
+  it('states the concrete outcome of undoing a return, and that every row is reviewed again for row forms', () => {
+    const dialog = buildPmuUndoConfirm({ ...base, formLabel: 'FC Unspent Declaration', status: 14, hasRows: true });
+    expect(dialog.title).toBe('Undo your return?');
+    expect(dialog.message).toContain('your return remark is cleared');
+    expect(dialog.message).toContain('Every ULB row goes back to pending too');
   });
 });

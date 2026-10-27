@@ -9,7 +9,7 @@ import { PmuFormReviewService } from '../pmu-form-review.service';
 import { PmuFormReviewData } from '../pmu-review.models';
 import { PmuFormReviewDetailComponent } from './pmu-form-review-detail.component';
 
-const review = (canAct: boolean): PmuFormReviewData => ({
+const review = (canAct: boolean, canUndo = false): PmuFormReviewData => ({
   formId: 'form-1',
   stateId: 'state-1',
   stateName: 'Rajasthan',
@@ -18,13 +18,13 @@ const review = (canAct: boolean): PmuFormReviewData => ({
   currentFormStatusLabel: 'Under Review by PMU',
   pmuRemarks: null,
   questions: [],
-  permissions: { canView: true, canApproveForm: canAct, canRejectForm: canAct },
+  permissions: { canView: true, canApproveForm: canAct, canRejectForm: canAct, canUndo },
   actors: [],
 });
 
 /** Renders the screen the way each route does: PMU's own route has no `viewOnly`; MoHUA's route sets it. */
 describe('PmuFormReviewDetailComponent — PMU review vs MoHUA view-only', () => {
-  const create = (options: { viewOnly: boolean; canAct: boolean }) => {
+  const create = (options: { viewOnly: boolean; canAct: boolean; canUndo?: boolean }) => {
     const data: Record<string, unknown> = { form: 'SFC_STATUS', ...(options.viewOnly ? { viewOnly: true } : {}) };
     TestBed.configureTestingModule({
       imports: [PmuFormReviewDetailComponent, HttpClientTestingModule],
@@ -33,7 +33,7 @@ describe('PmuFormReviewDetailComponent — PMU review vs MoHUA view-only', () =>
         provideNoopAnimations(),
         { provide: XvifcModuleService, useValue: { yearId: () => 'year-1' } },
         { provide: UtilityService, useValue: { triggerSnackbar: () => undefined } },
-        { provide: PmuFormReviewService, useValue: { getReview: () => of(review(options.canAct)) } },
+        { provide: PmuFormReviewService, useValue: { getReview: () => of(review(options.canAct, options.canUndo)) } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -67,6 +67,22 @@ describe('PmuFormReviewDetailComponent — PMU review vs MoHUA view-only', () =>
       'Review State Submissions',
       'SFC Status',
     ]);
+  });
+
+  const undoButton = (fixture: ReturnType<typeof create>) =>
+    (fixture.nativeElement as HTMLElement).querySelector('[data-cy="pmu-form-review-undo"]');
+
+  it('shows an Undo button only when the backend says the decision can be undone', () => {
+    expect(undoButton(create({ viewOnly: false, canAct: true, canUndo: false }))).toBeNull();
+  });
+
+  it('labels the Undo button for the decision being undone (status 13 in this fixture reads as an approval)', () => {
+    const fixture = create({ viewOnly: false, canAct: true, canUndo: true });
+    expect(undoButton(fixture)?.textContent).toContain('Undo approval');
+  });
+
+  it("never shows Undo on MoHUA's read-only route, even if the flag were set", () => {
+    expect(undoButton(create({ viewOnly: true, canAct: false, canUndo: true }))).toBeNull();
   });
 
   it("MoHUA's route is read-only: no approve or reject controls, its own wording and links back to the state", () => {

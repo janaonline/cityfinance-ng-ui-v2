@@ -127,6 +127,7 @@
 
 .condition-title    { font-size: 0.8rem; }
 .condition-subtitle { font-size: 0.7rem; line-height: 1.4; }
+.condition-subtitle--alert { color: #b91c1c; }
 
 .condition-icon {
   display: grid;
@@ -261,6 +262,21 @@
   border-radius: 50%;
   background: #9ca3af;
   flex-shrink: 0;
+}
+
+// Same green pill as the other conditions' action buttons (.condition-action-btn).
+.state-value-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(21, 128, 61, 0.25);
 }
 
 .awaiting-state-badge {

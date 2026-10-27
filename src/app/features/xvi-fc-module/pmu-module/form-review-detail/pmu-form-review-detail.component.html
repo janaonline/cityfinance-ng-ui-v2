@@ -1,3 +1,10 @@
+<!-- Whole-page loader while an approve, a reject or an undo is in flight (through the refresh that follows it). -->
+@if (isApproving() || isRejecting() || isUndoing()) {
+  <div role="status" aria-live="polite" aria-label="Saving your decision">
+    <app-loader></app-loader>
+  </div>
+}
+
 <div class="top-accent"></div>
 
 <section class="p-3 p-md-4">
@@ -26,9 +33,28 @@
       </div>
 
       <!-- Form Status -->
-      <div class="col-auto">
+      <div class="col-auto d-flex flex-column align-items-end gap-2">
         <!-- <span class="text-secondary">Status:</span> -->
         <span [class]="'custom-font-size-6 badge rounded-pill ' + statusBadgeClass()">{{ statusLabel() }}</span>
+        <!-- Stays visible while undoing (even though the refreshed review will hide it) so the loader shows. -->
+        @if (canUndo() || isUndoing()) {
+          <button
+            type="button"
+            class="pmu-undo-btn"
+            [disabled]="isBusy()"
+            [attr.aria-busy]="isUndoing()"
+            (click)="onUndo()"
+            data-cy="pmu-form-review-undo"
+          >
+            @if (isUndoing()) {
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              Undoing…
+            } @else {
+              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+              {{ undoLabel() }}
+            }
+          </button>
+        }
       </div>
     </div>
 

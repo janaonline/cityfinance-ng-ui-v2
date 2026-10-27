@@ -2,14 +2,17 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { FormGroup } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Subject, filter } from 'rxjs';
 import { DynamicFormComponent } from '../../../../shared/dynamic-form/dynamic-form.component';
 import { DynamicFormService } from '../../../../shared/dynamic-form/dynamic-form.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { ReviewAcknowledgmentComponent } from '../../shared/review-acknowledgment/review-acknowledgment.component';
 import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../shared/breadcrumb/breadcrumb.component';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
+import { LoaderComponent } from '../../../../shared/components/loader/loader.component';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { themedDialogConfig } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { TruncatedTextComponent } from '../../../../shared/components/truncated-text/truncated-text.component';
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
@@ -23,7 +26,12 @@ import { FORM_STATUS } from '../../common/constants/form-status.constants';
 import { bindAwardPeriodDurationDerivation } from '../../common/utils/award-period-duration-binding.utils';
 import { PmuDevolutionRow, PmuFormReviewData } from '../pmu-review.models';
 import { PmuFormReviewService } from '../pmu-form-review.service';
-import { extractApiErrorResponse, extractFormLevelErrorMessage, isLongSnackbarMessage } from '../pmu-review.utils';
+import {
+  buildPmuUndoConfirm,
+  extractApiErrorResponse,
+  extractFormLevelErrorMessage,
+  isLongSnackbarMessage,
+} from '../pmu-review.utils';
 
 /**
  * One generic form-level PMU review detail, serving SFC Status / GTC / Devolution Formula — only
@@ -37,6 +45,7 @@ import { extractApiErrorResponse, extractFormLevelErrorMessage, isLongSnackbarMe
     DynamicFormComponent,
     ReviewAcknowledgmentComponent,
     XvifcBreadcrumbComponent,
+    LoaderComponent,
     PreLoaderComponent,
     AmountDisplayToggleComponent,
     TruncatedTextComponent,
@@ -53,6 +62,9 @@ export class PmuFormReviewDetailComponent {
   private readonly visibilityService = inject(DynamicFormVisibilityService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly amountDisplay = inject(AmountDisplayModeService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  /** Read once at construction — `themedDialogConfig()` needs an injection context (see its docblock). */
+  private readonly dialogConfig = themedDialogConfig();
   /** Emitted right before each `bindVisibility()` rebuild so subscriptions bound to the previous
    *  `FormGroup` instance (after a mutation reload) are torn down cleanly — mirrors
    *  `SfcStatusComponent`'s own `formSubscriptionsTeardown$`. */
@@ -91,6 +103,7 @@ export class PmuFormReviewDetailComponent {
   readonly loadError = signal<string | null>(null);
   readonly isApproving = signal(false);
   readonly isRejecting = signal(false);
+  readonly isUndoing = signal(false);
   /** Set when approve/reject fails — distinct from `loadError`, which blocks the whole page on the
    *  initial GET and would hide the very form/actions the user needs to retry or fix. Cleared at
    *  the start of the next attempt. */
@@ -120,7 +133,11 @@ export class PmuFormReviewDetailComponent {
 
   readonly canApprove = computed(() => this.review()?.permissions.canApproveForm ?? false);
   readonly canReject = computed(() => this.review()?.permissions.canRejectForm ?? false);
-  readonly isBusy = computed(() => this.isApproving() || this.isRejecting());
+  readonly canUndo = computed(() => !this.viewOnly && (this.review()?.permissions.canUndo ?? false));
+  readonly undoLabel = computed(() =>
+    this.review()?.currentFormStatus === FORM_STATUS.RETURNED_BY_PMU ? 'Undo return' : 'Undo approval',
+  );
+  readonly isBusy = computed(() => this.isApproving() || this.isRejecting() || this.isUndoing());
 
   /** Only populated when `formOption.hasReadOnlyRows` (Devolution Formula today) — a read-only
    *  per-ULB allocation table shown in place of the (always-empty, for this form) `questions`
@@ -208,9 +225,12 @@ export class PmuFormReviewDetailComponent {
 
   /** Reloads metadata after a mutation — never locally patches status/remarks; the reloaded
    *  response is the only source of truth (mirrors mohua-module/fc-unspent-review's own discipline). */
-  private reloadAfterMutation(): void {
+  private reloadAfterMutation(onDone?: () => void): void {
     const yearId = this.moduleService.yearId();
-    if (!yearId) return;
+    if (!yearId) {
+      onDone?.();
+      return;
+    }
 
     this.reviewService
       .getReview(this.formOption, this.stateId, yearId, this.resolveInstallment())
@@ -219,9 +239,12 @@ export class PmuFormReviewDetailComponent {
         next: (data) => {
           this.review.set(data);
           this.applyQuestions(data.questions ?? []);
+          onDone?.();
         },
-        error: () =>
-          this.utilityService.triggerSnackbar('Review data may be stale — please reload the page.', 'snackbar-danger'),
+        error: () => {
+          this.utilityService.triggerSnackbar('Review data may be stale — please reload the page.', 'snackbar-danger');
+          onDone?.();
+        },
       });
   }
 
@@ -266,9 +289,9 @@ export class PmuFormReviewDetailComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.isApproving.set(false);
           this.utilityService.triggerSnackbar('Form approved. Ready to generate claim letter.');
-          this.reloadAfterMutation();
+          // Keep the page loader up until the refreshed review is in, so the old status never flashes back.
+          this.reloadAfterMutation(() => this.isApproving.set(false));
         },
         error: (err: unknown) => {
           this.isApproving.set(false);
@@ -289,14 +312,53 @@ export class PmuFormReviewDetailComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.isRejecting.set(false);
           ack.resetReject();
           this.utilityService.triggerSnackbar('Form rejected.', 'snackbar-danger');
-          this.reloadAfterMutation();
+          // Keep the page loader up until the refreshed review is in, so the old status never flashes back.
+          this.reloadAfterMutation(() => this.isRejecting.set(false));
         },
         error: (err: unknown) => {
           this.isRejecting.set(false);
           this.applyMutationError(err, 'Unable to reject the form. Please try again.');
+        },
+      });
+  }
+
+  /** Reverses PMU's own approve/return after an explicit confirmation that states the outcome. The
+   *  button only shows when the backend says `canUndo` (status 5/14 and no claim letter started). */
+  onUndo(): void {
+    if (!this.canUndo() || this.isBusy()) return;
+    const yearId = this.moduleService.yearId();
+    const status = this.review()?.currentFormStatus;
+    if (!yearId || status === undefined) return;
+
+    this.confirmDialog
+      .confirm(
+        buildPmuUndoConfirm({ formLabel: this.formOption.label, stateName: this.stateName(), status, hasRows: false }),
+        this.dialogConfig,
+      )
+      .pipe(
+        filter((confirmed) => confirmed),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.runUndo(yearId));
+  }
+
+  private runUndo(yearId: string): void {
+    this.mutationError.set(null);
+    this.isUndoing.set(true);
+    this.reviewService
+      .undoForm(this.formOption, this.stateId, yearId, this.resolveInstallment())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.utilityService.triggerSnackbar('Decision undone. The form is back under review.');
+          // Keep the loader up until the refreshed review is in, so the old status never flashes back.
+          this.reloadAfterMutation(() => this.isUndoing.set(false));
+        },
+        error: (err: unknown) => {
+          this.isUndoing.set(false);
+          this.applyMutationError(err, 'Unable to undo the decision. Please try again.');
         },
       });
   }
