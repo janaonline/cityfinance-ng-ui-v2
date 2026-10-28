@@ -1,0 +1,126 @@
+@let control = this.control();
+@let message = error();
+<ng-template #sizer>
+  <span class="cl-sizer" [class.cl-sizer-ghost]="empty()" aria-hidden="true">
+    @if (empty()) {
+      {{ placeholder() }}
+      @if (required()) {
+        <span class="cl-required">*</span>
+      }
+    } @else {
+      {{ sizerText() }}
+    }
+  </span>
+</ng-template>
+
+<span
+  class="cl-field"
+  [class.cl-field-wide]="kind() === 'textarea'"
+  [class.cl-field-strong]="bold()"
+  [attr.data-cy]="'claim-letter-field-' + field().key"
+>
+  <span
+    class="cl-box"
+    [class.cl-box-filled]="!empty()"
+    [class.cl-box-invalid]="!!message"
+    [class.cl-box-disabled]="control.disabled"
+    [matTooltip]="tooltip()"
+  >
+    @switch (kind()) {
+      @case ('textarea') {
+        <span class="cl-stack cl-stack-block">
+          <textarea
+            class="cl-control"
+            [id]="id()"
+            [formControl]="control"
+            [attr.aria-label]="field().label"
+            [attr.aria-required]="required()"
+            [attr.aria-invalid]="!!message"
+            [attr.aria-describedby]="message ? errorId() : null"
+            [attr.maxlength]="maxLength()"
+            cdkTextareaAutosize
+            cdkAutosizeMinRows="1"
+            (blur)="commit()"
+          ></textarea>
+          @if (empty()) {
+            <span class="cl-ghost" aria-hidden="true"
+              >{{ placeholder() }}
+              @if (required()) {
+                <span class="cl-required">*</span>
+              }
+            </span>
+          }
+        </span>
+      }
+      @case ('select') {
+        <span class="cl-stack cl-stack-select">
+          <ng-container *ngTemplateOutlet="sizer"></ng-container>
+          <select
+            class="cl-control"
+            [class.cl-control-empty]="empty()"
+            [id]="id()"
+            [formControl]="control"
+            [attr.aria-label]="field().label"
+            [attr.aria-required]="required()"
+            [attr.aria-invalid]="!!message"
+            [attr.aria-describedby]="message ? errorId() : null"
+            (change)="commit()"
+          >
+            <option value="" disabled>{{ placeholder() }}</option>
+            @for (option of options(); track option.id) {
+              <option [value]="option.id">{{ option.label }}</option>
+            }
+          </select>
+        </span>
+      }
+      @case ('date') {
+        <span class="cl-stack">
+          <ng-container *ngTemplateOutlet="sizer"></ng-container>
+          <input
+            class="cl-control"
+            [id]="id()"
+            [formControl]="control"
+            [matDatepicker]="picker"
+            [max]="maxDate()"
+            [attr.aria-label]="field().label"
+            [attr.aria-required]="required()"
+            [attr.aria-invalid]="!!message"
+            [attr.aria-describedby]="message ? errorId() : null"
+            (dateChange)="commit()"
+            (blur)="commit()"
+          />
+        </span>
+        <button
+          type="button"
+          class="cl-date-button"
+          [attr.aria-label]="'Choose ' + field().label"
+          [disabled]="control.disabled"
+          (click)="picker.open()"
+        >
+          <i class="bi bi-calendar3" aria-hidden="true"></i>
+        </button>
+        <mat-datepicker #picker [panelClass]="materialThemeClass"></mat-datepicker>
+      }
+      @default {
+        <span class="cl-stack">
+          <ng-container *ngTemplateOutlet="sizer"></ng-container>
+          <input
+            class="cl-control"
+            type="text"
+            [id]="id()"
+            [formControl]="control"
+            [attr.aria-label]="field().label"
+            [attr.aria-required]="required()"
+            [attr.aria-invalid]="!!message"
+            [attr.aria-describedby]="message ? errorId() : null"
+            [attr.maxlength]="maxLength()"
+            (blur)="commit()"
+          />
+        </span>
+      }
+    }
+  </span>
+  @if (message) {
+    <span class="cl-field-error" [id]="errorId()" role="alert">{{ message }}</span>
+  }
+</span>

@@ -247,7 +247,7 @@ Like the rest of the app, the XVI FC module uses RxJS `BehaviorSubject`s in serv
 - **`elected-body-status`** — elected ULB status form with Excel bulk upload/validation and a post-submission correction flow.
 - **`devolution-formula`** — devolution/allocation formula data submission.
 - **`fc-unspent-declaration`** — Yes/No branching declaration of unspent grant funds, with a searchable/paginated ULB picker.
-- **`claim-letter`** — select ULBs and per-ULB claim amounts against the state's Installment 1 Devolution allocation, upload a signed claim letter, and submit to MoHUA; supports up to 3 concurrent claim batches with a searchable/paginated ULB picker.
+- **`claim-letter`** — select ULBs and per-ULB claim amounts against the state's Installment 1 Devolution allocation (searchable/paginated ULB picker), fill in the letter details directly in the letter preview and download it as .docx, and upload the signed copy. That copy merged with its enclosures is the final claim letter: it shows on the page, Submit sends it to MoHUA, and it stays viewable after submission. Up to 3 batches per installment, but only one in progress at a time.
 - **`ulb-list`** (+ `register-ulb`) — manages the state's registry of ULBs.
 - **`ulb-submissions`, `requirements`, `insights`, `special-infrastructure`, `urbanisation-premium`, `doe-status`** — submission tracking and informational pages.
 - **`overview`, `roles-teams-overview`, `support-hours`** — landing dashboard, contacts directory, helpdesk hours.
