@@ -45,21 +45,16 @@ interface ClaimUlbRowViewModel {
   censusCode: string | null;
   sbCode: string | null;
   allocationAmount: number | null;
-  /** Server-known, from the picked option's/saved row's own eligibility gate re-verification —
-   *  never re-derived client-side. */
+  /** From the saved row or picked option; never re-derived here. */
   eligible: boolean | null;
-  /** Server-known difference, populated only once this row has actually been saved (a picked-but-
-   *  unsaved row has no such value yet) — see `liveDifferencePercentage` for the typing-time preview. */
+  /** Saved rows only; `liveDifferencePercentage` is the typing-time preview. */
   savedDifferencePercentage: number | null;
-  /** Always-live ±10% preview, recomputed on every keystroke from the current `claimedAmount` value —
-   *  a client preview only; the backend remains authoritative at save time. */
+  /** Recomputed on every keystroke; the backend decides at save. */
   liveDifferencePercentage: number | null;
   liveWithinVariance: boolean | null;
 }
 
-/** No backend `rowEditFields`-style metadata exists for claim-letter rows (unlike FC Unspent) — the
- *  DTO validation is just `ulbId: MongoId`, `claimedAmount: whole Rupee, min(1)`, so this builds each
- *  row with plain Validators instead of the shared `DynamicFormService`/backend-field-config route. */
+/** Plain validators: claim-letter rows have no backend field config (unlike FC Unspent's). */
 export function createClaimUlbRowGroup(
   canEdit: boolean,
   existingRow?: { ulbId: string | null; claimedAmount: number | null },
@@ -73,9 +68,7 @@ export function createClaimUlbRowGroup(
 
   if (!canEdit) group.disable({ emitEvent: false });
 
-  // Clear a server-injected `apiErrors` entry as soon as the user edits that control — mirrors
-  // FC Unspent's createFcUnspentUlbRowGroup, applied per-row here since each row is its own
-  // short-lived FormGroup rather than one shared edit-session form.
+  // A server apiErrors entry clears as soon as the user edits that control.
   for (const control of Object.values(group.controls)) {
     control.valueChanges.subscribe(() => {
       if (!control.errors?.['apiErrors']) return;
@@ -88,8 +81,7 @@ export function createClaimUlbRowGroup(
   return group;
 }
 
-/** A backend `apiErrors` entry always wins (most specific/authoritative), matching FC Unspent's
- *  `firstControlErrorText`. */
+/** A backend `apiErrors` entry wins over the local messages. */
 function claimedAmountErrorText(control: AbstractControl): string | null {
   if (!control.touched || !control.errors) return null;
   const apiErrors = control.errors['apiErrors'];
@@ -120,15 +112,11 @@ export class ClaimUlbTableComponent {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly themeClass = resolveThemeClass();
-  /** Passed through to `MatDialog.open` so the picker resolves against this component's own
-   *  injector rather than the root one — kept for parity with FC Unspent's table even though the
-   *  claim-letter picker has no feature-scoped cache service to resolve today. */
+  /** Gives the picker this component's injector; kept like FC Unspent's table, though nothing needs it yet. */
   private readonly injector = inject(Injector);
 
   readonly rows = input.required<FormArray<ClaimUlbRowGroup>>();
-  /** Backend-supplied snapshot of already-saved rows (from `GET :claimLetterId/ulbs`) — already
-   *  server-computed (`differencePercentage`/`eligible` re-verified at read time). Saved rows render
-   *  from this directly; it must never require a ULB-options request. */
+  /** Saved rows from `GET :claimLetterId/ulbs`; they render without a ulb-options request. */
   readonly savedRows = input<readonly ClaimLetterUlbRow[]>([]);
   readonly canEdit = input(false);
   readonly stateId = input.required<string>();
@@ -136,18 +124,15 @@ export class ClaimUlbTableComponent {
   /** Forwarded to the picker so a draft's own already-locked ULBs show as selectable. `undefined` in
    *  create mode (no id yet). */
   readonly claimLetterId = input<string | undefined>(undefined);
-  /** Claimed-vs-allocated variance band, sourced from the backend (`ClaimLetterClaimContext`/
-   *  `ClaimLetterBatchSummary`'s `varianceLowerPercent`/`varianceUpperPercent`) — never hardcoded here. */
+  /** Claimed-vs-allocated band from the backend. */
   readonly varianceLowerPercent = input.required<number>();
   readonly varianceUpperPercent = input.required<number>();
 
-  /** Display data for ULBs picked via the dialog this session — the only ULB-options data ever kept
-   *  locally, and only for rows a user actually chose. */
+  /** Display data for ULBs picked this session; the only ulb-options data kept. */
   readonly pickedUlbByUlbId = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
 
-  /** Bridges the FormArray's own `valueChanges` into a signal, including structural push/removeAt
-   *  changes — a raw FormArray reference isn't itself change-detection-reactive. `getRawValue()` (not
-   *  `.value`) is used for the initial snapshot so a disabled (read-only) row's value is still read. */
+  /** `rows` as a signal, structural changes included; the first value uses `getRawValue()` so
+   *  disabled (read-only) rows are read too. */
   private readonly rowValues = toSignal(
     toObservable(this.rows).pipe(
       switchMap((formArray) => formArray.valueChanges.pipe(startWith(formArray.getRawValue()))),
@@ -199,17 +184,15 @@ export class ClaimUlbTableComponent {
     });
   });
 
-  /** Rows we can already say, with certainty, will be rejected server-side — mirrors the backend's
-   *  own `buildChildren()` validation (ineligible or outside the ±10% band). Rows with not-yet-known
-   *  state (`null`) are excluded here; that's `validateRows()`'s required-field concern, not this one. */
+  /** Rows the backend will surely reject (ineligible, or outside the band); incomplete rows are
+   *  `validateRows()`'s concern. */
   readonly invalidRowIdentifiers = computed(() =>
     this.rowViewModels()
       .filter((row) => row.eligible === false || row.liveWithinVariance === false)
       .map((row) => row.censusCode ?? row.sbCode ?? row.ulbName ?? 'Unknown ULB'),
   );
 
-  /** Client-computed running totals — always available from the live FormArray, independent of
-   *  whether a real `financialSummary` exists yet on the backend (create mode has none). */
+  /** From the live rows, so they exist before any `financialSummary` (create mode). */
   readonly totalAllocation = computed(() =>
     this.rowViewModels().reduce((sum, row) => sum + (row.allocationAmount ?? 0), 0),
   );
@@ -217,12 +200,9 @@ export class ClaimUlbTableComponent {
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
-  /** Unit label for a column whose display follows the global override — both Allocation (always)
-   *  and Claim Amount (once it's no longer an editable input) use this, since both are `'inr'`
-   *  pageDefault. */
+  /** Unit label for the read-only amount columns, which follow the global display mode. */
   readonly unitSuffix = () => this.amountDisplay.unitSuffix('inr');
-  /** Info-icon tooltip for the editable claim-amount input — the whole-number instruction plus the
-   *  currently-typed value spelled out in words. */
+  /** Info-icon tooltip on the claim-amount input: the whole-number rule and the value in words. */
   readonly wholeNumberInfoText = (value: number | null | undefined) => this.amountDisplay.wholeNumberInfoText(value);
   readonly claimedAmountErrorText = claimedAmountErrorText;
 
@@ -272,9 +252,7 @@ export class ClaimUlbTableComponent {
     dialogRef.afterClosed().subscribe((options: ClaimLetterUlbOption[] | undefined) => {
       if (!options || options.length === 0) return;
 
-      // Defensive recheck — never apply a selection that duplicates a row that changed elsewhere
-      // while the picker was open, and never apply the same ulbId twice from one confirmed batch.
-      // Backend duplicate validation remains authoritative regardless.
+      // Skip ULBs added while the picker was open and repeats within one selection.
       const currentIds = new Set(this.currentUlbIds());
       const seen = new Set<string>();
       const uniqueNewOptions = options.filter((option) => {
@@ -292,8 +270,7 @@ export class ClaimUlbTableComponent {
 
       applySelections(uniqueNewOptions);
 
-      // The dialog closes asynchronously, off a native event inside its own template rather than
-      // this component's — force a recheck so the (possibly first-ever) row actually renders.
+      // The dialog closes outside this OnPush view's events, so the new rows need a recheck.
       this.cdr.markForCheck();
     });
   }

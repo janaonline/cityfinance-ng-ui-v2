@@ -1,0 +1,148 @@
+<ng-template #runsTpl let-paragraph>
+  @for (run of paragraph.runs; track $index) {
+    @let slot = slotEditor(run);
+    @if (slot) {
+      @if (run.lead) {
+        <span>{{ run.lead }}</span>
+      }
+      <app-claim-letter-letter-field
+        [field]="slot.field"
+        [control]="slot.control"
+        [bold]="!!run.bold"
+        (committed)="fieldCommitted.emit($event)"
+      ></app-claim-letter-letter-field>
+    } @else {
+      <span
+        [class.fw-bold]="run.bold"
+        [class.cl-placeholder]="run.placeholder"
+        [matTooltip]="run.hint ?? ''"
+        [matTooltipDisabled]="!run.hint"
+        >{{ printed(run) }}</span
+      >
+    }
+  }
+</ng-template>
+
+<ng-template #paragraphTpl let-paragraph let-extraClass="extraClass">
+  @if (paragraph.number) {
+    <div class="cl-numbered">
+      <span class="cl-number">{{ paragraph.number }}</span>
+      <p class="cl-para cl-justify">
+        <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: paragraph }"></ng-container>
+      </p>
+    </div>
+  } @else {
+    <p class="cl-para" [class]="extraClass">
+      <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: paragraph }"></ng-container>
+    </p>
+  }
+</ng-template>
+
+@let doc = document();
+@let letter = doc.letter;
+<article class="cl-letter" [class.cl-editing]="editor() !== null" data-cy="claim-letter-letter-view">
+  <section class="cl-page">
+    <ng-container
+      *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.letterhead, extraClass: 'text-center' }"
+    ></ng-container>
+    <ng-container
+      *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.letterNo, extraClass: 'text-center' }"
+    ></ng-container>
+    <ng-container
+      *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.refAndDate, extraClass: 'text-center' }"
+    ></ng-container>
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.addressee }"></ng-container>
+    <ng-container
+      *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.subject, extraClass: 'cl-justify' }"
+    ></ng-container>
+    <p class="cl-para fw-bold mb-1">{{ letter.referencesTitle }}</p>
+    @for (paragraph of letter.references; track $index) {
+      <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+    }
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.salutation }"></ng-container>
+    @for (paragraph of letter.body; track $index) {
+      <ng-container
+        *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph, extraClass: 'cl-justify' }"
+      ></ng-container>
+    }
+
+    <div class="table-responsive">
+      <table class="cl-table cl-compliance">
+        <thead>
+          <tr>
+            @for (header of letter.complianceHeaders; track $index) {
+              <th>{{ header }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of letter.compliance; track row.key) {
+            <tr>
+              <td>{{ row.key }}</td>
+              <td>
+                @for (paragraph of row.condition; track $index) {
+                  <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+                }
+              </td>
+              <td>
+                @for (paragraph of row.status; track $index) {
+                  <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.note }"></ng-container>
+    @for (paragraph of letter.closing; track $index) {
+      <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+    }
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.signOff }"></ng-container>
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: letter.signature }"></ng-container>
+  </section>
+
+  <section class="cl-page">
+    <p class="cl-para text-end">{{ doc.annexure.title }}</p>
+    @for (list of doc.annexure.lists; track list.key) {
+      @let page = pages()[list.key];
+      <h6 class="cl-list-heading">{{ list.heading }}</h6>
+      <p class="cl-para mb-2">{{ list.subheading }}</p>
+      @if (list.total === 0) {
+        <p class="cl-para">Nil</p>
+      } @else {
+        <div class="table-responsive" [class.cl-loading]="page.loading">
+          <table class="cl-table cl-annexure" [attr.data-cy]="'claim-letter-list-' + list.key">
+            <thead>
+              <tr>
+                @for (column of doc.annexure.columns; track $index) {
+                  <th class="text-center">{{ column.header }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of page.rows; track row.ulbId + $index) {
+                <tr>
+                  @for (cell of row.cells; track $index) {
+                    <td [class]="alignClass(doc.annexure.columns[$index].kind)">{{ cell }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (list.total > pageSize) {
+          <mat-paginator
+            [length]="list.total"
+            [pageSize]="pageSize"
+            [pageIndex]="page.pageIndex"
+            [hidePageSize]="true"
+            [disabled]="page.loading"
+            (page)="onPage(list.key, $event)"
+          ></mat-paginator>
+        }
+      }
+    }
+  </section>
+</article>

@@ -121,7 +121,7 @@ describe('ClaimLetterEligibilityChecklistComponent', () => {
     fixture.detectChanges();
 
     const panel = fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist"]'));
-    expect(panel.nativeElement.textContent).toContain('ULB Submission Status (5/7)');
+    expect(panel.nativeElement.textContent).toContain('ULBs meeting all requirements (5/7)');
     expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-ulb-items"]'))).toBeNull();
   });
 
@@ -149,13 +149,11 @@ describe('ClaimLetterEligibilityChecklistComponent', () => {
     fixture.componentRef.setInput('ulbReadiness', { eligible: 0, total: 431 });
     fixture.detectChanges();
 
-    expect(
-      fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-ulb-toggle"]')),
-    ).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-ulb-toggle"]'))).toBeNull();
     expect(ulbItems().length).toBe(1);
   });
 
-  it('renders a neutral primary info icon for every ULB-only item, regardless of ulbReadiness or the item\'s own tally', () => {
+  it("renders a neutral primary info icon for every ULB-only item, regardless of ulbReadiness or the item's own tally", () => {
     fixture.componentRef.setInput('sources', [
       ulbSource({ ulbBreakdown: { eligible: 1, ineligible: 430, exempted: 0, total: 431 } }),
       ulbSource({ formType: 'AUDITED', ulbBreakdown: { eligible: 0, ineligible: 431, exempted: 0, total: 431 } }),
@@ -168,6 +166,37 @@ describe('ClaimLetterEligibilityChecklistComponent', () => {
       expect(icon.nativeElement.classList).toContain('bi-info-circle-fill');
       expect(icon.nativeElement.classList).toContain('text-primary');
     }
+  });
+
+  it('lists each State form that judges ULBs once under ULBs, red with its count or green when all meet it', () => {
+    const electedBody = source({
+      formType: 'ELECTED_BODY',
+      displayLabel: 'Elected Body Constitution',
+      ulbBreakdown: { eligible: 14, ineligible: 6, exempted: 0, total: 20 },
+    });
+    const fcUnspent = source({
+      formType: 'FC_UNSPENT_STATE',
+      displayLabel: '14th FC Unspent Balance Declaration',
+      ulbBreakdown: { eligible: 20, ineligible: 0, exempted: 0, total: 20 },
+    });
+    fixture.componentRef.setInput('sources', [electedBody, fcUnspent, source(), ulbSource()]);
+    fixture.componentRef.setInput('ulbReadiness', { eligible: 14, total: 20 });
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-cy="claim-letter-eligibility-checklist-ulb-toggle"]'))
+      .nativeElement.click();
+    fixture.detectChanges();
+
+    const rows = fixture.debugElement.queryAll(By.css('[data-cy="claim-letter-eligibility-checklist-ulb-row-form"]'));
+    const text = rows.map((li) => li.nativeElement.textContent.replace(/\s+/g, ' ').trim());
+    expect(text).toEqual([
+      'Elected Body Constitution 6 ULBs do not meet this',
+      '14th FC Unspent Balance Declaration All 20 ULBs meet this',
+    ]);
+    expect(rows[0].query(By.css('i')).nativeElement.classList).toContain('text-danger');
+    expect(rows[1].query(By.css('i')).nativeElement.classList).toContain('text-success');
+    // 2 row-level State forms + the 1 ULB form (unchanged, blue info).
+    expect(ulbItems().length).toBe(3);
   });
 
   it('excludes result-less items from the state-level "all passing" ratio and computation', () => {
@@ -193,10 +222,32 @@ describe('ClaimLetterEligibilityChecklistComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const text = fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-items"]'))
-      .nativeElement.textContent;
-    expect(text).toContain(
-      'Elected Body constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123 ULBs)',
+    const items = fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-items"]'));
+    expect(items.nativeElement.textContent.replace(/\s+/g, ' ')).toContain(
+      'Elected Body constitution must be submitted by the state. (100 eligible, 3 exempted, 20 ineligible out of 123 ULBs)',
     );
+    const count = (name: string) =>
+      items.query(By.css(`[data-cy="claim-letter-eligibility-checklist-tally-${name}"]`)).nativeElement.classList;
+    expect(count('eligible')).toContain('text-success');
+    expect(count('exempted')).toContain('text-success');
+    expect(count('ineligible')).toContain('text-danger');
+  });
+
+  it('leaves a zero count in the muted text colour', () => {
+    fixture.componentRef.setInput('sources', [
+      source({
+        formType: 'ELECTED_BODY',
+        result: 'FAILED',
+        ulbBreakdown: { eligible: 0, ineligible: 20, exempted: 0, total: 20 },
+      }),
+    ]);
+    fixture.detectChanges();
+
+    const count = (name: string) =>
+      fixture.debugElement.query(By.css(`[data-cy="claim-letter-eligibility-checklist-tally-${name}"]`)).nativeElement
+        .classList;
+    expect(count('eligible')).not.toContain('text-success');
+    expect(count('exempted')).not.toContain('text-success');
+    expect(count('ineligible')).toContain('text-danger');
   });
 });

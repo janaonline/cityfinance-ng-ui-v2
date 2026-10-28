@@ -107,7 +107,9 @@ export class ReviewStateSubmissionsComponent {
     installment: this.fb.nonNullable.control<number>(DEFAULT_INSTALLMENT),
   });
 
-  private readonly stateQuery = toSignal(this.filterForm.controls.state.valueChanges, { initialValue: '' });
+  private readonly stateQuery = toSignal(this.filterForm.controls.state.valueChanges, {
+    initialValue: this.filterForm.controls.state.value,
+  });
   private readonly selectedForm = toSignal(this.filterForm.controls.form.valueChanges, {
     initialValue: this.filterForm.controls.form.value,
   });

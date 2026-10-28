@@ -1,8 +1,79 @@
-.claim-letter-document-preview-dialog-content {
-  max-height: 75vh;
+// Full-screen editor: a fixed toolbar on top, the letter scrolls below it.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.claim-letter-document-preview-body {
-  max-height: calc(75vh - 48px);
-  overflow-y: auto;
+.cl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.cl-toolbar-progress,
+.cl-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+// Title with the save status on the line below it.
+.cl-toolbar-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.cl-toolbar-progress {
+  font-size: 0.875rem;
+}
+
+// Fixed width: the toolbar must not shift under the pointer when the status text changes.
+.cl-status {
+  min-width: 15rem;
+  font-size: 0.8125rem;
+  color: var(--bs-secondary-color);
+}
+
+.cl-status-dot {
+  font-size: 0.45rem;
+  vertical-align: middle;
+  color: var(--color-primary, var(--bs-success));
+}
+
+.cl-status-saved {
+  color: var(--bs-success);
+}
+
+.cl-status-invalid,
+.cl-status-failed {
+  color: var(--bs-danger);
+
+  .cl-status-dot {
+    color: var(--bs-danger);
+  }
+}
+
+// Same colour as the "*" inside a required box.
+.cl-required-mark {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.cl-dialog-content {
+  flex: 1 1 auto;
+  max-height: none;
+}
+
+// About the width of an A4 page, so the boxes sit where they print.
+.cl-letter-wrap {
+  max-width: 960px;
+  margin: 0 auto;
 }

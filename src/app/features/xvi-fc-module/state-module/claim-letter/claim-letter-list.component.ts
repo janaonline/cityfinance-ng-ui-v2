@@ -53,8 +53,7 @@ export class ClaimLetterListComponent implements OnInit {
   readonly eligibility = signal<ClaimLetterEligibilitySummary | null>(null);
   readonly stateName = computed(() => this.eligibility()?.stateName ?? '');
   readonly claims = signal<readonly ClaimLetterBatchSummary[]>([]);
-  /** Collapsed by default — a returning user doesn't need the full walkthrough re-shown on every
-   *  visit just to reach "New Claim"; one click away for anyone who does. */
+  /** Collapsed by default, so returning users reach "New Claim" without the walkthrough. */
   readonly showInstructions = signal(false);
 
   readonly page = signal(1);
@@ -64,12 +63,7 @@ export class ClaimLetterListComponent implements OnInit {
   readonly hasPrev = computed(() => this.page() > 1);
   readonly hasNext = computed(() => this.page() < this.totalPages());
 
-  /** Unified checklist: the state-level gate sources (today: SFC, Devolution, Elected Body, FC
-   *  Unspent, GTC) plus the ULB-only criteria from `ulbLevelCriteria` (today: SLB, Provisional,
-   *  Audited, Bank Account, DUR), mapped into the same item shape with `result` left `undefined` —
-   *  the checklist component renders those with a neutral icon and excludes them from "all
-   *  passing" (plan: one unified list, not a separate informational block). Both lists are
-   *  config-driven (`formjsons.claimEligibility`) and will change over time. */
+  /** The State gate sources plus the ULB-only criteria as one list; ULB-only items have no `result`. */
   readonly checklistItems = computed<ClaimLetterEligibilitySource[]>(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return [];
@@ -85,13 +79,8 @@ export class ClaimLetterListComponent implements OnInit {
     return [...eligibility.stateLevelGate.sources, ...ulbOnlyItems];
   });
 
-  /** True exactly when zero ULBs meet every ULB-bulk requirement at once — the true intersection
-   *  across every ULB-level criterion (today: SLB, Provisional, Audited, Bank Account, DUR) plus
-   *  the Elected Body/FC Unspent row tallies, not just whether any single criterion individually
-   *  hits 0 (a criterion can each look fine on its own while no
-   *  ULB passes all of them, e.g. different ULBs failing different criteria). Same `ulbReadiness`
-   *  stat shown in the top banner and passed into the checklist component, so this button, the top
-   *  badge, and the checklist's ULB section always agree on whether ULBs are actually pickable. */
+  /** No ULB passes every ULB-bulk criterion at once, though each may look fine alone. The checklist
+   *  reads the same `ulbReadiness`, so the two always agree. */
   readonly ulbReadinessBlocked = computed(() => (this.eligibility()?.ulbReadiness.eligible ?? 0) === 0);
 
   readonly isEligible = computed(() => {
@@ -103,12 +92,14 @@ export class ClaimLetterListComponent implements OnInit {
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
-    return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
+    return (
+      this.isEligible() &&
+      eligibility.batchSlotsUsed < eligibility.batchSlotsMax &&
+      eligibility.activeBatchNumber === null
+    );
   });
 
-  /** Explains why "New Claim" is disabled — `null` once it's enabled (or before eligibility has
-   *  loaded). Checked in the same order `isEligible()`/`canCreateNewClaim()` compose their own
-   *  conditions, so this always names the actual reason those signals disabled the button for. */
+  /** Why "New Claim" is disabled, checked in the same order as `canCreateNewClaim`; null when enabled. */
   readonly newClaimDisabledReason = computed<string | null>(() => {
     const eligibility = this.eligibility();
     if (!eligibility || this.canCreateNewClaim()) return null;
@@ -122,25 +113,20 @@ export class ClaimLetterListComponent implements OnInit {
     if (eligibility.batchSlotsUsed >= eligibility.batchSlotsMax) {
       return `You've used all ${eligibility.batchSlotsMax} claim batch slots for this installment. Resolve or wait on an existing batch before starting another.`;
     }
+    if (eligibility.activeBatchNumber !== null) {
+      return `Only one claim batch can be processed at a time. Batch ${eligibility.activeBatchNumber} is still in progress or under MoHUA review.`;
+    }
     return 'New claims are currently unavailable.';
   });
 
-  /** Proactive "last call" warning — fires once exactly one batch slot remains (this state's
-   *  penultimate batch already exists) and at least one expected ULB still has no home in any
-   *  batch. Any ULB left out of the final batch becomes permanently unclaimable for this
-   *  installment, so this is shown well before that batch is even opened. */
+  /** One slot left and ULBs in no batch: a ULB left out of the last batch cannot be claimed this installment. */
   readonly showFinalBatchWarning = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
     return eligibility.batchSlotsMax - eligibility.batchSlotsUsed === 1 && eligibility.remainingUlbCount > 0;
   });
 
-  /** State-wide context only — "claimed in current batch"/"remaining after batch" don't mean
-   *  anything here since no specific batch is in view (only on the Batch #n detail page). The full
-   *  5-figure breakdown lives here (not on the create/edit pages, which stay leaner and let their
-   *  narrative bullets carry the "in progress"/"in draft" nuance in prose instead) — "Available to
-   *  Claim" is visually emphasized since it's the one number that most directly answers "can I act
-   *  right now." */
+  /** State-wide figures only (no batch in view); the full five-figure breakdown appears only here. */
   readonly summaryTiles = computed<ClaimLetterSummaryTile[]>(() => {
     const overview = this.eligibility()?.financialOverview;
     if (!overview) return [];
@@ -155,11 +141,6 @@ export class ClaimLetterListComponent implements OnInit {
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
   readonly installment = CLAIM_LETTER_INSTALLMENT;
-
-  /** Temporary gate — flip to `true` once Claim Letter access is actually wired to the "5 State
-   *  forms approved" condition. Until then this route shows a static locked message and makes no
-   *  API calls (the feature isn't complete yet, but the locked message ships for optics). */
-  readonly claimLetterSubmissionEnabled = true;
 
   toggleInstructions(): void {
     this.showInstructions.update((value) => !value);
@@ -179,7 +160,7 @@ export class ClaimLetterListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.claimLetterSubmissionEnabled) this.loadAll();
+    this.loadAll();
   }
 
   loadAll(): void {

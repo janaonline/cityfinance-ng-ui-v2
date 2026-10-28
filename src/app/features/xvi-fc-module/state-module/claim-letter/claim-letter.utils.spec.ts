@@ -6,7 +6,37 @@ import {
   formatUlbBreakdown,
   humanizeToken,
   isClaimWithinVariance,
+  readApiError,
 } from './claim-letter.utils';
+
+describe('readApiError', () => {
+  it('reads an HttpErrorResponse body, joining a class-validator message array', () => {
+    const api = readApiError({
+      error: { statusCode: 400, message: ['a must be a number', 'b is required'], code: 'X' },
+    });
+    expect(api).toEqual({
+      statusCode: 400,
+      message: 'a must be a number b is required',
+      messages: ['a must be a number', 'b is required'],
+      code: 'X',
+      errors: undefined,
+    });
+  });
+
+  it('reads a thrown success:false response and keeps a well-formed errors map only', () => {
+    expect(readApiError({ success: false, message: 'Bad.', errors: { a: [{ message: 'Too long.' }] } }).errors).toEqual(
+      {
+        a: [{ message: 'Too long.' }],
+      },
+    );
+    expect(readApiError({ error: { message: 'Bad.', errors: { a: 'not a list' } } }).errors).toBeUndefined();
+  });
+
+  it('is empty-handed for an error without a body', () => {
+    expect(readApiError(null)).toEqual({});
+    expect(readApiError({ error: { statusCode: 500 } }).message).toBeUndefined();
+  });
+});
 
 describe('computeClaimDifferencePercentage', () => {
   it('returns 0 when allocation is 0 (avoids divide-by-zero)', () =>
@@ -68,14 +98,14 @@ describe('describeEligibilitySourceDescription', () => {
         ulbBreakdown: { eligible: 100, ineligible: 20, exempted: 3, total: 123 },
       }),
     ).toBe(
-      'Elected Body constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123 ULBs)',
+      'Elected Body constitution must be submitted by the state. (100 eligible, 3 exempted, 20 ineligible out of 123 ULBs)',
     ));
 });
 
 describe('formatUlbBreakdown', () => {
-  it('formats the tally as "N eligible, N ineligible, N exempted out of N ULBs"', () =>
+  it('formats the tally as "N eligible, N exempted, N ineligible out of N ULBs"', () =>
     expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, total: 123 })).toBe(
-      '100 eligible, 20 ineligible, 3 exempted out of 123 ULBs',
+      '100 eligible, 3 exempted, 20 ineligible out of 123 ULBs',
     ));
 });
 
