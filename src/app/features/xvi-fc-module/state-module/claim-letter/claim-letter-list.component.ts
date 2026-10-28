@@ -103,7 +103,11 @@ export class ClaimLetterListComponent implements OnInit {
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
-    return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
+    return (
+      this.isEligible() &&
+      eligibility.batchSlotsUsed < eligibility.batchSlotsMax &&
+      eligibility.activeBatchNumber === null
+    );
   });
 
   /** Explains why "New Claim" is disabled — `null` once it's enabled (or before eligibility has
@@ -121,6 +125,9 @@ export class ClaimLetterListComponent implements OnInit {
     }
     if (eligibility.batchSlotsUsed >= eligibility.batchSlotsMax) {
       return `You've used all ${eligibility.batchSlotsMax} claim batch slots for this installment. Resolve or wait on an existing batch before starting another.`;
+    }
+    if (eligibility.activeBatchNumber !== null) {
+      return `Only one claim batch can be processed at a time. Batch ${eligibility.activeBatchNumber} is still in progress or under MoHUA review.`;
     }
     return 'New claims are currently unavailable.';
   });
@@ -156,11 +163,6 @@ export class ClaimLetterListComponent implements OnInit {
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
   readonly installment = CLAIM_LETTER_INSTALLMENT;
 
-  /** Temporary gate — flip to `true` once Claim Letter access is actually wired to the "5 State
-   *  forms approved" condition. Until then this route shows a static locked message and makes no
-   *  API calls (the feature isn't complete yet, but the locked message ships for optics). */
-  readonly claimLetterSubmissionEnabled = false;
-
   toggleInstructions(): void {
     this.showInstructions.update((value) => !value);
   }
@@ -179,7 +181,7 @@ export class ClaimLetterListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.claimLetterSubmissionEnabled) this.loadAll();
+    this.loadAll();
   }
 
   loadAll(): void {

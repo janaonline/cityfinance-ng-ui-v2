@@ -74,6 +74,11 @@ export interface ClaimLetterFinancialOverview {
  *  hardcode "14th"/"15th" against a year on this side — always read this field. */
 export type ClaimLetterPriorFcCycleLabel = '14th FC' | '15th FC';
 
+export interface ClaimLetterUlbReadiness {
+  eligible: number;
+  total: number;
+}
+
 export interface ClaimLetterEligibilitySummary {
   stateName: string;
   installment: ClaimLetterInstallment;
@@ -101,11 +106,13 @@ export interface ClaimLetterEligibilitySummary {
    *  Accounts, Elected Body row, FC Unspent row) — the true intersection, not derivable from any
    *  single criterion's tally. Scoped to just those criteria: it does NOT factor in Devolution
    *  allocation or "locked in another claim," so it is not the same as "pickable in the picker." */
-  ulbReadiness: { eligible: number; total: number };
+  ulbReadiness: ClaimLetterUlbReadiness;
   /** `expectedUlbCount` minus every ULB currently locked into *any* batch (draft or acknowledged,
    *  regardless of current eligibility) — how many ULBs still have no home in any batch at all.
    *  Drives the "must all be in your final batch" warning and the final-batch submit guard. */
   remainingUlbCount: number;
+  /** The batch in progress or under MoHUA review (one at a time); null when a new claim can start. */
+  activeBatchNumber: number | null;
 }
 
 /**
@@ -129,8 +136,10 @@ export interface ClaimLetterClaimContext {
   varianceUpperPercent: number;
   /** Whether the current user may start a new claim (PREPARE_GRANT_LETTERS) — the create-mode-only
    *  equivalent of `ClaimLetterBatchSummary.permissions.canEdit`, since there's no batch document
-   *  yet to attach a full `ClaimLetterPermissions` to. */
+   *  yet to attach a full `ClaimLetterPermissions` to. False while another batch is active. */
   canCreate: boolean;
+  /** Why a new claim can't start because another batch is active; null otherwise. */
+  createBlockedReason: string | null;
 }
 
 /**
@@ -230,6 +239,9 @@ export interface ClaimLetterPermissions {
  * `listHistory`, `createDraft`, `updateDraft`, `abandonDraft`, `uploadSignedFile`, `submit`).
  * `questions` is only ever populated by `getDetail` — every other endpoint leaves it `undefined`.
  */
+/** Which final claim letter the page shows: the live merge of a draft, or the copy that was submitted. */
+export type ClaimLetterFinalStage = 'DRAFT' | 'SUBMITTED';
+
 export interface ClaimLetterBatchSummary {
   claimLetterId: string;
   installment: ClaimLetterInstallment;
@@ -241,6 +253,8 @@ export interface ClaimLetterBatchSummary {
   ulbCount: number;
   isAbandoned: boolean;
   hasSignedFile: boolean;
+  /** null: nothing to show (no signed letter yet, abandoned, or blocked by another batch). */
+  finalClaimLetterStage: ClaimLetterFinalStage | null;
   financialSummary: ClaimLetterFinancialSummary;
   /** Optimistic-concurrency counter — required as `expectedRevision` on `updateDraft`. */
   revision: number;
@@ -257,87 +271,155 @@ export interface ClaimLetterBatchSummary {
    *  responses, same convention as `questions`. */
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
+  /** Mandatory letter details saved and valid (Submit needs them). Only on `getDetail`. */
+  letterDetailsComplete?: boolean;
+  /** Another batch is active (one at a time): preview, download, letter details and submit are
+   *  blocked, with the reason to show. On `getDetail` and `listHistory`. */
+  blockedByBatchNumber?: number | null;
+  blockedReason?: string | null;
   /** Authoritative edit/submit gates for this claim — always populated. */
   permissions: ClaimLetterPermissions;
 }
 
-/** One row of the covering letter's recommended-ULBs table. No per-ULB date exists on the batch
- *  (only a shared batch creation timestamp), so this row intentionally carries no date. */
-export interface ClaimLetterDocumentCoveringLetterRow {
-  slNo: number;
+// ─── Claim letter document (GET :claimLetterId/document, .../document/ulbs) ─────────────────
+
+/** One run of letter text; a '\n' inside `text` is a line break, `placeholder` marks a highlighted
+ *  `< >` the State still has to fill. Rendered verbatim - the backend owns every word. `field` is the
+ *  letter-detail key of a slot (an inline box when editing); `lead` prints before a filled value only;
+ *  `hint` explains a placeholder filled in another form. */
+export interface ClaimLetterRun {
+  text: string;
+  bold?: boolean;
+  placeholder?: boolean;
+  field?: string;
+  lead?: string;
+  hint?: string;
+}
+
+/** `number` (e.g. "2.") renders as a hanging-indent list item. */
+export interface ClaimLetterParagraph {
+  runs: ClaimLetterRun[];
+  number?: string;
+}
+
+export interface ClaimLetterComplianceRow {
+  key: string;
+  condition: ClaimLetterParagraph[];
+  status: ClaimLetterParagraph[];
+}
+
+export interface ClaimLetterCoveringLetter {
+  letterhead: ClaimLetterParagraph;
+  letterNo: ClaimLetterParagraph;
+  refAndDate: ClaimLetterParagraph;
+  addressee: ClaimLetterParagraph;
+  subject: ClaimLetterParagraph;
+  referencesTitle: string;
+  references: ClaimLetterParagraph[];
+  salutation: ClaimLetterParagraph;
+  body: ClaimLetterParagraph[];
+  complianceHeaders: string[];
+  compliance: ClaimLetterComplianceRow[];
+  note: ClaimLetterParagraph;
+  closing: ClaimLetterParagraph[];
+  signOff: ClaimLetterParagraph;
+  signature: ClaimLetterParagraph;
+}
+
+/** Drives alignment: serial centre, name left, value / yesNo centre, amount right. */
+export type ClaimLetterColumnKind = 'serial' | 'name' | 'value' | 'yesNo' | 'amount';
+
+export interface ClaimLetterColumn {
+  header: string;
+  kind: ClaimLetterColumnKind;
+}
+
+export type ClaimLetterListKey = 'ELIGIBLE' | 'INELIGIBLE';
+
+/** One annexure row; `cells` follow `ClaimLetterDocument.annexure.columns` (S. No. included). */
+export interface ClaimLetterAnnexureRow {
   ulbId: string;
-  ulbName: string;
-  /** Whole Rupees (no decimals). */
-  claimAmount: number;
+  cells: string[];
 }
 
-/** One row of Annexure 1 (FC Unspent Balance Disclosures). `priorFcUnspentAmount` is the ULB's
- *  unspent balance from the FC cycle named by `ClaimLetterDocumentData.priorFcCycleLabel`; `0` when
- *  no FC-Unspent declaration is on file. `claimedAmount` mirrors the covering letter's claim amount
- *  for the same ULB (labelled "16th FC Allocation" on this annexure — not a separate figure). */
-export interface ClaimLetterDocumentAnnexure1Row {
-  slNo: number;
-  ulbId: string;
-  ulbName: string;
-  priorFcUnspentAmount: number;
-  claimedAmount: number;
-  eligible: boolean;
+export interface ClaimLetterListMeta {
+  key: ClaimLetterListKey;
+  heading: string;
+  subheading: string;
+  total: number;
 }
 
-/** One column header for Annexure 2's dynamic criteria table — one per currently-enabled ULB-bulk
- *  eligibility criterion (never a fixed set — a new/removed enabled criterion changes this list
- *  with no frontend code change). `shortLabel` is what's rendered as the header text; `label` is
- *  the full description, shown as a hover tooltip. */
-export interface ClaimLetterDocumentAnnexure2Column {
-  type: string;
-  label: string;
-  shortLabel: string;
-}
-
-/** One ULB's pass/fail against a single Annexure 2 column, paired by `type` with the matching
- *  entry in `ClaimLetterDocumentData.annexure2Columns`. */
-export interface ClaimLetterDocumentAnnexure2CriterionResult {
-  type: string;
-  met: boolean;
-}
-
-/** One row of Annexure 2 (City-wise Eligibility Conditions) — `criteria` has exactly one entry per
- *  `ClaimLetterDocumentData.annexure2Columns`, in the same order, for every row. */
-export interface ClaimLetterDocumentAnnexure2Row {
-  slNo: number;
-  ulbId: string;
-  ulbName: string;
-  criteria: ClaimLetterDocumentAnnexure2CriterionResult[];
-}
-
-/**
- * Full content for the claim letter document — the live, batch-specific letter a State prints,
- * signs, and re-uploads via `signedClaimFile`. Fetched once via `GET :claimLetterId/document` and
- * shared by both the Preview Template dialog and the Download Template PDF builder (one fetch, two
- * renderers — see `claim-letter-detail.component.ts`).
- */
-export interface ClaimLetterDocumentData {
+export interface ClaimLetterDocument {
   refNo: string;
-  letterDate: string;
   stateName: string;
-  departmentName: string;
   designYearLabel: string;
   installment: ClaimLetterInstallment;
   batchNumber: ClaimLetterBatchNumber;
-  /** "14th FC" or "15th FC" — see `ClaimLetterDocumentAnnexure1Row.priorFcUnspentAmount`. */
-  priorFcCycleLabel: string;
-  subjectLine: string;
-  introParagraph: string;
-  closingParagraph: string;
-  signatoryName: string;
-  signatoryDesignation: string;
-  coveringLetterRows: ClaimLetterDocumentCoveringLetterRow[];
-  /** Whole-Rupee sum of every `coveringLetterRows[].claimAmount`. */
-  totalClaimAmount: number;
-  annexure1Rows: ClaimLetterDocumentAnnexure1Row[];
-  annexure2Columns: ClaimLetterDocumentAnnexure2Column[];
-  annexure2Rows: ClaimLetterDocumentAnnexure2Row[];
+  /** When (IST, "07 Oct 2026, 14:30") the eligibility behind rows C-K and the lists was evaluated. */
+  asOn: string;
+  letter: ClaimLetterCoveringLetter;
+  annexure: { title: string; columns: ClaimLetterColumn[]; lists: ClaimLetterListMeta[] };
 }
+
+/** Annexure rows are paged server-side, 20 per page per list. */
+export const CLAIM_LETTER_DOCUMENT_PAGE_SIZE = 20;
+
+export interface ClaimLetterDocumentUlbPage {
+  rows: ClaimLetterAnnexureRow[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
+// ─── Letter details (GET / PATCH :claimLetterId/letter-details) ─────────────────────────────
+
+export interface ClaimLetterLetterDetailsState {
+  values: Record<string, unknown>;
+  /** Mandatory fields saved and every saved value valid - Download and Submit need it. */
+  isComplete: boolean;
+  missingFields: string[];
+  hasSignedFile: boolean;
+  letterDetailsUpdatedAt: string | null;
+}
+
+export interface ClaimLetterLetterDetails extends ClaimLetterLetterDetailsState {
+  /** In formjson `meta.letterDetailKeys` order (= letter order); fields carry their saved `value`. */
+  fields: ConditionalFieldConfig[];
+  canEdit: boolean;
+  /** The State's latest saved details from another batch, minus Letter No. / date. */
+  previous: {
+    source: { yearLabel: string; installment: number; batchNumber: number };
+    values: Record<string, unknown>;
+  } | null;
+}
+
+export interface ClaimLetterLetterDetailsSaveResult extends ClaimLetterLetterDetailsState {
+  signedFileRemoved: boolean;
+}
+
+// ─── Final claim letter, the merged PDF (GET :claimLetterId/final-pdf) ──────────────────────
+
+export interface ClaimLetterFinalPdf {
+  /** Sent back on Submit; a stale key is refused with 409 FINAL_PDF_OUTDATED. */
+  sourceKey: string;
+  fileName: string;
+  included: string[];
+  missing: string[];
+  /** Non-optional documents missing now; Submit waits until they are uploaded in their forms. */
+  missingRequired: string[];
+  pageCount: number | null;
+  builtAt: string;
+}
+
+/** Backend error `code`s the letter dialogs react to. */
+export const CLAIM_LETTER_ERROR_CODE = {
+  SIGNED_FILE_REMOVAL_NOT_CONFIRMED: 'SIGNED_FILE_REMOVAL_NOT_CONFIRMED',
+  LETTER_DETAILS_CHANGED: 'LETTER_DETAILS_CHANGED',
+  LETTER_DETAILS_INCOMPLETE: 'LETTER_DETAILS_INCOMPLETE',
+  FINAL_PDF_OUTDATED: 'FINAL_PDF_OUTDATED',
+  FINAL_PDF_SOURCE_UNREADABLE: 'FINAL_PDF_SOURCE_UNREADABLE',
+  BATCH_BLOCKED: 'CLAIM_LETTER_BATCH_BLOCKED',
+} as const;
 
 export interface ClaimLetterHistoryQuery {
   installment?: ClaimLetterInstallment;
@@ -392,7 +474,10 @@ export interface ClaimLetterApiResponse<T = unknown> {
 export interface ClaimLetterApiErrorResponse {
   success?: false;
   statusCode?: number;
+  /** `messages` joined; a class-validator 400 sends an array. */
   message?: string;
+  messages?: string[];
+  code?: string;
   errors?: ClaimLetterApiErrorMap;
   timestamp?: string;
   path?: string;

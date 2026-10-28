@@ -103,13 +103,17 @@
         </mat-card-content>
       </mat-card>
 
-      @if (!isCreateMode && effectiveSignedClaimFileField(); as field) {
+      @if (!isCreateMode && showSignedFileField() && effectiveSignedClaimFileField(); as field) {
         <app-dynamic-form
           [field]="field"
           [group]="signedFileForm"
           [mode]="canEdit() ? 'edit' : 'view'"
           (supportingAction)="onSupportingAction($event)"
         ></app-dynamic-form>
+      }
+
+      @if (!isCreateMode && claim()?.finalClaimLetterStage && claim(); as current) {
+        <app-claim-letter-final-claim-letter [claim]="current" (readyChange)="finalPdf.set($event)" />
       }
     }
   </div>
@@ -125,6 +129,18 @@
       >
         <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
         <span class="small">{{ message }}</span>
+      </div>
+    }
+
+    @if (submitBlockedReason(); as reason) {
+      <div class="alert alert-warning small mt-2" data-cy="claim-letter-submit-blocked">
+        <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>{{ reason }}
+      </div>
+    }
+
+    @if (isCreateMode && eligibilityOverview()?.createBlockedReason; as reason) {
+      <div class="alert alert-warning small mt-2" data-cy="claim-letter-create-blocked">
+        <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>{{ reason }}
       </div>
     }
 
@@ -152,7 +168,7 @@
         <button
           type="button"
           matButton="filled"
-          [disabled]="isSaving() || hasInvalidRows()"
+          [disabled]="isSaving() || hasInvalidRows() || !canEdit()"
           (click)="createDraft()"
           data-cy="claim-letter-detail-create"
         >
@@ -169,7 +185,7 @@
           type="button"
           matButton="outlined"
           class="text-danger"
-          [disabled]="isSaving() || isAbandoning() || isSubmitting()"
+          [disabled]="isSaving() || isAbandoning()"
           (click)="abandonDraft()"
           data-cy="claim-letter-detail-abandon"
         >
@@ -185,7 +201,7 @@
         <button
           type="button"
           matButton="filled"
-          [disabled]="isSaving() || isAbandoning() || isSubmitting() || hasInvalidRows()"
+          [disabled]="isSaving() || isAbandoning() || hasInvalidRows()"
           (click)="saveChanges()"
           data-cy="claim-letter-detail-save"
         >
@@ -203,7 +219,14 @@
             type="button"
             matButton="filled"
             [disabled]="
-              isSaving() || isAbandoning() || isSubmitting() || !claim()?.hasSignedFile || finalBatchIncomplete()
+              isSaving() ||
+              isAbandoning() ||
+              isSubmitting() ||
+              hasUnsavedRowChanges() ||
+              !claim()?.hasSignedFile ||
+              !submittableFinalPdf() ||
+              finalBatchIncomplete() ||
+              !!submitBlockedReason()
             "
             (click)="submitToMohua()"
             data-cy="claim-letter-detail-submit"

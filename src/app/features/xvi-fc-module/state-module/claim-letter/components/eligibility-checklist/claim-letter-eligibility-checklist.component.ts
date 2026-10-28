@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { ClaimLetterEligibilitySource } from '../../claim-letter.models';
-import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } from '../../claim-letter.utils';
+import { NgTemplateOutlet } from '@angular/common';
+import { ClaimLetterEligibilitySource, ClaimLetterUlbReadiness } from '../../claim-letter.models';
+import { describeEligibilitySourceLabel, describeEligibilitySourceRequirement } from '../../claim-letter.utils';
 
 /**
  * Dynamic eligibility checklist — driven entirely by whatever `stateLevelGate.sources` the backend
@@ -16,7 +17,9 @@ import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } 
  * - State-level items (`stateSources`, those with a `result`): today SFC, Devolution, Elected
  *   Body, FC Unspent, GTC form status — pass/fail per `result`.
  * - ULB-only items (`ulbOnlySources`, no `result`): today SLB, Provisional, Audited, Bank Account,
- *   DUR — rendered with a neutral info icon (no per-item pass/fail signal). The group's own
+ *   DUR - rendered with a neutral info icon (no per-item pass/fail signal). State forms that also
+ *   judge each ULB (`rowLevelSources`, those with a `ulbBreakdown`: today Elected Body and FC
+ *   Unspent rows) are listed first with a pass / fail icon and their count. The group's own
  *   pass/fail instead comes from the `ulbReadiness` input — the true intersection across every
  *   ULB-bulk criterion, not just the ones listed above — mirroring the same threshold
  *   `claim-letter-list.component.ts` uses to disable "New Claim", so this section and that button
@@ -24,19 +27,21 @@ import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } 
  */
 @Component({
   selector: 'app-claim-letter-eligibility-checklist',
+  imports: [NgTemplateOutlet],
   templateUrl: './claim-letter-eligibility-checklist.component.html',
   styleUrl: './claim-letter-eligibility-checklist.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClaimLetterEligibilityChecklistComponent {
   readonly sources = input.required<readonly ClaimLetterEligibilitySource[]>();
-  readonly ulbReadiness = input.required<{ eligible: number; total: number }>();
+  readonly ulbReadiness = input.required<ClaimLetterUlbReadiness>();
 
   private readonly manuallyExpanded = signal(false);
   private readonly ulbManuallyExpanded = signal(false);
 
   readonly stateSources = computed(() => this.sources().filter((source) => source.result !== undefined));
   readonly ulbOnlySources = computed(() => this.sources().filter((source) => source.result === undefined));
+  readonly rowLevelSources = computed(() => this.stateSources().filter((source) => source.ulbBreakdown));
 
   readonly allPassing = computed(() => this.stateSources().every((source) => source.result !== 'FAILED'));
   readonly expanded = computed(() => !this.allPassing() || this.manuallyExpanded());
@@ -45,7 +50,7 @@ export class ClaimLetterEligibilityChecklistComponent {
   readonly ulbExpanded = computed(() => !this.ulbAllPassing() || this.ulbManuallyExpanded());
 
   readonly describeLabel = describeEligibilitySourceLabel;
-  readonly describeDescription = describeEligibilitySourceDescription;
+  readonly describeRequirement = describeEligibilitySourceRequirement;
 
   toggleExpanded(): void {
     this.manuallyExpanded.update((value) => !value);

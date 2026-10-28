@@ -1,4 +1,9 @@
-import { ClaimLetterInstallment, ClaimLetterUlbEligibilityTally } from './claim-letter.models';
+import {
+  ClaimLetterApiErrorMap,
+  ClaimLetterApiErrorResponse,
+  ClaimLetterInstallment,
+  ClaimLetterUlbEligibilityTally,
+} from './claim-letter.models';
 
 /**
  * Client-side preview of the backend's ±10% claimed-vs-allocated variance check
@@ -48,23 +53,30 @@ export function describeEligibilitySourceLabel(source: { formType: string; displ
 
 /** One-line requirement statement for an eligibility source — `displayDescription` when the backend
  *  configured one, else a generated sentence in the same "must be submitted" phrasing used by every
- *  configured source today, so an unconfigured source still reads like the rest of the checklist.
- *  When `ulbBreakdown` is present, the per-ULB tally is appended in parentheses — e.g. "Elected Body
- *  constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123
- *  ULBs)" — applied uniformly to every criterion that carries a tally, not just row-level ones. */
+ *  configured source today, so an unconfigured source still reads like the rest of the checklist. */
+export function describeEligibilitySourceRequirement(source: {
+  formType: string;
+  displayDescription?: string;
+}): string {
+  return source.displayDescription ?? `${humanizeToken(source.formType)} must be submitted by the state.`;
+}
+
+/** The requirement plus, when `ulbBreakdown` is present, the per-ULB tally in parentheses - e.g.
+ *  "Elected Body constitution must be submitted by the state. (100 eligible, 3 exempted, 20
+ *  ineligible out of 123 ULBs)". Plain text; the checklist draws the tally itself, in colour. */
 export function describeEligibilitySourceDescription(source: {
   formType: string;
   displayDescription?: string;
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
 }): string {
-  const description = source.displayDescription ?? `${humanizeToken(source.formType)} must be submitted by the state.`;
+  const description = describeEligibilitySourceRequirement(source);
   return source.ulbBreakdown ? `${description} (${formatUlbBreakdown(source.ulbBreakdown)})` : description;
 }
 
-/** `"100 eligible, 20 ineligible, 3 exempted out of 123 ULBs"` — shared phrasing for every
- *  per-ULB tally shown in the eligibility checklist (see `describeEligibilitySourceDescription`). */
+/** `"100 eligible, 3 exempted, 20 ineligible out of 123 ULBs"`: the two that meet the condition
+ *  first, then the ones that do not. */
 export function formatUlbBreakdown(tally: ClaimLetterUlbEligibilityTally): string {
-  return `${tally.eligible} eligible, ${tally.ineligible} ineligible, ${tally.exempted} exempted out of ${tally.total} ULBs`;
+  return `${tally.eligible} eligible, ${tally.exempted} exempted, ${tally.ineligible} ineligible out of ${tally.total} ULBs`;
 }
 
 /** One decimal place, matching the live difference-percentage badge's existing rounding convention
@@ -120,4 +132,51 @@ export function buildBatchNarrative(input: BatchNarrativeInput): string[] {
     `${input.formatAmount(input.remainingAfterThisBatch)} will remain available for other ULBs after this batch - ` +
       `enough for ${slotsRemaining} more ${batchWord}.`,
   ];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === 'string');
+}
+
+function isApiErrorMap(value: unknown): value is ClaimLetterApiErrorMap {
+  return (
+    isRecord(value) &&
+    Object.values(value).every(
+      (list) => Array.isArray(list) && list.every((e: unknown) => isRecord(e) && typeof e['message'] === 'string'),
+    )
+  );
+}
+
+/** Status, message(s), `code` and field errors from an `HttpErrorResponse` body or a thrown
+ *  `success: false` response; empty when the error carries none. */
+export function readApiError(err: unknown): ClaimLetterApiErrorResponse {
+  const body = isRecord(err) && isRecord(err['error']) ? err['error'] : err;
+  if (!isRecord(body)) return {};
+  const raw = body['message'];
+  const messages = typeof raw === 'string' ? [raw] : isStringArray(raw) ? raw : [];
+  return {
+    statusCode: typeof body['statusCode'] === 'number' ? body['statusCode'] : undefined,
+    message: messages.length ? messages.join(' ') : undefined,
+    messages,
+    code: typeof body['code'] === 'string' ? body['code'] : undefined,
+    errors: isApiErrorMap(body['errors']) ? body['errors'] : undefined,
+  };
+}
+
+/** `readApiError` for requests made with `responseType: 'blob' | 'arraybuffer'`, whose error body
+ *  is the JSON bytes. */
+export async function readBinaryApiError(err: unknown): Promise<ClaimLetterApiErrorResponse> {
+  const body = isRecord(err) ? err['error'] : null;
+  try {
+    const text =
+      body instanceof Blob ? await body.text() : body instanceof ArrayBuffer ? new TextDecoder().decode(body) : null;
+    if (text) return readApiError({ error: JSON.parse(text) as unknown });
+  } catch {
+    // Not JSON - fall back to whatever the error object itself carries.
+  }
+  return readApiError(err);
 }

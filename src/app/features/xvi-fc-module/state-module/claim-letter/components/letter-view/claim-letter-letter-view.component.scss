@@ -1,0 +1,83 @@
+// A paper-like preview of the .docx: fixed light page whatever the app theme.
+.cl-letter {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 0.95rem;
+  color: #000;
+}
+
+.cl-page {
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.cl-para {
+  white-space: pre-line;
+  margin-bottom: 0.5rem;
+}
+
+// Room between stacked boxes (e.g. the letterhead) while the letter is being filled in.
+.cl-editing .cl-para {
+  line-height: 1.85;
+  margin-bottom: 0.75rem;
+}
+
+.cl-justify {
+  text-align: justify;
+}
+
+.cl-placeholder {
+  background: #fff176;
+}
+
+.cl-numbered {
+  display: flex;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+
+  .cl-number {
+    flex: 0 0 1rem;
+  }
+
+  .cl-para {
+    flex: 1;
+  }
+}
+
+.cl-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+
+  th,
+  td {
+    border: 1px solid #000;
+    padding: 0.25rem 0.4rem;
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: 700;
+  }
+
+  .cl-para {
+    margin-bottom: 0.15rem;
+  }
+}
+
+.cl-compliance td:first-child {
+  width: 9%;
+}
+
+.cl-list-heading {
+  font-family: inherit;
+  font-weight: 700;
+  margin: 1rem 0 0.25rem;
+}
+
+.cl-loading {
+  opacity: 0.5;
+}

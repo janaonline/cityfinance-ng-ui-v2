@@ -1,19 +1,6 @@
 <div class="top-accent"></div>
 
 <section class="p-3 p-md-4">
-  @if (!claimLetterSubmissionEnabled) {
-    <div class="alert alert-info d-flex align-items-start gap-2 mb-0" role="alert" data-cy="claim-letter-locked-message">
-      <i class="bi bi-lock-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
-      <div>
-        <h2 class="h5 fw-semibold mb-2">Submit a ULB Claim Letter</h2>
-        <p class="mb-2">
-          Once all State forms have been submitted and approved, you can generate and submit a claim letter for
-          eligible ULBs here.
-        </p>
-        <p class="fw-semibold mb-0">This section will be enabled once the State forms are approved.</p>
-      </div>
-    </div>
-  } @else {
   <div class="content-stack d-flex flex-column gap-4">
     <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
       <div>
@@ -27,9 +14,10 @@
         <h1 class="page-title mb-2">Generate Claim Letter</h1>
 
         <p class="page-subtitle text-secondary mb-0">
-          Select ULBs and claim amounts against your state's Installment {{ installment }} allocation, then upload a
-          signed claim letter for MoHUA. You may hold multiple claim batches at a time, up to the slot limit shown
-          below.
+          Select ULBs and claim amounts against your state's Installment {{ installment }} allocation, fill in the claim
+          letter, then upload the signed copy and submit it to MoHUA. You can create up to the number of batches shown
+          below, one at a time: the next batch can start once MoHUA acknowledges the current one, or its draft is
+          abandoned.
         </p>
       </div>
 
@@ -271,5 +259,4 @@
       }
     }
   </div>
-  }
 </section>

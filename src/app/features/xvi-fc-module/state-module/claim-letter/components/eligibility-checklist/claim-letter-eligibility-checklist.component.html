@@ -35,7 +35,12 @@
                   <span class="badge text-bg-primary ms-1">Exempted</span>
                 }
                 <br />
-                <span class="text-secondary">{{ describeDescription(source) }}</span>
+                <span class="text-secondary">
+                  {{ describeRequirement(source) }}
+                  @if (source.ulbBreakdown; as tally) {
+                    <ng-container *ngTemplateOutlet="tallyTpl; context: { $implicit: tally }" />
+                  }
+                </span>
               </span>
             </li>
           }
@@ -49,7 +54,7 @@
         <div class="d-flex align-items-center justify-content-between gap-2">
           <span class="text-primary">
             <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
-            ULB Submission Status ({{ ulbReadiness().eligible }}/{{ ulbReadiness().total }})
+            ULBs meeting all requirements ({{ ulbReadiness().eligible }}/{{ ulbReadiness().total }})
           </span>
           <button
             type="button"
@@ -64,13 +69,39 @@
 
       @if (ulbExpanded()) {
         <ul class="list-unstyled mb-0 d-flex flex-column gap-2" data-cy="claim-letter-eligibility-checklist-ulb-items">
+          @for (source of rowLevelSources(); track source.formType) {
+            @let tally = source.ulbBreakdown!;
+            <li class="d-flex align-items-start gap-2 small" data-cy="claim-letter-eligibility-checklist-ulb-row-form">
+              @if (tally.ineligible > 0) {
+                <i class="bi bi-exclamation-circle-fill text-danger flex-shrink-0 mt-1" aria-hidden="true"></i>
+              } @else {
+                <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1" aria-hidden="true"></i>
+              }
+              <span>
+                <span class="fw-semibold">{{ describeLabel(source) }}</span>
+                <br />
+                <span class="text-secondary">
+                  @if (tally.ineligible > 0) {
+                    {{ tally.ineligible }} {{ tally.ineligible === 1 ? 'ULB does' : 'ULBs do' }} not meet this
+                  } @else {
+                    {{ tally.total === 1 ? 'The ULB meets this' : 'All ' + tally.total + ' ULBs meet this' }}
+                  }
+                </span>
+              </span>
+            </li>
+          }
           @for (source of ulbOnlySources(); track source.formType) {
             <li class="d-flex align-items-start gap-2 small">
               <i class="bi bi-info-circle-fill text-primary flex-shrink-0 mt-1" aria-hidden="true"></i>
               <span>
                 <span class="fw-semibold">{{ describeLabel(source) }}</span>
                 <br />
-                <span class="text-secondary">{{ describeDescription(source) }}</span>
+                <span class="text-secondary">
+                  {{ describeRequirement(source) }}
+                  @if (source.ulbBreakdown; as tally) {
+                    <ng-container *ngTemplateOutlet="tallyTpl; context: { $implicit: tally }" />
+                  }
+                </span>
               </span>
             </li>
           }
@@ -79,3 +110,17 @@
     }
   </div>
 }
+
+<!-- Green for the counts that meet the condition, red for the ones that do not; a 0 stays muted. -->
+<ng-template #tallyTpl let-tally>
+  (<span data-cy="claim-letter-eligibility-checklist-tally-eligible" [class.text-success]="tally.eligible > 0"
+    >{{ tally.eligible }} eligible</span
+  >,
+  <span data-cy="claim-letter-eligibility-checklist-tally-exempted" [class.text-success]="tally.exempted > 0"
+    >{{ tally.exempted }} exempted</span
+  >,
+  <span data-cy="claim-letter-eligibility-checklist-tally-ineligible" [class.text-danger]="tally.ineligible > 0"
+    >{{ tally.ineligible }} ineligible</span
+  >
+  out of {{ tally.total }} ULBs)
+</ng-template>

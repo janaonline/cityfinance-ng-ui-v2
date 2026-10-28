@@ -9,11 +9,16 @@ import {
   ClaimLetterApiResponse,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
-  ClaimLetterDocumentData,
+  ClaimLetterDocument,
+  ClaimLetterDocumentUlbPage,
   ClaimLetterEligibilitySummary,
+  ClaimLetterFinalPdf,
   ClaimLetterHistoryQuery,
   ClaimLetterHistoryResult,
   ClaimLetterInstallment,
+  ClaimLetterLetterDetails,
+  ClaimLetterLetterDetailsSaveResult,
+  ClaimLetterListKey,
   ClaimLetterUlbOption,
   ClaimLetterUlbOptionsQuery,
   ClaimLetterUlbOptionsResult,
@@ -128,9 +133,12 @@ export class ClaimLetterService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterBatchSummary));
   }
 
-  submit(claimLetterId: string): Observable<ClaimLetterBatchSummary> {
+  /** `finalPdfSourceKey` is the reviewed final PDF's key; the backend refuses a stale one. */
+  submit(claimLetterId: string, finalPdfSourceKey: string): Observable<ClaimLetterBatchSummary> {
     return this.http
-      .post<ClaimLetterApiResponse<ClaimLetterBatchSummary>>(`${this.baseUrl}${claimLetterId}/submit`, {})
+      .post<
+        ClaimLetterApiResponse<ClaimLetterBatchSummary>
+      >(`${this.baseUrl}${claimLetterId}/submit`, { finalPdfSourceKey })
       .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterBatchSummary));
   }
 
@@ -190,28 +198,89 @@ export class ClaimLetterService {
       );
   }
 
-  /** Covering letter + Annexure 1 + Annexure 2 content for Preview Template — fetch once, also used
-   *  by Download Template just to derive the filename (see `claim-letter-detail.component.ts`). The
-   *  PDF itself comes from `downloadDocumentPdf()` below, not from this data. */
-  getDocumentData(claimLetterId: string): Observable<ClaimLetterDocumentData> {
+  /** The letter for preview (covering letter + annexure headings, no ULB rows). */
+  getDocument(claimLetterId: string): Observable<ClaimLetterDocument> {
     return this.http
-      .get<ClaimLetterApiResponse<ClaimLetterDocumentData>>(`${this.baseUrl}${claimLetterId}/document`)
-      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterDocumentData));
+      .get<ClaimLetterApiResponse<ClaimLetterDocument>>(`${this.baseUrl}${claimLetterId}/document`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterDocument));
   }
 
-  /** Server-rendered PDF of the same document `getDocumentData()` returns as JSON — rendered
-   *  backend-side (not client-side `pdfmake`, which needs `'unsafe-eval'` in `script-src` and
-   *  breaks under a strict CSP) — mirrors Devolution Formula's `downloadTemplate()` blob pattern.
-   *  `observe: 'response'` lets the caller read the backend's complete `Content-Disposition`
-   *  filename via `download-file-name.util.ts`'s `parseContentDispositionFileName` — the component
-   *  saves it verbatim (falling back to a literal derived from `getDocumentData()`'s `refNo` if
-   *  that header is missing/unparseable), rather than reconstructing it client-side. */
-  downloadDocumentPdf(claimLetterId: string): Observable<XviFcDownloadedFile> {
+  /** One page (20 rows) of an annexure list. */
+  getDocumentUlbs(
+    claimLetterId: string,
+    list: ClaimLetterListKey,
+    page: number,
+  ): Observable<ClaimLetterDocumentUlbPage> {
+    const params = new HttpParams().set('list', list).set('page', String(page));
     return this.http
-      .get(`${this.baseUrl}${claimLetterId}/document/pdf`, { responseType: 'blob', observe: 'response' })
+      .get<ClaimLetterApiResponse<ClaimLetterDocumentUlbPage['rows']>>(
+        `${this.baseUrl}${claimLetterId}/document/ulbs`,
+        {
+          params,
+        },
+      )
+      .pipe(
+        map((res) => {
+          const response = ensureSuccessfulResponse(res);
+          const rows = response.data ?? [];
+          const meta = response.meta ?? {};
+          return {
+            rows,
+            page: typeof meta['page'] === 'number' ? meta['page'] : page,
+            limit: typeof meta['limit'] === 'number' ? meta['limit'] : rows.length,
+            total: typeof meta['total'] === 'number' ? meta['total'] : rows.length,
+          };
+        }),
+      );
+  }
+
+  /** Server-built .docx; the filename comes from Content-Disposition. A 400 (letter details
+   *  incomplete) arrives as a Blob - see `readBlobError`. */
+  downloadDocumentDocx(claimLetterId: string): Observable<XviFcDownloadedFile> {
+    return this.http
+      .get(`${this.baseUrl}${claimLetterId}/document/docx`, { responseType: 'blob', observe: 'response' })
       .pipe(
         map((response) => ({
           blob: response.body as Blob,
+          fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
+        })),
+      );
+  }
+
+  getLetterDetails(claimLetterId: string): Observable<ClaimLetterLetterDetails> {
+    return this.http
+      .get<ClaimLetterApiResponse<ClaimLetterLetterDetails>>(`${this.baseUrl}${claimLetterId}/letter-details`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterLetterDetails));
+  }
+
+  /** Saves the changed letter details; `confirmSignedFileRemoval` acknowledges that a change removes the
+   *  uploaded signed letter. */
+  saveLetterDetails(
+    claimLetterId: string,
+    data: Record<string, unknown>,
+    confirmSignedFileRemoval = false,
+  ): Observable<ClaimLetterLetterDetailsSaveResult> {
+    return this.http
+      .patch<
+        ClaimLetterApiResponse<ClaimLetterLetterDetailsSaveResult>
+      >(`${this.baseUrl}${claimLetterId}/letter-details`, { data, confirmSignedFileRemoval })
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterLetterDetailsSaveResult));
+  }
+
+  /** Builds (or reuses) the final merged PDF and returns what it contains. */
+  getFinalPdf(claimLetterId: string): Observable<ClaimLetterFinalPdf> {
+    return this.http
+      .get<ClaimLetterApiResponse<ClaimLetterFinalPdf>>(`${this.baseUrl}${claimLetterId}/final-pdf`)
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterFinalPdf));
+  }
+
+  /** The final claim letter (merged PDF) bytes, for View (new tab) and Download. */
+  getFinalPdfFile(claimLetterId: string): Observable<{ bytes: ArrayBuffer; fileName: string | null }> {
+    return this.http
+      .get(`${this.baseUrl}${claimLetterId}/final-pdf/file`, { responseType: 'arraybuffer', observe: 'response' })
+      .pipe(
+        map((response) => ({
+          bytes: response.body as ArrayBuffer,
           fileName: parseContentDispositionFileName(response.headers.get('Content-Disposition')),
         })),
       );

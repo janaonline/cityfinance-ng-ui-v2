@@ -32,6 +32,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
   ulbCount: 3,
   isAbandoned: false,
   hasSignedFile: false,
+  finalClaimLetterStage: null,
   financialSummary,
   revision: 0,
   submittedAt: null,
@@ -62,6 +63,7 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     ulbLevelCriteria: [],
     ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
+    activeBatchNumber: null,
     ...overrides,
   };
 }
@@ -94,10 +96,6 @@ describe('ClaimLetterListComponent', () => {
 
     fixture = TestBed.createComponent(ClaimLetterListComponent);
     component = fixture.componentInstance;
-    // Claim Letter submission is gated behind a temporary flag (defaults to `false`, see the
-    // "default locked state" describe block below) - flip it on here so the rest of this spec
-    // keeps exercising the live eligibility/history page exactly as before.
-    (component as any).claimLetterSubmissionEnabled = true;
     fixture.detectChanges();
   });
 
@@ -337,6 +335,19 @@ describe('ClaimLetterListComponent', () => {
     );
   });
 
+  it('disables New Claim while another batch is active (one batch at a time)', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 1, batchSlotsMax: 3, activeBatchNumber: 1 })),
+    );
+
+    component.loadAll();
+
+    expect(component.canCreateNewClaim()).toBeFalse();
+    expect(component.newClaimDisabledReason()).toBe(
+      'Only one claim batch can be processed at a time. Batch 1 is still in progress or under MoHUA review.',
+    );
+  });
+
   it('newClaimDisabledReason is null before eligibility has loaded', () => {
     component.eligibility.set(null);
     expect(component.newClaimDisabledReason()).toBeNull();
@@ -411,45 +422,5 @@ describe('ClaimLetterListComponent', () => {
     component.goToPage(999);
 
     expect(claimLetterService.listHistory).not.toHaveBeenCalled();
-  });
-});
-
-describe('ClaimLetterListComponent - default locked state', () => {
-  // claimLetterSubmissionEnabled defaults to false - the feature isn't complete yet, so this
-  // route ships a static locked message and must never call the eligibility/history APIs.
-  let fixture: ComponentFixture<ClaimLetterListComponent>;
-  let claimLetterService: ClaimLetterService;
-
-  beforeEach(async () => {
-    localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
-
-    const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
-    moduleService.yearId.and.returnValue('year-test-id');
-
-    await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, ClaimLetterListComponent],
-      providers: [{ provide: XvifcModuleService, useValue: moduleService }],
-    }).compileComponents();
-
-    claimLetterService = TestBed.inject(ClaimLetterService);
-    spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
-    spyOn(claimLetterService, 'listHistory').and.returnValue(of({ claims: [], page: 1, limit: 10, total: 0 }));
-
-    fixture = TestBed.createComponent(ClaimLetterListComponent);
-    fixture.detectChanges();
-  });
-
-  afterEach(() => {
-    localStorage.removeItem('userData');
-  });
-
-  it('shows the static locked message and never calls the eligibility/history APIs', () => {
-    expect(claimLetterService.getEligibilitySummary).not.toHaveBeenCalled();
-    expect(claimLetterService.listHistory).not.toHaveBeenCalled();
-
-    const message = fixture.debugElement.query(By.css('[data-cy="claim-letter-locked-message"]'));
-    expect(message).not.toBeNull();
-    expect(message.nativeElement.textContent).toContain('Submit a ULB Claim Letter');
-    expect(message.nativeElement.textContent).toContain('This section will be enabled once the State forms are approved.');
   });
 });
