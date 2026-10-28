@@ -308,6 +308,8 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
   }
 
   onPageChange(change: ClaimLetterListPageChange): void {
+    // A failed page keeps its previous rows and index, so the old error can go once a new request starts.
+    this.pageError.set(null);
     this.pages.update((pages) => ({ ...pages, [change.list]: { ...pages[change.list], loading: true } }));
     this.claimLetterService
       .getDocumentUlbs(this.data.claimLetterId, change.list, change.pageIndex + 1)
@@ -330,6 +332,7 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
   private load(): void {
     this.loading.set(true);
     this.loadError.set(null);
+    this.pageError.set(null);
     const id = this.data.claimLetterId;
     forkJoin({
       details: this.claimLetterService.getLetterDetails(id),

@@ -956,6 +956,23 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.submit).not.toHaveBeenCalled();
     });
 
+    it('disables Abandon Draft and Save Changes while Submit is in flight', async () => {
+      await setupSigned();
+      spyOn(claimLetterService, 'submit').and.returnValue(new Subject<ClaimLetterBatchSummary>());
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
+      const button = (cy: string) =>
+        fixture.debugElement.query(By.css(`[data-cy="${cy}"]`)).nativeElement as HTMLButtonElement;
+      expect(button('claim-letter-detail-abandon').disabled).toBeFalse();
+      expect(button('claim-letter-detail-save').disabled).toBeFalse();
+
+      component.submitToMohua();
+      fixture.detectChanges();
+
+      expect(component.isSubmitting()).toBeTrue();
+      expect(button('claim-letter-detail-abandon').disabled).toBeTrue();
+      expect(button('claim-letter-detail-save').disabled).toBeTrue();
+    });
+
     it('when the documents changed, warns and refreshes so the card loads the updated copy', async () => {
       await setupSigned();
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();

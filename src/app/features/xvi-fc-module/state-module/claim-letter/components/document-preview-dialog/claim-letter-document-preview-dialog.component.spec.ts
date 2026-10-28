@@ -396,6 +396,21 @@ describe('ClaimLetterDocumentPreviewDialogComponent', () => {
     el.remove();
   });
 
+  describe('annexure pages', () => {
+    it('clears a page error when the next page request starts', () => {
+      create();
+      service.getDocumentUlbs.and.returnValue(throwError(() => apiError(500, { message: 'Page failed.' })));
+      component.onPageChange({ list: 'ELIGIBLE', pageIndex: 1 });
+      expect(component.pageError()).toBe('Page failed.');
+
+      service.getDocumentUlbs.and.returnValue(of({ rows: [], page: 2, limit: 20, total: 21 }));
+      component.onPageChange({ list: 'ELIGIBLE', pageIndex: 1 });
+
+      expect(component.pageError()).toBeNull();
+      expect(component.pages().ELIGIBLE.pageIndex).toBe(1);
+    });
+  });
+
   describe('download', () => {
     it('is disabled until the required boxes are filled', () => {
       create();
