@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -510,6 +510,42 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.loadError()).toBe(true);
       expect(component.isLoading()).toBe(false);
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
+    });
+
+    it('keeps the spinner until the claim arrives, even when claim-context answers first', async () => {
+      await setup('claim-1');
+      const detail$ = new Subject<ClaimLetterBatchSummary>();
+      spyOn(claimLetterService, 'getDetail').and.returnValue(detail$);
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+
+      fixture.detectChanges();
+
+      expect(component.contextLoading()).toBe(false);
+      expect(component.pageLoading()).toBe(true);
+
+      detail$.next(buildClaim());
+      detail$.complete();
+
+      expect(component.pageLoading()).toBe(false);
+    });
+
+    it('keeps the spinner until claim-context arrives, even when the claim answers first', async () => {
+      await setup('claim-1');
+      const context$ = new Subject<ClaimLetterClaimContext>();
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(context$);
+
+      fixture.detectChanges();
+
+      expect(component.isLoading()).toBe(false);
+      expect(component.pageLoading()).toBe(true);
+
+      context$.next(buildClaimContext());
+      context$.complete();
+
+      expect(component.pageLoading()).toBe(false);
     });
 
     it('saveChanges sends the current expectedRevision and reloads on success', async () => {

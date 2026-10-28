@@ -31,7 +31,7 @@ import {
 
 function ensureSuccessfulResponse<T>(response: ClaimLetterApiResponse<T>): ClaimLetterApiResponse<T> {
   if (!response.success) {
-    // Throw the full response so the component can read message + errors, same as FC Unspent.
+    // Thrown whole so callers can read its message and errors (readApiError).
     throw response;
   }
   return response;
@@ -54,9 +54,7 @@ export class ClaimLetterService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as ClaimLetterEligibilitySummary));
   }
 
-  /** Lean sibling of `getEligibilitySummary` for the create/edit page — same financial/batch-slot/
-   *  ULB-count fields, without the expensive eligibility-checklist evaluation neither page mode
-   *  displays. */
+  /** Lean sibling of `getEligibilitySummary` for the create/edit page (no checklist evaluation). */
   getClaimContext(
     stateId: string,
     yearId: string,
@@ -234,8 +232,7 @@ export class ClaimLetterService {
       );
   }
 
-  /** Server-built .docx; the filename comes from Content-Disposition. A 400 (letter details
-   *  incomplete) arrives as a Blob - see `readBlobError`. */
+  /** Server-built .docx named by Content-Disposition; an error body arrives as a Blob (`readBinaryApiError`). */
   downloadDocumentDocx(claimLetterId: string): Observable<XviFcDownloadedFile> {
     return this.http
       .get(`${this.baseUrl}${claimLetterId}/document/docx`, { responseType: 'blob', observe: 'response' })
@@ -286,12 +283,7 @@ export class ClaimLetterService {
       );
   }
 
-  /**
-   * Pages through `getUlbs()` until every row of the batch has been fetched, rather than trusting a
-   * single (backend-defaulted, ≤20-row) page — a batch can have 700+ ULBs, and both the displayed
-   * total and the save payload must reflect all of them, not just the first page. Emits once, with
-   * the fully-accumulated row list.
-   */
+  /** Every row of the batch, page by page (a batch can hold 700+ ULBs); emits once. */
   getAllUlbs(claimLetterId: string, search?: string): Observable<ClaimLetterUlbRow[]> {
     const limit = CLAIM_LETTER_ULB_ROWS_PAGE_SIZE;
     return this.getUlbs(claimLetterId, { search, page: 1, limit }).pipe(

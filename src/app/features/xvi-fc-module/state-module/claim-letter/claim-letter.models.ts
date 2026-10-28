@@ -1,18 +1,15 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
 
-/** Installment 2 stays schema-legal on the backend but is rejected server-side in V1 — this
- *  feature only ever sends/renders installment 1 (no selector shown to the State). */
+/** V1 sends and shows Installment 1 only; the backend rejects 2. */
 export type ClaimLetterInstallment = 1 | 2;
 export const CLAIM_LETTER_INSTALLMENT: ClaimLetterInstallment = 1;
 export type ClaimLetterBatchNumber = 1 | 2 | 3;
 export type ClaimLetterAssemblyStatus = 'BUILDING' | 'READY';
 export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
 
-/** Matches the backend's own per-request cap (`CLAIM_LETTER_PAGINATION_MAX_LIMIT`) — used when
- *  paging through every ULB of a batch rather than trusting a single page (see `getAllUlbs`). */
+/** The backend's per-request max (`CLAIM_LETTER_PAGINATION_MAX_LIMIT`), used by `getAllUlbs`. */
 export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
 
-/** Per-ULB eligible/ineligible/exempted tally behind a criterion — see `ClaimLetterEligibilitySource.ulbBreakdown`. */
 export interface ClaimLetterUlbEligibilityTally {
   eligible: number;
   ineligible: number;
@@ -20,58 +17,37 @@ export interface ClaimLetterUlbEligibilityTally {
   total: number;
 }
 
-/**
- * One eligibility-gate source result. Only the fields this UI actually renders (pass/fail state,
- * a reason code, and optional display copy) are modeled — never the full backend
- * `EligibilityEvaluationResult` shape, most of which (evidence, dataset versions, snapshot ids) is
- * audit-only and never shown here.
- */
+/** One checklist line: only the fields this UI renders, not the backend's full evaluation result. */
 export interface ClaimLetterEligibilitySource {
   formType: string;
-  /** Absent for the ULB-only criteria (today: SLB, Provisional, Audited, Bank Account, DUR) merged
-   *  in from `ulbLevelCriteria` at render time — they have no single state-wide pass/fail, so the
-   *  checklist renders a neutral icon and excludes them from the "all passing" computation when
-   *  `result` is undefined. */
+  /** Absent for the ULB-only criteria merged in from `ulbLevelCriteria`: they have no State-wide
+   *  pass/fail, so the checklist shows them neutral and leaves them out of "all passing". */
   result?: ClaimLetterEligibilityResult;
   reasonCode: string;
-  /** Short human-readable name for this criterion (e.g. "Devolution Formula"). Falls back to a
-   *  humanized `formType` when absent — see `humanizeToken`/`describeEligibilitySource`. */
+  /** Falls back to a humanized `formType` (`describeEligibilitySourceLabel`). */
   displayLabel?: string;
-  /** One-line requirement statement, same wording regardless of pass/fail — only the tick/cross
-   *  indicator changes. Falls back to a generated sentence when absent. */
+  /** Same wording whatever the result; falls back to a generated sentence. */
   displayDescription?: string;
-  /** Relative frontend route for this criterion's "View" action (e.g. '../sfc-status').
-   *  Frontend falls back to '../requirements' (self-link) when unset. */
+  /** Relative route for the "View" action (e.g. '../sfc-status'); the requirements page falls back to itself. */
   checklistRoute?: string;
-  /** Plain-language checklist line for /requirements.
-   * Supports {{priorFcCycleLabel}}; substituted by ClaimLetterService.getEligibilitySummary().
-   * Falls back to displayDescription when unset. */
+  /** The requirements page's line, tokens already filled by the backend; falls back to the description. */
   checklistSummary?: string;
-  /** Per-ULB tally behind this requirement — populated for Elected Body/FC Unspent (state forms
-   *  representing ULB-level data) and for the ULB-only criteria merged in from `ulbLevelCriteria`.
-   *  Absent for pure state-form checks (today: SFC, Devolution, GTC), which have no per-ULB
-   *  meaning. */
+  /** Set for State forms with per-ULB rows and for the merged ULB-only criteria. */
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
 }
 
-/** State-wide financial context, independent of any one batch — the `financialSummary` concepts
- *  that still mean something before a specific claim letter exists, so they're surfaced here
- *  rather than waiting for a batch's own `ClaimLetterFinancialSummary`. */
+/** State-wide figures, available before any batch exists. */
 export interface ClaimLetterFinancialOverview {
   totalInstallmentAllocation: number;
   totalAlreadyAcknowledged: number;
-  /** Sum claimed across this state/year/installment's other batches currently under MoHUA review. */
+  /** Claimed in batches under MoHUA review (not drafts). */
   totalClaimInProgress: number;
-  /** Sum claimed across this state/year/installment's other batches still in draft. */
   totalClaimInDraft: number;
-  /** totalInstallmentAllocation − totalAlreadyAcknowledged − totalClaimInProgress − totalClaimInDraft. */
+  /** Allocation minus the three claimed totals. */
   availableToClaim: number;
 }
 
-/** Which FC cycle "FC Unspent Balance" disclosures refer to for this design year — resolved
- *  backend-side (`resolvePriorFcCycleLabel`) from the same table the actual signed Claim Letter
- *  document's own Annexure 1 heading uses, so this and that document can never disagree. Never
- *  hardcode "14th"/"15th" against a year on this side — always read this field. */
+/** Resolved by the backend per design year; never derive "14th" / "15th" from the year here. */
 export type ClaimLetterPriorFcCycleLabel = '14th FC' | '15th FC';
 
 export interface ClaimLetterUlbReadiness {
@@ -90,39 +66,27 @@ export interface ClaimLetterEligibilitySummary {
   expectedUlbCount: number;
   batchSlotsUsed: number;
   batchSlotsMax: number;
-  /** The batch-slot number that would be allocated if a draft were created right now — `null` once
-   *  all `batchSlotsMax` slots are occupied by a non-abandoned batch. */
+  /** Slot a new draft would take now; null when every slot is used. */
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
-  /** Tallies for ULB-only criteria with no state action to gate on (SLB, Provisional/Audited
-   *  Annual Accounts) — never affects `stateLevelGate.passed`. Merged into the same unified
-   *  checklist as `stateLevelGate.sources` at render time (see `claim-letter-list.component.ts`). */
+  /** ULB-owned criteria: informational, never part of `stateLevelGate`; the list page merges them
+   *  into the checklist. */
   ulbLevelCriteria: {
     displayLabel?: string;
     displayDescription?: string;
     tally: ClaimLetterUlbEligibilityTally;
   }[];
-  /** How many of `expectedUlbCount` ULBs pass *every* ULB-bulk criterion (SLB, Provisional/Audited
-   *  Accounts, Elected Body row, FC Unspent row) — the true intersection, not derivable from any
-   *  single criterion's tally. Scoped to just those criteria: it does NOT factor in Devolution
-   *  allocation or "locked in another claim," so it is not the same as "pickable in the picker." */
+  /** ULBs passing every ULB-bulk criterion at once. Ignores allocation and locks, so it is not the
+   *  picker's count of pickable ULBs. */
   ulbReadiness: ClaimLetterUlbReadiness;
-  /** `expectedUlbCount` minus every ULB currently locked into *any* batch (draft or acknowledged,
-   *  regardless of current eligibility) — how many ULBs still have no home in any batch at all.
-   *  Drives the "must all be in your final batch" warning and the final-batch submit guard. */
+  /** Expected ULBs in no batch, eligible or not; drives the final-batch warning and submit guard. */
   remainingUlbCount: number;
   /** The batch in progress or under MoHUA review (one at a time); null when a new claim can start. */
   activeBatchNumber: number | null;
 }
 
-/**
- * Lean sibling of `ClaimLetterEligibilitySummary` for the create/edit claim-letter page — exactly
- * the subset of fields that page reads (financial/batch-slot/ULB-count context), with none of the
- * `stateLevelGate`/`ulbLevelCriteria`/`ulbReadiness` fields that page never displays. Backed by
- * `GET .../claim-context`, which skips the expensive eligibility-checklist evaluation entirely.
- */
+/** Lean sibling of `ClaimLetterEligibilitySummary` for the create/edit page (`GET .../claim-context`, no checklist). */
 export interface ClaimLetterClaimContext {
-  /** Powers the page-header eyebrow — same convention as `ClaimLetterEligibilitySummary.stateName`. */
   stateName: string;
   expectedUlbCount: number;
   batchSlotsUsed: number;
@@ -130,45 +94,33 @@ export interface ClaimLetterClaimContext {
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
-  /** DB-driven claimed-vs-allocated variance band (formJson.meta on the backend) — never hardcode
-   *  these; pass straight through to `isClaimWithinVariance`. */
+  /** Claimed-vs-allocated band from the backend; pass it straight to `isClaimWithinVariance`. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
-  /** Whether the current user may start a new claim (PREPARE_GRANT_LETTERS) — the create-mode-only
-   *  equivalent of `ClaimLetterBatchSummary.permissions.canEdit`, since there's no batch document
-   *  yet to attach a full `ClaimLetterPermissions` to. False while another batch is active. */
+  /** PREPARE_GRANT_LETTERS and no active batch; stands in for `permissions.canEdit` before a batch exists. */
   canCreate: boolean;
   /** Why a new claim can't start because another batch is active; null otherwise. */
   createBlockedReason: string | null;
 }
 
-/**
- * One selectable-ULB picker row, sourced from the lazy/searchable `ulb-options` endpoint — never
- * part of the claim detail response. `eligible`/`ineligibleReasonCode` are server-computed; the
- * picker must never re-derive eligibility client-side.
- */
+/** A picker row from `ulb-options`; eligibility is server-computed, never re-derived here. */
 export interface ClaimLetterUlbOption {
   ulbId: string;
   ulbName: string;
   censusCode: string | null;
   sbCode: string | null;
-  /** Whole Rupees (no decimals). `null` when the ULB has no active Devolution allocation. */
+  /** Whole Rupees; null when the ULB has no active Devolution allocation. */
   allocationAmount: number | null;
   eligible: boolean;
   ineligibleReasonCode: string | null;
-  /** Specific, human-readable reason naming the failing form(s) (e.g. "SLB eligibility criteria not
-   *  met") — populated only for `ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET`; `null` otherwise, in which
-   *  case the UI falls back to humanizing `ineligibleReasonCode`. */
+  /** Names the failing form(s); only for ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET, else null (the code is humanized). */
   ineligibleReasonDetail: string | null;
 }
 
-/** Query params for the lazy ULB-options endpoint — `stateId`/`yearId`/installment are path params
- *  on the real endpoint, passed as separate `ClaimLetterService.getUlbOptions` arguments. */
 export interface ClaimLetterUlbOptionsQuery {
   search?: string;
   eligibilityFilter?: 'ELIGIBLE' | 'INELIGIBLE';
-  /** Excludes this draft's own already-locked ULBs from the "locked elsewhere" filter. Omitted in
-   *  create mode (no claim exists yet). */
+  /** Lets this draft's own locked ULBs show as selectable; omitted in create mode. */
   claimLetterId?: string;
   page?: number;
   limit?: number;
@@ -181,8 +133,7 @@ export interface ClaimLetterUlbOptionsResult {
   total: number;
 }
 
-/** One row of the selected-ULBs table, from `GET :claimLetterId/ulbs` — already server-computed
- *  (difference %, eligible re-verified at read time), never recomputed from `ClaimLetterUlbOption`. */
+/** A saved row from `GET :claimLetterId/ulbs`, difference and eligibility computed server-side. */
 export interface ClaimLetterUlbRow {
   ulbId: string;
   ulbName: string;
@@ -207,41 +158,31 @@ export interface ClaimLetterUlbRowsResult {
   total: number;
 }
 
-/** Whole Rupees (no decimals) — formatting (Cr/Lakh scaling or full-precision) is the FE's job via
- *  `AmountDisplayModeService`, not pre-applied by the backend. */
+/** Whole Rupees; display scaling is `AmountDisplayModeService`'s job. */
 export interface ClaimLetterFinancialSummary {
   totalInstallmentAllocation: number;
   totalAlreadyAcknowledged: number;
-  /** Self-excludes this batch — sums the state's OTHER batches at each status. Persisted (not just
-   *  transient) so the detail page can live-recompute `remainingIfAcknowledged`-equivalent values as
-   *  the user edits claim amounts, without a fresh server round-trip on every keystroke. */
+  /** This and totalClaimInDraft exclude this batch, so the page can subtract its live claim once. */
   totalClaimInProgress: number;
   totalClaimInDraft: number;
   availableToClaim: number;
   selectedAllocation: number;
   currentSelectedClaim: number;
-  /** = availableToClaim − currentSelectedClaim — accounts for other concurrent batches, not just
-   *  this state's already-acknowledged claims. */
+  /** Net of other drafts and batches under review too, not only acknowledged ones. */
   remainingIfAcknowledged: number;
 }
 
-/** Authoritative UI edit/submit gates, computed backend-side (same shape/convention as
- *  `SfcStatusPermissions`) — never infer `canEdit`/`canFinalSubmit` from `currentFormStatus`/
- *  `isAbandoned` locally. */
+/** Authoritative UI gates from the backend; never re-derive them from status. */
 export interface ClaimLetterPermissions {
   canView: boolean;
   canEdit: boolean;
   canFinalSubmit: boolean;
 }
 
-/**
- * The one response shape every claim-letter read/mutating endpoint returns (`getDetail`,
- * `listHistory`, `createDraft`, `updateDraft`, `abandonDraft`, `uploadSignedFile`, `submit`).
- * `questions` is only ever populated by `getDetail` — every other endpoint leaves it `undefined`.
- */
 /** Which final claim letter the page shows: the live merge of a draft, or the copy that was submitted. */
 export type ClaimLetterFinalStage = 'DRAFT' | 'SUBMITTED';
 
+/** The shape every batch endpoint returns. */
 export interface ClaimLetterBatchSummary {
   claimLetterId: string;
   installment: ClaimLetterInstallment;
@@ -256,43 +197,41 @@ export interface ClaimLetterBatchSummary {
   /** null: nothing to show (no signed letter yet, abandoned, or blocked by another batch). */
   finalClaimLetterStage: ClaimLetterFinalStage | null;
   financialSummary: ClaimLetterFinancialSummary;
-  /** Optimistic-concurrency counter — required as `expectedRevision` on `updateDraft`. */
+  /** Sent back as `expectedRevision` on `updateDraft`. */
   revision: number;
   submittedAt: string | null;
   resolvedAt: string | null;
   supersedes: string | null;
   supersededBy: string | null;
   createdAt: string;
-  /** Claim Letter's own `formjsons` field config (today: just `signedClaimFile`). Only present on
-   *  `getDetail` responses. */
+  // Set by getDetail only, down to letterDetailsComplete.
+  /** Formjson fields except the letter details (those come from `GET .../letter-details`). */
   questions?: ConditionalFieldConfig[];
   stateName?: string;
-  /** Same DB-driven variance band as `ClaimLetterClaimContext` — only present on `getDetail`
-   *  responses, same convention as `questions`. */
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
-  /** Mandatory letter details saved and valid (Submit needs them). Only on `getDetail`. */
+  /** Mandatory letter details saved and valid (Submit needs them). */
   letterDetailsComplete?: boolean;
   /** Another batch is active (one at a time): preview, download, letter details and submit are
    *  blocked, with the reason to show. On `getDetail` and `listHistory`. */
   blockedByBatchNumber?: number | null;
   blockedReason?: string | null;
-  /** Authoritative edit/submit gates for this claim — always populated. */
   permissions: ClaimLetterPermissions;
 }
 
 // ─── Claim letter document (GET :claimLetterId/document, .../document/ulbs) ─────────────────
 
-/** One run of letter text; a '\n' inside `text` is a line break, `placeholder` marks a highlighted
- *  `< >` the State still has to fill. Rendered verbatim - the backend owns every word. `field` is the
- *  letter-detail key of a slot (an inline box when editing); `lead` prints before a filled value only;
- *  `hint` explains a placeholder filled in another form. */
+/** One run of letter text, rendered verbatim (the backend owns every word); a '\n' is a line break. */
 export interface ClaimLetterRun {
   text: string;
   bold?: boolean;
+  /** A highlighted `< >` the State still has to fill. */
   placeholder?: boolean;
+  /** Letter-detail key of a slot, drawn as an inline box while editing. */
   field?: string;
+  /** Printed before a filled value only. */
   lead?: string;
+  /** Explains a placeholder that is filled in another form. */
   hint?: string;
 }
 
@@ -434,7 +373,7 @@ export interface ClaimLetterHistoryResult {
   total: number;
 }
 
-/** Client never sends `allocationAmount`/`eligible`/derived fields — only what the State chose. */
+/** Only what the State chose; allocation and eligibility are resolved server-side. */
 export interface ClaimLetterUlbSelection {
   ulbId: string;
   claimedAmount: number;
@@ -450,7 +389,7 @@ export interface UpdateClaimLetterDraftPayload {
   expectedRevision: number;
 }
 
-// ─── API response / error shapes (mirrors the FC Unspent envelope — same backend infra) ───────
+// ─── API response / error shapes (same envelope as FC Unspent) ───────────────────────────────
 
 export interface ClaimLetterApiFieldError {
   field?: string;
@@ -469,8 +408,7 @@ export interface ClaimLetterApiResponse<T = unknown> {
   timestamp?: string;
 }
 
-/** Normalized shape extracted from either an `HttpErrorResponse.error` body or a thrown
- *  `success:false` response — same two-shape narrowing FC Unspent's own component uses. */
+/** What `readApiError` extracts from an `HttpErrorResponse` body or a thrown `success: false` response. */
 export interface ClaimLetterApiErrorResponse {
   success?: false;
   statusCode?: number;

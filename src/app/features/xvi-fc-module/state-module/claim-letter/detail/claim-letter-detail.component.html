@@ -26,7 +26,7 @@
 
     <hr class="my-0 text-body-tertiary" />
 
-    @if (isLoading()) {
+    @if (pageLoading()) {
       <app-pre-loader></app-pre-loader>
       <app-pre-loader></app-pre-loader>
     } @else if (loadError()) {
@@ -119,7 +119,7 @@
   </div>
 </section>
 
-@if (!isLoading() && !loadError() && (isCreateMode || canEdit())) {
+@if (!pageLoading() && !loadError() && (isCreateMode || canEdit())) {
   <div class="acknowledgement">
     @if (rowValidationMessage(); as message) {
       <div
