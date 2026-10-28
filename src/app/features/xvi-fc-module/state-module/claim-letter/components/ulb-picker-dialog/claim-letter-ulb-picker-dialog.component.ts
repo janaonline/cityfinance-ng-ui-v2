@@ -17,22 +17,15 @@ export interface ClaimLetterUlbPickerDialogData {
   stateId: string;
   yearId: string;
   installment: ClaimLetterInstallment;
-  /** ulbIds already added to the current draft's table — disabled here even if the server reports
-   *  them as eligible, since a ULB can't be selected twice in the same claim. */
+  /** Already in this draft's table, so disabled even when eligible. */
   excludeUlbIds: string[];
-  /** Forwarded as the `claimLetterId` query param so this draft's own already-locked ULBs show as
-   *  normal/selectable rather than "locked elsewhere". `undefined` in create mode (no id yet). */
+  /** Lets this draft's own locked ULBs show as selectable; undefined in create mode. */
   claimLetterId?: string;
 }
 
 const CLAIM_LETTER_ULB_PICKER_PAGE_SIZE = 20;
 
-/**
- * Self-contained, backend-searched/paginated, multi-select ULB picker — near-verbatim mirror of
- * FC Unspent's `UlbPickerDialogComponent`, with two differences the backend contract requires:
- * rows carry a real, server-computed `eligible`/`ineligibleReasonCode` (not just a same-session
- * exclusion list), and an `eligibilityFilter` toggle maps to the `ulb-options` query param.
- */
+/** Server-searched, paged, multi-select picker, like FC Unspent's plus server eligibility and a filter. */
 @Component({
   selector: 'app-claim-letter-ulb-picker-dialog',
   imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatButtonToggleModule, MatTooltipModule],
@@ -57,8 +50,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   readonly loadError = signal(false);
   readonly isConfirming = signal(false);
 
-  /** Order-preserving multi-selection, keyed by canonical `ulbId`. Persists across search/page/filter
-   *  changes and retries, same as FC Unspent's picker. */
+  /** Keeps selection order, and survives search, page and filter changes. */
   readonly selectedUlbs = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
   readonly selectedCount = computed(() => this.selectedUlbs().size);
 
@@ -73,8 +65,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   readonly humanizeToken = humanizeToken;
 
-  /** Monotonically increasing request id — guards against a stale page/search/filter response
-   *  landing after a newer one has already been requested. */
+  /** Drops a response that arrives after a newer request was made. */
   private loadRequestId = 0;
 
   ngOnInit(): void {
@@ -133,8 +124,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
     this.loadOptions();
   }
 
-  /** True when a row can never be selected here — either already added to this draft's table
-   *  (session-local) or server-ineligible for this installment. */
+  /** Already in this draft's table, or ineligible. */
   isDisabled(option: ClaimLetterUlbOption): boolean {
     return this.excludeSet().has(option.ulbId) || !option.eligible;
   }
@@ -161,8 +151,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
     });
   }
 
-  /** A click that originated on the checkbox is ignored here since the checkbox's own `(change)`
-   *  handler already toggled it — avoids a double-toggle that would cancel itself out. */
+  /** Ignores clicks on the checkbox, whose own `(change)` already toggled the row. */
   onRowClick(option: ClaimLetterUlbOption, event: Event): void {
     if (event.target instanceof HTMLInputElement) return;
     this.toggle(option);

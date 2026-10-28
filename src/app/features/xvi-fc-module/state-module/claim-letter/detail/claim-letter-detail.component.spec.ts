@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, Subject, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -15,14 +15,14 @@ import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
 import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-table.component';
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
+import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
-  ClaimLetterDocumentData,
+  ClaimLetterFinalPdf,
   ClaimLetterUlbRow,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
-import FileSaver from 'file-saver';
 import { ClaimLetterDetailComponent } from './claim-letter-detail.component';
 
 const SIGNED_FILE_FIELD: ConditionalFieldConfig = {
@@ -67,6 +67,7 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     ulbCount: 1,
     isAbandoned: false,
     hasSignedFile: false,
+    finalClaimLetterStage: null,
     financialSummary,
     revision: 2,
     submittedAt: null,
@@ -102,6 +103,7 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
     varianceUpperPercent: 110,
     // Create-mode's canEdit() reads this — default to creatable for the same reason as above.
     canCreate: true,
+    createBlockedReason: null,
     ...overrides,
   };
 }
@@ -469,7 +471,11 @@ describe('ClaimLetterDetailComponent', () => {
 
     it('is editable when the backend grants canEdit', async () => {
       await setupEdit(
-        buildClaim({ currentFormStatus: 2, isAbandoned: false, permissions: { canView: true, canEdit: true, canFinalSubmit: true } }),
+        buildClaim({
+          currentFormStatus: 2,
+          isAbandoned: false,
+          permissions: { canView: true, canEdit: true, canFinalSubmit: true },
+        }),
       );
       expect(component.canEdit()).toBe(true);
     });
@@ -506,6 +512,42 @@ describe('ClaimLetterDetailComponent', () => {
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
     });
 
+    it('keeps the spinner until the claim arrives, even when claim-context answers first', async () => {
+      await setup('claim-1');
+      const detail$ = new Subject<ClaimLetterBatchSummary>();
+      spyOn(claimLetterService, 'getDetail').and.returnValue(detail$);
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+
+      fixture.detectChanges();
+
+      expect(component.contextLoading()).toBe(false);
+      expect(component.pageLoading()).toBe(true);
+
+      detail$.next(buildClaim());
+      detail$.complete();
+
+      expect(component.pageLoading()).toBe(false);
+    });
+
+    it('keeps the spinner until claim-context arrives, even when the claim answers first', async () => {
+      await setup('claim-1');
+      const context$ = new Subject<ClaimLetterClaimContext>();
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(context$);
+
+      fixture.detectChanges();
+
+      expect(component.isLoading()).toBe(false);
+      expect(component.pageLoading()).toBe(true);
+
+      context$.next(buildClaimContext());
+      context$.complete();
+
+      expect(component.pageLoading()).toBe(false);
+    });
+
     it('saveChanges sends the current expectedRevision and reloads on success', async () => {
       await setupEdit(buildClaim({ revision: 4 }));
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
@@ -525,6 +567,34 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.getAllUlbs).toHaveBeenCalledWith('claim-1');
     });
 
+    it('saveChanges does nothing when no ULB or amount changed', async () => {
+      await setupEdit(buildClaim({ revision: 4, hasSignedFile: true }));
+      const updateSpy = spyOn(claimLetterService, 'updateDraft');
+
+      component.saveChanges();
+
+      expect(updateSpy).not.toHaveBeenCalled();
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('No changes to save.', 'snackbar-warn');
+    });
+
+    it('saveChanges asks before a change removes the uploaded signed letter', async () => {
+      await setupEdit(buildClaim({ revision: 4, hasSignedFile: true }));
+      const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
+      const updateSpy = spyOn(claimLetterService, 'updateDraft').and.returnValue(of(buildClaim({ revision: 5 })));
+
+      component.rows.at(0).controls.claimedAmount.setValue(19);
+      component.saveChanges();
+      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      expect(updateSpy).not.toHaveBeenCalled();
+
+      confirmSpy.and.returnValue(of(true));
+      component.saveChanges();
+      expect(updateSpy).toHaveBeenCalledOnceWith('claim-1', {
+        ulbSelections: [{ ulbId: 'ulb-1', claimedAmount: 19 }],
+        expectedRevision: 4,
+      });
+    });
+
     it('saveChanges surfaces a revision-conflict message on failure without reloading', async () => {
       await setupEdit();
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
@@ -532,6 +602,7 @@ describe('ClaimLetterDetailComponent', () => {
         throwError(() => ({ success: false, message: 'This claim letter was modified elsewhere. Please reload.' })),
       );
 
+      component.rows.at(0).controls.claimedAmount.setValue(19);
       component.saveChanges();
 
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
@@ -550,6 +621,7 @@ describe('ClaimLetterDetailComponent', () => {
         })),
       );
 
+      component.rows.at(0).controls.claimedAmount.setValue(19);
       component.saveChanges();
 
       const control = component.rows.at(0).controls.claimedAmount;
@@ -565,6 +637,7 @@ describe('ClaimLetterDetailComponent', () => {
         })),
       );
 
+      component.rows.at(0).controls.claimedAmount.setValue(19);
       component.saveChanges();
 
       expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
@@ -656,10 +729,10 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.signedFileForm.get('signedClaimFile')?.value).toBeNull();
     });
 
-    // ─── Preview / Download Template ───────────────────────────────────────────────
+    // ─── Letter details & Preview ──────────────────────────────────────────────────
 
-    describe('Preview Template / Download Template', () => {
-      const SIGNED_FILE_FIELD_WITH_ACTIONS: ConditionalFieldConfig = {
+    describe('Letter details & Preview', () => {
+      const SIGNED_FILE_FIELD_WITH_ACTION: ConditionalFieldConfig = {
         ...SIGNED_FILE_FIELD,
         supportingContent: [
           {
@@ -667,13 +740,12 @@ describe('ClaimLetterDetailComponent', () => {
             position: 'before',
             layout: 'inline',
             separator: 'dot',
-            description: 'Preview or download the claim letter for this batch, then upload the signed copy below.',
+            description: 'Fill in the letter details, preview and download the claim letter.',
             actions: [
-              { id: 'preview-template', label: 'Preview Template', icon: 'bi bi-eye', tone: 'primary', visible: true },
               {
-                id: 'download-template',
-                label: 'Download Template',
-                icon: 'bi bi-file-earmark-arrow-down',
+                id: 'preview-template',
+                label: 'Letter details & Preview',
+                icon: 'bi bi-pencil-square',
                 tone: 'primary',
                 visible: true,
               },
@@ -682,121 +754,69 @@ describe('ClaimLetterDetailComponent', () => {
         ],
       };
 
-      const sampleDocumentData: ClaimLetterDocumentData = {
-        refNo: 'CL/AP/2026-27/1-1',
-        letterDate: '2026-06-30T00:00:00.000Z',
-        stateName: 'Andhra Pradesh',
-        departmentName: 'Directorate of Municipal Administration',
-        designYearLabel: '2026-27',
-        installment: 1,
-        batchNumber: 1,
-        priorFcCycleLabel: '14th FC',
-        subjectLine: 'Subject',
-        introParagraph: 'Intro',
-        closingParagraph: 'Closing',
-        signatoryName: 'Vikram Rao',
-        signatoryDesignation: 'Finance Analyst',
-        coveringLetterRows: [],
-        totalClaimAmount: 0,
-        annexure1Rows: [],
-        annexure2Columns: [],
-        annexure2Rows: [],
-      };
+      function dialogCloses(result: unknown): void {
+        dialogOpenSpy.and.returnValue({ afterClosed: () => of(result) });
+      }
 
       it('onSupportingAction ignores events for fields other than signedClaimFile', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData');
 
         component.onSupportingAction({ fieldKey: 'someOtherField', actionId: 'preview-template' });
 
-        expect(getDocumentDataSpy).not.toHaveBeenCalled();
+        expect(dialogOpenSpy).not.toHaveBeenCalled();
       });
 
-      it('onSupportingAction routes preview-template to previewTemplate()', async () => {
+      it('opens the letter editor full-screen with the claim id; only Close dismisses it', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
 
         component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'preview-template' });
 
-        expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
         expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
           ClaimLetterDocumentPreviewDialogComponent,
-          jasmine.objectContaining({ data: { documentData: sampleDocumentData } }),
+          jasmine.objectContaining({
+            data: { claimLetterId: 'claim-1' },
+            disableClose: true,
+            width: '100vw',
+            panelClass: jasmine.arrayContaining(['cl-fullscreen-dialog-panel']),
+          }),
         );
       });
 
-      it('onSupportingAction routes download-template to downloadTemplate(), falling back to a literal refNo-based name when Content-Disposition is absent', async () => {
+      it('refreshes only the summary (not every ULB page) after the dialog saved something', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(of({ blob: sampleBlob, fileName: null }));
-        const saveAsSpy = spyOn(FileSaver, 'saveAs');
-
-        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
-
-        expect(claimLetterService.getDocumentData).toHaveBeenCalledWith('claim-1');
-        expect(claimLetterService.downloadDocumentPdf).toHaveBeenCalledWith('claim-1');
-        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'Claim-letter-CL-AP-2026-27-1-1.pdf');
-      });
-
-      it('saves under the backend Content-Disposition filename verbatim when present', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
-          of({ blob: sampleBlob, fileName: 'CF_Test-State_claim-letter_2024-25.pdf' }),
-        );
-        const saveAsSpy = spyOn(FileSaver, 'saveAs');
-
-        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
-
-        expect(saveAsSpy).toHaveBeenCalledWith(sampleBlob, 'CF_Test-State_claim-letter_2024-25.pdf');
-      });
-
-      it('shares one fetch between previewTemplate() and downloadTemplate() (single-flight cache)', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(
-          of({ blob: new Blob(['pdf-bytes'], { type: 'application/pdf' }), fileName: null }),
-        );
-        spyOn(FileSaver, 'saveAs');
-
-        component.previewTemplate();
-        component.downloadTemplate();
-
-        expect(getDocumentDataSpy).toHaveBeenCalledTimes(1);
-      });
-
-      it('previewTemplate() surfaces an error snackbar and does not open the dialog on failure', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(
-          throwError(() => ({ success: false, message: 'Not found.' })),
-        );
+        (claimLetterService.getDetail as jasmine.Spy).calls.reset();
+        (claimLetterService.getAllUlbs as jasmine.Spy).calls.reset();
+        dialogCloses({ saved: true });
 
         component.previewTemplate();
 
-        expect(dialogOpenSpy).not.toHaveBeenCalled();
-        expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-danger');
+        expect(claimLetterService.getDetail).toHaveBeenCalledOnceWith('claim-1');
+        expect(claimLetterService.getAllUlbs).not.toHaveBeenCalled();
       });
 
-      it('invalidates the cached document once the claim revision changes after a reload (e.g. a save)', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD], revision: 2 }));
-        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(
-          of(sampleDocumentData),
-        );
+      it('does not refresh when the dialog closes without saving', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+        (claimLetterService.getDetail as jasmine.Spy).calls.reset();
+        dialogCloses({ saved: false });
 
         component.previewTemplate();
-        expect(getDocumentDataSpy).toHaveBeenCalledTimes(1);
 
-        // Simulate the post-save reload: loadDetail() re-fetches getDetail(), which now reflects the
-        // bumped revision from the edited/saved claimed amounts.
+        expect(claimLetterService.getDetail).not.toHaveBeenCalled();
+      });
+
+      it('clears the signed-file control once a refresh shows the file was removed', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD], hasSignedFile: true }));
+        const control = component.signedFileForm.get('signedClaimFile') as AbstractControl<unknown>;
+        control.setValue(SAMPLE_FILE_METADATA, { emitEvent: false });
         (claimLetterService.getDetail as jasmine.Spy).and.returnValue(
-          of(buildClaim({ questions: [SIGNED_FILE_FIELD], revision: 3 })),
+          of(buildClaim({ questions: [SIGNED_FILE_FIELD], hasSignedFile: false })),
         );
-        component.loadDetail();
+        dialogCloses({ saved: true });
 
         component.previewTemplate();
-        expect(getDocumentDataSpy).toHaveBeenCalledTimes(2);
+
+        expect(control.value).toBeNull();
+        expect(component.claim()?.hasSignedFile).toBeFalse();
       });
 
       it('hasUnsavedRowChanges() is false right after load and true once a claimed amount is edited', async () => {
@@ -809,8 +829,8 @@ describe('ClaimLetterDetailComponent', () => {
         expect(component.hasUnsavedRowChanges()).toBe(true);
       });
 
-      it('effectiveSignedClaimFileField() disables Preview/Download and swaps the description while dirty', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
+      it('effectiveSignedClaimFileField() disables the action and swaps the description while dirty', async () => {
+        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTION] }));
 
         expect(component.effectiveSignedClaimFileField()).toBe(component.signedClaimFileField());
 
@@ -821,136 +841,200 @@ describe('ClaimLetterDetailComponent', () => {
           ?.supportingContent?.find(
             (block): block is Extract<FieldSupportingContent, { type: 'actions' }> => block.type === 'actions',
           );
-        expect(actionsBlock?.description).toBe('Save your changes to update the claim letter preview and download.');
+        expect(actionsBlock?.description).toBe('Save your changes to update the claim letter preview.');
         expect(actionsBlock?.actions.every((action) => action.disabled)).toBe(true);
-
-        // Unaffected: the backend-supplied field config itself is never mutated.
         expect(
-          (component.signedClaimFileField()?.supportingContent?.[0] as { actions: { disabled?: boolean }[] })
-            .actions[0].disabled,
+          (component.signedClaimFileField()?.supportingContent?.[0] as { actions: { disabled?: boolean }[] }).actions[0]
+            .disabled,
         ).toBeFalsy();
       });
 
-      function findAction(actionId: string) {
-        const block = component
-          .effectiveSignedClaimFileField()
-          ?.supportingContent?.find(
-            (b): b is Extract<FieldSupportingContent, { type: 'actions' }> => b.type === 'actions',
-          );
-        return block?.actions.find((a) => a.id === actionId);
-      }
-
-      it('previewTemplate() shows loading only on preview-template while in flight, then clears it', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
-        const pending = new Subject<ClaimLetterDocumentData>();
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(pending);
-
-        component.previewTemplate();
-
-        expect(findAction('preview-template')?.loading).toBeTrue();
-        expect(findAction('preview-template')?.loadingLabel).toBe('Loading preview…');
-        expect(findAction('download-template')?.loading).toBeFalsy();
-
-        pending.next(sampleDocumentData);
-        pending.complete();
-
-        expect(findAction('preview-template')?.loading).toBeFalsy();
-        expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
-          ClaimLetterDocumentPreviewDialogComponent,
-          jasmine.objectContaining({ data: { documentData: sampleDocumentData } }),
-        );
-      });
-
-      it('downloadTemplate() shows loading only on download-template while in flight, then clears it', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
-        spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
-        const pending = new Subject<{ blob: Blob; fileName: string | null }>();
-        spyOn(claimLetterService, 'downloadDocumentPdf').and.returnValue(pending);
-        spyOn(FileSaver, 'saveAs');
-
-        component.downloadTemplate();
-
-        expect(findAction('download-template')?.loading).toBeTrue();
-        expect(findAction('download-template')?.loadingLabel).toBe('Preparing download…');
-        expect(findAction('preview-template')?.loading).toBeFalsy();
-
-        pending.next({ blob: new Blob(['pdf-bytes'], { type: 'application/pdf' }), fileName: null });
-        pending.complete();
-
-        expect(findAction('download-template')?.loading).toBeFalsy();
-        expect(FileSaver.saveAs).toHaveBeenCalled();
-      });
-
-      it('never shows loading on either action while there are unsaved changes (both are disabled instead)', async () => {
-        await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD_WITH_ACTIONS] }));
-
-        component.rows.at(0).controls.claimedAmount.setValue(99);
-
-        expect(findAction('preview-template')?.disabled).toBeTrue();
-        expect(findAction('download-template')?.disabled).toBeTrue();
-        expect(findAction('preview-template')?.loading).toBeFalsy();
-        expect(findAction('download-template')?.loading).toBeFalsy();
-      });
-
-      it('onSupportingAction is a no-op for preview-template/download-template while there are unsaved edits', async () => {
+      it('onSupportingAction is a no-op while there are unsaved edits', async () => {
         await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
-        const getDocumentDataSpy = spyOn(claimLetterService, 'getDocumentData').and.returnValue(of(sampleDocumentData));
         component.rows.at(0).controls.claimedAmount.setValue(99);
 
         component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'preview-template' });
-        component.onSupportingAction({ fieldKey: 'signedClaimFile', actionId: 'download-template' });
 
-        expect(getDocumentDataSpy).not.toHaveBeenCalled();
+        expect(dialogOpenSpy).not.toHaveBeenCalled();
       });
     });
 
-    // ─── Submit to MoHUA ──────────────────────────────────────────────────────────
+    // ─── Final claim letter and Submit ───────────────────────────────────────────
 
-    it('submitToMohua is a no-op when no signed file has been uploaded yet', async () => {
+    const FINAL_PDF: ClaimLetterFinalPdf = {
+      sourceKey: 'key-1',
+      fileName: 'CF_Test-State_Claim-letter-1-1_2026-27.pdf',
+      included: ['Signed claim letter', 'Copy of GTC'],
+      missing: [],
+      missingRequired: [],
+      pageCount: 4,
+      builtAt: '2026-10-28T10:00:00.000Z',
+    };
+
+    /** A signed draft whose final claim letter card has loaded. */
+    async function setupSigned(overrides: Partial<ClaimLetterBatchSummary> = {}): Promise<void> {
+      await setup('claim-1');
+      // A new object per call, like an HTTP response (the card re-checks on every new summary).
+      spyOn(claimLetterService, 'getDetail').and.callFake(() =>
+        of(buildClaim({ hasSignedFile: true, finalClaimLetterStage: 'DRAFT', ...overrides })),
+      );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getFinalPdf').and.returnValue(of(FINAL_PDF));
+      fixture.detectChanges();
+      fixture.detectChanges();
+    }
+
+    function submitButton(): HTMLButtonElement {
+      return fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]')).nativeElement;
+    }
+
+    it('shows no final claim letter and keeps Submit off until the signed letter is uploaded', async () => {
       await setupEdit(buildClaim({ hasSignedFile: false }));
-      const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');
 
       component.submitToMohua();
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(fixture.debugElement.query(By.css('app-claim-letter-final-claim-letter'))).toBeNull();
+      expect(submitButton().disabled).toBeTrue();
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
     });
 
-    it('submitToMohua confirms, then submits and reloads on success', async () => {
-      await setupEdit(buildClaim({ hasSignedFile: true }));
+    it('shows the final claim letter card once signed and enables Submit when its copy is ready', async () => {
+      await setupSigned();
+
+      expect(claimLetterService.getFinalPdf).toHaveBeenCalledWith('claim-1');
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final"]'))).not.toBeNull();
+      expect(component.submittableFinalPdf()).toEqual(FINAL_PDF);
+      expect(submitButton().disabled).toBeFalse();
+      expect(submitButton().textContent).toContain('Submit to MoHUA');
+    });
+
+    it('keeps Submit off while a required document is missing', async () => {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.callFake(() =>
+        of(buildClaim({ hasSignedFile: true, finalClaimLetterStage: 'DRAFT' })),
+      );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getFinalPdf').and.returnValue(of({ ...FINAL_PDF, missingRequired: ['Copy of GTC'] }));
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      expect(component.submittableFinalPdf()).toBeNull();
+      expect(submitButton().disabled).toBeTrue();
+    });
+
+    it('confirms with the page count, then submits the shown copy and reloads', async () => {
+      await setupSigned();
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
-      spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
       spyOn(claimLetterService, 'submit').and.returnValue(of(buildClaim({ currentFormStatus: 5 })));
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
 
       component.submitToMohua();
 
-      expect(claimLetterService.submit).toHaveBeenCalledWith('claim-1');
+      expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
+        ConfirmDialogComponent,
+        jasmine.objectContaining({
+          data: jasmine.objectContaining({
+            message:
+              'Submit the final claim letter (4 pages) to MoHUA? You cannot edit it after submission unless MoHUA returns it.',
+          }),
+        }),
+      );
+      expect(claimLetterService.submit).toHaveBeenCalledOnceWith('claim-1', 'key-1');
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-success');
       expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-1');
     });
 
-    it('submitToMohua does not call the service when the user declines the confirmation', async () => {
-      await setupEdit(buildClaim({ hasSignedFile: true }));
-      spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
-      const submitSpy = spyOn(claimLetterService, 'submit');
+    it('does not submit when the confirm is cancelled', async () => {
+      await setupSigned();
+      spyOn(claimLetterService, 'submit');
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(false) });
 
       component.submitToMohua();
 
-      expect(submitSpy).not.toHaveBeenCalled();
+      expect(claimLetterService.submit).not.toHaveBeenCalled();
     });
 
-    it('submitToMohua surfaces the backend message on failure', async () => {
-      await setupEdit(buildClaim({ hasSignedFile: true }));
-      spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(true));
+    it('disables Abandon Draft and Save Changes while Submit is in flight', async () => {
+      await setupSigned();
+      spyOn(claimLetterService, 'submit').and.returnValue(new Subject<ClaimLetterBatchSummary>());
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
+      const button = (cy: string) =>
+        fixture.debugElement.query(By.css(`[data-cy="${cy}"]`)).nativeElement as HTMLButtonElement;
+      expect(button('claim-letter-detail-abandon').disabled).toBeFalse();
+      expect(button('claim-letter-detail-save').disabled).toBeFalse();
+
+      component.submitToMohua();
+      fixture.detectChanges();
+
+      expect(component.isSubmitting()).toBeTrue();
+      expect(button('claim-letter-detail-abandon').disabled).toBeTrue();
+      expect(button('claim-letter-detail-save').disabled).toBeTrue();
+    });
+
+    it('when the documents changed, warns and refreshes so the card loads the updated copy', async () => {
+      await setupSigned();
+      (claimLetterService.getDetail as jasmine.Spy).calls.reset();
       spyOn(claimLetterService, 'submit').and.returnValue(
-        throwError(() => ({ success: false, message: 'Eligibility gate is no longer satisfied.' })),
+        throwError(() => ({ error: { message: 'Changed.', code: 'FINAL_PDF_OUTDATED' } })),
       );
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
+
+      component.submitToMohua();
+      fixture.detectChanges();
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        jasmine.stringContaining('documents changed'),
+        'snackbar-warn',
+      );
+      expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-1');
+      expect(claimLetterService.getFinalPdf).toHaveBeenCalledTimes(2);
+      expect(component.isSubmitting()).toBeFalse();
+    });
+
+    it('after Submit, shows the submitted copy in place of the upload field', async () => {
+      await setupSigned({
+        currentFormStatus: 5,
+        finalClaimLetterStage: 'SUBMITTED',
+        submittedAt: '2026-10-28T10:00:00.000Z',
+        questions: [SIGNED_FILE_FIELD],
+        permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+      });
+
+      const card = fixture.debugElement.query(By.css('[data-cy="claim-letter-final"]'));
+      expect(card.nativeElement.textContent).toContain('Submitted claim letter');
+      expect(fixture.debugElement.query(By.css('app-dynamic-form'))).toBeNull();
+      expect(component.submittableFinalPdf()).toBeNull();
+    });
+
+    it('blocks Submit with a reason while the mandatory letter details are incomplete', async () => {
+      await setupEdit(buildClaim({ hasSignedFile: true, letterDetailsComplete: false }));
+      fixture.detectChanges();
 
       component.submitToMohua();
 
-      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
-        'Eligibility gate is no longer satisfied.',
-        'snackbar-danger',
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
+      expect(component.submitBlockedReason()).toContain('letter details');
+      const submitButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'));
+      expect((submitButton.nativeElement as HTMLButtonElement).disabled).toBeTrue();
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).not.toBeNull();
+    });
+
+    it('shows why the batch is blocked by another active batch', async () => {
+      await setupEdit(
+        buildClaim({
+          hasSignedFile: true,
+          blockedByBatchNumber: 1,
+          blockedReason: 'Only one claim batch can be processed at a time. Batch 1 is still in progress.',
+          permissions: { canView: true, canEdit: true, canFinalSubmit: false },
+        }),
       );
+      fixture.detectChanges();
+
+      const alert = fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'));
+      expect(alert.nativeElement.textContent).toContain('Batch 1');
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'))).toBeNull();
     });
 
     // ─── Final-batch completeness guard (FE's first line of defense; BE is the real authority) ───
@@ -1015,11 +1099,10 @@ describe('ClaimLetterDetailComponent', () => {
         of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
       );
       fixture.detectChanges();
-      const confirmSpy = spyOn(TestBed.inject(ConfirmDialogService), 'confirm');
 
       component.submitToMohua();
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(dialogOpenSpy).not.toHaveBeenCalled();
     });
 
     // ─── Status stepper ───────────────────────────────────────────────────────────

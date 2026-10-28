@@ -4,16 +4,11 @@ import { AmountDisplayModeService } from '../../../../../../core/services/amount
 export interface ClaimLetterSummaryTile {
   label: string;
   value: number;
-  /** Renders this tile with visual emphasis (larger value, accent border) — for the one figure that
-   *  most directly answers "can I act right now" on a given page (e.g. "Available to Claim"), so a
-   *  row of otherwise-equal tiles doesn't bury the number a user is most likely scanning for. */
+  /** Highlights the one figure the page is about (e.g. "Available to Claim"). */
   emphasized?: boolean;
 }
 
-/** Small, reusable stat-tile row for the claim-letter feature's financial summary — used on the
- *  list ("Generate Claim Letter"), create ("New Claim Letter"), and detail ("Batch #n") pages with
- *  a different tile set on each, per the summary-placement plan (each page only shows the figures
- *  that make sense for it). */
+/** Stat-tile row; the list, create and detail pages each pass their own tiles. */
 @Component({
   selector: 'app-claim-letter-summary-tiles',
   templateUrl: './claim-letter-summary-tiles.component.html',

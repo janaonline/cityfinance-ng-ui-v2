@@ -2,7 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../environments/environment';
 import { ClaimLetterService } from './claim-letter.service';
-import { CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, ClaimLetterApiResponse, ClaimLetterBatchSummary } from './claim-letter.models';
+import {
+  CLAIM_LETTER_ULB_ROWS_PAGE_SIZE,
+  ClaimLetterApiResponse,
+  ClaimLetterBatchSummary,
+} from './claim-letter.models';
 
 const BASE_URL = `${environment.api.url2}xvi-fc/state/claim-letter/`;
 
@@ -45,6 +49,7 @@ const sampleSummary: ClaimLetterBatchSummary = {
   ulbCount: 1,
   isAbandoned: false,
   hasSignedFile: false,
+  finalClaimLetterStage: null,
   financialSummary,
   revision: 0,
   submittedAt: null,
@@ -285,12 +290,13 @@ describe('ClaimLetterService', () => {
   describe('submit', () => {
     const url = `${BASE_URL}${claimLetterId}/submit`;
 
-    it('posts with an empty body, resolving the mapped summary on success', () => {
+    it('posts the reviewed final-PDF key, resolving the mapped summary on success', () => {
       let result: unknown;
-      service.submit(claimLetterId).subscribe((data) => (result = data));
+      service.submit(claimLetterId, 'key-1').subscribe((data) => (result = data));
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ finalPdfSourceKey: 'key-1' });
       req.flush({ success: true, message: 'Submitted.', data: { ...sampleSummary, currentFormStatus: 5 } });
 
       expect(result).toEqual({ ...sampleSummary, currentFormStatus: 5 });
@@ -347,78 +353,99 @@ describe('ClaimLetterService', () => {
     });
   });
 
-  describe('getDocumentData', () => {
-    const url = `${BASE_URL}${claimLetterId}/document`;
-
-    it('calls the exact GET URL and emits the response data on success', () => {
-      const document = {
-        refNo: 'CL/AP/2026-27/1-1',
-        letterDate: '2026-07-01T00:00:00.000Z',
-        stateName: 'Andhra Pradesh',
-        departmentName: 'Directorate of Municipal Administration',
-        designYearLabel: '2026-27',
-        installment: 1,
-        batchNumber: 1,
-        priorFcCycleLabel: '14th FC',
-        subjectLine: 'Claim Letter',
-        introParagraph: 'Intro',
-        closingParagraph: 'Closing',
-        signatoryName: 'Vikram Rao',
-        signatoryDesignation: 'Finance Analyst',
-        coveringLetterRows: [],
-        totalClaimAmount: 0,
-        annexure1Rows: [],
-        annexure2Rows: [],
-      };
+  describe('getDocument', () => {
+    it('GETs the letter and emits the response data', () => {
+      const document = { refNo: 'CL/AP/2026-27/1-1', annexure: { title: 'Annexure', columns: [], lists: [] } };
       let result: unknown;
-      service.getDocumentData(claimLetterId).subscribe((data) => (result = data));
+      service.getDocument(claimLetterId).subscribe((data) => (result = data));
 
-      const req = httpMock.expectOne(url);
+      const req = httpMock.expectOne(`${BASE_URL}${claimLetterId}/document`);
       expect(req.request.method).toBe('GET');
       req.flush({ success: true, message: 'OK', data: document });
 
       expect(result).toEqual(document);
     });
+  });
 
-    it('throws the original response object when success:false', () => {
-      const errorBody: ClaimLetterApiResponse = { success: false, message: 'Not found.' };
-      let caughtError: unknown;
-      service.getDocumentData(claimLetterId).subscribe({ error: (err: unknown) => (caughtError = err) });
+  describe('getDocumentUlbs', () => {
+    it('sends list and page, resolving rows + pagination meta', () => {
+      let result: unknown;
+      service.getDocumentUlbs(claimLetterId, 'INELIGIBLE', 2).subscribe((data) => (result = data));
 
-      httpMock.expectOne(url).flush(errorBody);
+      const req = httpMock.expectOne((r) => r.url === `${BASE_URL}${claimLetterId}/document/ulbs`);
+      expect(req.request.params.get('list')).toBe('INELIGIBLE');
+      expect(req.request.params.get('page')).toBe('2');
+      const rows = [{ ulbId: 'u1', cells: ['21', 'ULB'] }];
+      req.flush({ success: true, message: 'OK', data: rows, meta: { page: 2, limit: 20, total: 21 } });
 
-      expect(caughtError).toBe(errorBody);
+      expect(result).toEqual({ rows, page: 2, limit: 20, total: 21 });
     });
   });
 
-  describe('downloadDocumentPdf', () => {
-    it('GETs the PDF endpoint as a blob', () => {
-      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
-      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-      let result: { blob: Blob; fileName: unknown } | undefined;
+  describe('downloadDocumentDocx', () => {
+    it('GETs the .docx as a blob and parses the Content-Disposition filename', () => {
+      const url = `${BASE_URL}${claimLetterId}/document/docx`;
+      const sampleBlob = new Blob(['docx-bytes']);
+      let result: { blob: Blob; fileName: string | null } | undefined;
 
-      service.downloadDocumentPdf(claimLetterId).subscribe((data) => (result = data));
+      service.downloadDocumentDocx(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(url);
+      expect(req.request.responseType).toBe('blob');
+      req.flush(sampleBlob, { headers: { 'Content-Disposition': 'attachment; filename="claim-letter.docx"' } });
+
+      expect(result?.blob).toBe(sampleBlob);
+      expect(result?.fileName).toBe('claim-letter.docx');
+    });
+  });
+
+  describe('letter details', () => {
+    const url = `${BASE_URL}${claimLetterId}/letter-details`;
+
+    it('GETs the steps and saved values', () => {
+      let result: unknown;
+      service.getLetterDetails(claimLetterId).subscribe((data) => (result = data));
 
       const req = httpMock.expectOne(url);
       expect(req.request.method).toBe('GET');
-      expect(req.request.responseType).toBe('blob');
-      req.flush(sampleBlob);
+      req.flush({ success: true, message: 'OK', data: { steps: [], values: {} } });
 
-      expect(result?.blob).toBe(sampleBlob);
+      expect(result).toEqual({ steps: [], values: {} });
     });
 
-    it('parses the backend Content-Disposition filename', () => {
-      const url = `${BASE_URL}${claimLetterId}/document/pdf`;
-      const sampleBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
-      let result: { blob: Blob; fileName: string | null } | undefined;
+    it('PATCHes one step with the signed-file confirmation flag', () => {
+      service.saveLetterDetails(claimLetterId, { letterNo: 'A/1' }, true).subscribe();
 
-      service.downloadDocumentPdf(claimLetterId).subscribe((data) => (result = data));
+      const req = httpMock.expectOne(url);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ data: { letterNo: 'A/1' }, confirmSignedFileRemoval: true });
+      req.flush({ success: true, message: 'OK', data: {} });
+    });
+  });
 
-      httpMock.expectOne(url).flush(sampleBlob, {
-        headers: { 'Content-Disposition': 'attachment; filename="claim-letter-CL-AP-2026-27-1-1.pdf"' },
-      });
+  describe('final PDF', () => {
+    it('GETs the final PDF metadata', () => {
+      let result: unknown;
+      service.getFinalPdf(claimLetterId).subscribe((data) => (result = data));
 
-      expect(result?.fileName).toEqual('claim-letter-CL-AP-2026-27-1-1.pdf');
+      httpMock
+        .expectOne(`${BASE_URL}${claimLetterId}/final-pdf`)
+        .flush({ success: true, message: 'OK', data: { sourceKey: 'k', included: [], missing: [] } });
+
+      expect(result).toEqual({ sourceKey: 'k', included: [], missing: [] });
+    });
+
+    it('GETs the final PDF bytes as an ArrayBuffer with its filename', () => {
+      let result: { bytes: ArrayBuffer; fileName: string | null } | undefined;
+      service.getFinalPdfFile(claimLetterId).subscribe((data) => (result = data));
+
+      const req = httpMock.expectOne(`${BASE_URL}${claimLetterId}/final-pdf/file`);
+      expect(req.request.responseType).toBe('arraybuffer');
+      const bytes = new ArrayBuffer(4);
+      req.flush(bytes, { headers: { 'Content-Disposition': 'attachment; filename="final.pdf"' } });
+
+      expect(result?.bytes).toBe(bytes);
+      expect(result?.fileName).toBe('final.pdf');
     });
   });
 
@@ -470,7 +497,12 @@ describe('ClaimLetterService', () => {
       const req = httpMock.expectOne((r) => r.url === url);
       expect(req.request.params.get('page')).toBe('1');
       expect(req.request.params.get('limit')).toBe(String(CLAIM_LETTER_ULB_ROWS_PAGE_SIZE));
-      req.flush({ success: true, message: 'OK', data: rows, meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 2 } });
+      req.flush({
+        success: true,
+        message: 'OK',
+        data: rows,
+        meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 2 },
+      });
 
       expect(result).toEqual(rows);
     });
@@ -508,7 +540,12 @@ describe('ClaimLetterService', () => {
 
       const req = httpMock.expectOne((r) => r.url === url);
       expect(req.request.params.get('search')).toBe('nagar');
-      req.flush({ success: true, message: 'OK', data: [], meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 0 } });
+      req.flush({
+        success: true,
+        message: 'OK',
+        data: [],
+        meta: { page: 1, limit: CLAIM_LETTER_ULB_ROWS_PAGE_SIZE, total: 0 },
+      });
     });
   });
 });
