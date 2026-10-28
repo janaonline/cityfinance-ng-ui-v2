@@ -185,7 +185,7 @@
           type="button"
           matButton="outlined"
           class="text-danger"
-          [disabled]="isSaving() || isAbandoning()"
+          [disabled]="isSaving() || isAbandoning() || isSubmitting()"
           (click)="abandonDraft()"
           data-cy="claim-letter-detail-abandon"
         >
@@ -201,7 +201,7 @@
         <button
           type="button"
           matButton="filled"
-          [disabled]="isSaving() || isAbandoning() || hasInvalidRows()"
+          [disabled]="isSaving() || isAbandoning() || isSubmitting() || hasInvalidRows()"
           (click)="saveChanges()"
           data-cy="claim-letter-detail-save"
         >
