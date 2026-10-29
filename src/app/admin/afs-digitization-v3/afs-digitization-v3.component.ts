@@ -29,6 +29,10 @@ import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import {
+  AfsDigitizationV3ResultDialogComponent,
+  DigitizationV3ResultDialogData,
+} from './afs-digitization-v3-result-dialog.component';
+import {
   AfsDigitizationV3Service,
   DigitizationV3Metrics,
   DigitizationV3Query,
@@ -242,7 +246,7 @@ export class AfsDigitizationV3Component implements OnInit {
     if (!total || this.queueing()) return;
 
     const confirmed = confirm(
-      `Queue all ${total} matching file(s) for AFS digitization?\n\n` +
+      `Digitize all ${total} filtered file(s)?\n\n` +
         'Files with no PDF, or already queued or digitized, are skipped.',
     );
     if (!confirmed) return;
@@ -259,16 +263,24 @@ export class AfsDigitizationV3Component implements OnInit {
         next: (res) => {
           this.queueing.set(false);
           this.selection.clear();
-          const skipped = res.skippedNoPdf + res.skippedAlreadyQueued + res.skippedAlreadyDigitized;
-          const failed = res.failedToQueue ? `, ${res.failedToQueue} could not be queued` : '';
-          this.notify(`Queued ${res.queued} of ${res.matched}. Skipped ${skipped}${failed}.`);
+          this.showResult({ summary: res });
           this.reload();
         },
         error: (err: HttpErrorResponse) => {
           this.queueing.set(false);
-          this.notify(this.errorMessage(err, 'Could not queue files'));
+          this.showResult({ error: this.errorMessage(err, 'Could not queue files') });
         },
       });
+  }
+
+  /** A modal, not a toast: it stays until the user closes it (no backdrop or Escape dismissal). */
+  private showResult(data: DigitizationV3ResultDialogData): void {
+    this.dialog.open(AfsDigitizationV3ResultDialogComponent, {
+      width: '520px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data,
+    });
   }
 
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
