@@ -14,7 +14,16 @@ export interface ClaimLetterUlbEligibilityTally {
   eligible: number;
   ineligible: number;
   exempted: number;
+  /** Of `exempted`, those resting on an exemption request still under MoHUA review. */
+  exemptedUnderReview?: number;
   total: number;
+}
+
+/** A ULB's exemption request worth flagging: under MoHUA review (it counts), or rejected and now
+ *  failing. `label` names the criterion. */
+export interface ClaimLetterExemptionNote {
+  label: string;
+  status: 'UNDER_REVIEW' | 'REJECTED';
 }
 
 /** One checklist line: only the fields this UI renders, not the backend's full evaluation result. */
@@ -34,6 +43,8 @@ export interface ClaimLetterEligibilitySource {
   checklistSummary?: string;
   /** Set for State forms with per-ULB rows and for the merged ULB-only criteria. */
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
+  /** For an EXEMPTED State form: 5 while the Entire State request is under MoHUA review, 7 approved. */
+  exemptionStatus?: number | null;
 }
 
 /** State-wide figures, available before any batch exists. */
@@ -115,6 +126,7 @@ export interface ClaimLetterUlbOption {
   ineligibleReasonCode: string | null;
   /** Names the failing form(s); only for ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET, else null (the code is humanized). */
   ineligibleReasonDetail: string | null;
+  exemptionNotes?: ClaimLetterExemptionNote[];
 }
 
 export interface ClaimLetterUlbOptionsQuery {
@@ -143,6 +155,7 @@ export interface ClaimLetterUlbRow {
   claimAmount: number;
   differencePercentage: number;
   eligible: boolean;
+  exemptionNotes?: ClaimLetterExemptionNote[];
 }
 
 export interface ClaimLetterUlbRowsQuery {
@@ -212,6 +225,10 @@ export interface ClaimLetterBatchSummary {
   varianceUpperPercent?: number;
   /** Mandatory letter details saved and valid (Submit needs them). */
   letterDetailsComplete?: boolean;
+  /** getDetail only: ULBs in this draft relying on an exemption still under MoHUA review. */
+  exemptionUnderReviewUlbCount?: number;
+  /** getDetail only: State forms whose Entire State exemption request is still under MoHUA review. */
+  stateExemptionsUnderReview?: string[];
   /** Another batch is active (one at a time): preview, download, letter details and submit are
    *  blocked, with the reason to show. On `getDetail` and `listHistory`. */
   blockedByBatchNumber?: number | null;

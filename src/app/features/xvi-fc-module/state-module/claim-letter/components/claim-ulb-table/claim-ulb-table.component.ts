@@ -22,7 +22,12 @@ import { decimalPlacesValidator } from '../../../../../../core/validators/decima
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
-import { computeClaimDifferencePercentage, isClaimWithinVariance } from '../../claim-letter.utils';
+import {
+  ClaimLetterExemptionBadge,
+  buildExemptionBadges,
+  computeClaimDifferencePercentage,
+  isClaimWithinVariance,
+} from '../../claim-letter.utils';
 import {
   ClaimLetterUlbPickerDialogComponent,
   ClaimLetterUlbPickerDialogData,
@@ -47,6 +52,7 @@ interface ClaimUlbRowViewModel {
   allocationAmount: number | null;
   /** From the saved row or picked option; never re-derived here. */
   eligible: boolean | null;
+  exemptionBadges: ClaimLetterExemptionBadge[];
   /** Saved rows only; `liveDifferencePercentage` is the typing-time preview. */
   savedDifferencePercentage: number | null;
   /** Recomputed on every keystroke; the backend decides at save. */
@@ -168,6 +174,7 @@ export class ClaimUlbTableComponent {
         sbCode: saved?.sbCode ?? picked?.sbCode ?? null,
         allocationAmount,
         eligible: saved?.eligible ?? picked?.eligible ?? null,
+        exemptionBadges: buildExemptionBadges(saved?.exemptionNotes ?? picked?.exemptionNotes),
         savedDifferencePercentage: saved?.differencePercentage ?? null,
         liveDifferencePercentage: hasLiveInputs
           ? computeClaimDifferencePercentage(allocationAmount as number, value.claimedAmount as number)
