@@ -13,6 +13,9 @@ export interface IUserLoggedInDetails {
   subRole?: StateSubRole;
   state?: ObjectID;
   ulb?: ObjectID;
+  /** Set only for an ADC (Autonomous District Council) user — a STATE-role user scoped to one ADC's ULBs. */
+  adc?: ObjectID | null;
+  adcName?: string | null;
   isXVIFCProfileVerified?: boolean;
   permissionOverrides?: {
     allow: Permission[];
