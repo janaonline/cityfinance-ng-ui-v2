@@ -38,6 +38,17 @@
               <span class="text-truncate d-block" [title]="rowViewModels()[i].ulbName ?? ''">
                 {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
               </span>
+              @for (badge of rowViewModels()[i].exemptionBadges; track badge.status) {
+                <span
+                  class="badge rounded px-1 small me-1"
+                  [class.text-bg-info]="badge.status === 'UNDER_REVIEW'"
+                  [class.text-bg-danger]="badge.status === 'REJECTED'"
+                  [matTooltip]="badge.tooltip"
+                  matTooltipPosition="above"
+                  data-cy="claim-ulb-table-exemption-badge"
+                  >{{ badge.text }}</span
+                >
+              }
             </td>
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
