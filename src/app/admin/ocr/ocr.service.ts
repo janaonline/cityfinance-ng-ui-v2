@@ -809,6 +809,31 @@ export class OcrService {
     });
   }
 
+  dumpDurValidationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    grant_type?: DurGrantType;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.grant_type) queryParams['grant_type'] = params.grant_type;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'dur-validation/jobs/dump', {
+      params: queryParams,
+      responseType: 'blob',
+    });
+  }
+
   getOcrTasks(params: {
     jobId?: string;
     filename?: string;
