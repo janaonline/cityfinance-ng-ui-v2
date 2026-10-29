@@ -71,6 +71,11 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Batch ID</mat-label>
+          <input matInput formControlName="batchId" placeholder="e.g. 20261029-153012-a1b2" (keydown.enter)="applyFilters()" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Financial Year</mat-label>
           <mat-select formControlName="financialYear">
             <mat-option value="">All</mat-option>
@@ -180,6 +185,21 @@
                   </button>
                 </span>
                 <span class="small fw-medium">{{ row.pageCount ?? '—' }} pg · {{ row.fileSizeLabel }}</span>
+                @if (row.batchId !== '—') {
+                  <span class="d-flex align-items-center gap-1" title="Batch ID">
+                    <span class="small text-uppercase text-body-secondary">Batch</span>
+                    <span class="small fw-medium font-monospace text-truncate">{{ row.batchId }}</span>
+                    <button
+                      type="button"
+                      class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                      [attr.aria-label]="isCopied('Batch ID', row.batchId) ? 'Copied' : 'Copy batch ID'"
+                      [attr.title]="isCopied('Batch ID', row.batchId) ? 'Copied' : 'Copy batch ID'"
+                      (click)="copyValue('Batch ID', row.batchId)"
+                    >
+                      <mat-icon>{{ isCopied('Batch ID', row.batchId) ? 'check' : 'content_copy' }}</mat-icon>
+                    </button>
+                  </span>
+                }
               </div>
             </td>
           </ng-container>
