@@ -116,6 +116,32 @@ describe('ClaimUlbTableComponent', () => {
     expect(component.rowViewModels()[0].savedDifferencePercentage).toBe(5);
   });
 
+  it('badges a row whose exemption request is under MoHUA review or was rejected', () => {
+    setupWithRows(
+      [createClaimUlbRowGroup(true, { ulbId: SAVED_ROWS[0].ulbId, claimedAmount: SAVED_ROWS[0].claimAmount })],
+      {
+        savedRows: [
+          {
+            ...SAVED_ROWS[0],
+            eligible: false,
+            exemptionNotes: [
+              { label: 'Audited Accounts', status: 'UNDER_REVIEW' },
+              { label: 'Provisional Accounts', status: 'REJECTED' },
+            ],
+          },
+        ],
+      },
+    );
+
+    const badges = fixture.debugElement.queryAll(By.css('[data-cy="claim-ulb-table-exemption-badge"]'));
+    expect(badges.map((badge) => (badge.nativeElement as HTMLElement).textContent?.trim())).toEqual([
+      'Exemption under review',
+      'Exemption rejected by MoHUA',
+    ]);
+    expect((badges[0].nativeElement as HTMLElement).classList).toContain('text-bg-info');
+    expect((badges[1].nativeElement as HTMLElement).classList).toContain('text-bg-danger');
+  });
+
   it('falls back to sbCode when censusCode is null, for a saved row', () => {
     const rowWithSbCodeOnly: ClaimLetterUlbRow = {
       ulbId: ULB_OPTIONS[1].ulbId,
