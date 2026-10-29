@@ -18,6 +18,8 @@ import {
 } from '../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { UtilityService } from '../../../../core/services/utility.service';
+import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import { AdcService } from '../../shared/adc/adc.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import {
   BulkReviewAction,
@@ -117,6 +119,14 @@ export class UlbSubmissionsComponent {
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
   private readonly dialogConfig = themedDialogConfig();
   private readonly http = inject(HttpClient);
+  private readonly adcService = inject(AdcService);
+  private readonly authPermission = inject(AuthPermissionService);
+
+  /** An ADC user only ever sees its own ULBs, so the page is headed "<ADC>, <State>" and has no ADC column. */
+  readonly isAdcUser = this.authPermission.isAdcUser();
+  readonly adcName = this.resolveAdcName();
+  /** A State user sees ADC-owned ULBs read-only; the ADC column is shown only when its state has any ADC. */
+  readonly showAdcColumn = signal(false);
 
   readonly filterSelects = FILTER_SELECTS;
   readonly pageSize = signal(PAGE_SIZE);
@@ -167,7 +177,7 @@ export class UlbSubmissionsComponent {
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   /** Key of the currently selected stat-card bucket, or null when no bucket filter is applied. */
-  readonly selectedBucketKey = signal<string>('UNDER_STATE_REVIEW');
+  readonly selectedBucketKey = signal<string>(this.resolveInitialBucketKey());
 
   /** Position of the selected bucket among the stat cards — drives the slide direction. */
   readonly selectedBucketIndex = computed(() =>
@@ -208,7 +218,8 @@ export class UlbSubmissionsComponent {
           'formStatus',
           'action',
         ];
-    return this.isBulkReviewable() ? base : base.filter((column) => column !== 'select');
+    const withAdc = this.showAdcColumn() ? base.flatMap((c) => (c === 'censusCode' ? [c, 'adc'] : [c])) : base;
+    return this.isBulkReviewable() ? withAdc : withAdc.filter((column) => column !== 'select');
   });
 
   readonly reviewableRows = computed(() => this.rows().filter(isRowReviewable));
@@ -221,6 +232,16 @@ export class UlbSubmissionsComponent {
 
   constructor() {
     if (this.isSelectedFormLive()) this.loadRows();
+
+    if (!this.isAdcUser) {
+      this.adcService
+        .list()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (adcs) => this.showAdcColumn.set(adcs.length > 0),
+          error: () => undefined,
+        });
+    }
 
     // The FY label cached in localStorage can be stale/empty (e.g. this session never went
     // through years-selection) — resolve it authoritatively from the route's yearId instead.
@@ -459,6 +480,22 @@ export class UlbSubmissionsComponent {
     } catch {
       return '';
     }
+  }
+
+  private resolveAdcName(): string {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('userData') : null;
+      return raw ? ((JSON.parse(raw) as { adcName?: string | null }).adcName ?? '') : '';
+    } catch {
+      return '';
+    }
+  }
+
+  /** Restores the selected stat-card bucket from the `?status=` query param (the ADC Overview's count links),
+   *  falling back to the default "Under Review by State" bucket for a missing or unknown key. */
+  private resolveInitialBucketKey(): string {
+    const requested = this.route.snapshot.queryParamMap.get('status');
+    return STATUS_BUCKETS.find((bucket) => bucket.key === requested)?.key ?? 'UNDER_STATE_REVIEW';
   }
 
   /** Restores the "Select Form" dropdown from the `?form=` query param the review page's "Back to

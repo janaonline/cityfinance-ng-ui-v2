@@ -16,7 +16,41 @@
         <h1 class="fs-4 fw-bold mb-1">Team &amp; Roles</h1>
         <p class="text-muted small mb-0">{{ pageSubtitle }}</p>
       </div>
+      @if (adcSelector) {
+        <!-- ADC Teams has no sidebar entry of its own; it is opened from People and Roles. -->
+        <a mat-stroked-button routerLink="../roles-teams-unified-view">
+          <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+          Back to People and Roles
+        </a>
+      }
     </div>
+
+    @if (adcSelector) {
+      <div class="mb-3">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="adc-select">
+          <mat-label>ADC</mat-label>
+          <mat-select
+            [value]="selectedAdcId()"
+            (selectionChange)="onAdcChange($event.value)"
+            aria-label="Select the ADC whose team to manage"
+          >
+            @for (adc of adcs(); track adc._id) {
+              <mat-option [value]="adc._id">{{ adc.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    }
+
+    @if (adcSelector && !selectedAdcId()) {
+      <mat-card class="members-card mb-4">
+        <div class="text-center py-5 px-4" role="status">
+          <i class="bi bi-diagram-3-fill text-muted d-block mx-auto mb-2 empty-state-icon" aria-hidden="true"></i>
+          <p class="fw-semibold text-muted mb-1">Select an ADC</p>
+          <p class="small text-muted mb-0">Choose an ADC above to see and manage its team.</p>
+        </div>
+      </mat-card>
+    } @else {
 
     <!-- ══ Info Banner ════════════════════════════════════════════════════════════════ -->
     @if (isSubmitter() && infoBannerText) {
@@ -559,9 +593,10 @@
       </mat-card>
     }
 
-    <!-- ══ Transfer Ownership (Admin only) — temporarily hidden ════════════════════ -->
-    <!-- TODO: re-enable after fixing isNodalOfficer sync on transfer + restore
-    @if (isSubmitter()) {
+    <!-- ══ Transfer Ownership (Admin only) ═══════════════════════════════════════════
+         Hidden for every team except those that opt in via config.transferEnabled (the ADC pages) — the
+         State/MoHUA/PMU/DoE pages stay off until the isNodalOfficer sync on transfer is fixed. -->
+    @if (transferEnabled && isSubmitter()) {
       <mat-card class="transfer-card">
 
         @if (!showTransferPanel()) {
@@ -572,7 +607,11 @@
             <div class="flex-grow-1">
               <p class="fw-semibold text-danger mb-0 small">Transfer Admin Ownership</p>
               <p class="text-muted mb-0 small">
-                Hand over full Admin control to an active team member. You'll become a Reviewer.
+                @if (transferDemotesSelf) {
+                  Hand over full Admin control to an active team member. You'll become a Reviewer.
+                } @else {
+                  Hand the ADC's Admin role to an active team member. The current Admin becomes a Reviewer.
+                }
               </p>
             </div>
             <button mat-stroked-button color="warn" type="button" class="flex-shrink-0"
@@ -627,10 +666,12 @@
                   <div class="d-flex align-items-center gap-2 flex-wrap">
                     <div class="d-flex align-items-center gap-2">
                       <span class="member-avatar member-avatar--submitter member-avatar--sm" aria-hidden="true">
-                        {{ getInitials(currentUserName()) }}
+                        {{ getInitials(transferDemotesSelf ? currentUserName() : (currentAdmin()?.name ?? '')) }}
                       </span>
                       <div>
-                        <span class="fw-semibold small d-block">You</span>
+                        <span class="fw-semibold small d-block">
+                          {{ transferDemotesSelf ? 'You' : (currentAdmin()?.name ?? 'Current Admin') }}
+                        </span>
                         <span class="badge transfer-preview__badge--from small">Admin → Reviewer</span>
                       </div>
                     </div>
@@ -688,7 +729,8 @@
 
       </mat-card>
     }
-    -->
+
+    }
   }
 </main>
       </div>

@@ -1,0 +1,28 @@
+<p class="fw-bold m-2 p-1 mb-0 pb-0 fs-4">Assign ADC</p>
+<mat-dialog-content>
+  <div class="px-2">
+    <div class="text-body-secondary small">ULB</div>
+    <div class="fw-medium mb-3">{{ data.ulb.name }} ({{ data.ulb.code }})</div>
+
+    @if (loading) {
+      <div class="text-body-secondary small">Loading…</div>
+    } @else if (loadError) {
+      <div class="text-danger small">Unable to load the ADC list. Please close and try again.</div>
+    } @else {
+      <label for="adcSelect" class="form-label small mb-1">Autonomous District Council</label>
+      <select id="adcSelect" class="form-select" [(ngModel)]="selectedAdcId" name="adcSelect">
+        <option value="">None (reviewed by the State DMA)</option>
+        @for (adc of adcs; track adc._id) {
+          <option [value]="adc._id">{{ adc.name }}</option>
+        }
+      </select>
+      <div class="text-body-secondary small fst-italic mt-2">
+        The ULB's pending forms and approval rights move to the new owner immediately.
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button class="btn btn-cfPrimary mx-2" [disabled]="loading || loadError" (click)="save()">Save</button>
+  <button class="btn btn-outline-cfPrimary mx-2" mat-dialog-close>Cancel</button>
+</mat-dialog-actions>

@@ -194,4 +194,26 @@ export const SIDE_MENU_ITEMS: Record<Roles, SideBarFactory> = {
     ],
     bottomModel: [],
   }),
+
+  STATE_ADC: (yearId) => ({
+    topModel: [
+      {
+        label: 'XVI Financial Commission',
+        routerLink: ['/xvifc'],
+        icon: 'bi bi-bank',
+      },
+      { label: '_', separator: true },
+      buildMenuItem(
+        'Create New ULB',
+        'bi bi-building-add',
+        buildXvifcFeatureLink('STATE_ADC', MOCK_ENTITY_ID, yearId, 'register-ulb'),
+      ),
+      buildMenuItem(
+        'ULB Forms Review',
+        'bi bi-ui-checks-grid',
+        buildXvifcFeatureLink('STATE_ADC', MOCK_ENTITY_ID, yearId, 'ulb-submissions'),
+      ),
+    ],
+    bottomModel: [],
+  }),
 };
