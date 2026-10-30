@@ -334,7 +334,7 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     order: 100,
     label: 'OCR',
     apps: ['v2'],
-    visibility: { ocrRouteOnly: true },
+    visibility: { ocrRouteOnly: true, roles: ['ADMIN'] },
     children: [
       {
         id: 'ocr.job-details',
