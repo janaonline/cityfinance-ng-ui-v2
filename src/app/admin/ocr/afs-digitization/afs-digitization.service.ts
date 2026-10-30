@@ -200,11 +200,13 @@ export class AfsDigitizationService {
     financial_year?: string;
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
   }) {
     const queryParams: Record<string, string> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.status) queryParams['status'] = params.status;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
@@ -227,6 +229,7 @@ export class AfsDigitizationService {
     financial_year?: string;
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
@@ -234,6 +237,7 @@ export class AfsDigitizationService {
     limit?: number;
   }) {
     const queryParams: Record<string, string | number> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.status) queryParams['status'] = params.status;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
