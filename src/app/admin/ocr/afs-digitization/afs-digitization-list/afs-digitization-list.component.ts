@@ -16,6 +16,7 @@ import { DigitizationJobStatusResponse } from '../afs-digitization-models';
 
 interface DigitizationListRow {
   jobId: string;
+  batchId: string;
   filename: string;
   fileSizeLabel: string;
   geminiModel: string;
@@ -88,6 +89,7 @@ export class AfsDigitizationListComponent implements OnInit {
     status: [''],
     filename: [''],
     ulbName: [''],
+    batchId: [''],
     financialYear: [''],
     docType: [''],
     dateFrom: this.fb.control<Date | null>(null),
@@ -123,6 +125,7 @@ export class AfsDigitizationListComponent implements OnInit {
       status: '',
       filename: '',
       ulbName: '',
+      batchId: '',
       financialYear: '',
       docType: '',
       dateFrom: null,
@@ -172,7 +175,7 @@ export class AfsDigitizationListComponent implements OnInit {
 
   exportToExcel(): void {
     if (this.exporting()) return;
-    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, batchId, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.exporting.set(true);
 
     this.digitizationService
@@ -180,6 +183,7 @@ export class AfsDigitizationListComponent implements OnInit {
         status: status || undefined,
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
+        batch_id: batchId.trim() || undefined,
         financial_year: financialYear.trim() || undefined,
         doc_type: docType || undefined,
         sort_order: this.sortOrder(),
@@ -324,7 +328,7 @@ export class AfsDigitizationListComponent implements OnInit {
   }
 
   private loadJobs(): void {
-    const { status, filename, ulbName, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
+    const { status, filename, ulbName, batchId, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.digitizationService
@@ -332,6 +336,7 @@ export class AfsDigitizationListComponent implements OnInit {
         status: status || undefined,
         filename: filename.trim() || undefined,
         ulb_name: ulbName.trim() || undefined,
+        batch_id: batchId.trim() || undefined,
         financial_year: financialYear.trim() || undefined,
         doc_type: docType || undefined,
         sort_order: this.sortOrder(),
@@ -361,6 +366,7 @@ export class AfsDigitizationListComponent implements OnInit {
   private mapRow(job: DigitizationJobStatusResponse): DigitizationListRow {
     return {
       jobId: job.job_id || '—',
+      batchId: job.batch_id || '—',
       filename: job.filename || '—',
       fileSizeLabel: this.formatFileSize(job.file_size_bytes),
       geminiModel: job.gemini_model || '—',
