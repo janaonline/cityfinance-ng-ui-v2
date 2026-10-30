@@ -1,7 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { FORM_STATUS } from '../../../../common/constants/form-status.constants';
 import { ClaimLetterEligibilitySource, ClaimLetterUlbReadiness } from '../../claim-letter.models';
-import { describeEligibilitySourceLabel, describeEligibilitySourceRequirement } from '../../claim-letter.utils';
+import {
+  describeEligibilitySourceLabel,
+  describeEligibilitySourceRequirement,
+  formatUnderReviewSuffix,
+} from '../../claim-letter.utils';
 
 /**
  * Built only from the sources the backend returns, so a new criterion needs no UI change. Each group
@@ -32,8 +37,11 @@ export class ClaimLetterEligibilityChecklistComponent {
   readonly ulbAllPassing = computed(() => this.ulbReadiness().eligible > 0);
   readonly ulbExpanded = computed(() => !this.ulbAllPassing() || this.ulbManuallyExpanded());
 
+  /** An Entire State exemption request still under MoHUA review. */
+  readonly exemptionUnderReviewStatus = FORM_STATUS.UNDER_REVIEW_BY_MOHUA;
   readonly describeLabel = describeEligibilitySourceLabel;
   readonly describeRequirement = describeEligibilitySourceRequirement;
+  readonly underReviewSuffix = formatUnderReviewSuffix;
 
   toggleExpanded(): void {
     this.manuallyExpanded.update((value) => !value);

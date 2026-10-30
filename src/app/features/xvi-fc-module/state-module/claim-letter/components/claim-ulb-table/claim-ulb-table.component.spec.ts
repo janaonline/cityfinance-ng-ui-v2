@@ -116,6 +116,78 @@ describe('ClaimUlbTableComponent', () => {
     expect(component.rowViewModels()[0].savedDifferencePercentage).toBe(5);
   });
 
+  it('badges a row whose exemption request is under MoHUA review or was rejected', () => {
+    setupWithRows(
+      [createClaimUlbRowGroup(true, { ulbId: SAVED_ROWS[0].ulbId, claimedAmount: SAVED_ROWS[0].claimAmount })],
+      {
+        savedRows: [
+          {
+            ...SAVED_ROWS[0],
+            eligible: false,
+            exemptionNotes: [
+              { label: 'Audited Accounts', status: 'UNDER_REVIEW' },
+              { label: 'Provisional Accounts', status: 'REJECTED' },
+            ],
+          },
+        ],
+      },
+    );
+
+    const badges = fixture.debugElement.queryAll(By.css('[data-cy="claim-ulb-table-exemption-badge"]'));
+    expect(badges.map((badge) => (badge.nativeElement as HTMLElement).textContent?.trim())).toEqual([
+      'Exemption under review',
+      'Exemption rejected by MoHUA',
+    ]);
+    expect((badges[0].nativeElement as HTMLElement).classList).toContain('text-bg-info');
+    expect((badges[1].nativeElement as HTMLElement).classList).toContain('text-bg-danger');
+    // Focusable, so keyboard users can open the tooltip naming the forms.
+    expect(badges.map((badge) => (badge.nativeElement as HTMLElement).getAttribute('tabindex'))).toEqual(['0', '0']);
+  });
+
+  it('shows a re-picked ULB with the picker data, not the older saved row', () => {
+    setupWithRows(
+      [createClaimUlbRowGroup(true, { ulbId: SAVED_ROWS[0].ulbId, claimedAmount: SAVED_ROWS[0].claimAmount })],
+      {
+        savedRows: [
+          {
+            ...SAVED_ROWS[0],
+            eligible: false,
+            exemptionNotes: [{ label: 'Audited Accounts', status: 'REJECTED' }],
+          },
+        ],
+      },
+    );
+    dialog.open.and.returnValue(
+      dialogRefReturning([
+        { ...ULB_OPTIONS[0], exemptionNotes: [{ label: 'Audited Accounts', status: 'UNDER_REVIEW' }] },
+      ]),
+    );
+
+    component.removeRow(0);
+    component.addRow();
+    fixture.detectChanges();
+
+    expect(component.rowViewModels()[0].eligible).toBe(true);
+    expect(component.rowViewModels()[0].exemptionBadges.map((badge) => badge.status)).toEqual(['UNDER_REVIEW']);
+    expect(component.invalidRowIdentifiers()).toEqual([]);
+  });
+
+  it('drops the picked data when savedRows changes, so the reloaded saved row shows', () => {
+    setupWithRows([]);
+    dialog.open.and.returnValue(
+      dialogRefReturning([
+        { ...ULB_OPTIONS[0], exemptionNotes: [{ label: 'Audited Accounts', status: 'UNDER_REVIEW' }] },
+      ]),
+    );
+    component.addRow();
+
+    fixture.componentRef.setInput('savedRows', [{ ...SAVED_ROWS[0], exemptionNotes: [] }]);
+    fixture.detectChanges();
+
+    expect(component.pickedUlbByUlbId().size).toBe(0);
+    expect(component.rowViewModels()[0].exemptionBadges).toEqual([]);
+  });
+
   it('falls back to sbCode when censusCode is null, for a saved row', () => {
     const rowWithSbCodeOnly: ClaimLetterUlbRow = {
       ulbId: ULB_OPTIONS[1].ulbId,
