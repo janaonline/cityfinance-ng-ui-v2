@@ -297,6 +297,39 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     },
   },
   {
+    id: 'digitization',
+    order: 95,
+    label: 'Digitization',
+    apps: ['v2'], // V2-only pages; no sync needed to ui / ssr
+    visibility: { requiresAuth: true, roles: ['ADMIN'] },
+    children: [
+      // {
+      //   id: 'digitization.afs-dashboard',
+      //   order: 10,
+      //   label: 'AFS Dashboard',
+      //   hostApp: 'v2',
+      //   path: '/afs-dashboard',
+      //   apps: ['v2'],
+      // },
+      {
+        id: 'digitization.afs-digitization',
+        order: 20,
+        label: 'AFS Digitization',
+        hostApp: 'v2',
+        path: '/afs-digitization-v3',
+        apps: ['v2'],
+      },
+      {
+        id: 'digitization.afs-digitization-jobs',
+        order: 30,
+        label: 'AFS Digitization Jobs',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/list',
+        apps: ['v2'],
+      },
+    ],
+  },
+  {
     id: 'ocr',
     order: 100,
     label: 'OCR',
