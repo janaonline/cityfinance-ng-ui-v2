@@ -32,7 +32,13 @@
               <span>
                 <span class="fw-semibold">{{ describeLabel(source) }}</span>
                 @if (source.result === 'EXEMPTED') {
-                  <span class="badge text-bg-primary ms-1">Exempted</span>
+                  @if (source.exemptionStatus === exemptionUnderReviewStatus) {
+                    <span class="badge text-bg-info ms-1" data-cy="claim-letter-eligibility-checklist-under-review"
+                      >Exemption under review</span
+                    >
+                  } @else {
+                    <span class="badge text-bg-primary ms-1">Exempted</span>
+                  }
                 }
                 <br />
                 <span class="text-secondary">
@@ -117,7 +123,7 @@
     >{{ tally.eligible }} eligible</span
   >,
   <span data-cy="claim-letter-eligibility-checklist-tally-exempted" [class.text-success]="tally.exempted > 0"
-    >{{ tally.exempted }} exempted</span
+    >{{ tally.exempted }} exempted{{ underReviewSuffix(tally) }}</span
   >,
   <span data-cy="claim-letter-eligibility-checklist-tally-ineligible" [class.text-danger]="tally.ineligible > 0"
     >{{ tally.ineligible }} ineligible</span

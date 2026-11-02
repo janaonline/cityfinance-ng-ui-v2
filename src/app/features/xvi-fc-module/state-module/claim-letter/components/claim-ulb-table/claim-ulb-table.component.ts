@@ -7,7 +7,7 @@ import {
   computed,
   inject,
   input,
-  signal,
+  linkedSignal,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -22,7 +22,12 @@ import { decimalPlacesValidator } from '../../../../../../core/validators/decima
 import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
-import { computeClaimDifferencePercentage, isClaimWithinVariance } from '../../claim-letter.utils';
+import {
+  ClaimLetterExemptionBadge,
+  buildExemptionBadges,
+  computeClaimDifferencePercentage,
+  isClaimWithinVariance,
+} from '../../claim-letter.utils';
 import {
   ClaimLetterUlbPickerDialogComponent,
   ClaimLetterUlbPickerDialogData,
@@ -47,6 +52,7 @@ interface ClaimUlbRowViewModel {
   allocationAmount: number | null;
   /** From the saved row or picked option; never re-derived here. */
   eligible: boolean | null;
+  exemptionBadges: ClaimLetterExemptionBadge[];
   /** Saved rows only; `liveDifferencePercentage` is the typing-time preview. */
   savedDifferencePercentage: number | null;
   /** Recomputed on every keystroke; the backend decides at save. */
@@ -128,8 +134,11 @@ export class ClaimUlbTableComponent {
   readonly varianceLowerPercent = input.required<number>();
   readonly varianceUpperPercent = input.required<number>();
 
-  /** Display data for ULBs picked this session; the only ulb-options data kept. */
-  readonly pickedUlbByUlbId = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
+  /** Data for ULBs re-picked since `savedRows` last changed. Takes priority over saved data and can be reset because rows are rebuilt from `savedRows`. */
+  readonly pickedUlbByUlbId = linkedSignal<readonly ClaimLetterUlbRow[], ReadonlyMap<string, ClaimLetterUlbOption>>({
+    source: this.savedRows,
+    computation: () => new Map(),
+  });
 
   /** `rows` as a signal, structural changes included; the first value uses `getRawValue()` so
    *  disabled (read-only) rows are read too. */
@@ -159,15 +168,16 @@ export class ClaimUlbTableComponent {
       const saved = value.ulbId ? savedByUlbId.get(value.ulbId) : undefined;
       const picked = value.ulbId ? pickedByUlbId.get(value.ulbId) : undefined;
 
-      const allocationAmount = saved?.allocationAmount ?? picked?.allocationAmount ?? null;
+      const allocationAmount = picked?.allocationAmount ?? saved?.allocationAmount ?? null;
       const hasLiveInputs = allocationAmount !== null && allocationAmount > 0 && value.claimedAmount !== null;
 
       return {
-        ulbName: saved?.ulbName ?? picked?.ulbName ?? null,
-        censusCode: saved?.censusCode ?? picked?.censusCode ?? null,
-        sbCode: saved?.sbCode ?? picked?.sbCode ?? null,
+        ulbName: picked?.ulbName ?? saved?.ulbName ?? null,
+        censusCode: picked?.censusCode ?? saved?.censusCode ?? null,
+        sbCode: picked?.sbCode ?? saved?.sbCode ?? null,
         allocationAmount,
-        eligible: saved?.eligible ?? picked?.eligible ?? null,
+        eligible: picked?.eligible ?? saved?.eligible ?? null,
+        exemptionBadges: buildExemptionBadges(picked?.exemptionNotes ?? saved?.exemptionNotes),
         savedDifferencePercentage: saved?.differencePercentage ?? null,
         liveDifferencePercentage: hasLiveInputs
           ? computeClaimDifferencePercentage(allocationAmount as number, value.claimedAmount as number)

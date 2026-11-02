@@ -74,6 +74,36 @@ describe('ClaimLetterEligibilityChecklistComponent', () => {
     expect(badge.nativeElement.textContent).toContain('Exempted');
   });
 
+  it('labels an Entire State exemption still under MoHUA review instead of Exempted', () => {
+    fixture.componentRef.setInput('sources', [
+      source({ formType: 'SFC_STATUS', result: 'EXEMPTED', exemptionStatus: 5 }),
+    ]);
+    fixture.detectChanges();
+    (fixture.componentInstance as unknown as { toggleExpanded(): void }).toggleExpanded();
+    fixture.detectChanges();
+
+    const badge = fixture.debugElement.query(By.css('[data-cy="claim-letter-eligibility-checklist-under-review"]'));
+    expect(badge.nativeElement.textContent).toContain('Exemption under review');
+  });
+
+  it('adds how many exempted ULBs are still under MoHUA review to the tally', () => {
+    fixture.componentRef.setInput('sources', [
+      source({
+        formType: 'ELECTED_BODY',
+        ulbBreakdown: { eligible: 1, ineligible: 0, exempted: 2, exemptedUnderReview: 1, total: 3 },
+      }),
+    ]);
+    fixture.componentRef.setInput('ulbReadiness', { eligible: 3, total: 3 });
+    fixture.detectChanges();
+    (fixture.componentInstance as unknown as { toggleExpanded(): void }).toggleExpanded();
+    fixture.detectChanges();
+
+    const exempted = fixture.debugElement.query(
+      By.css('[data-cy="claim-letter-eligibility-checklist-tally-exempted"]'),
+    );
+    expect(exempted.nativeElement.textContent.trim()).toBe('2 exempted (1 under review)');
+  });
+
   it('prefers displayLabel/displayDescription over the humanized fallback', () => {
     fixture.componentRef.setInput('sources', [
       source({

@@ -946,6 +946,48 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-1');
     });
 
+    it('tells the State how many ULBs rely on an exemption still under MoHUA review', async () => {
+      await setupSigned({ exemptionUnderReviewUlbCount: 2 });
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(false) });
+
+      component.submitToMohua();
+
+      expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
+        ConfirmDialogComponent,
+        jasmine.objectContaining({
+          data: jasmine.objectContaining({
+            message:
+              'Submit the final claim letter (4 pages) to MoHUA? You cannot edit it after submission unless MoHUA ' +
+              'returns it. 2 ULBs in this claim rely on exemption requests under MoHUA review. MoHUA decides ' +
+              'them during the claim review.',
+          }),
+        }),
+      );
+    });
+
+    it("also names the State's own exemption request still under MoHUA review", async () => {
+      await setupSigned({
+        exemptionUnderReviewUlbCount: 1,
+        stateExemptionsUnderReview: ['State Finance Commission (SFC)'],
+      });
+      dialogOpenSpy.and.returnValue({ afterClosed: () => of(false) });
+
+      component.submitToMohua();
+
+      expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
+        ConfirmDialogComponent,
+        jasmine.objectContaining({
+          data: jasmine.objectContaining({
+            message:
+              'Submit the final claim letter (4 pages) to MoHUA? You cannot edit it after submission unless MoHUA ' +
+              "returns it. The State's exemption request for State Finance Commission (SFC) is under MoHUA review. " +
+              '1 ULB in this claim relies on exemption requests under MoHUA review. MoHUA decides them during the ' +
+              'claim review.',
+          }),
+        }),
+      );
+    });
+
     it('does not submit when the confirm is cancelled', async () => {
       await setupSigned();
       spyOn(claimLetterService, 'submit');

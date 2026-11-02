@@ -1,6 +1,8 @@
 import {
   buildBatchNarrative,
+  buildExemptionBadges,
   computeClaimDifferencePercentage,
+  formatUnderReviewSuffix,
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
   formatUlbBreakdown,
@@ -107,6 +109,50 @@ describe('formatUlbBreakdown', () => {
     expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, total: 123 })).toBe(
       '100 eligible, 3 exempted, 20 ineligible out of 123 ULBs',
     ));
+
+  it('adds how many exempted ULBs rest on a request still under MoHUA review', () =>
+    expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, exemptedUnderReview: 1, total: 123 })).toBe(
+      '100 eligible, 3 exempted (1 under review), 20 ineligible out of 123 ULBs',
+    ));
+});
+
+describe('formatUnderReviewSuffix', () => {
+  it('is empty unless an exemption is still under review', () => {
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, exemptedUnderReview: 2, total: 3 })).toBe(
+      ' (2 under review)',
+    );
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, exemptedUnderReview: 0, total: 3 })).toBe(
+      '',
+    );
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, total: 3 })).toBe('');
+  });
+});
+
+describe('buildExemptionBadges', () => {
+  it('makes one badge per status, under review first, naming the criteria', () =>
+    expect(
+      buildExemptionBadges([
+        { label: 'Provisional Accounts', status: 'REJECTED' },
+        { label: 'Audited Accounts', status: 'UNDER_REVIEW' },
+        { label: 'Election Status', status: 'UNDER_REVIEW' },
+      ]),
+    ).toEqual([
+      {
+        status: 'UNDER_REVIEW',
+        text: 'Exemption under review',
+        tooltip: 'Exemption request under MoHUA review: Audited Accounts, Election Status',
+      },
+      {
+        status: 'REJECTED',
+        text: 'Exemption rejected by MoHUA',
+        tooltip: 'Exemption request rejected by MoHUA: Provisional Accounts',
+      },
+    ]));
+
+  it('makes none without notes', () => {
+    expect(buildExemptionBadges(undefined)).toEqual([]);
+    expect(buildExemptionBadges([])).toEqual([]);
+  });
 });
 
 describe('buildBatchNarrative', () => {

@@ -1,6 +1,7 @@
 import {
   ClaimLetterApiErrorMap,
   ClaimLetterApiErrorResponse,
+  ClaimLetterExemptionNote,
   ClaimLetterInstallment,
   ClaimLetterUlbEligibilityTally,
 } from './claim-letter.models';
@@ -58,10 +59,48 @@ export function describeEligibilitySourceDescription(source: {
   return source.ulbBreakdown ? `${description} (${formatUlbBreakdown(source.ulbBreakdown)})` : description;
 }
 
-/** `"100 eligible, 3 exempted, 20 ineligible out of 123 ULBs"`: the two that meet the condition
- *  first, then the ones that do not. */
+/** `"100 eligible, 3 exempted (1 under review), 20 ineligible out of 123 ULBs"`: the two that meet
+ *  the condition first, then the ones that do not. */
 export function formatUlbBreakdown(tally: ClaimLetterUlbEligibilityTally): string {
-  return `${tally.eligible} eligible, ${tally.exempted} exempted, ${tally.ineligible} ineligible out of ${tally.total} ULBs`;
+  return `${tally.eligible} eligible, ${tally.exempted} exempted${formatUnderReviewSuffix(tally)}, ${tally.ineligible} ineligible out of ${tally.total} ULBs`;
+}
+
+/** `" (1 under review)"` after the exempted count; empty when no exemption is still under review. */
+export function formatUnderReviewSuffix(tally: ClaimLetterUlbEligibilityTally): string {
+  return tally.exemptedUnderReview ? ` (${tally.exemptedUnderReview} under review)` : '';
+}
+
+export interface ClaimLetterExemptionBadge {
+  status: ClaimLetterExemptionNote['status'];
+  text: string;
+  /** Names the criteria. */
+  tooltip: string;
+}
+
+/** One badge per status, under review first. */
+export function buildExemptionBadges(
+  notes: readonly ClaimLetterExemptionNote[] | undefined,
+): ClaimLetterExemptionBadge[] {
+  const badges: ClaimLetterExemptionBadge[] = [];
+  const labels = (status: ClaimLetterExemptionNote['status']) =>
+    (notes ?? []).filter((n) => n.status === status).map((n) => n.label);
+  const underReview = labels('UNDER_REVIEW');
+  if (underReview.length) {
+    badges.push({
+      status: 'UNDER_REVIEW',
+      text: 'Exemption under review',
+      tooltip: `Exemption request under MoHUA review: ${underReview.join(', ')}`,
+    });
+  }
+  const rejected = labels('REJECTED');
+  if (rejected.length) {
+    badges.push({
+      status: 'REJECTED',
+      text: 'Exemption rejected by MoHUA',
+      tooltip: `Exemption request rejected by MoHUA: ${rejected.join(', ')}`,
+    });
+  }
+  return badges;
 }
 
 /** One decimal, like the table's difference badge. */

@@ -84,11 +84,25 @@ function sameAsSaved(selections: readonly ClaimLetterUlbSelection[], saved: read
   return selections.every((s) => claimed.get(s.ulbId) === s.claimedAmount);
 }
 
-function submitConfirm(pageCount: number | null): Required<ConfirmDialogData> {
+function submitConfirm(
+  pageCount: number | null,
+  exemptionUnderReviewUlbs: number,
+  stateExemptionsUnderReview: readonly string[],
+): Required<ConfirmDialogData> {
   const size = pageCount ? ` (${pageCount} ${pageCount === 1 ? 'page' : 'pages'})` : '';
+  const pending: string[] = [];
+  if (stateExemptionsUnderReview.length) {
+    pending.push(`The State's exemption request for ${stateExemptionsUnderReview.join(', ')} is under MoHUA review.`);
+  }
+  if (exemptionUnderReviewUlbs) {
+    pending.push(
+      `${exemptionUnderReviewUlbs} ${exemptionUnderReviewUlbs === 1 ? 'ULB in this claim relies' : 'ULBs in this claim rely'} on exemption requests under MoHUA review.`,
+    );
+  }
+  const exemptions = pending.length ? ` ${pending.join(' ')} MoHUA decides them during the claim review.` : '';
   return {
     title: 'Submit to MoHUA?',
-    message: `Submit the final claim letter${size} to MoHUA? You cannot edit it after submission unless MoHUA returns it.`,
+    message: `Submit the final claim letter${size} to MoHUA? You cannot edit it after submission unless MoHUA returns it.${exemptions}`,
     confirmText: 'Yes, submit',
     cancelText: 'No, check again',
     confirmButtonColor: 'primary',
@@ -574,7 +588,14 @@ export class ClaimLetterDetailComponent implements OnInit {
     if (!this.claim()?.hasSignedFile || this.finalBatchIncomplete() || this.submitBlockedReason()) return;
 
     this.confirmDialogService
-      .confirm(submitConfirm(finalPdf.pageCount), this.dialogConfig)
+      .confirm(
+        submitConfirm(
+          finalPdf.pageCount,
+          this.claim()?.exemptionUnderReviewUlbCount ?? 0,
+          this.claim()?.stateExemptionsUnderReview ?? [],
+        ),
+        this.dialogConfig,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((confirmed) => {
         if (confirmed) this.submit(claimLetterId, finalPdf.sourceKey);
