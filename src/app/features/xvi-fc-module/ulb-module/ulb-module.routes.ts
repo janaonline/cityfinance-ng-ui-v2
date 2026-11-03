@@ -17,6 +17,10 @@ export const ULB_ROUTES: Routes = [
         loadComponent: () => import('./overview/overview.component').then((m) => m.OverviewComponent),
       },
       {
+        path: 'data-hub',
+        loadComponent: () => import('../../dalgo/dalgo.component').then((m) => m.DalgoComponent),
+      },
+      {
         path: 'support-hours',
         loadComponent: () => import('./support-hours/support-hours.component').then((m) => m.SupportHoursComponent),
       },

@@ -1,0 +1,9 @@
+<div class="dalgo">
+  @if (status() === 'loading') {
+    <p class="dalgo__message" role="status">Loading dashboard…</p>
+  }
+  @if (status() === 'error') {
+    <p class="dalgo__message dalgo__message--error" role="alert">{{ errorMessage() }}</p>
+  }
+  <div #mountPoint class="dalgo__container" [class.dalgo__container--hidden]="status() === 'error'"></div>
+</div>
