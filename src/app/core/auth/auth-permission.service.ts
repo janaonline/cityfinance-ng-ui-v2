@@ -1,6 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Permission } from './permissions';
 import {
+  ADC_ACCESS_LEVEL_PERMISSIONS,
   DOE_ACCESS_LEVEL_PERMISSIONS,
   MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS,
   PMU_ACCESS_LEVEL_PERMISSIONS,
@@ -40,6 +41,10 @@ export class AuthPermissionService {
     const accessLevel = user.accessLevel ?? 'VIEWER';
 
     let base: Permission[];
+    if (role === 'STATE' && user.adc) {
+      // An ADC user is a STATE-role user scoped to one ADC; permission overrides are ignored for it (mirrors the backend).
+      return (ADC_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? ADC_ACCESS_LEVEL_PERMISSIONS.VIEWER).includes(permission);
+    }
     if (role === 'STATE') {
       base = STATE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else if (role === 'MoHUA') {
@@ -75,6 +80,11 @@ export class AuthPermissionService {
 
   isStateUser(): boolean {
     return this.role() === 'STATE';
+  }
+
+  /** An ADC user is a STATE-role user with an `adc` — it sees only its own ADC's ULBs and none of the State-level forms. */
+  isAdcUser(): boolean {
+    return this.role() === 'STATE' && !!this.userSignal()?.adc;
   }
 
   isMohuaUser(): boolean {

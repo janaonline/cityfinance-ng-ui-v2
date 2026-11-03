@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { unsavedChangesGuard } from '../../../core/guards/unsaved-changes.guard';
-import { STATE_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-overview.models';
+import {
+  STATE_ADC_TEAMS_CONFIG,
+  STATE_ROLES_CONFIG,
+} from '../shared/roles-teams-overview/roles-teams-overview.models';
 
 type DeferredStateRoute = Readonly<{
   path: string;
@@ -111,6 +114,16 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
         (m) => m.RolesTeamsOverviewComponent,
       ),
     data: { rolesConfig: STATE_ROLES_CONFIG },
+  },
+  {
+    // State admin manages each ADC's team here. No sidebar entry: it opens from the "ADC Teams" button on
+    // People and Roles, which stays highlighted in the sidebar via menuGroup.
+    path: 'adc-teams',
+    loadComponent: () =>
+      import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+        (m) => m.RolesTeamsOverviewComponent,
+      ),
+    data: { rolesConfig: STATE_ADC_TEAMS_CONFIG, menuGroup: 'roles-teams-unified-view' },
   },
   {
     path: 'register-ulb',

@@ -135,3 +135,14 @@ export const DOE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
   EDITOR: DOE_VIEW_PERMISSIONS,
   VIEWER: DOE_VIEW_PERMISSIONS,
 };
+
+/**
+ * Permissions for ADC users (role STATE + `adc` set), keyed by accessLevel. Mirrors backend XVIFC_ADC_PERMISSIONS.
+ * An ADC user reviews its own ULBs' forms and registers ULBs; it never gets a State-form, claim-letter or
+ * user-management permission (ADC team management is an admin-level check, not a permission).
+ */
+export const ADC_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> = {
+  ADMIN: [Permission.VIEW_STATUS_REPORTS, Permission.REVIEW_ULB_SUBMISSIONS, Permission.APPROVE_ULB_SUBMISSIONS],
+  EDITOR: [Permission.VIEW_STATUS_REPORTS, Permission.REVIEW_ULB_SUBMISSIONS, Permission.APPROVE_ULB_SUBMISSIONS],
+  VIEWER: [Permission.VIEW_STATUS_REPORTS],
+};

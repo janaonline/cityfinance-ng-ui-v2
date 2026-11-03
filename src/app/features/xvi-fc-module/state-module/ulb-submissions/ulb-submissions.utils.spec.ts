@@ -30,6 +30,17 @@ describe('ulb-submissions.utils', () => {
     expect(isRowReviewable(makeRow({ formStatus: 'NOT_STARTED' }))).toBe(false);
   });
 
+  it('isRowReviewable is false for an ADC-owned row the caller may not decide (canReview: false), true when canReview is true or absent', () => {
+    expect(isRowReviewable(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', canReview: false }))).toBe(false);
+    expect(isRowReviewable(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', canReview: true }))).toBe(true);
+    expect(isRowReviewable(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE' }))).toBe(true);
+  });
+
+  it('getRowActionLabel shows View, not Review, for an under-review row the caller may not decide', () => {
+    expect(getRowActionLabel(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', canReview: false }))).toBe('View');
+    expect(getRowActionLabel(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE', canReview: false, recordId: null }))).toBeNull();
+  });
+
   it('getRowActionLabel returns Review while under state review, View once an account exists, null before one exists', () => {
     expect(getRowActionLabel(makeRow({ formStatus: 'UNDER_REVIEW_BY_STATE' }))).toBe('Review');
     expect(getRowActionLabel(makeRow({ formStatus: 'SUBMISSION_ACKNOWLEDGED_BY_MOHUA' }))).toBe('View');

@@ -17,7 +17,14 @@ export class FaqComponent {
 
   protected readonly isState = computed(() => this.xvifcService.role() === 'STATE');
 
-  protected readonly subtitle = computed(() => (this.isState() ? FAQ_PAGE_COPY.STATE : FAQ_PAGE_COPY.ULB).subtitle);
+  /** ADC users see only the shared sections (Logging In) — no ULB- or State-DMA-specific ones. */
+  protected readonly isAdc = computed(() => this.xvifcService.role() === 'STATE_ADC');
+
+  protected readonly subtitle = computed(() =>
+    this.isAdc()
+      ? 'Common questions about signing in and using the 16th Finance Commission portal.'
+      : (this.isState() ? FAQ_PAGE_COPY.STATE : FAQ_PAGE_COPY.ULB).subtitle,
+  );
 
   protected readonly sections = computed<readonly FaqSection[]>(() => {
     const role = this.xvifcService.role();

@@ -39,6 +39,8 @@ export interface IUlbMaster {
   isActive: boolean;
   isPublish: boolean;
   approval: IUlbApproval;
+  /** The Autonomous District Council that owns this ULB (populated by the list API); null/absent = reviewed by the State DMA. */
+  adc?: { _id: string; name: string } | null;
   /** True for a legacy ULB that predates the approval workflow (no `approval` ever stored) —
    *  the backend backfills a synthetic 'APPROVED' `approval` for these on read, but this flag
    *  is what actually distinguishes them from an ADMIN-reviewed approval. */
