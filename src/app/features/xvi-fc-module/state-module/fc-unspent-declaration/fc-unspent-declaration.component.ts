@@ -124,8 +124,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
   readonly applicableFcLabel = computed(() => (this.applicableFc() === '15TH_FC' ? '15th' : '14th'));
   readonly actors = signal<FormActor[]>([]);
 
-  readonly pmuRemarks = signal<string | null>(null);
-  readonly mohuaRemarks = signal<string | null>(null);
+  readonly rejectionRemarks = signal<string | null>(null);
 
   /** Raw saved-row snapshot from the preview response (ulbName/censusCode/sbCode/allocationAmount),
    *  kept alongside the editable FormArray so the table can render already-saved rows without ever
@@ -346,8 +345,7 @@ export class FcUnspentDeclarationComponent implements OnInit, CanComponentDeacti
           this.stateName.set(data.stateName);
           this.applicableFc.set(data.applicableFc);
           this.actors.set(data.actors);
-          this.pmuRemarks.set(data.pmuRemarks ?? null);
-          this.mohuaRemarks.set(data.mohuaRemarks ?? null);
+          this.rejectionRemarks.set(data.rejectionRemarks ?? null);
           this.threshold.set(data.threshold);
           this.policy.set(data.policy ?? DEFAULT_POLICY);
           this.currentFormStatus.set(data.currentFormStatus);

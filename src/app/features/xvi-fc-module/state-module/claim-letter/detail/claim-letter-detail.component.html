@@ -39,6 +39,10 @@
     } @else {
       @if (!isCreateMode && claim()) {
         <app-form-progress formType="state" [formStatus]="currentFormStatusValue()"></app-form-progress>
+        <app-returned-reason-banner
+          [currentFormStatus]="claim()!.currentFormStatus"
+          [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
+        />
       }
 
       @if (summaryTiles().length) {

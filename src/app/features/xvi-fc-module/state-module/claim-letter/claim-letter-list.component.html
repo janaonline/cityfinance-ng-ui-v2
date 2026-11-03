@@ -204,7 +204,7 @@
                     >
                       <td class="ps-3 small">{{ claim.batchNumber }}</td>
                       <td class="small">{{ claim.version }}</td>
-                      <td class="small">{{ claim.currentFormStatusLabel }}</td>
+                      <td class="small">{{ statusLabel(claim) }}</td>
                       <td class="small text-end">{{ claim.ulbCount }}</td>
                       <td class="small text-end">
                         {{ formatAmount(claim.financialSummary.currentSelectedClaim) }}
