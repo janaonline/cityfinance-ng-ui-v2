@@ -26,6 +26,8 @@ interface DigitizationListRow {
   errorMessage: string;
   confidenceScore: number | null;
   accuracyScore: number | null;
+  overallAssessment: string | null;
+  arithmeticAssessment: string | null;
   pageCount: number | null;
   ocrPriceInr: number | null;
   hasExcel: boolean;
@@ -64,15 +66,9 @@ export class AfsDigitizationListComponent implements OnInit {
 
   @ViewChild(MatPaginator) paginator?: MatPaginator;
 
-  readonly displayedColumns: string[] = [
-    'jobAndFile',
-    'status',
-    'scores',
-    'cost',
-    'expected',
-    'dates',
-    'action',
-  ];
+  readonly displayedColumns: string[] = ['jobAndFile', 'status', 'scores', 'cost', 'expected', 'dates', 'action'];
+
+  private readonly scoreThreshold = 80;
 
   readonly statusOptions = [
     { value: '', label: 'All' },
@@ -80,6 +76,24 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'processing', label: 'Processing' },
     { value: 'completed', label: 'Completed' },
     { value: 'failed', label: 'Failed' },
+  ];
+
+  readonly assessmentOptions = [
+    { value: '', label: 'All' },
+    { value: 'PASS', label: 'Pass' },
+    { value: 'PARTIAL', label: 'Partial' },
+    { value: 'FAIL', label: 'Fail' },
+  ];
+  readonly arithmeticOptions = [
+    { value: '', label: 'All' },
+    { value: 'PASS', label: 'Pass' },
+    { value: 'FAIL', label: 'Fail' },
+    { value: 'NOT_APPLICABLE', label: 'Not applicable' },
+  ];
+  readonly scoreThresholdOptions = [
+    { value: '', label: 'All' },
+    { value: 'gte', label: `≥ ${this.scoreThreshold}%` },
+    { value: 'lt', label: `< ${this.scoreThreshold}%` },
   ];
 
   readonly docTypeOptions = this.digitizationService.documentTypes;
@@ -92,6 +106,10 @@ export class AfsDigitizationListComponent implements OnInit {
     batchId: [''],
     financialYear: [''],
     docType: [''],
+    overall: [''],
+    arithmetic: [''],
+    accuracy: [''],
+    confidence: [''],
     dateFrom: this.fb.control<Date | null>(null),
     dateTo: this.fb.control<Date | null>(null),
   });
@@ -128,6 +146,10 @@ export class AfsDigitizationListComponent implements OnInit {
       batchId: '',
       financialYear: '',
       docType: '',
+      overall: '',
+      arithmetic: '',
+      accuracy: '',
+      confidence: '',
       dateFrom: null,
       dateTo: null,
     });
@@ -173,23 +195,25 @@ export class AfsDigitizationListComponent implements OnInit {
     return 'text-danger';
   }
 
+  getAssessmentClass(assessment: string | null): string {
+    switch (assessment?.toUpperCase()) {
+      case 'PASS':
+        return 'bg-success-subtle text-success-emphasis';
+      case 'PARTIAL':
+        return 'bg-warning-subtle text-warning-emphasis';
+      case 'FAIL':
+        return 'bg-danger-subtle text-danger-emphasis';
+      default:
+        return 'bg-secondary-subtle text-secondary-emphasis';
+    }
+  }
+
   exportToExcel(): void {
     if (this.exporting()) return;
-    const { status, filename, ulbName, batchId, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.exporting.set(true);
 
     this.digitizationService
-      .dumpDigitizationJobs({
-        status: status || undefined,
-        filename: filename.trim() || undefined,
-        ulb_name: ulbName.trim() || undefined,
-        batch_id: batchId.trim() || undefined,
-        financial_year: financialYear.trim() || undefined,
-        doc_type: docType || undefined,
-        sort_order: this.sortOrder(),
-        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
-        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
-      })
+      .dumpDigitizationJobs(this.buildFilterParams())
       .pipe(finalize(() => this.exporting.set(false)))
       .subscribe({
         next: (blob) => {
@@ -219,7 +243,11 @@ export class AfsDigitizationListComponent implements OnInit {
         }, 1500);
       })
       .catch(() => {
-        this.utilityService.swalPopup('Copy failed', `Unable to copy ${label.toLowerCase()}. Please try again.`, 'error');
+        this.utilityService.swalPopup(
+          'Copy failed',
+          `Unable to copy ${label.toLowerCase()}. Please try again.`,
+          'error',
+        );
       });
   }
 
@@ -327,21 +355,37 @@ export class AfsDigitizationListComponent implements OnInit {
       });
   }
 
+  private buildFilterParams() {
+    const f = this.filterForm.getRawValue();
+    const scoreBounds = (op: string, key: 'accuracy' | 'confidence') =>
+      op === 'gte'
+        ? { [`${key}_min`]: this.scoreThreshold }
+        : op === 'lt'
+          ? { [`${key}_max`]: this.scoreThreshold }
+          : {};
+    return {
+      status: f.status || undefined,
+      filename: f.filename.trim() || undefined,
+      ulb_name: f.ulbName.trim() || undefined,
+      batch_id: f.batchId.trim() || undefined,
+      financial_year: f.financialYear.trim() || undefined,
+      doc_type: f.docType || undefined,
+      overall_assessment: f.overall || undefined,
+      arithmetic_assessment: f.arithmetic || undefined,
+      ...scoreBounds(f.accuracy, 'accuracy'),
+      ...scoreBounds(f.confidence, 'confidence'),
+      sort_order: this.sortOrder(),
+      date_from: f.dateFrom ? this.toStartOfDay(f.dateFrom) : undefined,
+      date_to: f.dateTo ? this.toEndOfDay(f.dateTo) : undefined,
+    };
+  }
+
   private loadJobs(): void {
-    const { status, filename, ulbName, batchId, financialYear, docType, dateFrom, dateTo } = this.filterForm.getRawValue();
     this.loading.set(true);
 
     this.digitizationService
       .listDigitizationJobs({
-        status: status || undefined,
-        filename: filename.trim() || undefined,
-        ulb_name: ulbName.trim() || undefined,
-        batch_id: batchId.trim() || undefined,
-        financial_year: financialYear.trim() || undefined,
-        doc_type: docType || undefined,
-        sort_order: this.sortOrder(),
-        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
-        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
+        ...this.buildFilterParams(),
         skip: this.pageIndex * this.pageSize,
         limit: this.pageSize,
       })
@@ -376,6 +420,8 @@ export class AfsDigitizationListComponent implements OnInit {
       errorMessage: job.error_message || '—',
       confidenceScore: job.confidence_score,
       accuracyScore: job.accuracy_score,
+      overallAssessment: job.overall_assessment ?? null,
+      arithmeticAssessment: job.arithmetic_assessment ?? null,
       pageCount: job.page_count,
       ocrPriceInr: job.ocr_price_inr,
       hasExcel: !!job.excel_s3_key,
