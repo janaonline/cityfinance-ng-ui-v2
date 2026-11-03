@@ -88,6 +88,7 @@ const EULB_SUPPORTING_ACTION = {
  *  backend already allowed it. */
 export const POST_SUBMISSION_UPDATE_STATUS: Partial<FormStatusValue>[] = [
   FORM_STATUS.UNDER_REVIEW_BY_PMU,
+  FORM_STATUS.UNDER_REVIEW_BY_SO,
   FORM_STATUS.UNDER_REVIEW_BY_MOHUA,
   FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA,
 ];
@@ -136,7 +137,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
   /** Current numeric form status; used by the form-progress card. */
   readonly formStatus = signal<FormStatusValue>(FORM_STATUS.NO_STATUS);
 
-  readonly pmuRemarks = signal<string | null>(null);
+  readonly rejectionRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -292,7 +293,7 @@ export class ElectedBodyStatusComponent implements OnInit, CanComponentDeactivat
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
           this.validationSummary.set(data.validationSummary ?? null);
           this.statusSummary.set(data.statusSummary ?? null);
-          this.pmuRemarks.set(data.pmuRemarks ?? null);
+          this.rejectionRemarks.set(data.rejectionRemarks ?? null);
 
           const fileField = data.questions.find((q) => q.key === 'electedBodyExcelFile');
           this.lastPersistedExcelFile = normalizeUploadedFileMetadata(fileField?.value);

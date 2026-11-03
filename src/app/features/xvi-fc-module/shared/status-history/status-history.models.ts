@@ -36,9 +36,11 @@ export function statusHistoryAccent(toStatus: number): StatusAccent {
     case FORM_STATUS.RETURNED_BY_STATE:
     case FORM_STATUS.RETURNED_BY_PMU:
     case FORM_STATUS.RETURNED_BY_MOHUA:
+    case FORM_STATUS.RETURNED_BY_SO:
       return 'danger';
     case FORM_STATUS.UNDER_REVIEW_BY_STATE:
     case FORM_STATUS.UNDER_REVIEW_BY_PMU:
+    case FORM_STATUS.UNDER_REVIEW_BY_SO:
       return 'warning';
     case FORM_STATUS.UNDER_REVIEW_BY_MOHUA:
     case FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA:

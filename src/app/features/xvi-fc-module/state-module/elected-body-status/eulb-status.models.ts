@@ -74,7 +74,7 @@ export interface EulbFormResponseData {
   response?: { errorExcelFile?: EulbFileValue; [key: string]: unknown };
   instructions?: unknown[];
   meta?: { version: number };
-  pmuRemarks?: string | null;
+  rejectionRemarks?: string | null;
 }
 
 export interface EulbFormApiResponse {

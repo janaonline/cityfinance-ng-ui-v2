@@ -116,8 +116,7 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
   readonly actors = signal<FormActor[]>([]);
   readonly formStatus = signal<FormStatusValue>(FORM_STATUS.NO_STATUS);
 
-  readonly pmuRemarks = signal<string | null>(null);
-  readonly mohuaRemarks = signal<string | null>(null);
+  readonly rejectionRemarks = signal<string | null>(null);
 
   readonly installment = signal<DfInstallment>(1);
 
@@ -274,8 +273,7 @@ export class DevolutionFormulaComponent implements OnInit, CanComponentDeactivat
           this.stateName.set(data.stateName ?? '');
           this.actors.set(data.actors ?? []);
           this.formStatus.set(data.currentFormStatus as FormStatusValue);
-          this.pmuRemarks.set(data.pmuRemarks ?? null);
-          this.mohuaRemarks.set(data.mohuaRemarks ?? null);
+          this.rejectionRemarks.set(data.rejectionRemarks ?? null);
           this.validationSummary.set(data.validationSummary ?? null);
           this.grantAllocationSummary.set(data.grantAllocationSummary ?? null);
 

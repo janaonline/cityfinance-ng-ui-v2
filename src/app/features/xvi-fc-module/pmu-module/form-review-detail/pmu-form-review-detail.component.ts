@@ -109,11 +109,11 @@ export class PmuFormReviewDetailComponent {
   readonly stateName = computed(() => this.review()?.stateName ?? 'Selected State');
   readonly statusLabel = computed(() => pmuStatusLabel(this.review()?.currentFormStatus ?? 0));
   readonly statusBadgeClass = computed(() => pmuStatusBadgeClass(this.review()?.currentFormStatus ?? 0));
-  /** Only shown while the form is currently Returned — `pmuRemarks` itself is never cleared on
+  /** Only shown while the form is currently Returned — `rejectionRemarks` itself is never cleared on
    *  approve (confirmed on the backend), so without this gate a stale reason from an earlier
    *  reject-then-resubmit-then-approve cycle would keep surfacing forever. */
   readonly rejectionRemarks = computed(() =>
-    this.review()?.currentFormStatus === FORM_STATUS.RETURNED_BY_PMU ? (this.review()?.pmuRemarks ?? null) : null,
+    this.review()?.currentFormStatus === FORM_STATUS.RETURNED_BY_PMU ? (this.review()?.rejectionRemarks ?? null) : null,
   );
 
   readonly canApprove = computed(() => this.review()?.permissions.canApproveForm ?? false);

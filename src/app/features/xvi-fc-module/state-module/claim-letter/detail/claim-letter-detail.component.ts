@@ -61,6 +61,7 @@ import {
 } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
 import { ClaimLetterFinalClaimLetterComponent } from '../components/final-claim-letter/claim-letter-final-claim-letter.component';
 import { MatCardModule } from '@angular/material/card';
+import { ReturnedReasonBannerComponent } from '../../../shared/returned-reason-banner/returned-reason-banner.component';
 
 /** Must match the backend's `CLAIM_LETTER_ACTION_PREVIEW_TEMPLATE`. */
 const CLAIM_LETTER_ACTION = {
@@ -135,6 +136,7 @@ const CLAIM_ROW_ERROR_KEY_PATTERN = /^ulbSelections\.(\d+)\.(ulbId|claimedAmount
     ClaimLetterSummaryTilesComponent,
     AmountDisplayToggleComponent,
     ClaimLetterFinalClaimLetterComponent,
+    ReturnedReasonBannerComponent,
   ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',

@@ -87,10 +87,10 @@ export class PmuRowReviewService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
   }
 
-  rejectForm(form: PmuFormOption, stateId: string, yearId: string, pmuRemarks: string): Observable<PmuFormSubmitData> {
+  rejectForm(form: PmuFormOption, stateId: string, yearId: string, rejectionRemarks: string): Observable<PmuFormSubmitData> {
     return this.http
       .post<PmuApiResponse<PmuFormSubmitData>>(`${environment.api.url2}${form.basePath}${stateId}/${yearId}/reject`, {
-        pmuRemarks,
+        rejectionRemarks,
       })
       .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
   }
