@@ -115,7 +115,7 @@ export interface PmuFormReviewData {
   currentFormStatus: number;
   currentFormStatusLabel: string;
   /** Set on PMU reject, never cleared until the next transition overwrites it. */
-  pmuRemarks: string | null;
+  rejectionRemarks: string | null;
   questions?: ConditionalFieldConfig[];
   rowSummary?: PmuRowSummary;
   /** Only present for Elected Body — the Excel upload's validation status ('VALID'/'INVALID'/
@@ -134,7 +134,7 @@ export interface PmuFormSubmitData {
 }
 
 export interface PmuRejectFormPayload {
-  pmuRemarks: string;
+  rejectionRemarks: string;
 }
 
 export interface PmuRowPermissions {

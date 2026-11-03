@@ -145,8 +145,7 @@ export interface FcUnspentDeclarationData {
    *  eligibility) — mirrors DevolutionFormResponseData.rowEditFields / EulbFormResponseData.rowEditFields. */
   rowEditFields?: ConditionalFieldConfig[];
   unspentUlbData: FcUnspentUlbData[];
-  pmuRemarks?: string | null;
-  mohuaRemarks?: string | null;
+  rejectionRemarks?: string | null;
 }
 
 /**

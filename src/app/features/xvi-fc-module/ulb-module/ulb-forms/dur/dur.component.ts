@@ -142,7 +142,8 @@ function emptyDoc(id: DurDocId): DurDocument {
 
 // Numeric FORM_STATUS values (src/common/constants/form-status.constants.ts on the backend) in
 // which the ULB may still edit — mirrors canUlbEditForm.
-const ULB_EDITABLE_STATUS_IDS: ReadonlySet<number> = new Set([1, 2, 4, 6]);
+// 16 = RETURNED_BY_SO: the MoHUA Section Officer returned the claim letter this form was in.
+const ULB_EDITABLE_STATUS_IDS: ReadonlySet<number> = new Set([1, 2, 4, 6, 16]);
 export const LOCKED_BANNER_MESSAGE: Readonly<Record<number, string>> = {
   3: 'This form has been submitted to State DMA and is now locked for review.',
   8: 'This form has been approved by your State DMA and is awaiting MoHUA review.',
@@ -235,12 +236,12 @@ export class DurComponent implements OnInit, OnDestroy {
    *  discretionary exemption path (unlike Annual Accounts), so this is the only source. */
   readonly isExempted = computed(() => this.currentFormStatusId() === 12); // EXEMPTED_ACKNOWLEDGED
 
-  // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6) — explains
+  // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6/RETURNED_BY_SO=16) — explains
   // why, even though the form itself is editable again at that point. Mirrors
   // xvi-fc-bank-account.component.ts's returnNotice exactly.
   readonly returnNotice = computed(() => {
     const status = this.currentFormStatusId();
-    if (status !== 4 && status !== 6) return null;
+    if (status !== 4 && status !== 6 && status !== 16) return null;
     const actor = status === 4 ? 'the state' : 'MoHUA';
     const note = (status === 4 ? this.stateDecision() : this.mohuaDecision())?.note ?? null;
     return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;
