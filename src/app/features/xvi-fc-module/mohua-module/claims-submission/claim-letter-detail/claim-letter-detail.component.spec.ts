@@ -131,7 +131,7 @@ describe('ClaimLetterDetailComponent', () => {
     expect(rows[0].textContent).toContain('Eligible');
     expect(rows[0].querySelector('.cs-badge--bad')).toBeNull();
     expect(rows[1].textContent).toContain('Eligible via exemption');
-    expect(rows[0].querySelectorAll('td')[1].textContent?.trim()).toBe('1');
+    expect(rows[0].querySelectorAll('td')[0].textContent?.trim()).toBe('1');
   });
 
   it('links each ULB to its page, remembering this claim letter so Back returns here', () => {
