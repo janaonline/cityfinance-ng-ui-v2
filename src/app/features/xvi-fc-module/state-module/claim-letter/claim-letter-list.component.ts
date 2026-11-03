@@ -23,6 +23,7 @@ import {
 } from './components/summary-tiles/claim-letter-summary-tiles.component';
 import { ClaimLetterService } from './claim-letter.service';
 const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
+const FORM_STATUS_UNDER_REVIEW_BY_SO = 15;
 
 @Component({
   selector: 'app-claim-letter-list',
@@ -45,6 +46,7 @@ export class ClaimLetterListComponent implements OnInit {
   private readonly claimLetterService = inject(ClaimLetterService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly amountDisplay = inject(AmountDisplayModeService);
+
 
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
@@ -88,6 +90,11 @@ export class ClaimLetterListComponent implements OnInit {
     if (!eligibility) return false;
     return eligibility.stateLevelGate.passed && !this.ulbReadinessBlocked();
   });
+
+  /** The SO review is internal to MoHUA, so the State sees a letter under SO review as under MoHUA review. */
+  statusLabel(claim: ClaimLetterBatchSummary): string {
+    return claim.currentFormStatus === FORM_STATUS_UNDER_REVIEW_BY_SO ? 'Under Review by MoHUA' : claim.currentFormStatusLabel;
+  }
 
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();

@@ -1,0 +1,106 @@
+// Same M3 custom-property override the other reject-style dialogs use for a red confirm button.
+.rcl-confirm {
+  --mat-button-filled-label-text-color: #fff;
+  --mat-button-filled-container-color: var(--bs-danger, #dc3545);
+}
+
+.rcl-title {
+  color: #b91c1c;
+}
+
+.rcl-lead {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: #5b6b73;
+}
+
+.rcl-section {
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid #e3e8ea;
+
+  &:last-of-type {
+    border-bottom: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.rcl-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #5b6b73;
+
+  &__note {
+    margin-left: 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #0f5b4a;
+  }
+}
+
+.rcl-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.4rem 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.rcl-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #0f1f26;
+  cursor: pointer;
+
+  input {
+    cursor: pointer;
+  }
+
+  // An exemption MoHUA has already decided: shown for context, not pickable.
+  &--disabled {
+    color: #5b6b73;
+    cursor: not-allowed;
+
+    input {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.rcl-remarks-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5b6b73;
+}
+
+.rcl-muted {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.rcl-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #5b6b73;
+}
+
+.rcl-outcome {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #f4f5f6;
+  font-size: 0.8rem;
+  color: #0f1f26;
+}

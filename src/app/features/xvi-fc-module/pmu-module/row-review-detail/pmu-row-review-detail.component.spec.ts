@@ -16,7 +16,7 @@ const review = (canAct: boolean): PmuFormReviewData => ({
   yearId: 'year-1',
   currentFormStatus: 13,
   currentFormStatusLabel: 'Under Review by PMU',
-  pmuRemarks: null,
+  rejectionRemarks: null,
   questions: [],
   rowSummary: { total: 1, active: 1, updatePending: 0, rejected: 0, needsUpdate: 0 },
   permissions: { canView: true, canApproveForm: canAct, canRejectForm: canAct, canReviewRows: canAct },

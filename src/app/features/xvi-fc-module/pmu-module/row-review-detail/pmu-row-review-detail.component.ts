@@ -209,9 +209,9 @@ export class PmuRowReviewDetailComponent {
   readonly statusLabel = computed(() => pmuStatusLabel(this.review()?.currentFormStatus ?? 0));
   readonly statusBadgeClass = computed(() => pmuStatusBadgeClass(this.review()?.currentFormStatus ?? 0));
   /** Only shown while the form is currently Returned — see the form-level detail component's own
-   *  doc comment for why a plain truthy check on `pmuRemarks` isn't enough. */
+   *  doc comment for why a plain truthy check on `rejectionRemarks` isn't enough. */
   readonly rejectionRemarks = computed(() =>
-    this.review()?.currentFormStatus === FORM_STATUS.RETURNED_BY_PMU ? (this.review()?.pmuRemarks ?? null) : null,
+    this.review()?.currentFormStatus === FORM_STATUS.RETURNED_BY_PMU ? (this.review()?.rejectionRemarks ?? null) : null,
   );
 
   readonly canApprove = computed(() => this.review()?.permissions.canApproveForm ?? false);

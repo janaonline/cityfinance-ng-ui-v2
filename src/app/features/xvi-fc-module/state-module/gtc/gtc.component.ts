@@ -74,7 +74,7 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
 
-  readonly pmuRemarks = signal<string | null>(null);
+  readonly rejectionRemarks = signal<string | null>(null);
 
   readonly installment = signal<GtcInstallment>(1);
   readonly installmentAccess = signal<GtcInstallmentAccess | null>(null);
@@ -176,7 +176,7 @@ export class GtcComponent implements OnInit, CanComponentDeactivate {
           this.fields.set(data.questions);
           this.stateName.set(data.stateName);
           this.actors.set(data.actors);
-          this.pmuRemarks.set(data.pmuRemarks ?? null);
+          this.rejectionRemarks.set(data.rejectionRemarks ?? null);
           this.installmentAccess.set(data.installmentAccess ?? null);
           this.createFormControls();
           this.isLoading.set(false);

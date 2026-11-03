@@ -1,0 +1,147 @@
+@if (data.mode === 'ulb') {
+  <h2 mat-dialog-title class="rcl-title">Return {{ data.ulbName }} for correction?</h2>
+  <mat-dialog-content>
+    @if (exemptionMode) {
+      <p class="rcl-lead">
+        This ULB is eligible via exemption. Tick the exemptions to reject: they are rejected when you return the claim
+        letter, and the others stay under MoHUA review.
+      </p>
+
+      <section class="rcl-section" aria-labelledby="rcl-exemption-heading">
+        <h3 id="rcl-exemption-heading" class="rcl-heading">Exemptions</h3>
+        <div class="rcl-options">
+          @for (option of exemptionOptions; track option.formId) {
+            <label class="rcl-option" [class.rcl-option--disabled]="!option.decidable">
+              <input
+                type="checkbox"
+                [checked]="isSelected(option.formId)"
+                [disabled]="!option.decidable"
+                (change)="toggle(option.formId)"
+              />
+              {{ option.label }} <span class="rcl-muted">({{ option.statusText }})</span>
+            </label>
+          }
+        </div>
+        @if (nothingDecidable) {
+          <p class="rcl-hint">
+            <i class="bi bi-info-circle" aria-hidden="true"></i> MoHUA has already decided every exemption of this ULB,
+            so there is nothing to reject.
+          </p>
+        }
+
+        <label class="rcl-remarks-label" for="rcl-remark">
+          Remarks <span class="rcl-muted">(required to reject an exemption, shared with the State)</span>
+        </label>
+        <textarea
+          id="rcl-remark"
+          class="form-control"
+          rows="3"
+          [attr.maxlength]="remarksMaxLength"
+          [class.is-invalid]="remark.invalid"
+          [formControl]="remark"
+          placeholder="Why the exemption is rejected..."
+        ></textarea>
+      </section>
+    } @else {
+    <p class="rcl-lead">
+      Tick what this ULB needs to correct. Nothing reopens yet: the picked forms reopen when you return the claim letter.
+    </p>
+
+    <section class="rcl-section" aria-labelledby="rcl-ulb-heading">
+      <h3 id="rcl-ulb-heading" class="rcl-heading">ULB forms</h3>
+      <div class="rcl-options">
+        @for (option of ulbFormOptions; track option.formId) {
+          <label class="rcl-option">
+            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+            {{ option.label }}
+          </label>
+        }
+      </div>
+    </section>
+
+    <section class="rcl-section" aria-labelledby="rcl-row-heading">
+      <h3 id="rcl-row-heading" class="rcl-heading">
+        State forms <span class="rcl-heading__note">this ULB's row only</span>
+      </h3>
+      <div class="rcl-options">
+        @for (option of rowFormOptions; track option.formId) {
+          <label class="rcl-option">
+            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+            {{ option.label }}
+          </label>
+        }
+      </div>
+
+      <label class="rcl-remarks-label" for="rcl-remark">
+        Remarks <span class="rcl-muted">(optional, shared with the ULB and the State)</span>
+      </label>
+      <textarea
+        id="rcl-remark"
+        class="form-control"
+        rows="3"
+        [attr.maxlength]="remarksMaxLength"
+        [class.is-invalid]="remark.invalid"
+        [formControl]="remark"
+        placeholder="Add any detail the ULB needs to correct the forms..."
+      ></textarea>
+    </section>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancel()">Cancel</button>
+    <button matButton="filled" class="rcl-confirm" type="button" [disabled]="!canConfirm()" (click)="confirm()">
+      <i class="bi bi-arrow-return-left" aria-hidden="true"></i> Mark for Return
+    </button>
+  </mat-dialog-actions>
+} @else {
+  <h2 mat-dialog-title class="rcl-title">Return this claim letter for correction?</h2>
+  <mat-dialog-content>
+    <p class="rcl-lead">
+      The claim letter closes and the State prepares a new one. The ULBs you marked returned go back with it; tick any
+      State-wide item that also needs correcting.
+    </p>
+
+    <section class="rcl-section" aria-labelledby="rcl-state-heading">
+      <h3 id="rcl-state-heading" class="rcl-heading">State forms</h3>
+      <div class="rcl-options">
+        @for (option of stateFormOptions; track option.formId) {
+          <label class="rcl-option">
+            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+            {{ option.label }}
+          </label>
+        }
+      </div>
+
+      <label class="rcl-remarks-label" for="rcl-state-remark">
+        Remarks <span class="rcl-muted">(optional, shared with the State)</span>
+      </label>
+      <textarea
+        id="rcl-state-remark"
+        class="form-control"
+        rows="3"
+        [attr.maxlength]="remarksMaxLength"
+        [class.is-invalid]="remark.invalid"
+        [formControl]="remark"
+        placeholder="Add any detail the State needs to act on this..."
+      ></textarea>
+    </section>
+
+    @if (canConfirm()) {
+      <p class="rcl-outcome" aria-live="polite">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <span><strong>What happens:</strong> {{ outcome() }}</span>
+      </p>
+    } @else {
+      <p class="rcl-hint">
+        <i class="bi bi-info-circle" aria-hidden="true"></i> No ULB is marked returned: tick a State item to return the
+        letter.
+      </p>
+    }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancel()">Cancel</button>
+    <button matButton="filled" class="rcl-confirm" type="button" [disabled]="!canConfirm()" (click)="confirm()">
+      <i class="bi bi-arrow-return-left" aria-hidden="true"></i> Confirm Return
+    </button>
+  </mat-dialog-actions>
+}

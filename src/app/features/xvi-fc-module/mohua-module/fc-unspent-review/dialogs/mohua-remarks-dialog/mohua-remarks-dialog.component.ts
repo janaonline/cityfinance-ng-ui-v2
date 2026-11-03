@@ -16,7 +16,7 @@ export interface MohuaRemarksDialogData {
 
 /**
  * Self-contained "Reject form" dialog for FC Unspent Declaration MoHUA review — calls
- * `POST /:stateId/:yearId/reject` (required `mohuaRemarks`) itself, staying open and showing
+ * `POST /:stateId/:yearId/reject` (required `rejectionRemarks`) itself, staying open and showing
  * backend validation errors inline on failure so the user's typed remarks are never lost.
  * Closes with `true` only after a confirmed successful reject.
  */
@@ -61,7 +61,7 @@ export class MohuaRemarksDialogComponent {
     this.formError.set(null);
 
     this.service
-      .rejectForm(this.data.stateId, this.data.yearId, { mohuaRemarks: value })
+      .rejectForm(this.data.stateId, this.data.yearId, { rejectionRemarks: value })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
@@ -90,7 +90,7 @@ export class MohuaRemarksDialogComponent {
 
     const unrouted: string[] = [];
     for (const error of all) {
-      if (error.field === 'mohuaRemarks' || !error.field) {
+      if (error.field === 'rejectionRemarks' || !error.field) {
         this.remarks.setErrors({ ...this.remarks.errors, apiError: error.message });
       } else {
         unrouted.push(error.message);

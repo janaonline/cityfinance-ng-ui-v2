@@ -106,6 +106,25 @@ export const MOHUA_ROUTES: Routes = [
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
       },
       {
+        path: 'claims-submission',
+        loadComponent: () =>
+          import('./claims-submission/claims-submission.component').then((m) => m.ClaimsSubmissionComponent),
+      },
+      {
+        path: 'claims-submission/:stateId',
+        loadComponent: () =>
+          import('./claims-submission/state-claim-letters/state-claim-letters.component').then(
+            (m) => m.StateClaimLettersComponent,
+          ),
+      },
+      {
+        path: 'claims-submission/:stateId/letter/:claimLetterId',
+        loadComponent: () =>
+          import('./claims-submission/claim-letter-detail/claim-letter-detail.component').then(
+            (m) => m.ClaimLetterDetailComponent,
+          ),
+      },
+      {
         path: '**',
         redirectTo: 'overview',
       },

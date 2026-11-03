@@ -1,0 +1,70 @@
+<div class="cs-page">
+  <h1 class="cs-title">
+    Claim Letters — Installment {{ installment }}
+    @if (data(); as d) {
+      <span class="cs-year">FY {{ d.year.label }}</span>
+    }
+  </h1>
+  <p class="cs-subtitle">Claim letter status by state for the first installment of Basic Grants.</p>
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading claim letters" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    @if (data(); as d) {
+    <div class="cs-table-wrap">
+      <table class="cs-table">
+        <caption class="visually-hidden">
+          Claim letters by state
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">State</th>
+            <th scope="col">First claim status</th>
+            <th scope="col">Claim no.</th>
+            <th scope="col" class="num">Installment {{ installment }}</th>
+            <th scope="col" class="num">Amount claimed</th>
+            <th scope="col" class="num">ULBs included</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of d.states; track row.stateId; let i = $index) {
+            <tr>
+              <td class="muted">{{ i + 1 }}</td>
+              <td class="strong">{{ row.name }}</td>
+              <td>
+                <span class="cs-badge" [class.cs-badge--good]="row.firstClaimStatus === 'RECEIVED'">
+                  {{ row.firstClaimStatus === 'RECEIVED' ? 'Received' : 'Pending' }}
+                </span>
+              </td>
+              <td>{{ row.latestClaimNumber ? ordinal(row.latestClaimNumber) : '—' }}</td>
+              <td class="num">{{ formatCrore(row.installmentAllocation) }}</td>
+              <td class="num">{{ formatCrore(row.amountClaimed) }}</td>
+              <td class="num">{{ row.ulbsIncluded ?? '—' }}</td>
+              <td>
+                @if (row.firstClaimStatus === 'RECEIVED') {
+                  <a class="cs-btn" [routerLink]="['claims-submission', row.stateId]" [relativeTo]="mohuaRoute">
+                    View claims
+                  </a>
+                } @else {
+                  <button type="button" class="cs-btn cs-btn--ghost" disabled aria-disabled="true">Track</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="cs-state">No states to show.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  }
+</div>
