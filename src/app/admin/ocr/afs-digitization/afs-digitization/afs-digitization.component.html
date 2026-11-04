@@ -204,6 +204,20 @@
                       <mat-icon>{{ isCopied('Job Link', getJobLink(job.jobId)) ? 'check' : 'link' }}</mat-icon>
                     </button>
                   </span>
+                  @if (job.batchId) {
+                    <span class="job-id-chip">
+                      Batch ID: {{ job.batchId }}
+                      <button
+                        type="button"
+                        class="copy-btn"
+                        [attr.aria-label]="isCopied('Batch ID', job.batchId) ? 'Copied' : 'Copy batch ID'"
+                        [attr.title]="isCopied('Batch ID', job.batchId) ? 'Copied' : 'Copy batch ID'"
+                        (click)="copyValue('Batch ID', job.batchId)"
+                      >
+                        <mat-icon>{{ isCopied('Batch ID', job.batchId) ? 'check' : 'content_copy' }}</mat-icon>
+                      </button>
+                    </span>
+                  }
                 </div>
                 <div class="job-header__actions">
                   @if (job.excelS3Key) {

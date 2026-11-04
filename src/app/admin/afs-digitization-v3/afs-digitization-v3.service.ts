@@ -69,9 +69,12 @@ export interface DigitizationV3Metrics {
 
 export interface EnqueueSummary {
   success: boolean;
+  /** Groups the jobs queued by this call (also stored on each file and in FastAPI) */
+  batchId?: string;
   matched: number;
   queued: number;
   skippedNoPdf: number;
+  skippedDuplicate?: number;
   skippedAlreadyQueued: number;
   skippedAlreadyDigitized: number;
   failedToQueue: number;

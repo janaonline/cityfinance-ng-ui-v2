@@ -82,7 +82,7 @@
             [disabled]="queueing() || loading() || selection.selected.length === 0"
             (click)="queueSelected()"
           >
-            Queue Selected ({{ selection.selected.length }})
+            Digitize Selected ({{ selection.selected.length }})
           </button>
           <button
             type="button"
@@ -94,7 +94,7 @@
               <mat-spinner diameter="16" class="d-inline-block me-1" style="vertical-align: middle"></mat-spinner>
               Queueing...
             } @else {
-              Queue All Matching ({{ totalCount() }})
+              Digitize All Filtered ({{ totalCount() }})
             }
           </button>
         </div>

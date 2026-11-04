@@ -20,6 +20,8 @@ export interface DigitizationJobStatusResponse {
   filename: string;
   file_size_bytes: number | null;
   ocr_engine: DigitizationOcrEngine;
+  /** Groups jobs queued together (e.g. one NestJS enqueue run); null for jobs submitted without one */
+  batch_id?: string | null;
   gemini_model: string;
   enable_validation: boolean;
   enable_arithmetic_validation: boolean;
@@ -246,6 +248,8 @@ export interface DigitizationJobsListResponse {
 /** Client-side tracker for a job shown on the upload/tracking page. */
 export interface DigitizationJobTracker {
   jobId: string;
+  /** Set for jobs queued in a batch (e.g. from NestJS); filled in once the status is loaded */
+  batchId?: string | null;
   filename: string;
   status: DigitizationStatus;
   message: string;

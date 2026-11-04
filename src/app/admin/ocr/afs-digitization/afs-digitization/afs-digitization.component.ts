@@ -676,6 +676,7 @@ export class AfsDigitizationComponent implements OnInit {
         switchMap(() => this.digitizationService.getDigitizationJobStatus(jobId)),
         tap((status) => {
           this.updateJob(jobId, {
+            batchId: status.batch_id ?? null,
             status: status.status,
             message: status.message,
             progressStep: status.progress_step,
@@ -727,6 +728,7 @@ export class AfsDigitizationComponent implements OnInit {
       next: (status) => {
         this.addJob({
           jobId: status.job_id,
+          batchId: status.batch_id ?? null,
           filename: status.filename,
           status: status.status,
           message: status.message,
