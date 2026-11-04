@@ -34,6 +34,22 @@ export class AfsDigitizationService {
   private readonly http = inject(HttpClient);
 
   readonly geminiModels: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.6-flash',
+      label: 'Gemini 3.6 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.5-flash-lite',
+      label: 'Gemini 3.5 Flash-Lite',
+      pricing: { inputPerM: 0.3, outputPerM: 2.5, thinkingPerM: 2.5 },
+    },
     {
       value: 'gemini-3.1-pro-preview',
       label: 'Gemini 3.1 Pro Preview',
