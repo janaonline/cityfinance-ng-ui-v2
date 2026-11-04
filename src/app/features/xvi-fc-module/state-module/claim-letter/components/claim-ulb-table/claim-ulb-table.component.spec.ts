@@ -17,6 +17,7 @@ const ULB_OPTIONS: ClaimLetterUlbOption[] = [
     eligible: true,
     ineligibleReasonCode: null,
     ineligibleReasonDetail: null,
+    claimedInBatch: null,
   },
   {
     ulbId: '66a000000000000000000002',
@@ -27,6 +28,7 @@ const ULB_OPTIONS: ClaimLetterUlbOption[] = [
     eligible: true,
     ineligibleReasonCode: null,
     ineligibleReasonDetail: null,
+    claimedInBatch: null,
   },
 ];
 

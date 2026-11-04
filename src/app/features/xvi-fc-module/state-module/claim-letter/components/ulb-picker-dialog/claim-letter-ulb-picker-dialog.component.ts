@@ -11,7 +11,7 @@ import { ClaimLetterInstallment, ClaimLetterUlbOption } from '../../claim-letter
 import { ClaimLetterService } from '../../claim-letter.service';
 import { humanizeToken } from '../../claim-letter.utils';
 
-export type ClaimLetterEligibilityFilter = 'ALL' | 'ELIGIBLE' | 'INELIGIBLE';
+export type ClaimLetterEligibilityFilter = 'ALL' | 'ELIGIBLE' | 'INELIGIBLE' | 'IN_OTHER_BATCH';
 
 export interface ClaimLetterUlbPickerDialogData {
   stateId: string;
@@ -24,6 +24,14 @@ export interface ClaimLetterUlbPickerDialogData {
 }
 
 const CLAIM_LETTER_ULB_PICKER_PAGE_SIZE = 20;
+
+const EMPTY_SEARCH_MESSAGE = 'No ULBs found for the current search.';
+const EMPTY_FILTER_MESSAGES: Record<ClaimLetterEligibilityFilter, string> = {
+  ALL: 'No ULBs found.',
+  ELIGIBLE: 'No eligible ULBs.',
+  INELIGIBLE: 'No ineligible ULBs.',
+  IN_OTHER_BATCH: 'No ULBs are in another batch.',
+};
 
 /** Server-searched, paged, multi-select picker, like FC Unspent's plus server eligibility and a filter. */
 @Component({
@@ -49,6 +57,8 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
   readonly isConfirming = signal(false);
+  /** For the search and filter the shown list was loaded with, not what is typed since. */
+  readonly emptyMessage = signal(EMPTY_FILTER_MESSAGES.ALL);
 
   /** Keeps selection order, and survives search, page and filter changes. */
   readonly selectedUlbs = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
@@ -101,6 +111,7 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
           if (requestId !== this.loadRequestId) return;
           this.options.set(result.options);
           this.total.set(result.total);
+          this.emptyMessage.set(normalizedSearch ? EMPTY_SEARCH_MESSAGE : EMPTY_FILTER_MESSAGES[filter]);
           this.isLoading.set(false);
         },
         error: () => {
@@ -131,6 +142,26 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
 
   isExcluded(ulbId: string): boolean {
     return this.excludeSet().has(ulbId);
+  }
+
+  claimedBadgeText(option: ClaimLetterUlbOption): string {
+    return `In ${this.claimedBatchName(option)}`;
+  }
+
+  claimedTooltip(option: ClaimLetterUlbOption): string {
+    const batchNumber = option.claimedInBatch?.batchNumber;
+    return batchNumber ? `Already in Claim Batch #${batchNumber}` : 'Already in another claim batch';
+  }
+
+  checkboxLabel(option: ClaimLetterUlbOption): string {
+    if (option.claimedInBatch) return `${option.ulbName} is already in ${this.claimedBatchName(option)}`;
+    return this.isDisabled(option) ? `${option.ulbName} cannot be selected` : `Select ${option.ulbName}`;
+  }
+
+  /** "Batch #1", or "another batch" when the backend could not read it. */
+  private claimedBatchName(option: ClaimLetterUlbOption): string {
+    const batchNumber = option.claimedInBatch?.batchNumber;
+    return batchNumber ? `Batch #${batchNumber}` : 'another batch';
   }
 
   isSelected(ulbId: string): boolean {
