@@ -77,6 +77,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly form = this.fb.group({
     ocrEngine: this.fb.nonNullable.control<DigitizationOcrEngine>('gemini', Validators.required),
     geminiModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
+    arithmeticModel: this.fb.nonNullable.control('gemini-3-flash-preview', Validators.required),
     ulbName: this.fb.control<IUlbSummary | string | null>(null),
     financialYear: this.fb.control<string | null>(null),
     docType: this.fb.control<string | null>(null),
@@ -225,6 +226,7 @@ export class AfsDigitizationComponent implements OnInit {
     const {
       ocrEngine,
       geminiModel,
+      arithmeticModel,
       ulbName,
       financialYear,
       docType,
@@ -232,7 +234,7 @@ export class AfsDigitizationComponent implements OnInit {
       enableArithmeticValidation,
       enableDocumentClassification,
       notes,
-    } = this.form.getRawValue();
+    } =this.form.getRawValue();
     const notesValue = notes.trim() || null;
     const ulbNameValue = this.selectedUlb()?.name ?? (typeof ulbName === 'string' ? ulbName : null);
     const source: File | string = this.useS3 ? this.s3Path.value.trim() : this.selectedFile!;
@@ -251,6 +253,7 @@ export class AfsDigitizationComponent implements OnInit {
         ocrEngine,
         enableDocumentClassification,
         notesValue,
+        arithmeticModel,
       )
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
@@ -554,11 +557,11 @@ export class AfsDigitizationComponent implements OnInit {
       });
   }
 
-  revalidateArithmetic(job: DigitizationJobTracker): void {
+  revalidateArithmetic(job: DigitizationJobTracker, geminiModel?: string): void {
     if (this.revalidatingArithmeticJobId()) return;
     this.revalidatingArithmeticJobId.set(job.jobId);
     this.digitizationService
-      .revalidateDigitizationArithmetic(job.jobId)
+      .revalidateDigitizationArithmetic(job.jobId, geminiModel)
       .pipe(finalize(() => this.revalidatingArithmeticJobId.set(null)))
       .subscribe({
         next: (response) => {

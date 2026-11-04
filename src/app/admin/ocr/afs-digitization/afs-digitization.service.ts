@@ -105,6 +105,7 @@ export class AfsDigitizationService {
     ocrEngine: DigitizationOcrEngine = 'gemini',
     enableDocumentClassification = true,
     notes?: string | null,
+    arithmeticModel?: string | null,
   ) {
     const formData = new FormData();
     // A string is an S3 path to a PDF already in the CityFinance bucket.
@@ -115,6 +116,7 @@ export class AfsDigitizationService {
     }
     formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
+    if (arithmeticModel) formData.append('arithmetic_model', arithmeticModel);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
