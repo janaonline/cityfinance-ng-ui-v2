@@ -140,7 +140,7 @@ export const STATE_ADC_TEAMS_CONFIG: RolesTeamsConfig = {
   defaultSubRole: 'VIEWER',
   infoBannerText:
     'The first member you add to an ADC becomes its <strong>Admin</strong>; later members join as Reviewer or Viewer. ' +
-    'Each ADC has exactly one Admin, and you can hand that role to another member using <strong>Transfer</strong>.',
+    'Each ADC has exactly one Admin.',
   pageSubtitle: "Manage who has access to each Autonomous District Council's XVI FC workspace.",
   tableAriaLabel: 'ADC team members',
   adcSelector: true,
