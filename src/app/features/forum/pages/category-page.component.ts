@@ -8,12 +8,18 @@ import { ThreadListComponent } from '../components/thread-list.component';
 import { findCategoryContent } from '../forum.constants';
 import { toLoadable } from '../forum-loadable';
 import { ForumService } from '../forum.service';
+import { ForumNotFoundComponent } from './forum-not-found.component';
 import { ForumStatusComponent } from './forum-status.component';
 
 @Component({
   selector: 'app-forum-category-page',
   standalone: true,
-  imports: [CategoryNavComponent, ThreadListComponent, ForumStatusComponent],
+  imports: [
+    CategoryNavComponent,
+    ThreadListComponent,
+    ForumStatusComponent,
+    ForumNotFoundComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (vm(); as v) {
@@ -21,18 +27,14 @@ import { ForumStatusComponent } from './forum-status.component';
         @case ('loading') {
           <div class="loading" role="status">
             <span></span>
-            <p>Gathering discussions…</p>
+            <p>Loading discussions…</p>
           </div>
         }
         @case ('error') {
           @if (v.notFound) {
-            <app-forum-status
-              eyebrow="404"
-              heading="That conversation wandered off"
-              message="The page may have moved or never existed."
-            />
+            <app-forum-not-found />
           } @else {
-            <app-forum-status heading="We hit a snag" [message]="v.message" />
+            <app-forum-status heading="Could not load discussions" [message]="v.message" />
           }
         }
         @case ('ready') {

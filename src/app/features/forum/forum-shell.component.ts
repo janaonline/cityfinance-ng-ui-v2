@@ -22,7 +22,7 @@ import { injectForumViewer } from './forum-viewer';
   styleUrl: './forum.scss',
   template: `
     <div class="forum-root">
-      <div class="shell">
+      <div class="container">
         <nav class="header-nav" aria-label="Forum navigation">
           <div class="nav-links">
             <a
@@ -44,7 +44,7 @@ import { injectForumViewer } from './forum-viewer';
               routerLink="/forum/my-threads"
               [class.active]="section() === 'mine'"
               [attr.aria-current]="section() === 'mine' ? 'page' : null"
-              >My Threads</a
+              >My threads</a
             >
             @if (isAdmin()) {
               <a

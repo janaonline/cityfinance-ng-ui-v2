@@ -14,22 +14,26 @@ import { ForumService } from '../forum.service';
     <section class="page-intro my-threads-intro">
       <div>
         <p class="eyebrow">Your contributions</p>
-        <h1>My Threads</h1>
+        <h1>My threads</h1>
         <p>Discussions you started, sorted by the latest activity.</p>
       </div>
-      <a class="button" routerLink="/forum/threads/new">Start a discussion <span>+</span></a>
+      <a
+        class="btn btn-cfPrimary fw-bold d-inline-flex align-items-center gap-2"
+        routerLink="/forum/threads/new"
+        ><i class="bi bi-plus-lg" aria-hidden="true"></i>Start a discussion</a
+      >
     </section>
     @if (vm(); as v) {
       @switch (v.status) {
         @case ('loading') {
           <div class="loading" role="status">
             <span></span>
-            <p>Gathering discussions…</p>
+            <p>Loading discussions…</p>
           </div>
         }
         @case ('error') {
           <div class="empty-state error-state">
-            <h2>We hit a snag</h2>
+            <h2>Could not load discussions</h2>
             <p>{{ v.message }}</p>
           </div>
         }

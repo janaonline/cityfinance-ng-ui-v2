@@ -51,7 +51,7 @@ import { RichTextEditorComponent } from './rich-text-editor.component';
           @if (bodyError()) {
             <span class="field-error">{{ bodyError() }}</span>
           }
-          <button class="button" type="submit" [disabled]="pending()">
+          <button class="btn btn-cfPrimary fw-bold" type="submit" [disabled]="pending()">
             {{ pending() ? 'Saving…' : 'Save changes' }}
           </button>
         </form>

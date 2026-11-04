@@ -78,7 +78,7 @@ import { ForumService } from '../forum.service';
         @if (errors()['body']) {
           <span class="field-error">{{ errors()['body'] }}</span>
         }
-        <button class="button" type="submit" [disabled]="pending()">
+        <button class="btn btn-cfPrimary fw-bold" type="submit" [disabled]="pending()">
           {{ pending() ? 'Posting...' : 'Post discussion' }}
         </button>
       </form>

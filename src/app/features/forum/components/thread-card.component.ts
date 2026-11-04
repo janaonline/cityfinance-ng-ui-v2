@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { formatDate } from '../forum-date';
+import { findCategoryContent } from '../forum.constants';
 import { ForumThread } from '../forum.models';
 import { ReactionButtonComponent } from './reaction-button.component';
 
@@ -19,10 +20,8 @@ const TONES = ['mint', 'gold', 'violet', 'rose'];
           <a [routerLink]="['/forum/threads', thread().slug]">{{ thread().title }}</a>
         </h2>
         <p class="meta">
-          <strong>{{ thread().user.name }}</strong> <span>-</span> {{ date() }} in
-          <a [routerLink]="['/forum/categories', thread().categorySlug]">{{
-            thread().categorySlug
-          }}</a>
+          <strong>{{ thread().user.name }}</strong> · {{ date() }} ·
+          <a [routerLink]="['/forum/categories', thread().categorySlug]">{{ categoryName() }}</a>
         </p>
       </div>
       <div class="thread-stats">
@@ -53,6 +52,9 @@ export class ThreadCardComponent {
 
   protected readonly tone = computed(() => TONES[this.thread().title.length % TONES.length]);
   protected readonly date = computed(() => formatDate(this.thread().createdAt));
+  protected readonly categoryName = computed(
+    () => findCategoryContent(this.thread().categorySlug)?.name ?? this.thread().categorySlug,
+  );
   protected readonly liked = computed(() => !!this.thread().liked);
   protected readonly bookmarked = computed(
     () => this.bookmarkedOverride() ?? !!this.thread().bookmarked,

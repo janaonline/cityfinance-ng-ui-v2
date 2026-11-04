@@ -20,6 +20,9 @@ export type ReactionTarget = 'thread-like' | 'thread-bookmark' | 'comment-like';
     <button
       type="button"
       class="reaction-button"
+      [class.btn]="!compact()"
+      [class.btn-sm]="!compact()"
+      [class.btn-outline-cfPrimary]="!compact()"
       [class.active]="active()"
       [class.compact]="compact()"
       [attr.aria-pressed]="active()"

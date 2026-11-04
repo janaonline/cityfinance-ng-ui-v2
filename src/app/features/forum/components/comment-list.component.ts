@@ -10,6 +10,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { formatDate } from '../forum-date';
 import { canComment, canModerateComment } from '../forum-permissions';
+import { formatRole } from '../forum-role';
 import { MAX_COMMENT_DEPTH } from '../forum.constants';
 import { ForumComment, ForumViewer } from '../forum.models';
 import { ForumService } from '../forum.service';
@@ -32,7 +33,7 @@ import { ReactionButtonComponent } from './reaction-button.component';
           <div>
             <header>
               <strong>{{ comment.user.name }}</strong>
-              <span class="role-badge">{{ comment.user.role }}</span>
+              <span class="role-badge">{{ role(comment) }}</span>
               <span>#{{ numberOf(comment) }} · {{ date(comment) }}</span>
             </header>
             <app-forum-markdown [source]="comment.body" />
@@ -77,7 +78,7 @@ import { ReactionButtonComponent } from './reaction-button.component';
     </ng-template>
 
     @if (!comments().length) {
-      <p class="empty-replies">No replies yet. Start the conversation.</p>
+      <p class="empty-replies">No replies yet.</p>
     } @else {
       <div class="comment-list">
         @for (root of roots(); track root.id) {
@@ -129,6 +130,10 @@ export class CommentListComponent {
 
   protected date(comment: ForumComment): string {
     return formatDate(comment.createdAt);
+  }
+
+  protected role(comment: ForumComment): string {
+    return formatRole(comment.user.role);
   }
 
   protected mayReply(): boolean {

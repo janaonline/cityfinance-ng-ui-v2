@@ -13,8 +13,6 @@ interface HomeData {
   categories: ForumCategory[];
   threads: ForumThread[];
   popular: ForumThread[];
-  replyCount: number;
-  memberCount: number;
 }
 
 const score = (t: ForumThread) => t.viewCount + t.replyCount + t.likeCount;
@@ -25,41 +23,35 @@ const score = (t: ForumThread) => t.viewCount + t.replyCount + t.likeCount;
   imports: [RouterLink, CategoryNavComponent, ThreadListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="hero prototype-hero">
+    <section class="hero">
       <div>
         <p class="eyebrow">16th Finance Commission</p>
-        <h1>Discussion Forum</h1>
+        <h1>Discussion forum</h1>
         <p>
           A collaborative space for ULBs, State DMAs, and MoHUA to ask questions, share resources,
           and exchange notes on grant compliance and municipal finance.
         </p>
       </div>
-      <div class="hero-illustration" aria-hidden="true">
-        <span class="sun"></span>
-        <span class="tower one"></span>
-        <span class="tower two"></span>
-        <span class="tower three"></span>
-        <span class="tree left"></span>
-        <span class="tree right"></span>
-        <a class="button hero-button" routerLink="/forum/threads/new"
-          >Start a discussion <span>+</span></a
-        >
-      </div>
+      <a
+        class="btn btn-cfPrimary fw-bold d-inline-flex align-items-center gap-2"
+        routerLink="/forum/threads/new"
+        ><i class="bi bi-plus-lg" aria-hidden="true"></i>Start a discussion</a
+      >
     </section>
 
     <aside class="guidelines">
-      <h2>Community Guidelines</h2>
+      <h2>Community guidelines</h2>
       <ol>
         <li>
-          <span class="guide-icon guide-topic" aria-hidden="true"></span>
+          <i class="guide-icon bi bi-chat-square-text" aria-hidden="true"></i>
           <p>Keep posts relevant to urban finance, grant compliance, or municipal governance.</p>
         </li>
         <li>
-          <span class="guide-icon guide-smile" aria-hidden="true">:)</span>
+          <i class="guide-icon bi bi-people" aria-hidden="true"></i>
           <p>Treat colleagues across roles and states with professional courtesy.</p>
         </li>
         <li>
-          <span class="guide-icon guide-lock" aria-hidden="true"></span>
+          <i class="guide-icon bi bi-shield-lock" aria-hidden="true"></i>
           <p>
             Do not share unpublished government orders, internal references, or personal details.
           </p>
@@ -72,12 +64,12 @@ const score = (t: ForumThread) => t.viewCount + t.replyCount + t.likeCount;
         @case ('loading') {
           <div class="loading" role="status">
             <span></span>
-            <p>Gathering discussions…</p>
+            <p>Loading discussions…</p>
           </div>
         }
         @case ('error') {
           <div class="empty-state error-state">
-            <h2>We hit a snag</h2>
+            <h2>Could not load discussions</h2>
             <p>{{ v.message }}</p>
           </div>
         }
@@ -137,25 +129,11 @@ const score = (t: ForumThread) => t.viewCount + t.replyCount + t.likeCount;
                 }
               </section>
               <section class="sidebar-card">
-                <h2>About this Board</h2>
+                <h2>About this board</h2>
                 <p>
                   Connect with peers, seek clarity, and collaborate on improving municipal finance
                   and governance.
                 </p>
-                <div class="board-stats">
-                  <span
-                    ><strong>{{ v.data.memberCount.toLocaleString() }}</strong
-                    ><small>Members</small></span
-                  >
-                  <span
-                    ><strong>{{ v.data.threads.length.toLocaleString() }}</strong
-                    ><small>Discussions</small></span
-                  >
-                  <span
-                    ><strong>{{ v.data.replyCount.toLocaleString() }}</strong
-                    ><small>Replies</small></span
-                  >
-                </div>
               </section>
             </aside>
           </div>
@@ -187,15 +165,7 @@ export class ForumHomeComponent {
                     Date.parse(b.lastActivityAt) - Date.parse(a.lastActivityAt),
                 )
                 .slice(0, 3);
-              const members = new Set(threads.map((t) => t.user.userId).filter(Boolean)).size;
-              return {
-                query,
-                categories,
-                threads,
-                popular,
-                replyCount: threads.reduce((total, t) => total + t.replyCount, 0),
-                memberCount: Math.max(members, 1),
-              };
+              return { query, categories, threads, popular };
             }),
           ),
         ),

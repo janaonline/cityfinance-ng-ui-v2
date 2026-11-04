@@ -56,6 +56,7 @@ import { ForumService } from '../../forum.service';
                     @if (comment.deletedAt) {
                       <button
                         type="button"
+                        class="btn btn-sm btn-outline-cfPrimary"
                         [disabled]="pending() === comment.id"
                         (click)="update(comment, false)"
                       >
@@ -64,7 +65,7 @@ import { ForumService } from '../../forum.service';
                     } @else {
                       <button
                         type="button"
-                        class="danger"
+                        class="btn btn-sm btn-outline-danger"
                         [disabled]="pending() === comment.id"
                         (click)="update(comment, true)"
                       >

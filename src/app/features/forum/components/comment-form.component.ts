@@ -28,11 +28,13 @@ import { RichTextEditorComponent } from './rich-text-editor.component';
         <span class="field-error">{{ bodyError() }}</span>
       }
       <div class="form-actions">
-        <button class="button" type="submit" [disabled]="pending()">
+        <button class="btn btn-cfPrimary fw-bold" type="submit" [disabled]="pending()">
           {{ pending() ? 'Posting…' : 'Post reply' }}
         </button>
         @if (cancellable()) {
-          <button class="text-action" type="button" (click)="cancelled.emit()">Cancel</button>
+          <button class="btn btn-outline-cfPrimary" type="button" (click)="cancelled.emit()">
+            Cancel
+          </button>
         }
       </div>
     </form>

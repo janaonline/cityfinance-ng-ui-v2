@@ -20,12 +20,12 @@ import { ForumService } from '../forum.service';
         @case ('loading') {
           <div class="loading" role="status">
             <span></span>
-            <p>Gathering discussions…</p>
+            <p>Loading discussions…</p>
           </div>
         }
         @case ('error') {
           <div class="empty-state error-state">
-            <h2>We hit a snag</h2>
+            <h2>Could not load discussions</h2>
             <p>{{ v.message }}</p>
           </div>
         }

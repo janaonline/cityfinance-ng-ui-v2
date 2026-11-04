@@ -1,4 +1,5 @@
 import { formatRelativeDate } from './forum-date';
+import { formatRole } from './forum-role';
 import {
   canComment,
   canDeleteThread,
@@ -55,5 +56,19 @@ describe('formatRelativeDate', () => {
     expect(formatRelativeDate('2025-01-01T00:00:00Z', now)).toContain('2025');
     expect(formatRelativeDate('not a date', now)).toBe('');
     expect(formatRelativeDate(null, now)).toBe('');
+  });
+});
+
+describe('formatRole', () => {
+  it('maps role codes to sentence-case labels', () => {
+    expect(formatRole('STATE')).toBe('State');
+    expect(formatRole('ULB-EDITOR')).toBe('ULB');
+    expect(formatRole('ADMIN')).toBe('Admin');
+    expect(formatRole('MoHUA')).toBe('MoHUA');
+  });
+
+  it('shows unknown codes as-is and empty for missing roles', () => {
+    expect(formatRole('PMU')).toBe('PMU');
+    expect(formatRole(undefined)).toBe('');
   });
 });

@@ -14,7 +14,7 @@ import { RouterLink } from '@angular/router';
       }
       <h1>{{ heading() }}</h1>
       <p>{{ message() }}</p>
-      <a class="button" routerLink="/forum">Return home</a>
+      <a class="btn btn-cfPrimary fw-bold" routerLink="/forum">Back to discussions</a>
     </div>
   `,
 })

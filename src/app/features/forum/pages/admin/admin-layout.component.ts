@@ -17,10 +17,10 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <p>Manage</p>
         <nav aria-label="Admin panel">
           <a routerLink="categories" routerLinkActive="active" ariaCurrentWhenActive="page">
-            <span aria-hidden="true">C</span>Categories
+            <i class="bi bi-tags" aria-hidden="true"></i>Categories
           </a>
           <a routerLink="threads" routerLinkActive="active" ariaCurrentWhenActive="page">
-            <span aria-hidden="true">T</span>Threads
+            <i class="bi bi-chat-left-text" aria-hidden="true"></i>Threads
           </a>
         </nav>
       </aside>

@@ -100,7 +100,8 @@ import { AdminCommentTableComponent } from './admin-comment-table.component';
                           <div class="admin-actions">
                             <button
                               type="button"
-                              [class.selected]="selectedId() === thread.id"
+                              class="btn btn-sm btn-outline-cfPrimary"
+                              [class.active]="selectedId() === thread.id"
                               (click)="selectedId.set(thread.id)"
                             >
                               Comments
@@ -108,6 +109,7 @@ import { AdminCommentTableComponent } from './admin-comment-table.component';
                             @if (thread.deletedAt) {
                               <button
                                 type="button"
+                                class="btn btn-sm btn-outline-cfPrimary"
                                 [disabled]="pending() === thread.id"
                                 (click)="update(thread, { isDeleted: false })"
                               >
@@ -116,6 +118,7 @@ import { AdminCommentTableComponent } from './admin-comment-table.component';
                             } @else {
                               <button
                                 type="button"
+                                class="btn btn-sm btn-outline-cfPrimary"
                                 [disabled]="pending() === thread.id"
                                 (click)="update(thread, { isPublished: !thread.isPublished })"
                               >
@@ -123,7 +126,7 @@ import { AdminCommentTableComponent } from './admin-comment-table.component';
                               </button>
                               <button
                                 type="button"
-                                class="danger"
+                                class="btn btn-sm btn-outline-danger"
                                 [disabled]="pending() === thread.id"
                                 (click)="update(thread, { isDeleted: true })"
                               >

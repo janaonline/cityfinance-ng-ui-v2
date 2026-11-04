@@ -72,11 +72,16 @@ const byName = (a: ForumCategory, b: ForumCategory) => a.name.localeCompare(b.na
             <span class="field-error">{{ fieldErrors()['description'] }}</span>
           }
           <div class="admin-form-actions">
-            <button class="button small" type="submit" [disabled]="pending()">
+            <button class="btn btn-sm btn-cfPrimary fw-bold" type="submit" [disabled]="pending()">
               {{ pending() ? 'Saving…' : editingId() ? 'Save changes' : 'Add category' }}
             </button>
             @if (editingId()) {
-              <button type="button" class="text-action" (click)="reset()" [disabled]="pending()">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-cfPrimary"
+                (click)="reset()"
+                [disabled]="pending()"
+              >
                 Cancel
               </button>
             }
@@ -109,12 +114,17 @@ const byName = (a: ForumCategory, b: ForumCategory) => a.name.localeCompare(b.na
                       <td>{{ category.description }}</td>
                       <td>
                         <div class="admin-actions">
-                          <button type="button" (click)="edit(category)" [disabled]="pending()">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-outline-cfPrimary"
+                            (click)="edit(category)"
+                            [disabled]="pending()"
+                          >
                             Edit
                           </button>
                           <button
                             type="button"
-                            class="danger"
+                            class="btn btn-sm btn-outline-danger"
                             (click)="remove(category)"
                             [disabled]="pending()"
                           >

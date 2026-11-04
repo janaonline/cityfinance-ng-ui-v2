@@ -1,24 +1,30 @@
 // Forum feature styles, ported from the Next forum globals.css (final cascade values).
 // Everything is scoped under `.forum-root` so nothing leaks into the rest of the app.
+// Typography uses the City Finance font (`--ff-base`, Montserrat) and colours use the global
+// `--clr-primary` / `--clr-secondary` tokens (src/styles.scss); do not introduce a separate
+// serif or monospace face, or a forum-only accent colour, here.
 
-$mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-$serif: Georgia, serif;
 $line-soft: #dce4e1;
 
 .forum-root {
   --ink: #1d2925;
   --muted: #66736e;
-  --card: #fffefa;
+  --card: #fff;
   --line: #dcded6;
-  --green: #1e6149;
-  --green-dark: #154b38;
+  // Same split as the CF navbar: orange for active states and highlights, dark blue for
+  // headings, links and resting navigation.
+  --accent: var(--clr-primary);
+  --accent-ink: var(--clr-secondary);
   --navy: #101827;
   --shadow: 0 14px 40px rgba(16, 24, 39, 0.08);
 
   color: var(--navy);
-  font-family: inherit;
-  background: linear-gradient(180deg, #fff 0, #f8fbfa 48%, #f5f8f6 100%);
+  // Set explicitly: `body` gets Bootstrap's system font stack, not Montserrat.
+  font-family: var(--ff-base);
+  background: #fff;
   min-height: 70vh;
+  // Leaves a gap below the CF navbar; the white background otherwise paints over its shadow.
+  margin-top: 10px;
 
   *,
   *::before,
@@ -26,21 +32,25 @@ $line-soft: #dce4e1;
     box-sizing: border-box;
   }
 
-  a {
+  // Resets skip `.btn` so the City Finance Bootstrap buttons (`btn-cfPrimary`,
+  // `btn-outline-cfPrimary`) keep their own colour and type. `:where` keeps specificity unchanged.
+  a:where(:not(.btn)) {
     color: inherit;
     text-decoration: none;
   }
 
-  button,
+  button:where(:not(.btn)),
   input,
   select,
   textarea {
     font: inherit;
   }
 
-  .shell {
-    width: min(1480px, calc(100% - 56px));
-    margin-inline: auto;
+  // The global `h1, h2, h3 { line-height: 1 }` is too tight for headings that wrap.
+  h1,
+  h2,
+  h3 {
+    line-height: 1.25;
   }
 
   // ---- Header navigation ---------------------------------------------------------------------
@@ -51,6 +61,7 @@ $line-soft: #dce4e1;
     justify-content: space-between;
     gap: 28px;
     border-bottom: 1px solid #dfe6e3;
+    background: #fff;
   }
 
   .nav-links {
@@ -62,15 +73,16 @@ $line-soft: #dce4e1;
   .nav-link {
     position: relative;
     padding: 21px 0 17px;
-    color: #111827;
+    color: var(--accent-ink);
     font-size: 14px;
     font-weight: 700;
 
     &:hover,
     &.active {
-      color: var(--green);
+      color: var(--accent);
     }
 
+    &:hover::after,
     &.active::after {
       content: '';
       position: absolute;
@@ -78,7 +90,7 @@ $line-soft: #dce4e1;
       right: 0;
       bottom: 6px;
       height: 2px;
-      background: var(--green);
+      background: var(--accent);
       border-radius: 99px;
     }
   }
@@ -140,38 +152,8 @@ $line-soft: #dce4e1;
   }
 
   // ---- Buttons & text -------------------------------------------------------------------------
-  .button {
-    border: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 13px 20px;
-    background: var(--green);
-    color: white;
-    border-radius: 9px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 0 var(--green-dark);
-    transition: 0.2s ease;
-
-    &:hover {
-      background: var(--green-dark);
-      transform: translateY(-1px);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: wait;
-    }
-
-    &.small {
-      padding: 9px 14px;
-      font-size: 13px;
-      box-shadow: none;
-    }
-  }
-
+  // Buttons use the global City Finance classes (`btn btn-cfPrimary`, `btn btn-outline-cfPrimary`);
+  // only inline text actions are styled here.
   .text-action,
   .moderation-actions > button {
     border: 0;
@@ -182,7 +164,7 @@ $line-soft: #dce4e1;
     padding: 5px;
 
     &:hover {
-      color: var(--green);
+      color: var(--accent);
     }
   }
 
@@ -191,12 +173,9 @@ $line-soft: #dce4e1;
   }
 
   .eyebrow {
-    color: var(--green);
-    font-family: $mono;
-    font-size: 12px;
+    color: var(--accent);
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
     margin: 0 0 12px;
   }
 
@@ -215,28 +194,25 @@ $line-soft: #dce4e1;
     align-items: center;
     padding: 2px 7px;
     border-radius: 4px;
-    background: #e2f0ff;
-    color: #1462aa;
-    font: 700 10px $mono;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    background: color-mix(in srgb, var(--accent-ink) 10%, #fff);
+    color: var(--accent-ink);
+    font-size: 11px;
+    font-weight: 700;
   }
 
   // ---- Hero & guidelines ----------------------------------------------------------------------
   .hero {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 40px;
-    min-height: 220px;
-    padding: 34px 0 14px;
+    padding: 34px 0 28px;
 
     h1 {
-      font-family: $serif;
-      font-size: clamp(38px, 4vw, 52px);
-      line-height: 1.03;
-      font-weight: 500;
-      letter-spacing: -0.03em;
+      font-size: clamp(32px, 3.4vw, 44px);
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.02em;
       color: #121a27;
       margin: 0 0 14px;
     }
@@ -248,97 +224,9 @@ $line-soft: #dce4e1;
       color: #526176;
       margin: 0;
     }
-  }
 
-  .hero-illustration {
-    position: relative;
-    flex: 1;
-    min-width: 390px;
-    height: 190px;
-    overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: -70px 20px 0 auto;
-      width: 460px;
-      border-radius: 50%;
-      border: 1px solid rgba(21, 97, 73, 0.08);
-      box-shadow:
-        0 0 0 24px rgba(21, 97, 73, 0.025),
-        0 0 0 50px rgba(21, 97, 73, 0.018);
-    }
-
-    .sun {
-      position: absolute;
-      right: 170px;
-      top: 30px;
-      width: 56px;
-      height: 22px;
-      border-radius: 99px;
-      background: #dff1e9;
-    }
-
-    .tower {
-      position: absolute;
-      bottom: 20px;
-      width: 66px;
-      background: linear-gradient(180deg, #d3e8e6, #edf5f2);
-      border-radius: 4px 4px 0 0;
-
-      &.one {
-        right: 236px;
-        height: 124px;
-      }
-
-      &.two {
-        right: 158px;
-        height: 86px;
-      }
-
-      &.three {
-        right: 74px;
-        height: 108px;
-        clip-path: polygon(0 20%, 100% 0, 100% 100%, 0 100%);
-      }
-    }
-
-    .tree {
-      position: absolute;
-      bottom: 18px;
-      width: 62px;
-      height: 78px;
-      border-radius: 50% 50% 18px 18px;
-      background: #8cc999;
-
-      &.left {
-        right: 326px;
-        transform: scale(0.76);
-      }
-
-      &.right {
-        right: 108px;
-      }
-    }
-
-    .hero-button {
-      position: absolute;
-      right: 50px;
-      bottom: 30px;
-      margin: 0;
-      padding: 14px 22px;
-      border-radius: 8px;
-      box-shadow: 0 10px 22px rgba(7, 91, 60, 0.25);
-      font-size: 15px;
-
-      span {
-        display: grid;
-        place-items: center;
-        width: 20px;
-        height: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.78);
-        border-radius: 50%;
-      }
+    > .btn {
+      flex: none;
     }
   }
 
@@ -356,7 +244,7 @@ $line-soft: #dce4e1;
 
     h2 {
       margin: 0;
-      color: var(--green);
+      color: var(--accent-ink);
       font-size: 17px;
     }
 
@@ -384,54 +272,12 @@ $line-soft: #dce4e1;
     }
   }
 
+  // Bootstrap Icons glyph (`bi bi-*`), the product icon set.
   .guide-icon {
-    position: relative;
     display: block;
-    width: 32px;
-    height: 32px;
-    color: var(--green);
-  }
-
-  .guide-topic {
-    border: 2px solid currentColor;
-    border-radius: 9px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 8px;
-      width: 14px;
-      height: 8px;
-      border-left: 2px solid currentColor;
-      border-bottom: 2px solid currentColor;
-      transform: rotate(-45deg);
-    }
-  }
-
-  .guide-smile {
-    display: grid;
-    place-items: center;
-    font: 900 20px/1 $mono;
-  }
-
-  .guide-lock {
-    border: 2px solid currentColor;
-    border-radius: 7px;
-    margin-top: 8px;
-    height: 22px;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: -13px;
-      width: 14px;
-      height: 14px;
-      border: 2px solid currentColor;
-      border-bottom: 0;
-      border-radius: 10px 10px 0 0;
-    }
+    color: var(--accent);
+    font-size: 28px;
+    line-height: 1;
   }
 
   // ---- Board layout, category pills, search ------------------------------------------------------
@@ -460,14 +306,14 @@ $line-soft: #dce4e1;
   .category-pill {
     white-space: nowrap;
     padding: 13px 0;
-    color: #4d5a56;
+    color: var(--accent-ink);
     font-size: 15px;
     font-weight: 650;
 
     &:hover,
     &.active {
-      color: var(--green);
-      box-shadow: inset 0 -2px var(--green);
+      color: var(--accent);
+      box-shadow: inset 0 -2px var(--accent);
     }
   }
 
@@ -489,7 +335,7 @@ $line-soft: #dce4e1;
     }
 
     a {
-      color: var(--green);
+      color: var(--accent);
       font-weight: 800;
     }
   }
@@ -498,11 +344,10 @@ $line-soft: #dce4e1;
     padding: 36px 0 34px;
 
     h1 {
-      font-family: $serif;
-      font-size: clamp(40px, 5vw, 58px);
-      line-height: 1.03;
-      font-weight: 500;
-      letter-spacing: -0.045em;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.1;
+      font-weight: 700;
+      letter-spacing: -0.02em;
       margin: 0 0 20px;
     }
 
@@ -521,7 +366,7 @@ $line-soft: #dce4e1;
     justify-content: space-between;
     gap: 24px;
 
-    .button {
+    .btn {
       flex: none;
       margin-bottom: 8px;
     }
@@ -539,10 +384,9 @@ $line-soft: #dce4e1;
     margin: 42px 0 18px;
 
     h2 {
-      font-family: $serif;
-      font-size: 29px;
-      font-weight: 500;
-      letter-spacing: -0.025em;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       margin: 0;
     }
 
@@ -579,13 +423,13 @@ $line-soft: #dce4e1;
       top: 50%;
       width: 6px;
       height: 6px;
-      border-left: 2px solid var(--green);
-      border-bottom: 2px solid var(--green);
+      border-left: 2px solid var(--accent);
+      border-bottom: 2px solid var(--accent);
       transform: translateY(-50%) rotate(45deg);
     }
 
     &:hover {
-      color: var(--green);
+      color: var(--accent);
     }
   }
 
@@ -598,22 +442,22 @@ $line-soft: #dce4e1;
     box-shadow: 0 8px 24px rgba(16, 24, 39, 0.04);
   }
 
+  // Stat columns are kept narrow so the title column has room inside the 1140px CF container.
   .thread-list-head,
   .thread-card {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr) 80px 80px 86px 100px;
-    gap: 16px;
+    grid-template-columns: 48px minmax(0, 1fr) repeat(3, 64px) 76px;
+    gap: 12px;
     align-items: center;
   }
 
   .thread-list-head {
-    padding: 14px 24px;
+    padding: 12px 20px;
     border-bottom: 1px solid $line-soft;
     background: #f7faf8;
     color: #697773;
-    font: 800 11px $mono;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 700;
 
     span:first-child {
       grid-column: 1 / 3;
@@ -626,7 +470,7 @@ $line-soft: #dce4e1;
 
   .thread-card {
     min-height: 82px;
-    padding: 0 24px;
+    padding: 16px 20px;
     border-bottom: 1px solid $line-soft;
     background: white;
 
@@ -686,26 +530,30 @@ $line-soft: #dce4e1;
   .thread-main {
     min-width: 0;
 
+    // Global h2 has `line-height: 1`, which crushes titles that wrap.
     h2 {
-      font-size: 17px;
-      font-weight: 800;
-      margin: 0 0 7px;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin: 0 0 6px;
 
       a:hover {
-        color: var(--green);
+        color: var(--accent);
       }
     }
 
+    // Plain inline text (not flex) so the author, date and category wrap as one sentence.
     .meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
       color: #68756f;
       font-size: 13px;
+      line-height: 1.5;
 
       a {
         color: #4d5a56;
+
+        &:hover {
+          color: var(--accent);
+        }
       }
     }
   }
@@ -717,7 +565,7 @@ $line-soft: #dce4e1;
   .thread-count {
     justify-self: center;
     color: #111827;
-    font-weight: 800;
+    font-weight: 700;
   }
 
   .thread-stats app-forum-reaction-button {
@@ -752,8 +600,8 @@ $line-soft: #dce4e1;
 
       &:hover:not(:disabled),
       &.active {
-        border-color: var(--green);
-        background: var(--green);
+        border-color: var(--accent);
+        background: var(--accent);
         color: white;
       }
 
@@ -787,31 +635,12 @@ $line-soft: #dce4e1;
     margin-top: 12px;
   }
 
+  // The full variant also carries `btn btn-sm btn-outline-cfPrimary` (set in the component), so only
+  // layout lives here; colours, border and padding come from the City Finance button.
   .reaction-button {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    border: 1px solid var(--line);
-    background: transparent;
-    color: var(--muted);
-    border-radius: 99px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 650;
-    cursor: pointer;
-    transition: 0.18s;
-
-    &:hover {
-      border-color: #a9b8ae;
-      color: var(--green-dark);
-      background: #f2f6f1;
-    }
-
-    &.active {
-      color: var(--green-dark);
-      background: #dfeae2;
-      border-color: #b9d0c0;
-    }
 
     svg {
       width: 17px;
@@ -829,13 +658,6 @@ $line-soft: #dce4e1;
 
     strong {
       min-width: 1ch;
-      font-family: $mono;
-      font-size: 10px;
-    }
-
-    &:disabled {
-      opacity: 0.65;
-      cursor: wait;
     }
 
     // Compact variant used inside thread rows: borderless, icon + count.
@@ -843,15 +665,17 @@ $line-soft: #dce4e1;
       min-width: 58px;
       height: 32px;
       justify-content: center;
-      gap: 7px;
       border: 0;
       padding: 0;
+      background: transparent;
       color: #697773;
+      cursor: pointer;
+      transition: 0.18s;
 
       &:hover,
       &.active {
         background: transparent;
-        color: var(--green);
+        color: var(--accent);
       }
 
       svg {
@@ -880,7 +704,7 @@ $line-soft: #dce4e1;
 
     h2 {
       margin: 0 0 18px;
-      color: var(--green);
+      color: var(--accent-ink);
       font-size: 17px;
     }
 
@@ -889,28 +713,6 @@ $line-soft: #dce4e1;
       color: #303a36;
       font-size: 14px;
       line-height: 1.6;
-    }
-  }
-
-  .board-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-top: 24px;
-
-    span {
-      display: grid;
-      gap: 4px;
-      color: var(--green);
-    }
-
-    strong {
-      font-size: 16px;
-    }
-
-    small {
-      color: #303a36;
-      font-size: 11px;
     }
   }
 
@@ -941,10 +743,9 @@ $line-soft: #dce4e1;
     th {
       padding: 11px 7px;
       color: #52615b;
-      font: 700 10px $mono;
+      font-size: 11px;
+      font-weight: 700;
       text-align: center;
-      text-transform: uppercase;
-      letter-spacing: 0.045em;
 
       &:nth-child(2) {
         text-align: left;
@@ -956,11 +757,12 @@ $line-soft: #dce4e1;
       border-top: 1px solid #e1e8e5;
       color: #3f4f49;
       text-align: center;
-      font: 600 12px $mono;
+      font-size: 12px;
+      font-weight: 600;
 
       &:first-child {
         width: 24px;
-        color: var(--green);
+        color: var(--accent);
         font-size: 15px;
         font-weight: 800;
       }
@@ -968,7 +770,6 @@ $line-soft: #dce4e1;
       &:nth-child(2) {
         min-width: 125px;
         text-align: left;
-        font-family: inherit;
       }
     }
 
@@ -984,7 +785,7 @@ $line-soft: #dce4e1;
       line-clamp: 2;
 
       &:hover {
-        color: var(--green);
+        color: var(--accent);
       }
     }
   }
@@ -1024,8 +825,8 @@ $line-soft: #dce4e1;
       outline: none;
 
       &:focus {
-        border-color: var(--green);
-        box-shadow: 0 0 0 3px rgba(30, 97, 73, 0.1);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
       }
     }
 
@@ -1034,7 +835,7 @@ $line-soft: #dce4e1;
       line-height: 1.6;
     }
 
-    > .button {
+    > .btn {
       justify-self: start;
       margin-top: 8px;
     }
@@ -1100,10 +901,9 @@ $line-soft: #dce4e1;
       min-height: 250px;
     }
 
-    > .button {
+    > .btn {
       justify-self: end;
       margin-top: 12px;
-      padding-inline: 24px;
     }
 
     .editor-preview {
@@ -1131,14 +931,14 @@ $line-soft: #dce4e1;
       border-radius: 5px;
       background: transparent;
       padding: 6px 9px;
-      color: #24443b;
+      color: var(--accent-ink);
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
 
       &:hover {
-        background: #e2e9e3;
-        color: var(--green);
+        background: color-mix(in srgb, var(--accent) 12%, #fff);
+        color: var(--accent);
       }
     }
 
@@ -1160,7 +960,6 @@ $line-soft: #dce4e1;
     justify-self: end;
     margin-top: 6px;
     color: var(--muted);
-    font-family: $mono;
     font-weight: 400;
   }
 
@@ -1189,11 +988,10 @@ $line-soft: #dce4e1;
   }
 
   .thread-page-title {
-    font-family: $serif;
-    font-weight: 500;
-    font-size: clamp(28px, 4vw, 44px);
-    line-height: 1.15;
-    letter-spacing: -0.035em;
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 38px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
     margin: 14px 0 28px;
   }
 
@@ -1212,7 +1010,7 @@ $line-soft: #dce4e1;
 
     .avatar {
       border-radius: 12px;
-      background: #1768bd;
+      background: var(--accent-ink);
       color: #fff;
       width: 48px;
       height: 48px;
@@ -1234,12 +1032,11 @@ $line-soft: #dce4e1;
   .avatar {
     display: grid;
     place-items: center;
-    background: #dfeae2;
-    color: var(--green-dark);
+    background: color-mix(in srgb, var(--accent-ink) 10%, #fff);
+    color: var(--accent-ink);
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    font-family: $serif;
     font-weight: 700;
   }
 
@@ -1307,10 +1104,9 @@ $line-soft: #dce4e1;
     margin-top: 50px;
 
     h2 {
-      font-family: $serif;
-      font-size: 30px;
+      font-size: 24px;
       margin: 0 0 18px;
-      font-weight: 500;
+      font-weight: 700;
     }
   }
 
@@ -1327,7 +1123,6 @@ $line-soft: #dce4e1;
     h1,
     h2,
     h3 {
-      font-family: $serif;
       line-height: 1.25;
       margin: 24px 0 10px;
     }
@@ -1364,21 +1159,20 @@ $line-soft: #dce4e1;
     blockquote {
       margin: 18px 0;
       padding: 12px 18px;
-      border-left: 3px solid var(--green);
-      background: #f1f6f2;
-      color: #456058;
+      border-left: 3px solid var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, #fff);
+      color: var(--muted);
     }
 
     code {
       padding: 2px 5px;
       border-radius: 4px;
       background: #edf0ec;
-      font-family: $mono;
-      font-size: 0.88em;
+      font-size: 0.92em;
     }
 
     a {
-      color: var(--green);
+      color: var(--accent-ink);
       text-decoration: underline;
       overflow-wrap: anywhere;
     }
@@ -1395,9 +1189,8 @@ $line-soft: #dce4e1;
 
     h1,
     h2 {
-      font-family: $serif;
       color: var(--ink);
-      font-weight: 500;
+      font-weight: 700;
     }
   }
 
@@ -1405,7 +1198,7 @@ $line-soft: #dce4e1;
     max-width: 650px;
     margin: 70px auto;
 
-    .button {
+    .btn {
       margin-top: 15px;
     }
   }
@@ -1421,7 +1214,7 @@ $line-soft: #dce4e1;
       width: 30px;
       height: 30px;
       border: 3px solid var(--line);
-      border-top-color: var(--green);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: forum-spin 0.7s linear infinite;
     }
@@ -1447,9 +1240,8 @@ $line-soft: #dce4e1;
     > p {
       margin: 0 10px 10px;
       color: var(--muted);
-      font: 800 10px $mono;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     nav {
@@ -1470,19 +1262,19 @@ $line-soft: #dce4e1;
       &:hover,
       &:focus-visible,
       &.active {
-        background: #e6f1ec;
-        color: var(--green);
+        background: color-mix(in srgb, var(--accent) 12%, #fff);
+        color: var(--accent);
       }
 
-      span {
+      i {
         display: grid;
         place-items: center;
         width: 25px;
         height: 25px;
         border-radius: 7px;
-        background: #edf3f0;
-        color: var(--green);
-        font: 800 10px $mono;
+        background: color-mix(in srgb, var(--accent) 10%, #fff);
+        color: var(--accent);
+        font-size: 14px;
       }
     }
   }
@@ -1504,7 +1296,8 @@ $line-soft: #dce4e1;
 
     h2 {
       margin: 0 0 7px;
-      font: 500 32px $serif;
+      font-size: 26px;
+      font-weight: 700;
     }
 
     p:not(.eyebrow) {
@@ -1515,8 +1308,8 @@ $line-soft: #dce4e1;
 
     > span {
       color: var(--muted);
-      font: 700 11px $mono;
-      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 700;
     }
   }
 
@@ -1534,7 +1327,8 @@ $line-soft: #dce4e1;
 
     h3 {
       margin: 0 0 8px;
-      font: 500 22px $serif;
+      font-size: 19px;
+      font-weight: 700;
     }
 
     textarea {
@@ -1574,9 +1368,8 @@ $line-soft: #dce4e1;
 
     th {
       color: var(--muted);
-      font: 700 10px $mono;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 700;
       background: #f3f4f0;
     }
 
@@ -1587,7 +1380,7 @@ $line-soft: #dce4e1;
     }
 
     a:hover {
-      color: var(--green);
+      color: var(--accent);
     }
 
     tr.deleted-row {
@@ -1665,29 +1458,6 @@ $line-soft: #dce4e1;
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
-
-    button {
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      background: white;
-      padding: 7px 9px;
-      font-size: 11px;
-      cursor: pointer;
-
-      &:disabled {
-        opacity: 0.5;
-      }
-
-      &.danger {
-        color: #a23f2e;
-      }
-
-      &.selected {
-        border-color: var(--green);
-        background: #e6f1ec;
-        color: var(--green);
-      }
-    }
   }
 
   .admin-thread-moderation {
@@ -1697,9 +1467,9 @@ $line-soft: #dce4e1;
 
   .selected-thread-comments {
     padding: 24px;
-    border: 1px solid #cdded7;
+    border: 1px solid color-mix(in srgb, var(--accent-ink) 18%, #fff);
     border-radius: 14px;
-    background: #f8fbfa;
+    background: color-mix(in srgb, var(--accent-ink) 3%, #fff);
     box-shadow: 0 12px 32px rgba(16, 24, 39, 0.06);
 
     .admin-section-heading {
@@ -1723,12 +1493,10 @@ $line-soft: #dce4e1;
 
     .hero {
       display: block;
-    }
 
-    .hero-illustration {
-      min-width: 0;
-      width: 100%;
-      margin-top: 12px;
+      > .btn {
+        margin-top: 20px;
+      }
     }
 
     .board-layout {
@@ -1788,10 +1556,6 @@ $line-soft: #dce4e1;
   }
 
   @media (max-width: 760px) {
-    .shell {
-      width: min(100% - 28px, 1480px);
-    }
-
     .nav-links {
       gap: 18px;
       flex-wrap: wrap;
@@ -1810,16 +1574,7 @@ $line-soft: #dce4e1;
       padding-top: 28px;
 
       h1 {
-        font-size: 36px;
-      }
-    }
-
-    .hero-illustration {
-      height: 150px;
-
-      .hero-button {
-        right: 14px;
-        bottom: 20px;
+        font-size: 30px;
       }
     }
 
@@ -1873,7 +1628,7 @@ $line-soft: #dce4e1;
     .discussion-form {
       padding: 22px;
 
-      > .button {
+      > .btn {
         justify-self: stretch;
       }
     }
@@ -1889,7 +1644,7 @@ $line-soft: #dce4e1;
     .my-threads-intro {
       display: block;
 
-      .button {
+      .btn {
         margin-top: 20px;
       }
     }

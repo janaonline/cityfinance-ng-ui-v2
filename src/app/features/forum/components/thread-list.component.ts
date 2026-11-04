@@ -13,13 +13,13 @@ import { ThreadCardComponent } from './thread-card.component';
     @if (!threads().length) {
       <div class="empty-state">
         <h2>No discussions yet</h2>
-        <p>Be the first person to start one.</p>
+        <p>Start a discussion to add one here.</p>
       </div>
     } @else {
       <div class="thread-list">
         <div class="thread-list-head">
-          <span>Discussion</span><span>Replies</span><span>Views</span><span>Like</span
-          ><span>Bookmark</span>
+          <span>Discussion</span><span>Replies</span><span>Views</span><span>Likes</span
+          ><span>Bookmarks</span>
         </div>
         @for (thread of visibleThreads(); track thread.id) {
           <app-forum-thread-card [thread]="thread" [bookmarkedOverride]="bookmarkedOverride()" />

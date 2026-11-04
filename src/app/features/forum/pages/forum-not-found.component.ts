@@ -9,7 +9,7 @@ import { ForumStatusComponent } from './forum-status.component';
   template: `
     <app-forum-status
       eyebrow="404"
-      heading="That conversation wandered off"
+      heading="Page not found"
       message="The page may have moved or never existed."
     />
   `,

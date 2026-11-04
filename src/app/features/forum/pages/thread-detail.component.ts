@@ -10,10 +10,12 @@ import { formatDate } from '../forum-date';
 import { toFormError } from '../forum-errors';
 import { Loadable } from '../forum-loadable';
 import { canComment, canDeleteThread, canEditThread } from '../forum-permissions';
+import { formatRole } from '../forum-role';
 import { injectForumViewer } from '../forum-viewer';
 import { ForumThreadDetail } from '../forum.models';
 import { ForumService } from '../forum.service';
 import { MarkdownComponent } from '../markdown/markdown.component';
+import { ForumNotFoundComponent } from './forum-not-found.component';
 import { ForumStatusComponent } from './forum-status.component';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -28,6 +30,7 @@ import { HttpErrorResponse } from '@angular/common/http';
     CommentListComponent,
     CommentFormComponent,
     ForumStatusComponent,
+    ForumNotFoundComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -36,18 +39,14 @@ import { HttpErrorResponse } from '@angular/common/http';
         @case ('loading') {
           <div class="loading" role="status">
             <span></span>
-            <p>Gathering discussions…</p>
+            <p>Loading discussion…</p>
           </div>
         }
         @case ('error') {
           @if (s.notFound) {
-            <app-forum-status
-              eyebrow="404"
-              heading="That conversation wandered off"
-              message="The page may have moved or never existed."
-            />
+            <app-forum-not-found />
           } @else {
-            <app-forum-status heading="We hit a snag" [message]="s.message" />
+            <app-forum-status heading="Could not load this discussion" [message]="s.message" />
           }
         }
         @case ('ready') {
@@ -61,7 +60,7 @@ import { HttpErrorResponse } from '@angular/common/http';
                 <div>
                   <strong>{{ thread.user.name }}</strong>
                   <p class="meta">
-                    <span class="role-badge">{{ thread.user.role }}</span> · Posted
+                    <span class="role-badge">{{ role(thread.user.role) }}</span> · Posted
                     {{ date(thread.createdAt) }} · {{ thread.viewCount }} views
                   </p>
                 </div>
@@ -91,7 +90,7 @@ import { HttpErrorResponse } from '@angular/common/http';
             </article>
             <section class="replies">
               <div class="section-heading">
-                <h2>{{ thread.replyCount }} {{ thread.replyCount === 1 ? 'Reply' : 'Replies' }}</h2>
+                <h2>{{ thread.replyCount }} {{ thread.replyCount === 1 ? 'reply' : 'replies' }}</h2>
               </div>
               <app-forum-comment-list
                 [comments]="s.data.comments"
@@ -101,7 +100,6 @@ import { HttpErrorResponse } from '@angular/common/http';
               />
             </section>
             <section class="reply-form">
-              <p class="eyebrow">Join the conversation</p>
               <h2>Add your reply</h2>
               @if (mayComment()) {
                 <app-forum-comment-form [threadId]="thread.id" (posted)="reload()" />
@@ -159,6 +157,10 @@ export class ThreadDetailComponent {
 
   protected date(value: string): string {
     return formatDate(value);
+  }
+
+  protected role(value: string): string {
+    return formatRole(value);
   }
 
   protected mayEdit(thread: { user: { userId: string } }): boolean {
