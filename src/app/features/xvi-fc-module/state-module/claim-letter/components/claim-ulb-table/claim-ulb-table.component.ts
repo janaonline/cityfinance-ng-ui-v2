@@ -253,8 +253,8 @@ export class ClaimUlbTableComponent {
       panelClass,
       width: '65vw',
       maxWidth: '65vw',
-      height: '80vh',
-      maxHeight: '80vh',
+      height: '85vh',
+      maxHeight: '85vh',
       injector: this.injector,
       data,
     });

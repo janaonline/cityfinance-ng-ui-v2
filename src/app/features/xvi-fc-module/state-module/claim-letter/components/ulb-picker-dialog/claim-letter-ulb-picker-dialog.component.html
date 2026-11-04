@@ -6,7 +6,7 @@
 </h2>
 
 <mat-dialog-content class="p-0 claim-letter-ulb-picker-dialog-content">
-  <div class="border-bottom px-3 py-2 d-flex flex-wrap align-items-end justify-content-between gap-2">
+  <div class="px-3 py-2 d-flex flex-wrap align-items-end justify-content-between gap-2">
     <div>
       <label class="form-label small fw-semibold mb-1" for="claim-letter-ulb-picker-search">Search</label>
       <input
@@ -27,7 +27,11 @@
       <mat-button-toggle value="ALL">All</mat-button-toggle>
       <mat-button-toggle value="ELIGIBLE">Eligible</mat-button-toggle>
       <mat-button-toggle value="INELIGIBLE">Ineligible</mat-button-toggle>
+      <mat-button-toggle value="IN_OTHER_BATCH">In other batches</mat-button-toggle>
     </mat-button-toggle-group>
+  </div>
+  <div class="border-bottom px-3 pb-2 small text-secondary" data-cy="claim-letter-ulb-picker-hover-note">
+    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Hover over a status pill for more details.
   </div>
 
   <div class="table-responsive claim-letter-ulb-picker-table-wrap">
@@ -44,7 +48,9 @@
         </button>
       </div>
     } @else if (!options().length) {
-      <div class="text-center py-5 text-secondary small">No ULBs found for the current search.</div>
+      <div class="text-center py-5 text-secondary small" data-cy="claim-letter-ulb-picker-empty">
+        {{ emptyMessage() }}
+      </div>
     } @else {
       <table class="table table-sm table-hover align-middle mb-0 claim-letter-ulb-picker-table">
         <thead class="table-light border-bottom">
@@ -72,6 +78,14 @@
               <td class="small">
                 @if (option.eligible) {
                   <span class="badge text-bg-success">Eligible</span>
+                } @else if (option.claimedInBatch) {
+                  <span
+                    class="badge text-bg-info"
+                    [matTooltip]="claimedTooltip(option)"
+                    data-cy="claim-letter-ulb-picker-claimed-badge"
+                  >
+                    {{ claimedBadgeText(option) }}
+                  </span>
                 } @else {
                   <span
                     class="badge text-bg-secondary"
@@ -96,9 +110,7 @@
                     [checked]="isSelected(option.ulbId)"
                     [disabled]="isDisabled(option)"
                     (change)="toggle(option)"
-                    [attr.aria-label]="
-                      isDisabled(option) ? option.ulbName + ' cannot be selected' : 'Select ' + option.ulbName
-                    "
+                    [attr.aria-label]="checkboxLabel(option)"
                     data-cy="claim-letter-ulb-picker-checkbox"
                   />
                 </div>

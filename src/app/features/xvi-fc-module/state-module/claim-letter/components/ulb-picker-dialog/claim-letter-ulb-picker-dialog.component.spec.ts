@@ -21,6 +21,7 @@ function makeOption(id: string, name: string, overrides: Partial<ClaimLetterUlbO
     eligible: true,
     ineligibleReasonCode: null,
     ineligibleReasonDetail: null,
+    claimedInBatch: null,
     ...overrides,
   };
 }
@@ -140,6 +141,23 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('No ULBs found');
   });
 
+  it('words the empty state for the search or filter it was loaded with', () => {
+    getUlbOptionsSpy.and.returnValue(of(makeResult([])));
+    const emptyText = () =>
+      (
+        fixture.nativeElement.querySelector('[data-cy="claim-letter-ulb-picker-empty"]') as HTMLElement
+      ).textContent?.trim();
+
+    component.setEligibilityFilter('IN_OTHER_BATCH');
+    fixture.detectChanges();
+    expect(emptyText()).toBe('No ULBs are in another batch.');
+
+    component.search.setValue('Alpha', { emitEvent: false });
+    component.loadOptions();
+    fixture.detectChanges();
+    expect(emptyText()).toBe('No ULBs found for the current search.');
+  });
+
   it('shows a retryable failure state on error, and retry re-requests', () => {
     getUlbOptionsSpy.and.returnValue(throwError(() => new Error('network error')));
     component.loadOptions();
@@ -180,11 +198,9 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
 
   it('clicking the Eligible mat-button-toggle sends the mapped query param', () => {
     getUlbOptionsSpy.calls.reset();
-    const group = fixture.debugElement.query(
-      By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'),
-    );
+    const group = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'));
     const toggleButtons = group.queryAll(By.css('button'));
-    toggleButtons[1].nativeElement.click(); // ALL, ELIGIBLE, INELIGIBLE
+    toggleButtons[1].nativeElement.click(); // ALL, ELIGIBLE, INELIGIBLE, IN_OTHER_BATCH
     fixture.detectChanges();
 
     expect(getUlbOptionsSpy).toHaveBeenCalledWith(
@@ -192,6 +208,23 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
       'year-1',
       1,
       jasmine.objectContaining({ eligibilityFilter: 'ELIGIBLE', page: 1 }),
+    );
+  });
+
+  it('clicking the In other batches toggle sends IN_OTHER_BATCH from page 1', () => {
+    component.goToPage(1);
+    getUlbOptionsSpy.calls.reset();
+    const group = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'));
+    const toggleButtons = group.queryAll(By.css('button'));
+    expect((toggleButtons[3].nativeElement as HTMLElement).textContent?.trim()).toBe('In other batches');
+    toggleButtons[3].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(getUlbOptionsSpy).toHaveBeenCalledWith(
+      'state-1',
+      'year-1',
+      1,
+      jasmine.objectContaining({ eligibilityFilter: 'IN_OTHER_BATCH', page: 1 }),
     );
   });
 
@@ -352,5 +385,64 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
   it('falls back to the humanized reason code when ineligibleReasonDetail is absent', () => {
     // options[2] ('Gamma ULB') is ineligible with reasonCode 'FORM_STATUS_3_NOT_ACCEPTED' and no detail.
     expect(tooltipMessageFor('ulb-3')).toBe('Form Status 3 Not Accepted');
+  });
+
+  // ─── ULB in another batch ──────────────────────────────────────────────────
+
+  function renderSingle(option: ClaimLetterUlbOption) {
+    getUlbOptionsSpy.and.returnValue(of(makeResult([option])));
+    component.loadOptions();
+    fixture.detectChanges();
+    return fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
+  }
+
+  const claimedOption = (claimedInBatch: ClaimLetterUlbOption['claimedInBatch']) =>
+    makeOption('ulb-9', 'Bicholim Municipality', {
+      eligible: false,
+      ineligibleReasonCode: 'ALREADY_LOCKED_IN_ANOTHER_CLAIM',
+      claimedInBatch,
+    });
+
+  it('shows "In Batch #N" instead of "Ineligible" for a ULB in another batch, without its status', () => {
+    const row = renderSingle(claimedOption({ batchNumber: 1 }));
+
+    const badge = row.query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'));
+    expect((badge.nativeElement as HTMLElement).textContent?.trim()).toBe('In Batch #1');
+    expect((badge.nativeElement as HTMLElement).classList).toContain('text-bg-info');
+    expect(badge.injector.get(MatTooltip).message).toBe('Already in Claim Batch #1');
+    expect((row.nativeElement as HTMLElement).textContent).not.toContain('Ineligible');
+  });
+
+  it('says "In another batch" when the batch number is unknown', () => {
+    const row = renderSingle(claimedOption({ batchNumber: null }));
+
+    const badge = row.query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'));
+    expect((badge.nativeElement as HTMLElement).textContent?.trim()).toBe('In another batch');
+    expect(badge.injector.get(MatTooltip).message).toBe('Already in another claim batch');
+  });
+
+  it('keeps a ULB in another batch unselectable and names its batch in the checkbox label', () => {
+    const option = claimedOption({ batchNumber: 2 });
+    const row = renderSingle(option);
+
+    const checkbox = row.query(By.css('[data-cy="claim-letter-ulb-picker-checkbox"]'))
+      .nativeElement as HTMLInputElement;
+    expect(checkbox.disabled).toBeTrue();
+    expect(checkbox.getAttribute('aria-label')).toBe('Bicholim Municipality is already in Batch #2');
+    component.toggle(option);
+    expect(component.selectedCount()).toBe(0);
+  });
+
+  it('shows the hover note with its info icon above the table', () => {
+    const note = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-hover-note"]'));
+
+    expect((note.nativeElement as HTMLElement).textContent?.trim()).toBe('Hover over a status pill for more details.');
+    expect(note.query(By.css('i.bi-info-circle'))).not.toBeNull();
+  });
+
+  it('keeps the "Ineligible" badge for a ULB that is not in another batch', () => {
+    expect(rowFor('ulb-3').query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'))).toBeNull();
+    expect((rowFor('ulb-3').nativeElement as HTMLElement).textContent).toContain('Ineligible');
+    expect(checkboxFor('ulb-3').getAttribute('aria-label')).toBe('Gamma ULB cannot be selected');
   });
 });

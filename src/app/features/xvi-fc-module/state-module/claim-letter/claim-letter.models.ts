@@ -26,6 +26,11 @@ export interface ClaimLetterExemptionNote {
   status: 'UNDER_REVIEW' | 'REJECTED';
 }
 
+/** The other batch a ULB is locked in; null only when the backend could not read that batch. */
+export interface ClaimLetterClaimedBatch {
+  batchNumber: number | null;
+}
+
 /** One checklist line: only the fields this UI renders, not the backend's full evaluation result. */
 export interface ClaimLetterEligibilitySource {
   formType: string;
@@ -127,11 +132,14 @@ export interface ClaimLetterUlbOption {
   /** Names the failing form(s); only for ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET, else null (the code is humanized). */
   ineligibleReasonDetail: string | null;
   exemptionNotes?: ClaimLetterExemptionNote[];
+  /** Set when the ULB is in another batch (then `eligible` is false); shown instead of "Ineligible". */
+  claimedInBatch: ClaimLetterClaimedBatch | null;
 }
 
 export interface ClaimLetterUlbOptionsQuery {
   search?: string;
-  eligibilityFilter?: 'ELIGIBLE' | 'INELIGIBLE';
+  /** INELIGIBLE leaves out ULBs in another batch; IN_OTHER_BATCH lists only them. */
+  eligibilityFilter?: 'ELIGIBLE' | 'INELIGIBLE' | 'IN_OTHER_BATCH';
   /** Lets this draft's own locked ULBs show as selectable; omitted in create mode. */
   claimLetterId?: string;
   page?: number;
