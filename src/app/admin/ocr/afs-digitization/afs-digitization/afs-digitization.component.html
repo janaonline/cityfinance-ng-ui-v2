@@ -40,6 +40,18 @@
             </mat-form-field>
 
             <mat-form-field appearance="outline">
+              <mat-label>Gemini arithmetic validation model</mat-label>
+              <mat-select formControlName="arithmeticModel">
+                @for (m of geminiModels; track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+              @if (form.controls.arithmeticModel.invalid && form.controls.arithmeticModel.touched) {
+                <mat-error>Model is required.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
               <mat-label>Document type (optional)</mat-label>
               <mat-select formControlName="docType">
                 @for (dt of documentTypes; track dt.value) {
@@ -245,6 +257,19 @@
                       (click)="revalidateArithmetic(job)">
                       @if (revalidatingArithmeticJobId() === job.jobId) { Queuing... } @else { Rerun Arithmetic }
                     </button>
+                    <button mat-stroked-button type="button" [disabled]="revalidatingArithmeticJobId() === job.jobId"
+                      title="Re-run Gemini arithmetic validations with a model of your choice"
+                      [matMenuTriggerFor]="arithmeticModelMenu">
+                      Rerun Arithmetic with…
+                      <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+                    </button>
+                    <mat-menu #arithmeticModelMenu="matMenu">
+                      @for (m of geminiModels; track m.value) {
+                        <button mat-menu-item type="button" (click)="revalidateArithmetic(job, m.value)">
+                          {{ m.label }}
+                        </button>
+                      }
+                    </mat-menu>
                     <button mat-stroked-button type="button" [disabled]="regeneratingJobId() === job.jobId"
                       title="Rebuild the Excel workbook from the stored result — no Textract/Gemini calls"
                       (click)="regenerateExcel(job)">

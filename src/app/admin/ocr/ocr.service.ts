@@ -280,10 +280,16 @@ export class OcrService {
   readonly source = 'ocr';
 
   readonly models: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
     {
       value: 'gemini-3.6-flash',
       label: 'Gemini 3.6 Flash',
-      pricing: { inputPerM: 1.5, outputPerM: 7.5, thinkingPerM: 7.5 },
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
     },
     {
       value: 'gemini-3.5-flash',
