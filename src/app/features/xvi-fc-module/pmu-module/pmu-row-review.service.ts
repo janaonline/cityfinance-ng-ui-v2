@@ -70,6 +70,17 @@ export class PmuRowReviewService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
   }
 
+  /** Reverses PMU's own approve/return — the form and every ULB row go back to Under Review by PMU. */
+  undoForm(form: PmuFormOption, stateId: string, yearId: string): Observable<PmuFormSubmitData> {
+    return this.http
+      .post<PmuApiResponse<PmuFormSubmitData>>(`${environment.api.url2}xvi-fc/pmu/undo`, {
+        type: form.value,
+        stateId,
+        yearId,
+      })
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
+  }
+
   rejectForm(form: PmuFormOption, stateId: string, yearId: string, rejectionRemarks: string): Observable<PmuFormSubmitData> {
     return this.http
       .post<PmuApiResponse<PmuFormSubmitData>>(`${environment.api.url2}${form.basePath}${stateId}/${yearId}/reject`, {
