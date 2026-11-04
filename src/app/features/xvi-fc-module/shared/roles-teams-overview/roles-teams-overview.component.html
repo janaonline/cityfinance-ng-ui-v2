@@ -595,7 +595,9 @@
 
     <!-- ══ Transfer Ownership (Admin only) ═══════════════════════════════════════════
          Hidden for every team except those that opt in via config.transferEnabled (the ADC pages) — the
-         State/MoHUA/PMU/DoE pages stay off until the isNodalOfficer sync on transfer is fixed. -->
+         State/MoHUA/PMU/DoE pages stay off until the isNodalOfficer sync on transfer is fixed.
+         Commented out for now on the ADC pages too; uncomment to bring Transfer back. -->
+    <!--
     @if (transferEnabled && isSubmitter()) {
       <mat-card class="transfer-card">
 
@@ -729,6 +731,7 @@
 
       </mat-card>
     }
+    -->
 
     }
   }
