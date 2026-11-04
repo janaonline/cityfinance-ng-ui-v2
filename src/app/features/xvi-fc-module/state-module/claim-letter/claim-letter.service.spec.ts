@@ -191,6 +191,7 @@ describe('ClaimLetterService', () => {
           eligible: true,
           ineligibleReasonCode: null,
           ineligibleReasonDetail: null,
+          claimedInBatch: null,
         },
       ];
       let result: unknown;
