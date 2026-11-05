@@ -145,14 +145,21 @@
                     Click <strong>New Claim</strong> to start. Only ULBs meeting every eligibility criterion above will
                     be selectable in the picker.
                   </li>
-                  <li>
-                    Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its full
-                    allocation amount, which you can adjust from there.
-                  </li>
-                  <li>
-                    Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
-                    outside that range will be rejected.
-                  </li>
+                  @if (eligibility()?.claimAmountEditable) {
+                    <li>
+                      Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its full
+                      allocation amount, which you can adjust from there.
+                    </li>
+                    <li>
+                      Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
+                      outside that range will be rejected.
+                    </li>
+                  } @else {
+                    <li>
+                      Pick ULBs and select <strong>Add selected ULBs</strong> - each ULB is claimed at its full
+                      allocation amount.
+                    </li>
+                  }
                   <li>
                     Submitting to MoHUA requires the signed claim letter upload first; until then your batch stays an
                     editable draft.

@@ -130,7 +130,10 @@ export class ClaimUlbTableComponent {
   /** Forwarded to the picker so a draft's own already-locked ULBs show as selectable. `undefined` in
    *  create mode (no id yet). */
   readonly claimLetterId = input<string | undefined>(undefined);
-  /** Claimed-vs-allocated band from the backend. */
+  /** formjson 26 switch from the backend. Off: each claim is its allocation, so the claim and
+   *  difference columns are hidden and the `claimedAmount` controls are ignored. */
+  readonly claimAmountEditable = input(false);
+  /** Claimed-vs-allocated band from the backend; used only while `claimAmountEditable` is on. */
   readonly varianceLowerPercent = input.required<number>();
   readonly varianceUpperPercent = input.required<number>();
 
@@ -163,13 +166,15 @@ export class ClaimUlbTableComponent {
   readonly rowViewModels = computed<ClaimUlbRowViewModel[]>(() => {
     const savedByUlbId = this.savedRowsByUlbId();
     const pickedByUlbId = this.pickedUlbByUlbId();
+    const claimAmountEditable = this.claimAmountEditable();
 
     return this.rowValues().map((value) => {
       const saved = value.ulbId ? savedByUlbId.get(value.ulbId) : undefined;
       const picked = value.ulbId ? pickedByUlbId.get(value.ulbId) : undefined;
 
       const allocationAmount = picked?.allocationAmount ?? saved?.allocationAmount ?? null;
-      const hasLiveInputs = allocationAmount !== null && allocationAmount > 0 && value.claimedAmount !== null;
+      const hasLiveInputs =
+        claimAmountEditable && allocationAmount !== null && allocationAmount > 0 && value.claimedAmount !== null;
 
       return {
         ulbName: picked?.ulbName ?? saved?.ulbName ?? null,
@@ -178,7 +183,7 @@ export class ClaimUlbTableComponent {
         allocationAmount,
         eligible: picked?.eligible ?? saved?.eligible ?? null,
         exemptionBadges: buildExemptionBadges(picked?.exemptionNotes ?? saved?.exemptionNotes),
-        savedDifferencePercentage: saved?.differencePercentage ?? null,
+        savedDifferencePercentage: claimAmountEditable ? (saved?.differencePercentage ?? null) : null,
         liveDifferencePercentage: hasLiveInputs
           ? computeClaimDifferencePercentage(allocationAmount as number, value.claimedAmount as number)
           : null,
@@ -195,7 +200,7 @@ export class ClaimUlbTableComponent {
   });
 
   /** Rows the backend will surely reject (ineligible, or outside the band); incomplete rows are
-   *  `validateRows()`'s concern. */
+   *  `validateRows()`'s concern. `liveWithinVariance` is null while the switch is off. */
   readonly invalidRowIdentifiers = computed(() =>
     this.rowViewModels()
       .filter((row) => row.eligible === false || row.liveWithinVariance === false)
@@ -206,7 +211,12 @@ export class ClaimUlbTableComponent {
   readonly totalAllocation = computed(() =>
     this.rowViewModels().reduce((sum, row) => sum + (row.allocationAmount ?? 0), 0),
   );
-  readonly totalClaim = computed(() => this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0));
+  /** The allocation total while the switch is off, since that is what the server stores. */
+  readonly totalClaim = computed(() =>
+    this.claimAmountEditable()
+      ? this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0)
+      : this.totalAllocation(),
+  );
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);

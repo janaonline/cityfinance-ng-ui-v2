@@ -20,7 +20,12 @@
       </h1>
 
       <p class="page-subtitle text-secondary mb-0">
-        Select the ULBs you are claiming Installment {{ installment }} funds for, and enter each ULB's claim amount.
+        @if (claimAmountEditable()) {
+          Select the ULBs you are claiming Installment {{ installment }} funds for, and enter each ULB's claim amount.
+        } @else {
+          Select the ULBs you are claiming Installment {{ installment }} funds for. Each ULB is claimed at its full
+          allocation.
+        }
       </p>
     </div>
 
@@ -86,7 +91,9 @@
 
       <mat-card appearance="outlined">
         <mat-card-header>
-          <mat-card-title class="small fw-semibold">Verify Claim Amount</mat-card-title>
+          <mat-card-title class="small fw-semibold">{{
+            claimAmountEditable() ? 'Verify Claim Amount' : 'Selected ULBs'
+          }}</mat-card-title>
         </mat-card-header>
 
         <mat-card-content class="p-2">
@@ -97,6 +104,7 @@
             [stateId]="stateId"
             [yearId]="yearId"
             [claimLetterId]="claimLetterId() ?? undefined"
+            [claimAmountEditable]="claimAmountEditable()"
             [varianceLowerPercent]="varianceLowerPercent()"
             [varianceUpperPercent]="varianceUpperPercent()"
           ></app-claim-ulb-table>

@@ -104,6 +104,8 @@ export interface ClaimLetterEligibilitySummary {
   remainingUlbCount: number;
   /** The batch in progress or under MoHUA review (one at a time); null when a new claim can start. */
   activeBatchNumber: number | null;
+  /** formjson 26 switch: off means each ULB's claim is its allocation, so no claim column or ±10% text. */
+  claimAmountEditable: boolean;
 }
 
 /** Lean sibling of `ClaimLetterEligibilitySummary` for the create/edit page (`GET .../claim-context`, no checklist). */
@@ -115,7 +117,10 @@ export interface ClaimLetterClaimContext {
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
-  /** Claimed-vs-allocated band from the backend; pass it straight to `isClaimWithinVariance`. */
+  /** As in `ClaimLetterEligibilitySummary`. */
+  claimAmountEditable: boolean;
+  /** Claimed-vs-allocated band from the backend; pass it straight to `isClaimWithinVariance`. Used
+   *  only while `claimAmountEditable` is on. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
   /** PREPARE_GRANT_LETTERS and no active batch; stands in for `permissions.canEdit` before a batch exists. */
@@ -234,6 +239,7 @@ export interface ClaimLetterBatchSummary {
   /** Formjson fields except the letter details (those come from `GET .../letter-details`). */
   questions?: ConditionalFieldConfig[];
   stateName?: string;
+  claimAmountEditable?: boolean;
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
   /** Mandatory letter details saved and valid (Submit needs them). */
@@ -406,7 +412,8 @@ export interface ClaimLetterHistoryResult {
 /** Only what the State chose; allocation and eligibility are resolved server-side. */
 export interface ClaimLetterUlbSelection {
   ulbId: string;
-  claimedAmount: number;
+  /** Sent only while `claimAmountEditable` is on; otherwise the server stores the allocation. */
+  claimedAmount?: number;
 }
 
 export interface CreateClaimLetterDraftPayload {

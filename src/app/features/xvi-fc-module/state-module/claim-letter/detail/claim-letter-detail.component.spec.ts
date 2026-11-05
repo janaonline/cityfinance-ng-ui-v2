@@ -80,6 +80,8 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     // about other behavior don't also have to specify permissions explicitly.
     permissions: { canView: true, canEdit: true, canFinalSubmit: true },
     stateName: 'Test State',
+    // Switch on keeps the claim-amount tests on the editable mode; off has its own describe.
+    claimAmountEditable: true,
     ...overrides,
   };
 }
@@ -99,6 +101,7 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
       availableToClaim: 15,
     },
     remainingUlbCount: 0,
+    claimAmountEditable: true,
     varianceLowerPercent: 90,
     varianceUpperPercent: 110,
     // Create-mode's canEdit() reads this — default to creatable for the same reason as above.
@@ -1152,6 +1155,76 @@ describe('ClaimLetterDetailComponent', () => {
     it('exposes the claim status as a FormStatusValue for the stepper', async () => {
       await setupEdit(buildClaim({ currentFormStatus: 5 }));
       expect(component.currentFormStatusValue()).toBe(5);
+    });
+  });
+
+  // ─── Claim-amount switch off (claim = allocation) ───────────────────────────
+
+  describe('with the claim-amount switch off', () => {
+    it('create mode posts ULB ids only and ignores an empty hidden claim amount', async () => {
+      await setup('new');
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ claimAmountEditable: false })),
+      );
+      fixture.detectChanges();
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: null }));
+      spyOn(claimLetterService, 'createDraft').and.returnValue(of(buildClaim({ claimLetterId: 'claim-new' })));
+
+      component.createDraft();
+
+      expect(claimLetterService.createDraft).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1, {
+        ulbSelections: [{ ulbId: 'ulb-1' }],
+      });
+    });
+
+    describe('edit mode', () => {
+      beforeEach(async () => {
+        await setup('claim-1');
+        spyOn(claimLetterService, 'getDetail').and.returnValue(
+          of(buildClaim({ revision: 4, claimAmountEditable: false })),
+        );
+        spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+        spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+          of(buildClaimContext({ claimAmountEditable: false })),
+        );
+        fixture.detectChanges();
+      });
+
+      it('titles the card "Selected ULBs" and says each ULB is claimed at its allocation', () => {
+        const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+        expect(text).toContain('Selected ULBs');
+        expect(text).not.toContain('Verify Claim Amount');
+        expect(text).toContain('Each ULB is claimed at its full');
+      });
+
+      it('totals the batch claim as the allocation', () => {
+        // SAVED_ULB_ROWS: allocation 20, stored claim 21.
+        expect(component.summaryTiles()).toContain({ label: 'Claimed in This Batch', value: 20 });
+      });
+
+      it('treats the same ULBs as unchanged, whatever the hidden claim amount holds', () => {
+        component.rows.at(0).controls.claimedAmount.setValue(19);
+        expect(component.hasUnsavedRowChanges()).toBe(false);
+
+        const updateSpy = spyOn(claimLetterService, 'updateDraft');
+        component.saveChanges();
+
+        expect(updateSpy).not.toHaveBeenCalled();
+        expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('No changes to save.', 'snackbar-warn');
+      });
+
+      it('saves a ULB change with ULB ids only', () => {
+        component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+        expect(component.hasUnsavedRowChanges()).toBe(true);
+        spyOn(claimLetterService, 'updateDraft').and.returnValue(of(buildClaim({ revision: 5 })));
+
+        component.saveChanges();
+
+        expect(claimLetterService.updateDraft).toHaveBeenCalledWith('claim-1', {
+          ulbSelections: [{ ulbId: 'ulb-1' }, { ulbId: 'ulb-2' }],
+          expectedRevision: 4,
+        });
+      });
     });
   });
 });

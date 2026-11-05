@@ -77,11 +77,17 @@ const CLAIM_LETTER_SAVE_REMOVES_SIGNED_FILE_CONFIRM: Required<ConfirmDialogData>
   icon: 'bi-exclamation-triangle-fill',
 };
 
-/** Same ULBs with the same claimed amounts as the last load. */
-function sameAsSaved(selections: readonly ClaimLetterUlbSelection[], saved: readonly ClaimLetterUlbRow[]): boolean {
+/** Same ULBs with the same claimed amounts as the last load; ULBs only while the switch is off. */
+function sameAsSaved(
+  selections: readonly ClaimLetterUlbSelection[],
+  saved: readonly ClaimLetterUlbRow[],
+  claimAmountEditable: boolean,
+): boolean {
   if (selections.length !== saved.length) return false;
   const claimed = new Map(saved.map((row) => [row.ulbId, row.claimAmount]));
-  return selections.every((s) => claimed.get(s.ulbId) === s.claimedAmount);
+  return selections.every(
+    (s) => claimed.has(s.ulbId) && (!claimAmountEditable || claimed.get(s.ulbId) === s.claimedAmount),
+  );
 }
 
 function submitConfirm(
@@ -171,6 +177,12 @@ export class ClaimLetterDetailComponent implements OnInit {
    *  failed load is non-fatal (no `loadError`). */
   readonly eligibilityOverview = signal<ClaimLetterClaimContext | null>(null);
 
+  /** formjson 26 switch, from getDetail in edit mode and claim-context in create mode. Off (also before
+   *  either loads): each claim is its allocation, so `claimedAmount` is neither shown, validated nor sent. */
+  readonly claimAmountEditable = computed(
+    () => this.claim()?.claimAmountEditable ?? this.eligibilityOverview()?.claimAmountEditable ?? false,
+  );
+
   /** From getDetail in edit mode, claim-context in create mode; 90 / 110 only shows before either loads. */
   readonly varianceLowerPercent = computed(
     () => this.claim()?.varianceLowerPercent ?? this.eligibilityOverview()?.varianceLowerPercent ?? 90,
@@ -202,6 +214,10 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly hasUnsavedRowChanges = computed(() => {
     if (this.isCreateMode) return false;
     const savedAmountByUlbId = new Map(this.savedUlbRows().map((row) => [row.ulbId, row.claimAmount]));
+    if (!this.claimAmountEditable()) {
+      const liveUlbIds = this.rowValues().flatMap((row) => (row.ulbId === null ? [] : [row.ulbId]));
+      return liveUlbIds.length !== savedAmountByUlbId.size || liveUlbIds.some((id) => !savedAmountByUlbId.has(id));
+    }
     const liveRows = this.rowValues().filter(
       (row): row is { ulbId: string; claimedAmount: number } => row.ulbId !== null && row.claimedAmount !== null,
     );
@@ -671,7 +687,7 @@ export class ClaimLetterDetailComponent implements OnInit {
     if (!claim || !claimLetterId) return;
 
     const selections = this.buildUlbSelections();
-    if (sameAsSaved(selections, this.savedUlbRows())) {
+    if (sameAsSaved(selections, this.savedUlbRows(), this.claimAmountEditable())) {
       this.utilityService.triggerSnackbar('No changes to save.', 'snackbar-warn');
       return;
     }
@@ -759,7 +775,13 @@ export class ClaimLetterDetailComponent implements OnInit {
     this.router.navigate(['/xvifc', this.yearId, 'claim-letter']);
   }
 
+  /** No `claimedAmount` while the switch is off: the server stores each ULB's allocation. */
   private buildUlbSelections(): ClaimLetterUlbSelection[] {
+    if (!this.claimAmountEditable()) {
+      return this.rows.controls
+        .filter((row) => row.controls.ulbId.value !== null)
+        .map((row) => ({ ulbId: row.controls.ulbId.value as string }));
+    }
     return this.rows.controls
       .filter((row) => row.controls.ulbId.value !== null && row.controls.claimedAmount.value !== null)
       .map((row) => ({
@@ -768,15 +790,17 @@ export class ClaimLetterDetailComponent implements OnInit {
       }));
   }
 
-  /** At least one row and every row valid: a claim draft has no partial-save mode. */
+  /** At least one row and every row valid: a claim draft has no partial-save mode. The hidden
+   *  claim amount is not checked while the switch is off. */
   private validateRows(): boolean {
     let valid = this.rows.length > 0;
+    const claimAmountEditable = this.claimAmountEditable();
 
     for (const row of this.rows.controls) {
-      if (row.invalid) {
+      if (claimAmountEditable ? row.invalid : row.controls.ulbId.invalid) {
         valid = false;
         row.controls.ulbId.markAsTouched();
-        row.controls.claimedAmount.markAsTouched();
+        if (claimAmountEditable) row.controls.claimedAmount.markAsTouched();
       }
     }
 

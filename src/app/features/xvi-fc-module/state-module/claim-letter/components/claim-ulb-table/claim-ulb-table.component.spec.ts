@@ -49,6 +49,8 @@ interface SetupOptions {
   canEdit?: boolean;
   savedRows?: readonly ClaimLetterUlbRow[];
   claimLetterId?: string;
+  /** Defaults to on, so the claim-amount tests run on the editable mode; off has its own describe. */
+  claimAmountEditable?: boolean;
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
 }
@@ -78,6 +80,7 @@ describe('ClaimUlbTableComponent', () => {
     fixture.componentRef.setInput('stateId', 'state-1');
     fixture.componentRef.setInput('yearId', 'year-1');
     fixture.componentRef.setInput('claimLetterId', options.claimLetterId);
+    fixture.componentRef.setInput('claimAmountEditable', options.claimAmountEditable ?? true);
     fixture.componentRef.setInput('varianceLowerPercent', options.varianceLowerPercent ?? 90);
     fixture.componentRef.setInput('varianceUpperPercent', options.varianceUpperPercent ?? 110);
     fixture.detectChanges();
@@ -491,5 +494,53 @@ describe('ClaimUlbTableComponent', () => {
       .nativeElement as HTMLButtonElement;
     expect(addButton.disabled).toBe(true);
     expect(rows.at(0).controls.claimedAmount.disabled).toBe(true);
+  });
+
+  // ─── Claim-amount switch off (claim = allocation) ──────────────────────────────
+
+  describe('with the claim-amount switch off', () => {
+    function headerTexts(): string[] {
+      return fixture.debugElement
+        .queryAll(By.css('thead th'))
+        .map((th) => (th.nativeElement as HTMLElement).textContent?.trim() ?? '');
+    }
+
+    beforeEach(() => {
+      setupWithRows(
+        [
+          createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[0].ulbId, claimedAmount: 21 }),
+          createClaimUlbRowGroup(true, { ulbId: ULB_OPTIONS[1].ulbId, claimedAmount: 9 }),
+        ],
+        {
+          claimAmountEditable: false,
+          savedRows: SAVED_ROWS.concat({ ...SAVED_ROWS[0], ulbId: ULB_OPTIONS[1].ulbId, allocationAmount: 8 }),
+        },
+      );
+    });
+
+    it('shows only the allocation: no claim input and no difference column', () => {
+      expect(headerTexts().length).toBe(5);
+      expect(headerTexts().some((text) => text.startsWith('Claim Amount'))).toBeFalse();
+      expect(headerTexts()).not.toContain('Difference (%)');
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-ulb-table-claim-amount"]'))).toBeNull();
+    });
+
+    it('totals the claim as the allocation, whatever the hidden controls hold', () => {
+      expect(component.totalAllocation()).toBe(28);
+      expect(component.totalClaim()).toBe(28);
+    });
+
+    it('never flags a row for the band or shows a difference', () => {
+      expect(component.invalidRowIdentifiers()).toEqual([]);
+      expect(component.rowViewModels().every((row) => row.liveWithinVariance === null)).toBeTrue();
+      expect(component.rowViewModels().every((row) => row.savedDifferencePercentage === null)).toBeTrue();
+    });
+
+    it('spans the empty state over the five remaining columns', () => {
+      setupWithRows([], { claimAmountEditable: false });
+      const empty = fixture.debugElement.query(By.css('[data-cy="claim-ulb-table-empty"]'))
+        .nativeElement as HTMLTableCellElement;
+      expect(empty.getAttribute('colspan')).toBe('5');
+    });
   });
 });

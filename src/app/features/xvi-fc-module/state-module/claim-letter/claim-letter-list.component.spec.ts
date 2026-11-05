@@ -64,6 +64,8 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
     activeBatchNumber: null,
+    // Switch on keeps the claim-amount tests below on the editable mode; off is tested on its own.
+    claimAmountEditable: true,
     ...overrides,
   };
 }
@@ -413,6 +415,23 @@ describe('ClaimLetterListComponent', () => {
 
     component.toggleInstructions();
     expect(component.showInstructions()).toBeFalse();
+  });
+
+  it('instructions follow the claim-amount switch: the ±10% rule only while it is on', () => {
+    const instructionsText = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-cy="claim-letter-instructions"]')?.textContent ?? '';
+    component.toggleInstructions();
+    fixture.detectChanges();
+    expect(instructionsText()).toContain('±10%');
+
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ claimAmountEditable: false })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(instructionsText()).not.toContain('±10%');
+    expect(instructionsText()).toContain('each ULB is claimed at its full');
   });
 
   it('goToPage ignores out-of-range page numbers', () => {
