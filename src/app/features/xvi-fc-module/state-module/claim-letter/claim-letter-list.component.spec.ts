@@ -309,13 +309,12 @@ describe('ClaimLetterListComponent', () => {
     ]);
   });
 
-  it('derives all 5 tiles from financialOverview, with Available to Claim emphasized first', () => {
+  it('derives 4 tiles from financialOverview, with the balance emphasized first and acknowledged counted under review', () => {
     expect(component.summaryTiles()).toEqual([
-      { label: 'Available to Claim', value: 15, emphasized: true },
-      { label: 'Total Allocation', value: 25 },
-      { label: 'Already Claimed (Acknowledged)', value: 5 },
-      { label: 'Claim in Progress (Under Review)', value: 3 },
-      { label: 'Claim in Draft', value: 2 },
+      { label: 'Balance Available for Claim', value: 15, emphasized: true },
+      { label: 'Total Allocation for 1st Installment', value: 25 },
+      { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
+      { label: 'Claims in Draft', value: 2 },
     ]);
   });
 

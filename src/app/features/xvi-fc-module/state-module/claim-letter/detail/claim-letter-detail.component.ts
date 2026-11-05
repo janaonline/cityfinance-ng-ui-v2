@@ -37,8 +37,10 @@ import {
   createClaimUlbRowGroup,
 } from '../components/claim-ulb-table/claim-ulb-table.component';
 import {
+  CLAIM_LETTER_TILE_LABELS,
   ClaimLetterSummaryTilesComponent,
   ClaimLetterSummaryTile,
+  claimsUnderReviewTotal,
 } from '../components/summary-tiles/claim-letter-summary-tiles.component';
 import {
   CLAIM_LETTER_ERROR_CODE,
@@ -335,9 +337,9 @@ export class ClaimLetterDetailComponent implements OnInit {
       const overview = this.eligibilityOverview()?.financialOverview;
       if (!overview) return [];
       return [
-        { label: 'Total Allocation', value: overview.totalInstallmentAllocation },
-        { label: 'Already Claimed (Acknowledged)', value: overview.totalAlreadyAcknowledged },
-        { label: 'Available to Claim', value: overview.availableToClaim },
+        { label: CLAIM_LETTER_TILE_LABELS.total, value: overview.totalInstallmentAllocation },
+        { label: CLAIM_LETTER_TILE_LABELS.underReview, value: claimsUnderReviewTotal(overview) },
+        { label: CLAIM_LETTER_TILE_LABELS.available, value: overview.availableToClaim },
       ];
     }
 
@@ -348,8 +350,8 @@ export class ClaimLetterDetailComponent implements OnInit {
     const currentSelectedClaim = this.claimTable()?.totalClaim() ?? claim.financialSummary.currentSelectedClaim;
 
     return [
-      { label: 'Total Allocation', value: totalInstallmentAllocation },
-      { label: 'Already Claimed (Acknowledged)', value: totalAlreadyAcknowledged },
+      { label: CLAIM_LETTER_TILE_LABELS.total, value: totalInstallmentAllocation },
+      { label: CLAIM_LETTER_TILE_LABELS.underReview, value: claimsUnderReviewTotal(claim.financialSummary) },
       { label: 'Claimed in This Batch', value: currentSelectedClaim },
       {
         label: 'Remaining After This Batch',

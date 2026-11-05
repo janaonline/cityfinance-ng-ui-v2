@@ -200,13 +200,12 @@ describe('ClaimLetterDetailComponent', () => {
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
       expect(claimLetterService.getClaimContext).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
-      // Same 3-tile shape as the list page — the full 5-figure breakdown lives there only; this page
-      // stays lean and lets the narrative bullets carry the "in progress"/"in draft" nuance instead.
-      // "Available to Claim" is the server-computed field, not a client subtraction.
+      // 3 tiles; the full 4-figure breakdown lives on the list page only. Under review adds the
+      // acknowledged amount, and "Balance Available for Claim" is the server-computed field.
       expect(component.summaryTiles()).toEqual([
-        { label: 'Total Allocation', value: 25 },
-        { label: 'Already Claimed (Acknowledged)', value: 5 },
-        { label: 'Available to Claim', value: 15 },
+        { label: 'Total Allocation for 1st Installment', value: 25 },
+        { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
+        { label: 'Balance Available for Claim', value: 15 },
       ]);
     });
 
@@ -376,8 +375,8 @@ describe('ClaimLetterDetailComponent', () => {
       );
 
       expect(component.summaryTiles()).toEqual([
-        { label: 'Total Allocation', value: 25 },
-        { label: 'Already Claimed (Acknowledged)', value: 5 },
+        { label: 'Total Allocation for 1st Installment', value: 25 },
+        { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
         { label: 'Claimed in This Batch', value: 21 },
         { label: 'Remaining After This Batch', value: -5 }, // 25 - 5 - 3 - 1 - 21
       ]);
