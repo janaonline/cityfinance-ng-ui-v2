@@ -117,9 +117,9 @@ function submitConfirm(
 }
 
 const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
-  title: 'Abandon this claim letter draft?',
-  message: 'This draft and its selected ULBs will be marked as abandoned. This cannot be undone.',
-  confirmText: 'Yes, abandon',
+  title: 'Discard this claim letter draft?',
+  message: 'This draft will be discarded, and its selected ULBs can be added to a new draft. This cannot be undone.',
+  confirmText: 'Yes, discard',
   cancelText: 'No, keep editing',
   confirmButtonColor: 'warn',
   icon: 'bi-x-circle-fill',
@@ -746,13 +746,13 @@ export class ClaimLetterDetailComponent implements OnInit {
       .subscribe({
         next: () => {
           this.isAbandoning.set(false);
-          this.utilityService.triggerSnackbar('Claim letter draft abandoned.', 'snackbar-success');
+          this.utilityService.triggerSnackbar('Claim letter draft discarded.', 'snackbar-success');
           this.loadDetail();
         },
         error: (err: unknown) => {
           console.error('Failed to abandon Claim Letter draft', err);
           this.isAbandoning.set(false);
-          this.handleSaveError(err, 'Unable to abandon the draft. Please try again.');
+          this.handleSaveError(err, 'Unable to discard the draft. Please try again.');
         },
       });
   }

@@ -21,10 +21,10 @@
 
       <p class="page-subtitle text-secondary mb-0">
         @if (claimAmountEditable()) {
-          Select the ULBs you are claiming Installment {{ installment }} funds for, and enter each ULB's claim amount.
+          Select the ULBs against which claims are being submitted under Installment {{ installment }}, and enter each
+          ULB's claim amount.
         } @else {
-          Select the ULBs you are claiming Installment {{ installment }} funds for. Each ULB is claimed at its full
-          allocation.
+          Select the ULBs against which claims are being submitted under Installment {{ installment }}.
         }
       </p>
     </div>
@@ -199,10 +199,10 @@
         >
           @if (isAbandoning()) {
             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-            <span class="d-none d-md-inline">Abandoning...</span>
+            <span class="d-none d-md-inline">Discarding...</span>
           } @else {
             <i class="bi bi-x-circle d-md-none"></i>
-            <span class="d-none d-md-inline">Abandon Draft</span>
+            <span class="d-none d-md-inline">Discard Draft</span>
           }
         </button>
 

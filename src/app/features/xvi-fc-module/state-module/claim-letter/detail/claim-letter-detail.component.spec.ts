@@ -1001,7 +1001,7 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.submit).not.toHaveBeenCalled();
     });
 
-    it('disables Abandon Draft and Save Changes while Submit is in flight', async () => {
+    it('disables Discard Draft and Save Changes while Submit is in flight', async () => {
       await setupSigned();
       spyOn(claimLetterService, 'submit').and.returnValue(new Subject<ClaimLetterBatchSummary>());
       dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
@@ -1190,11 +1190,12 @@ describe('ClaimLetterDetailComponent', () => {
         fixture.detectChanges();
       });
 
-      it('titles the card "Selected ULBs" and says each ULB is claimed at its allocation', () => {
+      it('titles the card "Selected ULBs" and does not ask for claim amounts', () => {
         const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
         expect(text).toContain('Selected ULBs');
         expect(text).not.toContain('Verify Claim Amount');
-        expect(text).toContain('Each ULB is claimed at its full');
+        expect(text).toContain('Select the ULBs against which claims are being submitted under Installment 1.');
+        expect(text).not.toContain("enter each ULB's claim amount");
       });
 
       it('totals the batch claim as the allocation', () => {
