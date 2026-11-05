@@ -8,8 +8,11 @@ export type ClaimLetterBatchNumber = 1 | 2 | 3;
 export type ClaimLetterAssemblyStatus = 'BUILDING' | 'READY';
 export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
 
-/** The backend's per-request max (`CLAIM_LETTER_PAGINATION_MAX_LIMIT`), used by `getAllUlbs`. */
-export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
+/** The backend's `CLAIM_LETTER_MAX_ULBS`: most ULBs per batch, and per ULB-picker load. */
+export const CLAIM_LETTER_MAX_ULBS = 1000;
+
+/** `getAllUlbs` page size: the rows endpoint's max, so a whole batch loads in one request. */
+export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = CLAIM_LETTER_MAX_ULBS;
 
 export interface ClaimLetterUlbEligibilityTally {
   eligible: number;
@@ -173,6 +176,9 @@ export interface ClaimLetterUlbRow {
   claimAmount: number;
   differencePercentage: number;
   eligible: boolean;
+  /** The State-level gate, the same on every row. False makes every row ineligible for a reason that
+   *  removing ULBs cannot fix. */
+  stateGatePassed?: boolean;
   exemptionNotes?: ClaimLetterExemptionNote[];
 }
 
@@ -394,6 +400,8 @@ export const CLAIM_LETTER_ERROR_CODE = {
   FINAL_PDF_OUTDATED: 'FINAL_PDF_OUTDATED',
   FINAL_PDF_SOURCE_UNREADABLE: 'FINAL_PDF_SOURCE_UNREADABLE',
   BATCH_BLOCKED: 'CLAIM_LETTER_BATCH_BLOCKED',
+  /** A save refused some ULBs; `errors` names their rows (`ulbSelections.<index>.<field>`). */
+  ULBS_REJECTED: 'CLAIM_LETTER_ULBS_REJECTED',
 } as const;
 
 export interface ClaimLetterHistoryQuery {

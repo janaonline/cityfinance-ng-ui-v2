@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
-import { Subject, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { ClaimLetterUlbOption, ClaimLetterUlbOptionsResult } from '../../claim-letter.models';
 import { ClaimLetterService } from '../../claim-letter.service';
 import {
@@ -26,31 +26,41 @@ function makeOption(id: string, name: string, overrides: Partial<ClaimLetterUlbO
   };
 }
 
-function makeResult(options: ClaimLetterUlbOption[], page = 1, total = options.length): ClaimLetterUlbOptionsResult {
-  return { options, page, limit: 20, total };
+function makeResult(options: ClaimLetterUlbOption[], total = options.length): ClaimLetterUlbOptionsResult {
+  return { options, page: 1, limit: 1000, total };
 }
+
+/** `n` eligible ULBs named "ULB 00".."ULB nn", A-Z like the backend sends them. */
+function manyOptions(n: number, prefix = 'm'): ClaimLetterUlbOption[] {
+  return Array.from({ length: n }, (_, i) => makeOption(`${prefix}-${i}`, `ULB ${String(i).padStart(2, '0')}`));
+}
+
+const baseData: ClaimLetterUlbPickerDialogData = {
+  stateId: 'state-1',
+  yearId: 'year-1',
+  installment: 1,
+  excludeUlbIds: ['ulb-2'],
+  claimLetterId: 'claim-1',
+};
 
 describe('ClaimLetterUlbPickerDialogComponent', () => {
   let fixture: ComponentFixture<ClaimLetterUlbPickerDialogComponent>;
   let component: ClaimLetterUlbPickerDialogComponent;
-  let service: ClaimLetterService;
   let dialogRef: jasmine.SpyObj<MatDialogRef<ClaimLetterUlbPickerDialogComponent, ClaimLetterUlbOption[]>>;
   let getUlbOptionsSpy: jasmine.Spy;
 
-  const data: ClaimLetterUlbPickerDialogData = {
-    stateId: 'state-1',
-    yearId: 'year-1',
-    installment: 1,
-    excludeUlbIds: ['ulb-2'],
-    claimLetterId: 'claim-1',
-  };
   const options = [
     makeOption('ulb-1', 'Alpha ULB'),
     makeOption('ulb-2', 'Beta ULB'),
     makeOption('ulb-3', 'Gamma ULB', { eligible: false, ineligibleReasonCode: 'FORM_STATUS_3_NOT_ACCEPTED' }),
   ];
 
-  async function setup(): Promise<void> {
+  async function setup(
+    loaded: ClaimLetterUlbOption[] = options,
+    data: ClaimLetterUlbPickerDialogData = baseData,
+    total = loaded.length,
+  ): Promise<void> {
+    TestBed.resetTestingModule();
     dialogRef = jasmine.createSpyObj<MatDialogRef<ClaimLetterUlbPickerDialogComponent, ClaimLetterUlbOption[]>>(
       'MatDialogRef',
       ['close'],
@@ -66,8 +76,8 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
 
     fixture = TestBed.createComponent(ClaimLetterUlbPickerDialogComponent);
     component = fixture.componentInstance;
-    service = TestBed.inject(ClaimLetterService);
-    getUlbOptionsSpy = spyOn(service, 'getUlbOptions').and.returnValue(of(makeResult(options)));
+    const service = TestBed.inject(ClaimLetterService);
+    getUlbOptionsSpy = spyOn(service, 'getUlbOptions').and.returnValue(of(makeResult(loaded, total)));
     fixture.detectChanges();
   }
 
@@ -75,10 +85,13 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
     await setup();
   });
 
+  function rows() {
+    return fixture.debugElement.queryAll(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
+  }
+
   function rowFor(ulbId: string) {
-    const rows = fixture.debugElement.queryAll(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
-    const index = options.findIndex((o) => o.ulbId === ulbId);
-    return rows[index];
+    const index = component.pageRows().findIndex((o) => o.ulbId === ulbId);
+    return rows()[index];
   }
 
   function checkboxFor(ulbId: string): HTMLInputElement {
@@ -86,315 +99,419 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
       .nativeElement as HTMLInputElement;
   }
 
-  // ─── Loading / query params ─────────────────────────────────────────────────
+  function byCy(cy: string): HTMLElement | null {
+    return (fixture.nativeElement as HTMLElement).querySelector(`[data-cy="${cy}"]`);
+  }
 
-  it('requests page 1 with no search/filter and the claimLetterId passthrough as soon as it opens', () => {
-    expect(getUlbOptionsSpy).toHaveBeenCalledWith('state-1', 'year-1', 1, {
-      search: undefined,
-      eligibilityFilter: undefined,
+  function clickWithShift(target: HTMLElement): void {
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }));
+    fixture.detectChanges();
+  }
+
+  // ─── Loading ─────────────────────────────────────────────────────────────────
+
+  it('loads every ULB in one request, with the claimLetterId passthrough', () => {
+    expect(getUlbOptionsSpy).toHaveBeenCalledOnceWith('state-1', 'year-1', 1, {
       claimLetterId: 'claim-1',
       page: 1,
-      limit: 20,
+      limit: 1000,
     });
-    expect(component.options()).toEqual(options);
+    expect(component.allOptions()).toEqual(options);
   });
 
   it('omits claimLetterId when opened in create mode', async () => {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, ClaimLetterUlbPickerDialogComponent],
-      providers: [
-        { provide: MatDialogRef, useValue: dialogRef },
-        { provide: MAT_DIALOG_DATA, useValue: { ...data, claimLetterId: undefined } },
-      ],
-    }).compileComponents();
-
-    const createFixture = TestBed.createComponent(ClaimLetterUlbPickerDialogComponent);
-    const createService = TestBed.inject(ClaimLetterService);
-    const spy = spyOn(createService, 'getUlbOptions').and.returnValue(of(makeResult(options)));
-    createFixture.detectChanges();
-
-    expect(spy).toHaveBeenCalledWith('state-1', 'year-1', 1, jasmine.objectContaining({ claimLetterId: undefined }));
-  });
-
-  it('debounces search input before requesting, using a trimmed term', fakeAsync(() => {
-    getUlbOptionsSpy.calls.reset();
-    component.search.setValue('Al');
-    tick(100);
-    component.search.setValue('  Alpha  ');
-    tick(399);
-    expect(getUlbOptionsSpy).not.toHaveBeenCalled();
-    tick(1);
+    await setup(options, { ...baseData, claimLetterId: undefined });
     expect(getUlbOptionsSpy).toHaveBeenCalledWith(
       'state-1',
       'year-1',
       1,
-      jasmine.objectContaining({ search: 'Alpha', page: 1 }),
+      jasmine.objectContaining({ claimLetterId: undefined }),
     );
-  }));
-
-  it('shows an empty state when no options are returned', () => {
-    getUlbOptionsSpy.and.returnValue(of(makeResult([])));
-    component.loadOptions();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('No ULBs found');
   });
 
-  it('words the empty state for the search or filter it was loaded with', () => {
-    getUlbOptionsSpy.and.returnValue(of(makeResult([])));
-    const emptyText = () =>
-      (
-        fixture.nativeElement.querySelector('[data-cy="claim-letter-ulb-picker-empty"]') as HTMLElement
-      ).textContent?.trim();
-
-    component.setEligibilityFilter('IN_OTHER_BATCH');
-    fixture.detectChanges();
-    expect(emptyText()).toBe('No ULBs are in another batch.');
-
-    component.search.setValue('Alpha', { emitEvent: false });
-    component.loadOptions();
-    fixture.detectChanges();
-    expect(emptyText()).toBe('No ULBs found for the current search.');
+  it('notes when the State has more ULBs than one load returns', async () => {
+    await setup(options, baseData, 1200);
+    expect(byCy('claim-letter-ulb-picker-truncated-note')?.textContent?.trim()).toBe(
+      'Showing the first 3 of 1200 ULBs.',
+    );
   });
 
-  it('shows a retryable failure state on error, and retry re-requests', () => {
+  it('shows a retryable failure state on error, and retry loads again', () => {
     getUlbOptionsSpy.and.returnValue(throwError(() => new Error('network error')));
     component.loadOptions();
     fixture.detectChanges();
 
     expect(component.loadError()).toBe(true);
     const retryButton = fixture.debugElement.query(By.css('button[aria-label="Retry loading ULBs"]'));
-    expect(retryButton).toBeTruthy();
 
     getUlbOptionsSpy.and.returnValue(of(makeResult(options)));
     retryButton.nativeElement.click();
     fixture.detectChanges();
 
     expect(component.loadError()).toBe(false);
-    expect(component.options()).toEqual(options);
+    expect(component.allOptions()).toEqual(options);
   });
 
-  // ─── Eligibility filter ──────────────────────────────────────────────────────
+  // ─── Local search, filter and paging ──────────────────────────────────────────
 
-  it('setEligibilityFilter sends the mapped query param and resets to page 1', () => {
-    component.goToPage(1); // no-op, already page 1
-    getUlbOptionsSpy.calls.reset();
-    component.setEligibilityFilter('ELIGIBLE');
-
-    expect(getUlbOptionsSpy).toHaveBeenCalledWith(
-      'state-1',
-      'year-1',
-      1,
-      jasmine.objectContaining({ eligibilityFilter: 'ELIGIBLE', page: 1 }),
-    );
-  });
-
-  it('setEligibilityFilter is a no-op when re-selecting the current filter', () => {
-    getUlbOptionsSpy.calls.reset();
-    component.setEligibilityFilter('ALL');
-    expect(getUlbOptionsSpy).not.toHaveBeenCalled();
-  });
-
-  it('clicking the Eligible mat-button-toggle sends the mapped query param', () => {
-    getUlbOptionsSpy.calls.reset();
-    const group = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'));
-    const toggleButtons = group.queryAll(By.css('button'));
-    toggleButtons[1].nativeElement.click(); // ALL, ELIGIBLE, INELIGIBLE, IN_OTHER_BATCH
+  it('searches locally after a short debounce, on a trimmed term, without another request', fakeAsync(() => {
+    component.search.setValue('  alp  ');
+    tick(149);
+    expect(component.filtered().length).toBe(3);
+    tick(1);
     fixture.detectChanges();
 
-    expect(getUlbOptionsSpy).toHaveBeenCalledWith(
-      'state-1',
-      'year-1',
-      1,
-      jasmine.objectContaining({ eligibilityFilter: 'ELIGIBLE', page: 1 }),
-    );
+    expect(component.filtered().map((o) => o.ulbId)).toEqual(['ulb-1']);
+    expect(getUlbOptionsSpy).toHaveBeenCalledTimes(1);
+  }));
+
+  it('searches the Census Code and SB Code too', fakeAsync(() => {
+    component.search.setValue('800ulb-3');
+    tick(150);
+    expect(component.filtered().map((o) => o.ulbId)).toEqual(['ulb-3']);
+  }));
+
+  it('filters locally with the backend rules', () => {
+    const inBatch = makeOption('ulb-4', 'Delta ULB', {
+      eligible: false,
+      ineligibleReasonCode: 'ALREADY_LOCKED_IN_ANOTHER_CLAIM',
+      claimedInBatch: { batchNumber: 1 },
+    });
+    component.allOptions.set([...options, inBatch]);
+
+    component.setEligibilityFilter('ELIGIBLE');
+    expect(component.filtered().map((o) => o.ulbId)).toEqual(['ulb-1', 'ulb-2']);
+    component.setEligibilityFilter('INELIGIBLE');
+    expect(component.filtered().map((o) => o.ulbId)).toEqual(['ulb-3']);
+    component.setEligibilityFilter('IN_OTHER_BATCH');
+    expect(component.filtered().map((o) => o.ulbId)).toEqual(['ulb-4']);
+    expect(getUlbOptionsSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('clicking the In other batches toggle sends IN_OTHER_BATCH from page 1', () => {
-    component.goToPage(1);
-    getUlbOptionsSpy.calls.reset();
+  it('clicking the In other batches toggle filters to ULBs in another batch', () => {
     const group = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-eligibility-filter"]'));
     const toggleButtons = group.queryAll(By.css('button'));
     expect((toggleButtons[3].nativeElement as HTMLElement).textContent?.trim()).toBe('In other batches');
     toggleButtons[3].nativeElement.click();
     fixture.detectChanges();
 
-    expect(getUlbOptionsSpy).toHaveBeenCalledWith(
-      'state-1',
-      'year-1',
-      1,
-      jasmine.objectContaining({ eligibilityFilter: 'IN_OTHER_BATCH', page: 1 }),
-    );
+    expect(component.eligibilityFilter()).toBe('IN_OTHER_BATCH');
+    expect(byCy('claim-letter-ulb-picker-empty')?.textContent?.trim()).toBe('No ULBs are in another batch.');
   });
 
-  // ─── Disabled rows (excluded vs. server-ineligible) ─────────────────────────
+  it('words the empty state for a search', fakeAsync(() => {
+    component.search.setValue('zzz');
+    tick(150);
+    fixture.detectChanges();
+    expect(byCy('claim-letter-ulb-picker-empty')?.textContent?.trim()).toBe('No ULBs found for the current search.');
+  }));
 
-  it('disables an already-added ULB even though the server reports it eligible', () => {
-    expect(component.isDisabled(options[1])).toBe(true);
-    const checkbox = checkboxFor('ulb-2');
-    expect(checkbox.disabled).toBe(true);
+  it('pages 20 at a time, and goes back to page 1 when the filter changes', async () => {
+    await setup(manyOptions(45));
+    expect(component.totalPages()).toBe(3);
+    expect(rows().length).toBe(20);
+
+    component.goToPage(3);
+    fixture.detectChanges();
+    expect(rows().length).toBe(5);
+
+    component.goToPage(0);
+    component.goToPage(4);
+    expect(component.page()).toBe(3);
+
+    component.setEligibilityFilter('ELIGIBLE');
+    expect(component.page()).toBe(1);
   });
 
-  it('disables a server-ineligible ULB even though it is not in the excluded list', () => {
-    expect(component.isDisabled(options[2])).toBe(true);
-    const checkbox = checkboxFor('ulb-3');
-    expect(checkbox.disabled).toBe(true);
-  });
+  // ─── Disabled rows ────────────────────────────────────────────────────────────
 
-  it('leaves an eligible, non-excluded ULB selectable', () => {
-    expect(component.isDisabled(options[0])).toBe(false);
-    const checkbox = checkboxFor('ulb-1');
-    expect(checkbox.disabled).toBe(false);
-  });
+  it('disables an already-added ULB and an ineligible one, and leaves an eligible one selectable', () => {
+    expect(checkboxFor('ulb-2').disabled).toBe(true);
+    expect(checkboxFor('ulb-3').disabled).toBe(true);
+    expect(checkboxFor('ulb-1').disabled).toBe(false);
 
-  it('toggling a disabled row does nothing', () => {
     component.toggle(options[2]);
     expect(component.isSelected('ulb-3')).toBe(false);
   });
 
-  // ─── Multi-selection ────────────────────────────────────────────────────────
+  // ─── Selecting rows ───────────────────────────────────────────────────────────
 
-  it('selects multiple eligible ULBs in one session, preserving order', () => {
+  it('confirms the selected ULBs in selection order', () => {
     component.toggle(options[0]);
     component.confirm();
     expect(dialogRef.close).toHaveBeenCalledWith([options[0]]);
   });
 
-  it('tracks selection by canonical ulbId, and a ULB appears at most once', () => {
-    component.toggle(options[0]);
-    component.toggle({ ...options[0] });
+  it('a row click toggles, and a checkbox click does not double-toggle through the row', () => {
+    rowFor('ulb-1').nativeElement.click();
+    expect(component.isSelected('ulb-1')).toBe(true);
+    checkboxFor('ulb-1').click();
     expect(component.isSelected('ulb-1')).toBe(false);
+  });
+
+  it('shift-click ticks every selectable row between the last toggled row and this one', async () => {
+    const list = manyOptions(6);
+    list[2] = makeOption('m-2', 'ULB 02', { eligible: false, ineligibleReasonCode: 'X' });
+    await setup(list, { ...baseData, excludeUlbIds: ['m-3'] });
+
+    checkboxFor('m-1').click();
+    fixture.detectChanges();
+    clickWithShift(checkboxFor('m-5'));
+
+    // m-2 is ineligible and m-3 already added, so both are skipped.
+    expect([...component.selectedUlbs().keys()].sort()).toEqual(['m-1', 'm-4', 'm-5']);
+
+    // Shift-click on a ticked row unticks the range back to the new anchor.
+    clickWithShift(rowFor('m-4').nativeElement as HTMLElement);
+    expect([...component.selectedUlbs().keys()].sort()).toEqual(['m-1']);
+  });
+
+  it('never reaches rows on another page: a new page drops the shift-click anchor', async () => {
+    await setup(manyOptions(45));
+
+    checkboxFor('m-1').click();
+    fixture.detectChanges();
+    component.goToPage(2);
+    fixture.detectChanges();
+    clickWithShift(checkboxFor('m-25'));
+
+    // Only the clicked row: the anchor stayed on page 1.
+    expect([...component.selectedUlbs().keys()].sort()).toEqual(['m-1', 'm-25']);
+  });
+
+  it('a filter change drops the shift-click anchor too', async () => {
+    await setup(manyOptions(6));
+
+    checkboxFor('m-1').click();
+    fixture.detectChanges();
+    component.setEligibilityFilter('ELIGIBLE');
+    fixture.detectChanges();
+    clickWithShift(checkboxFor('m-4'));
+
+    expect([...component.selectedUlbs().keys()].sort()).toEqual(['m-1', 'm-4']);
+  });
+
+  it('stops a shift-click from selecting the text between rows, but leaves plain text selection alone', () => {
+    const row = rowFor('ulb-1').nativeElement as HTMLElement;
+    const shiftDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true, shiftKey: true });
+    const plainDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+
+    row.dispatchEvent(shiftDown);
+    row.dispatchEvent(plainDown);
+
+    expect(shiftDown.defaultPrevented).toBe(true);
+    expect(plainDown.defaultPrevented).toBe(false);
+  });
+
+  // ─── Header checkbox and the select-all bar ───────────────────────────────────
+
+  function headerCheckbox(): HTMLInputElement {
+    return byCy('claim-letter-ulb-picker-select-page') as HTMLInputElement;
+  }
+
+  it('the header checkbox ticks and unticks the selectable rows on this page, and shows a partial state', () => {
+    component.toggle(options[0]);
+    fixture.detectChanges();
+    // Only Alpha is selectable here, so ticking it fills the page.
+    expect(headerCheckbox().checked).toBe(true);
+
+    headerCheckbox().click();
+    fixture.detectChanges();
+    expect(component.selectedCount()).toBe(0);
+    expect(headerCheckbox().checked).toBe(false);
+  });
+
+  it('shows the header checkbox as partly checked when only some page rows are ticked', async () => {
+    await setup(manyOptions(5));
+    component.toggle(component.allOptions()[0]);
+    fixture.detectChanges();
+    expect(headerCheckbox().indeterminate).toBe(true);
+    expect(headerCheckbox().checked).toBe(false);
+  });
+
+  it('disables the header checkbox when the page has nothing selectable', () => {
+    component.setEligibilityFilter('INELIGIBLE');
+    fixture.detectChanges();
+    expect(headerCheckbox().disabled).toBe(true);
+  });
+
+  it('after the page is ticked, offers every eligible ULB across pages, with an exact count', async () => {
+    const list = [
+      ...manyOptions(45),
+      makeOption('x-ineligible', 'ZZ Ineligible', { eligible: false, ineligibleReasonCode: 'X' }),
+    ];
+    await setup(list, { ...baseData, excludeUlbIds: ['m-44'] });
+
+    headerCheckbox().click();
+    fixture.detectChanges();
+    expect(component.selectedCount()).toBe(20);
+    expect(byCy('claim-letter-ulb-picker-select-all-bar')?.textContent).toContain(
+      'All 20 eligible ULBs on this page are selected.',
+    );
+
+    const selectAll = byCy('claim-letter-ulb-picker-select-all') as HTMLButtonElement;
+    expect(selectAll.textContent?.trim()).toBe('Select all 44 eligible ULBs');
+    selectAll.click();
+    fixture.detectChanges();
+
+    expect(component.selectedCount()).toBe(44);
+    expect(component.isSelected('m-44')).toBe(false); // already added
+    expect(component.isSelected('x-ineligible')).toBe(false);
+    expect(byCy('claim-letter-ulb-picker-select-all-bar')?.textContent).toContain('All 44 eligible ULBs are selected.');
+
+    const clear = byCy('claim-letter-ulb-picker-clear-selection') as HTMLButtonElement;
+    expect(clear.textContent?.trim()).toBe('Clear these 44');
+    clear.click();
+    fixture.detectChanges();
     expect(component.selectedCount()).toBe(0);
   });
 
-  it('toggling a row via a click (not directly on the checkbox) also toggles selection', () => {
-    rowFor('ulb-1').nativeElement.click();
-    expect(component.isSelected('ulb-1')).toBe(true);
+  it('"Clear these N" clears only the matching set; "Clear all" clears the rest', fakeAsync(() => {
+    const north = manyOptions(25, 'n').map((o) => ({ ...o, ulbName: `North ${o.ulbName}` }));
+    const south = manyOptions(5, 's').map((o) => ({ ...o, ulbName: `South ${o.ulbName}` }));
+    component.allOptions.set([...north, ...south]);
+    component.toggle(south[0]);
+
+    component.search.setValue('north');
+    tick(150);
+    fixture.detectChanges();
+    headerCheckbox().click();
+    fixture.detectChanges();
+    (byCy('claim-letter-ulb-picker-select-all') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.selectedCount()).toBe(26);
+
+    const clear = byCy('claim-letter-ulb-picker-clear-selection') as HTMLButtonElement;
+    expect(clear.textContent?.trim()).toBe('Clear these 25');
+    clear.click();
+    fixture.detectChanges();
+    expect([...component.selectedUlbs().keys()]).toEqual(['s-0']);
+
+    (byCy('claim-letter-ulb-picker-clear-all') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(component.selectedCount()).toBe(0);
+    expect(byCy('claim-letter-ulb-picker-clear-all')).toBeNull();
+  }));
+
+  it('select all follows the current search, and keeps earlier picks', fakeAsync(() => {
+    const north = manyOptions(25, 'n').map((o) => ({ ...o, ulbName: `North ${o.ulbName}` }));
+    const south = manyOptions(5, 's').map((o) => ({ ...o, ulbName: `South ${o.ulbName}` }));
+    component.allOptions.set([...north, ...south]);
+    component.toggle(south[0]);
+
+    component.search.setValue('north');
+    tick(150);
+    fixture.detectChanges();
+    headerCheckbox().click();
+    fixture.detectChanges();
+
+    const selectAll = byCy('claim-letter-ulb-picker-select-all') as HTMLButtonElement;
+    expect(selectAll.textContent?.trim()).toBe('Select all 25 eligible ULBs matching "north"');
+    selectAll.click();
+
+    expect(component.selectedCount()).toBe(26);
+    expect(component.isSelected('s-0')).toBe(true);
+  }));
+
+  it('shows no bar when every selectable row fits on this page', () => {
+    component.toggle(options[0]);
+    fixture.detectChanges();
+    expect(component.selectAllBar()).toBeNull();
+    expect(byCy('claim-letter-ulb-picker-select-all')).toBeNull();
   });
 
-  it('a single checkbox click does not double-toggle via the bubbled row click handler', () => {
-    const checkbox = checkboxFor('ulb-1');
-    checkbox.click();
-    expect(component.isSelected('ulb-1')).toBe(true);
+  // ─── Footer ───────────────────────────────────────────────────────────────────
+
+  it('shows the count, the total allocation and how many rely on an exemption under review', async () => {
+    await setup([
+      makeOption('a', 'A', { allocationAmount: 1_00_00_000 }),
+      makeOption('b', 'B', {
+        allocationAmount: 50_00_000,
+        exemptionNotes: [{ label: 'SLB', status: 'UNDER_REVIEW' }],
+      }),
+    ]);
+    const countText = () => byCy('claim-letter-ulb-picker-selected-count')?.textContent ?? '';
+    expect(countText()).toContain('0 ULBs selected');
+    expect(byCy('claim-letter-ulb-picker-selected-total')).toBeNull();
+
+    component.selectAllInView();
+    fixture.detectChanges();
+
+    expect(countText()).toContain('2 ULBs selected');
+    expect(component.selectedTotalAmount()).toBe(1_50_00_000);
+    expect(byCy('claim-letter-ulb-picker-selected-total')).not.toBeNull();
+    expect(byCy('claim-letter-ulb-picker-under-review-count')?.textContent?.trim()).toBe(
+      '· 1 relies on an exemption under review',
+    );
   });
 
-  // ─── Footer ──────────────────────────────────────────────────────────────────
-
-  it('shows singular and plural selected counts correctly', () => {
-    expect(
-      fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-selected-count"]')).nativeElement
-        .textContent,
-    ).toContain('0 ULBs selected');
+  it('Add selected ULBs is disabled at zero selections, and confirm runs once', () => {
+    const confirmButton = () => byCy('claim-letter-ulb-picker-confirm') as HTMLButtonElement;
+    expect(confirmButton().disabled).toBe(true);
 
     component.toggle(options[0]);
     fixture.detectChanges();
-    expect(
-      fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-selected-count"]')).nativeElement
-        .textContent,
-    ).toContain('1 ULB selected');
-  });
+    expect(confirmButton().disabled).toBe(false);
 
-  it('the top-right close icon returns no result (cancel)', () => {
-    fixture.debugElement.query(By.css('button[aria-label="Close dialog"]')).nativeElement.click();
-    expect(dialogRef.close).toHaveBeenCalledWith(undefined);
-  });
-
-  it('Add selected ULBs is disabled at zero selections and enabled once selected', () => {
-    let confirmButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-confirm"]'))
-      .nativeElement as HTMLButtonElement;
-    expect(confirmButton.disabled).toBe(true);
-
-    component.toggle(options[0]);
-    fixture.detectChanges();
-    confirmButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-confirm"]'))
-      .nativeElement as HTMLButtonElement;
-    expect(confirmButton.disabled).toBe(false);
-  });
-
-  it('confirm cannot execute twice (guards double-submit)', () => {
-    component.toggle(options[0]);
     component.confirm();
     component.confirm();
     expect(dialogRef.close).toHaveBeenCalledTimes(1);
   });
 
-  it('cancel closes with undefined', () => {
+  it('cancel and the close icon return no result', () => {
     component.toggle(options[0]);
-    component.cancel();
+    fixture.debugElement.query(By.css('button[aria-label="Close dialog"]')).nativeElement.click();
     expect(dialogRef.close).toHaveBeenCalledWith(undefined);
   });
 
-  // ─── Pagination ──────────────────────────────────────────────────────────────
+  // ─── Final batch note ─────────────────────────────────────────────────────────
 
-  it('goToPage requests the given page and ignores out-of-range values', () => {
-    component.total.set(25); // a real 2nd page must already be known to exist before jumping to it
-    getUlbOptionsSpy.and.returnValue(of(makeResult([options[1]], 2, 25)));
-    component.goToPage(2);
-    expect(component.page()).toBe(2);
+  it('on the final batch, notes the eligible ULBs not yet added and the ineligible ones in no batch', async () => {
+    const inBatch = makeOption('ulb-4', 'Delta ULB', { eligible: false, claimedInBatch: { batchNumber: 1 } });
+    await setup([...options, inBatch], { ...baseData, isFinalBatch: true });
 
-    getUlbOptionsSpy.calls.reset();
-    component.goToPage(0);
-    component.goToPage(999);
-    expect(getUlbOptionsSpy).not.toHaveBeenCalled();
+    expect(byCy('claim-letter-ulb-picker-final-batch-note')?.textContent?.trim()).toBe(
+      'This is the final batch. It can be submitted only when every ULB is in a batch: ' +
+        '1 eligible ULB is not yet added, and 1 ineligible ULB is in no batch.',
+    );
   });
 
-  it('a stale response is ignored once a newer request has been issued', () => {
-    const first$ = new Subject<ClaimLetterUlbOptionsResult>();
-    const second$ = new Subject<ClaimLetterUlbOptionsResult>();
-    getUlbOptionsSpy.and.returnValues(first$, second$);
+  it('counts a ULB ticked here as added in the final batch note', async () => {
+    await setup(options, { ...baseData, isFinalBatch: true });
 
-    component.loadOptions();
-    component.loadOptions();
+    component.toggle(options[0]);
+    fixture.detectChanges();
 
-    first$.next(makeResult([options[2]])); // late response from the superseded first request
-    expect(component.options()).toEqual(options); // unchanged — still the initial ngOnInit load
-
-    second$.next(makeResult([options[1]]));
-    expect(component.options()).toEqual([options[1]]);
+    expect(byCy('claim-letter-ulb-picker-final-batch-note')?.textContent?.trim()).toBe(
+      'This is the final batch. It can be submitted only when every ULB is in a batch: 1 ineligible ULB is in no batch.',
+    );
   });
 
-  // ─── Ineligible tooltip ────────────────────────────────────────────────────
+  it('shows no final batch note on other batches, or when nothing is left out', async () => {
+    expect(byCy('claim-letter-ulb-picker-final-batch-note')).toBeNull();
+
+    await setup([options[1]], { ...baseData, isFinalBatch: true });
+    expect(byCy('claim-letter-ulb-picker-final-batch-note')).toBeNull();
+  });
+
+  // ─── Badges and tooltips ──────────────────────────────────────────────────────
 
   function tooltipMessageFor(ulbId: string): string {
     return rowFor(ulbId).query(By.directive(MatTooltip)).injector.get(MatTooltip).message;
   }
 
-  it('shows the specific failing form(s) when the backend supplies ineligibleReasonDetail', () => {
-    getUlbOptionsSpy.and.returnValue(
-      of(
-        makeResult([
-          makeOption('ulb-3', 'Gamma ULB', {
-            eligible: false,
-            ineligibleReasonCode: 'ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET',
-            ineligibleReasonDetail: 'SLB eligibility criteria not met',
-          }),
-        ]),
-      ),
-    );
-    component.loadOptions();
-    fixture.detectChanges();
-
-    // Only one row is rendered by this override, so query it directly rather than via rowFor()
-    // (which indexes into the outer, 3-item `options` fixture).
-    const row = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
-    const message = row.query(By.directive(MatTooltip)).injector.get(MatTooltip).message;
-    expect(message).toBe('SLB eligibility criteria not met');
-  });
-
-  it('falls back to the humanized reason code when ineligibleReasonDetail is absent', () => {
-    // options[2] ('Gamma ULB') is ineligible with reasonCode 'FORM_STATUS_3_NOT_ACCEPTED' and no detail.
+  it('shows the failing form(s) when the backend supplies ineligibleReasonDetail, else the humanized code', async () => {
     expect(tooltipMessageFor('ulb-3')).toBe('Form Status 3 Not Accepted');
+
+    await setup([
+      makeOption('ulb-3', 'Gamma ULB', {
+        eligible: false,
+        ineligibleReasonCode: 'ULB_LEVEL_ELIGIBILITY_CRITERIA_NOT_MET',
+        ineligibleReasonDetail: 'SLB eligibility criteria not met',
+      }),
+    ]);
+    expect(tooltipMessageFor('ulb-3')).toBe('SLB eligibility criteria not met');
   });
-
-  // ─── ULB in another batch ──────────────────────────────────────────────────
-
-  function renderSingle(option: ClaimLetterUlbOption) {
-    getUlbOptionsSpy.and.returnValue(of(makeResult([option])));
-    component.loadOptions();
-    fixture.detectChanges();
-    return fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-row"]'));
-  }
 
   const claimedOption = (claimedInBatch: ClaimLetterUlbOption['claimedInBatch']) =>
     makeOption('ulb-9', 'Bicholim Municipality', {
@@ -403,46 +520,57 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
       claimedInBatch,
     });
 
-  it('shows "In Batch #N" instead of "Ineligible" for a ULB in another batch, without its status', () => {
-    const row = renderSingle(claimedOption({ batchNumber: 1 }));
+  it('shows "In Batch #N" for a ULB in another batch, unselectable and named in its checkbox label', async () => {
+    await setup([claimedOption({ batchNumber: 2 })]);
+    const row = rowFor('ulb-9');
 
     const badge = row.query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'));
-    expect((badge.nativeElement as HTMLElement).textContent?.trim()).toBe('In Batch #1');
-    expect((badge.nativeElement as HTMLElement).classList).toContain('text-bg-info');
-    expect(badge.injector.get(MatTooltip).message).toBe('Already in Claim Batch #1');
+    expect((badge.nativeElement as HTMLElement).textContent?.trim()).toBe('In Batch #2');
+    expect(badge.injector.get(MatTooltip).message).toBe('Already in Claim Batch #2');
     expect((row.nativeElement as HTMLElement).textContent).not.toContain('Ineligible');
+    expect(checkboxFor('ulb-9').disabled).toBeTrue();
+    expect(checkboxFor('ulb-9').getAttribute('aria-label')).toBe('Bicholim Municipality is already in Batch #2');
   });
 
-  it('says "In another batch" when the batch number is unknown', () => {
-    const row = renderSingle(claimedOption({ batchNumber: null }));
-
-    const badge = row.query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'));
+  it('says "In another batch" when the batch number is unknown', async () => {
+    await setup([claimedOption({ batchNumber: null })]);
+    const badge = rowFor('ulb-9').query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'));
     expect((badge.nativeElement as HTMLElement).textContent?.trim()).toBe('In another batch');
     expect(badge.injector.get(MatTooltip).message).toBe('Already in another claim batch');
   });
 
-  it('keeps a ULB in another batch unselectable and names its batch in the checkbox label', () => {
-    const option = claimedOption({ batchNumber: 2 });
-    const row = renderSingle(option);
-
-    const checkbox = row.query(By.css('[data-cy="claim-letter-ulb-picker-checkbox"]'))
-      .nativeElement as HTMLInputElement;
-    expect(checkbox.disabled).toBeTrue();
-    expect(checkbox.getAttribute('aria-label')).toBe('Bicholim Municipality is already in Batch #2');
-    component.toggle(option);
-    expect(component.selectedCount()).toBe(0);
-  });
-
-  it('shows the hover note with its info icon above the table', () => {
-    const note = fixture.debugElement.query(By.css('[data-cy="claim-letter-ulb-picker-hover-note"]'));
-
-    expect((note.nativeElement as HTMLElement).textContent?.trim()).toBe('Hover over a status pill for more details.');
-    expect(note.query(By.css('i.bi-info-circle'))).not.toBeNull();
-  });
-
-  it('keeps the "Ineligible" badge for a ULB that is not in another batch', () => {
+  it('keeps the "Ineligible" badge and label for a ULB that is not in another batch', () => {
     expect(rowFor('ulb-3').query(By.css('[data-cy="claim-letter-ulb-picker-claimed-badge"]'))).toBeNull();
     expect((rowFor('ulb-3').nativeElement as HTMLElement).textContent).toContain('Ineligible');
     expect(checkboxFor('ulb-3').getAttribute('aria-label')).toBe('Gamma ULB cannot be selected');
+  });
+
+  it('shows both tips on one line above the table, with its info icon, and none below it', () => {
+    const tips = byCy('claim-letter-ulb-picker-tips');
+    expect(tips?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Tips: hover a status pill for details \u00b7 Shift+click to select a range',
+    );
+    expect(tips?.querySelector('i.bi-info-circle')).not.toBeNull();
+    expect(byCy('claim-letter-ulb-picker-select-all-bar')?.contains(tips)).toBeTrue();
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Tip: hold Shift');
+  });
+
+  it('gives the tips line over to the select-all offer once the page is ticked', async () => {
+    await setup(manyOptions(45));
+
+    (byCy('claim-letter-ulb-picker-select-page') as HTMLInputElement).click();
+    fixture.detectChanges();
+
+    expect(byCy('claim-letter-ulb-picker-tips')).toBeNull();
+    expect(byCy('claim-letter-ulb-picker-select-all')).not.toBeNull();
+  });
+
+  it('centres the Eligibility header and its badges', () => {
+    const header = fixture.debugElement
+      .queryAll(By.css('th'))
+      .find((th) => (th.nativeElement as HTMLElement).textContent?.trim() === 'Eligibility');
+    expect((header?.nativeElement as HTMLElement).classList).toContain('text-center');
+    const badgeCell = (rowFor('ulb-1').nativeElement as HTMLElement).querySelector('.badge')?.closest('td');
+    expect(badgeCell?.classList).toContain('text-center');
   });
 });

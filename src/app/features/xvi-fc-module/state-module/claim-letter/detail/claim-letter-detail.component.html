@@ -60,11 +60,18 @@
           data-cy="claim-letter-detail-form-errors-alert"
         >
           <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
-          <ul class="small mb-0 ps-3">
-            @for (message of formLevelErrors(); track message) {
-              <li>{{ message }}</li>
+          <div class="small">
+            <ul class="mb-0 ps-3">
+              @for (message of formLevelErrors(); track message) {
+                <li>{{ message }}</li>
+              }
+            </ul>
+            @if (canEdit() && refusedUlbIds().size > 0) {
+              <ng-container
+                *ngTemplateOutlet="removeUlbsButton; context: { $implicit: refusedUlbIds() }"
+              ></ng-container>
             }
-          </ul>
+          </div>
         </div>
       }
 
@@ -107,6 +114,10 @@
             [claimAmountEditable]="claimAmountEditable()"
             [varianceLowerPercent]="varianceLowerPercent()"
             [varianceUpperPercent]="varianceUpperPercent()"
+            [isFinalBatch]="isFinalBatch()"
+            [rejectedRows]="rejectedRows()"
+            [locked]="isSaving() || isAbandoning() || isSubmitting()"
+            (ulbsRemoved)="forgetRejected($event)"
           ></app-claim-ulb-table>
         </mat-card-content>
       </mat-card>
@@ -136,7 +147,14 @@
         data-cy="claim-letter-detail-row-validation-alert"
       >
         <i class="bi bi-x-circle-fill flex-shrink-0" aria-hidden="true"></i>
-        <span class="small">{{ message }}</span>
+        <div class="small">
+          <span>{{ message }}</span>
+          @if (ineligibleUlbIdsToRemove().size > 0) {
+            <ng-container
+              *ngTemplateOutlet="removeUlbsButton; context: { $implicit: ineligibleUlbIdsToRemove() }"
+            ></ng-container>
+          }
+        </div>
       </div>
     }
 
@@ -252,3 +270,16 @@
     </div>
   </div>
 }
+
+<ng-template #removeUlbsButton let-ulbIds>
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-danger d-block mt-2"
+    [disabled]="isSaving()"
+    (click)="removeUlbRows(ulbIds)"
+    data-cy="claim-letter-detail-remove-rejected"
+  >
+    <i class="bi bi-trash me-1" aria-hidden="true"></i>
+    {{ ulbIds.size === 1 ? 'Remove this ULB' : 'Remove these ' + ulbIds.size + ' ULBs' }}
+  </button>
+</ng-template>
