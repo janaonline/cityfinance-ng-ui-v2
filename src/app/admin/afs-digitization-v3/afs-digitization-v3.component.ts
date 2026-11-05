@@ -29,8 +29,13 @@ import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import {
+  AfsDigitizationV3ResultDialogComponent,
+  DigitizationV3ResultDialogData,
+} from './afs-digitization-v3-result-dialog.component';
+import {
   AfsDigitizationV3Service,
   DigitizationV3Metrics,
+  DigitizationV3OverallMetrics,
   DigitizationV3Query,
   DigitizationV3Row,
   DigitizationV3Status,
@@ -45,6 +50,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   auditor_report: "Auditor's Report",
   unknown: 'Unidentified',
 };
+
+type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
 
 interface MetricCard {
   key: keyof DigitizationV3Metrics;
@@ -94,6 +101,14 @@ export class AfsDigitizationV3Component implements OnInit {
     { key: 'mismatch', title: 'Mismatch', icon: 'bi bi-exclamation-triangle', class: 'text-danger' },
   ];
 
+  /** Overall cards: every year, audit type and doc type, whatever the filters say */
+  readonly overallCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
+    { key: 'total', title: 'Total files', icon: 'bi bi-collection', class: 'text-info' },
+    { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
+    { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
+    { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
+  ];
+
   readonly statusOptions: { value: DigitizationV3Status | ''; label: string }[] = [
     { value: '', label: 'All' },
     { value: 'not-digitized', label: 'Not digitized' },
@@ -120,6 +135,7 @@ export class AfsDigitizationV3Component implements OnInit {
 
   rows = signal<DigitizationV3Row[]>([]);
   metrics = signal<DigitizationV3Metrics | null>(null);
+  overall = signal<DigitizationV3OverallMetrics | null>(null);
   totalCount = signal(0);
   loading = signal(false);
   queueing = signal(false);
@@ -210,6 +226,32 @@ export class AfsDigitizationV3Component implements OnInit {
   reload(): void {
     this.loading.set(true);
     this.load$.next();
+    this.loadOverall();
+  }
+
+  /** The overall cards do not depend on the filters, but are refreshed with every list load so they track the queue. */
+  private loadOverall(): void {
+    this.api
+      .getOverallMetrics()
+      .pipe(
+        // The cards are secondary: a failure leaves the last numbers (or dashes) and does not interrupt the page
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((overall) => this.overall.set(overall));
+  }
+
+  overallValue(key: OverallKey): number | string {
+    const o = this.overall();
+    if (!o) return '–';
+    // Same as the per-selection cards: "Queued" includes files being processed
+    return (key === 'queued' ? o.queued + o.processing : o[key]).toLocaleString('en-IN');
+  }
+
+  overallHint(key: OverallKey): string {
+    const o = this.overall();
+    if (key === 'total' && o?.totalPages != null) return `${o.totalPages.toLocaleString('en-IN')} pages`;
+    return '';
   }
 
   /** One list request at a time: a newer request cancels the one still in flight, so old responses never win. */
@@ -242,7 +284,7 @@ export class AfsDigitizationV3Component implements OnInit {
     if (!total || this.queueing()) return;
 
     const confirmed = confirm(
-      `Queue all ${total} matching file(s) for AFS digitization?\n\n` +
+      `Digitize all ${total} filtered file(s)?\n\n` +
         'Files with no PDF, or already queued or digitized, are skipped.',
     );
     if (!confirmed) return;
@@ -259,16 +301,24 @@ export class AfsDigitizationV3Component implements OnInit {
         next: (res) => {
           this.queueing.set(false);
           this.selection.clear();
-          const skipped = res.skippedNoPdf + res.skippedAlreadyQueued + res.skippedAlreadyDigitized;
-          const failed = res.failedToQueue ? `, ${res.failedToQueue} could not be queued` : '';
-          this.notify(`Queued ${res.queued} of ${res.matched}. Skipped ${skipped}${failed}.`);
+          this.showResult({ summary: res });
           this.reload();
         },
         error: (err: HttpErrorResponse) => {
           this.queueing.set(false);
-          this.notify(this.errorMessage(err, 'Could not queue files'));
+          this.showResult({ error: this.errorMessage(err, 'Could not queue files') });
         },
       });
+  }
+
+  /** A modal, not a toast: it stays until the user closes it (no backdrop or Escape dismissal). */
+  private showResult(data: DigitizationV3ResultDialogData): void {
+    this.dialog.open(AfsDigitizationV3ResultDialogComponent, {
+      width: '520px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data,
+    });
   }
 
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
