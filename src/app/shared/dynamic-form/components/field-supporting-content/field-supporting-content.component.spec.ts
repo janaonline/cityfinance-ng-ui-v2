@@ -461,15 +461,47 @@ describe('DynamicFieldSupportingContentComponent', () => {
       expect(fixture.nativeElement.textContent).toContain('Download the GTC template');
     });
 
-    it('still shows info and warning items when mode="view"', () => {
+    it('hides info and warning items when mode="view"', () => {
       componentRef.setInput('supportingContent', [
         { type: 'info', description: 'Info text' },
         { type: 'warning', description: 'Warning text' },
       ] satisfies FieldSupportingContent[]);
       componentRef.setInput('mode', 'view');
       fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Info text');
+      expect(fixture.nativeElement.textContent).not.toContain('Warning text');
+    });
+
+    it('hides sample-columns items when mode="view"', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'sample-columns', columns: ['Col A'] } satisfies FieldSupportingContent,
+      ]);
+      componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('.sc-sample-columns'))).toBeNull();
+    });
+
+    it('hides readonly-card items when mode="view"', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'readonly-card', title: 'Summary' } satisfies FieldSupportingContent,
+      ]);
+      componentRef.setInput('mode', 'view');
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('.card'))).toBeNull();
+    });
+
+    it('still shows info, warning, sample-columns, and readonly-card items when mode="edit" (default)', () => {
+      componentRef.setInput('supportingContent', [
+        { type: 'info', description: 'Info text' },
+        { type: 'warning', description: 'Warning text' },
+        { type: 'sample-columns', columns: ['Col A'] },
+        { type: 'readonly-card', title: 'Summary' },
+      ] satisfies FieldSupportingContent[]);
+      fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('Info text');
       expect(fixture.nativeElement.textContent).toContain('Warning text');
+      expect(fixture.debugElement.query(By.css('.sc-sample-columns'))).toBeTruthy();
+      expect(fixture.debugElement.query(By.css('.card'))).toBeTruthy();
     });
   });
 

@@ -1,9 +1,11 @@
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AuthService } from '../../../../core/services/auth.service';
+import { IUserLoggedInDetails } from '../../../../core/models/login/userLoggedInDetails';
+import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { RequirementsComponent } from './requirements.component';
 
 describe('RequirementsComponent', () => {
@@ -34,5 +36,102 @@ describe('RequirementsComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+});
+
+describe('RequirementsComponent — status tooltip', () => {
+  let component: RequirementsComponent;
+  let fixture: ComponentFixture<RequirementsComponent>;
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['getCurrentUserSnapshot']);
+    authService.getCurrentUserSnapshot.and.returnValue({ state: 'state-1' } as IUserLoggedInDetails);
+
+    const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
+    moduleService.yearId.and.returnValue('year-1');
+
+    await TestBed.configureTestingModule({
+      providers: [
+        { provide: MatDialogRef, useValue: { close: () => undefined } },
+        { provide: MAT_DIALOG_DATA, useValue: {} },
+        { provide: AuthService, useValue: authService },
+        { provide: XvifcModuleService, useValue: moduleService },
+      ],
+      imports: [HttpClientTestingModule, RouterTestingModule, RequirementsComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(RequirementsComponent);
+    component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('collapses UNDER_REVIEW_BY_PMU to the state-facing MoHUA label, never showing "PMU"', () => {
+    const dashboardReq = httpMock.expectOne((req) => req.url.endsWith('/dashboard'));
+    dashboardReq.flush({
+      success: true,
+      message: '',
+      data: { context: { financialYear: '2026-27' }, metrics: { allocatedAmount: 1000 } },
+    });
+
+    const eligibilityReq = httpMock.expectOne((req) => req.url.endsWith('/eligibility-summary'));
+    eligibilityReq.flush({
+      success: true,
+      message: '',
+      data: {
+        stateName: 'Test State',
+        expectedUlbCount: 10,
+        stateLevelGate: {
+          passed: false,
+          sources: [
+            {
+              formType: 'devolutionFormula',
+              result: 'FAILED',
+              reasonCode: 'pending',
+              statusAtEvaluation: 13, // FORM_STATUS.UNDER_REVIEW_BY_PMU
+            },
+          ],
+        },
+      },
+    });
+
+    fixture.detectChanges();
+
+    const conditions = component.conditionsToBeMet();
+    expect(conditions.length).toBe(1);
+    expect(conditions[0].statusLabel).toBe('Under Review by MoHUA');
+    expect(conditions[0].statusLabel).not.toContain('PMU');
+  });
+
+  it('disables the status tooltip when a source has no statusAtEvaluation', () => {
+    const dashboardReq = httpMock.expectOne((req) => req.url.endsWith('/dashboard'));
+    dashboardReq.flush({
+      success: true,
+      message: '',
+      data: { context: { financialYear: '2026-27' }, metrics: { allocatedAmount: 1000 } },
+    });
+
+    const eligibilityReq = httpMock.expectOne((req) => req.url.endsWith('/eligibility-summary'));
+    eligibilityReq.flush({
+      success: true,
+      message: '',
+      data: {
+        stateName: 'Test State',
+        expectedUlbCount: 10,
+        stateLevelGate: {
+          passed: false,
+          sources: [{ formType: 'slb', result: undefined, reasonCode: 'ulbOnly' }],
+        },
+      },
+    });
+
+    fixture.detectChanges();
+
+    expect(component.conditionsToBeMet()[0].statusLabel).toBe('');
   });
 });

@@ -116,7 +116,9 @@
                     <td class="small text-end" [title]="formatAmountExact(row.totalGrantAllocation)">
                       {{ formatAmount(row.totalGrantAllocation) }}
                     </td>
-                    <td class="small text-secondary ps-3 pe-3">{{ row.devolutionFormula }}</td>
+                    <td class="small text-secondary ps-3 pe-3">
+                      <app-truncated-text [text]="row.devolutionFormula" mode="clamp" [lines]="3" />
+                    </td>
                   </tr>
                 }
               </tbody>

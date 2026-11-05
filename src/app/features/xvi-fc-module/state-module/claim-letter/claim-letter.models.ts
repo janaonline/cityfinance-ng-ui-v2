@@ -1,4 +1,5 @@
 import { ConditionalFieldConfig } from '../../dynamic-form-visibility.service';
+import type { FormStatusValue } from '../../shared/form-progress/form-progress.component';
 
 /** V1 sends and shows Installment 1 only; the backend rejects 2. */
 export type ClaimLetterInstallment = 1 | 2;
@@ -48,6 +49,10 @@ export interface ClaimLetterEligibilitySource {
   checklistSummary?: string;
   /** Set for State forms with per-ULB rows and for the merged ULB-only criteria. */
   ulbBreakdown?: ClaimLetterUlbEligibilityTally;
+  /** Backend-evaluated form status, used to show the current status on pass/fail icon hover.
+   *  Displayed via getCurrentStatusLabel('state', ...), never as a raw number or PMU/MoHUA distinction.
+   */
+  statusAtEvaluation?: FormStatusValue | null;
   /** For an EXEMPTED State form: 5 while the Entire State request is under MoHUA review, 7 approved. */
   exemptionStatus?: number | null;
 }

@@ -12,8 +12,12 @@ import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { StateDashboardService } from '../state-dashboard/state-dashboard.service';
 import { ClaimLetterService } from '../claim-letter/claim-letter.service';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterEligibilitySource } from '../claim-letter/claim-letter.models';
-import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } from '../claim-letter/claim-letter.utils';
-import { PreLoaderComponent } from "../../../../shared/components/pre-loader/pre-loader.component";
+import {
+  describeEligibilitySourceDescription,
+  describeEligibilitySourceLabel,
+} from '../claim-letter/claim-letter.utils';
+import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
+import { getCurrentStatusLabel } from '../../shared/form-progress/form-progress.component';
 
 interface RequirementCondition {
   label: string;
@@ -24,6 +28,8 @@ interface RequirementCondition {
   buttonLabel: string;
   routerLink: string;
   passed: boolean;
+  // / State-facing status shown on icon hover, normalized via getCurrentStatusLabel('state', ...) to hide PMU/MoHUA distinctions. Empty when no single state-wide status exists, disabling the tooltip.
+  statusLabel: string;
 }
 
 @Component({
@@ -117,6 +123,7 @@ export class RequirementsComponent implements OnInit {
         buttonLabel: 'View',
         routerLink: source.checklistRoute ?? '../requirements',
         passed,
+        statusLabel: source.statusAtEvaluation != null ? getCurrentStatusLabel('state', source.statusAtEvaluation) : '',
       };
     });
   }

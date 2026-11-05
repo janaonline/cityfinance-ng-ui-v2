@@ -12,7 +12,8 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatTooltip } from '@angular/material/tooltip';
-import { EulbBodyStatus, EulbFieldCellKey } from '../../eulb-status.models';
+import { TruncatedTextComponent } from '../../../../../../shared/components/truncated-text/truncated-text.component';
+import { EULB_ROW_REMARKS_MAX_LENGTH, EulbBodyStatus, EulbFieldCellKey } from '../../eulb-status.models';
 
 export interface EulbEditableFieldCellStatusOption {
   readonly value: string;
@@ -28,7 +29,7 @@ export type EulbEditableFieldCellControl =
 
 @Component({
   selector: 'td[app-eulb-editable-field-cell]',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TruncatedTextComponent],
   hostDirectives: [MatTooltip],
   template: `
     @if (isEditing) {
@@ -79,17 +80,24 @@ export type EulbEditableFieldCellControl =
             />
           }
           @case ('remarks') {
-            <input
-              type="text"
-              [class]="inputControlClass"
-              [class.is-invalid]="cellHasError"
-              aria-label="Remarks"
-              [attr.aria-invalid]="cellHasError || null"
-              placeholder="Remarks"
-              [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
-              [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"
-              [formControl]="editControl"
-            />
+            <div class="eulb-remarks-wrap">
+              <textarea
+                class="eulb-remarks-input"
+                [class]="inputControlClass"
+                [class.is-invalid]="cellHasError"
+                [attr.maxlength]="remarksMaxLength"
+                rows="1"
+                aria-label="Remarks"
+                [attr.aria-invalid]="cellHasError || null"
+                placeholder="Remarks"
+                [attr.data-eulb-edit-field]="editFieldDataAttribute === 'data-eulb-edit-field' ? field : null"
+                [attr.data-eulb-post-edit-field]="editFieldDataAttribute === 'data-eulb-post-edit-field' ? field : null"
+                [formControl]="editControl"
+              ></textarea>
+              <span class="eulb-remarks-counter" aria-live="polite">
+                {{ editControl.value?.length ?? 0 }}/{{ remarksMaxLength }}
+              </span>
+            </div>
           }
           @case ('censusCode') {
             <input
@@ -123,7 +131,17 @@ export type EulbEditableFieldCellControl =
       }
     } @else {
       <div class="d-flex align-items-center justify-content-between gap-2 w-100">
-        <span class="text-truncate min-w-0">{{ displayText }}</span>
+        @switch (field) {
+          @case ('remarks') {
+            <app-truncated-text [text]="displayText" mode="clamp" [lines]="3" class="min-w-0" />
+          }
+          @case ('ulbName') {
+            <app-truncated-text [text]="displayText" class="min-w-0" />
+          }
+          @default {
+            <span class="text-truncate min-w-0">{{ displayText }}</span>
+          }
+        }
         @if (cellHasError) {
           <button
             type="button"
@@ -137,10 +155,31 @@ export type EulbEditableFieldCellControl =
       </div>
     }
   `,
+  styles: `
+    .eulb-remarks-wrap {
+      position: relative;
+    }
+    .eulb-remarks-input {
+      padding-right: 44px;
+    }
+    .eulb-remarks-counter {
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      transform: translateY(-50%);
+      font-size: 0.65rem;
+      line-height: 1;
+      color: var(--bs-secondary-color, #6c757d);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EulbEditableFieldCellComponent implements OnChanges {
   private readonly tooltip = inject(MatTooltip, { self: true });
+
+  readonly remarksMaxLength = EULB_ROW_REMARKS_MAX_LENGTH;
 
   @Input({ required: true }) field!: EulbFieldCellKey;
   @Input() value: string | null | undefined = null;

@@ -83,7 +83,11 @@
               class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-3 px-2 px-md-3 py-2 border"
             >
               <div class="d-flex align-items-center gap-3 gap-md-4 flex-grow-1">
-                <i class="fs-4 {{ item.iconClass }}"></i>
+                <i
+                  class="fs-4 {{ item.iconClass }}"
+                  [matTooltip]="item.statusLabel"
+                  [matTooltipDisabled]="!item.statusLabel"
+                ></i>
 
                 <div>
                   <p class="fw-semibold m-0">
