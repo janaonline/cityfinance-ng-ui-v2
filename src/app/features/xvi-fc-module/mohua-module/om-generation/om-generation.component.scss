@@ -1,0 +1,40 @@
+@use '../claims-submission/claims-shared';
+
+// The State heading row of each group, across the whole table.
+.om-state-row th {
+  padding: 0.6rem 1rem;
+  background: #eef3f4;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f1f26;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.om-state-row__count {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: #5b6b73;
+}
+
+// Letters sit one step in under their State.
+.om-letter-cell {
+  padding-left: 2rem !important;
+}
+
+.om-action {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.om-history-link {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+
+  a {
+    color: #0f5b4a;
+    font-weight: 600;
+  }
+}
