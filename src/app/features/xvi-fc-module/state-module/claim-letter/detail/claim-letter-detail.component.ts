@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
@@ -32,13 +33,16 @@ import {
   FormStatusValue,
 } from '../../../shared/form-progress/form-progress.component';
 import {
+  ClaimRowRejection,
   ClaimUlbRowGroup,
   ClaimUlbTableComponent,
   createClaimUlbRowGroup,
 } from '../components/claim-ulb-table/claim-ulb-table.component';
 import {
+  CLAIM_LETTER_TILE_LABELS,
   ClaimLetterSummaryTilesComponent,
   ClaimLetterSummaryTile,
+  claimsUnderReviewTotal,
 } from '../components/summary-tiles/claim-letter-summary-tiles.component';
 import {
   CLAIM_LETTER_ERROR_CODE,
@@ -53,7 +57,7 @@ import {
 import { parseFieldPrefixedMessages } from '../../../common/utils/xvi-fc-error-lookup.utils';
 import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterService } from '../claim-letter.service';
-import { buildBatchNarrative, readApiError } from '../claim-letter.utils';
+import { buildBatchNarrative, ineligibleUlbsMessage, readApiError } from '../claim-letter.utils';
 import {
   ClaimLetterDocumentPreviewDialogComponent,
   ClaimLetterDocumentPreviewDialogData,
@@ -78,11 +82,17 @@ const CLAIM_LETTER_SAVE_REMOVES_SIGNED_FILE_CONFIRM: Required<ConfirmDialogData>
   icon: 'bi-exclamation-triangle-fill',
 };
 
-/** Same ULBs with the same claimed amounts as the last load. */
-function sameAsSaved(selections: readonly ClaimLetterUlbSelection[], saved: readonly ClaimLetterUlbRow[]): boolean {
+/** Same ULBs with the same claimed amounts as the last load; ULBs only while the switch is off. */
+function sameAsSaved(
+  selections: readonly ClaimLetterUlbSelection[],
+  saved: readonly ClaimLetterUlbRow[],
+  claimAmountEditable: boolean,
+): boolean {
   if (selections.length !== saved.length) return false;
   const claimed = new Map(saved.map((row) => [row.ulbId, row.claimAmount]));
-  return selections.every((s) => claimed.get(s.ulbId) === s.claimedAmount);
+  return selections.every(
+    (s) => claimed.has(s.ulbId) && (!claimAmountEditable || claimed.get(s.ulbId) === s.claimedAmount),
+  );
 }
 
 function submitConfirm(
@@ -112,9 +122,9 @@ function submitConfirm(
 }
 
 const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
-  title: 'Abandon this claim letter draft?',
-  message: 'This draft and its selected ULBs will be marked as abandoned. This cannot be undone.',
-  confirmText: 'Yes, abandon',
+  title: 'Discard this claim letter draft?',
+  message: 'This draft will be discarded, and its selected ULBs can be added to a new draft. This cannot be undone.',
+  confirmText: 'Yes, discard',
   cancelText: 'No, keep editing',
   confirmButtonColor: 'warn',
   icon: 'bi-x-circle-fill',
@@ -123,9 +133,14 @@ const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
 /** The backend's `ulbSelections.<index>.<field>` error keys, from an `errors` map or `buildErrorMapFromMessages`. */
 const CLAIM_ROW_ERROR_KEY_PATTERN = /^ulbSelections\.(\d+)\.(ulbId|claimedAmount)$/;
 
+/** Replaces the list of codes when every row fails the State-level gate; no remove button then. */
+const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
+  'The State-level eligibility conditions are not met, so no ULB can be claimed right now. Removing ULBs will not fix this. See the eligibility checklist on the Claim Letters page.';
+
 @Component({
   selector: 'app-claim-letter-detail',
   imports: [
+    NgTemplateOutlet,
     MatCardModule,
     MatButtonModule,
     PreLoaderComponent,
@@ -173,6 +188,12 @@ export class ClaimLetterDetailComponent implements OnInit {
    *  failed load is non-fatal (no `loadError`). */
   readonly eligibilityOverview = signal<ClaimLetterClaimContext | null>(null);
 
+  /** formjson 26 switch, from getDetail in edit mode and claim-context in create mode. Off (also before
+   *  either loads): each claim is its allocation, so `claimedAmount` is neither shown, validated nor sent. */
+  readonly claimAmountEditable = computed(
+    () => this.claim()?.claimAmountEditable ?? this.eligibilityOverview()?.claimAmountEditable ?? false,
+  );
+
   /** From getDetail in edit mode, claim-context in create mode; 90 / 110 only shows before either loads. */
   readonly varianceLowerPercent = computed(
     () => this.claim()?.varianceLowerPercent ?? this.eligibilityOverview()?.varianceLowerPercent ?? 90,
@@ -183,6 +204,35 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   /** OnPush child: needs `refreshValidationDisplay()` after this component changes a row control. */
   private readonly claimTable = viewChild(ClaimUlbTableComponent);
+
+  /** The last batch slot, whose submit needs every ULB in a batch; the picker then says what is left. */
+  readonly isFinalBatch = computed(() => {
+    const overview = this.eligibilityOverview();
+    if (!overview) return false;
+    const batchNumber = this.isCreateMode ? overview.nextBatchNumber : this.claim()?.batchNumber;
+    return batchNumber != null && batchNumber === overview.batchSlotsMax;
+  });
+
+  /** Rows the last save refused, by ULB id and field, with the server's reasons; cleared when the next
+   *  save starts, and per ULB when the user removes it. Kept here, not on the controls: a row's
+   *  `[formGroup]` re-validates (dropping set errors) whenever the table re-renders it, which paging
+   *  and search do. */
+  readonly rejectedRows = signal<ReadonlyMap<string, ClaimRowRejection>>(new Map());
+  /** Every saved row fails the State-level gate, which removing ULBs cannot fix. */
+  readonly stateGateFailed = computed(() => this.savedUlbRows().some((row) => row.stateGatePassed === false));
+  /** ULBs still in the table that the last save refused; the save-error banner offers to remove them. */
+  readonly refusedUlbIds = computed<ReadonlySet<string>>(() => {
+    const table = this.claimTable();
+    if (!table) return new Set();
+    const rejected = this.rejectedRows();
+    return new Set(table.currentUlbIds().filter((ulbId) => !!rejected.get(ulbId)?.ulbId));
+  });
+  /** ULBs known to be ineligible before any save; none while the State-level gate fails. */
+  readonly ineligibleUlbIdsToRemove = computed<ReadonlySet<string>>(() => {
+    const table = this.claimTable();
+    if (!table || this.stateGateFailed()) return new Set();
+    return new Set(table.ineligibleUlbIds());
+  });
 
   /** The signed-file field from getDetail's `questions` (formjson-driven, never hand-written here). */
   readonly signedClaimFileField = signal<ConditionalFieldConfig | null>(null);
@@ -204,6 +254,10 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly hasUnsavedRowChanges = computed(() => {
     if (this.isCreateMode) return false;
     const savedAmountByUlbId = new Map(this.savedUlbRows().map((row) => [row.ulbId, row.claimAmount]));
+    if (!this.claimAmountEditable()) {
+      const liveUlbIds = this.rowValues().flatMap((row) => (row.ulbId === null ? [] : [row.ulbId]));
+      return liveUlbIds.length !== savedAmountByUlbId.size || liveUlbIds.some((id) => !savedAmountByUlbId.has(id));
+    }
     const liveRows = this.rowValues().filter(
       (row): row is { ulbId: string; claimedAmount: number } => row.ulbId !== null && row.claimedAmount !== null,
     );
@@ -321,9 +375,9 @@ export class ClaimLetterDetailComponent implements OnInit {
       const overview = this.eligibilityOverview()?.financialOverview;
       if (!overview) return [];
       return [
-        { label: 'Total Allocation', value: overview.totalInstallmentAllocation },
-        { label: 'Already Claimed (Acknowledged)', value: overview.totalAlreadyAcknowledged },
-        { label: 'Available to Claim', value: overview.availableToClaim },
+        { label: CLAIM_LETTER_TILE_LABELS.total, value: overview.totalInstallmentAllocation },
+        { label: CLAIM_LETTER_TILE_LABELS.underReview, value: claimsUnderReviewTotal(overview) },
+        { label: CLAIM_LETTER_TILE_LABELS.available, value: overview.availableToClaim },
       ];
     }
 
@@ -334,8 +388,8 @@ export class ClaimLetterDetailComponent implements OnInit {
     const currentSelectedClaim = this.claimTable()?.totalClaim() ?? claim.financialSummary.currentSelectedClaim;
 
     return [
-      { label: 'Total Allocation', value: totalInstallmentAllocation },
-      { label: 'Already Claimed (Acknowledged)', value: totalAlreadyAcknowledged },
+      { label: CLAIM_LETTER_TILE_LABELS.total, value: totalInstallmentAllocation },
+      { label: CLAIM_LETTER_TILE_LABELS.underReview, value: claimsUnderReviewTotal(claim.financialSummary) },
       { label: 'Claimed in This Batch', value: currentSelectedClaim },
       {
         label: 'Remaining After This Batch',
@@ -400,9 +454,8 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** Same wording as the backend's rejection, so the user sees one message either way. */
   readonly rowValidationMessage = computed<string | null>(() => {
     const identifiers = this.claimTable()?.invalidRowIdentifiers() ?? [];
-    return identifiers.length
-      ? `The following ULBs are ineligible or have an invalid claimed amount: ${identifiers.join(', ')}`
-      : null;
+    if (!identifiers.length) return null;
+    return this.stateGateFailed() ? CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE : ineligibleUlbsMessage(identifiers);
   });
 
   get stateId(): string {
@@ -476,11 +529,15 @@ export class ClaimLetterDetailComponent implements OnInit {
       });
   }
 
+  /** One valueChanges for the whole batch, not one per row: a batch can hold hundreds. */
   private hydrateRows(rows: readonly ClaimLetterUlbRow[]): void {
-    this.rows.clear();
+    this.rows.clear({ emitEvent: false });
     for (const row of rows) {
-      this.rows.push(createClaimUlbRowGroup(this.canEdit(), { ulbId: row.ulbId, claimedAmount: row.claimAmount }));
+      this.rows.push(createClaimUlbRowGroup(this.canEdit(), { ulbId: row.ulbId, claimedAmount: row.claimAmount }), {
+        emitEvent: false,
+      });
     }
+    this.rows.updateValueAndValidity();
   }
 
   /** The control is built once per component instance (the user's in-progress file selection must
@@ -642,11 +699,16 @@ export class ClaimLetterDetailComponent implements OnInit {
     const yearId = this.yearId;
     if (!stateId || !yearId) return;
 
+    const selections = this.buildUlbSelections();
     this.isSaving.set(true);
     this.formLevelErrors.set([]);
+    this.rejectedRows.set(new Map());
 
     this.claimLetterService
-      .createDraft(stateId, yearId, CLAIM_LETTER_INSTALLMENT, { ulbSelections: this.buildUlbSelections() })
+      .createDraft(stateId, yearId, CLAIM_LETTER_INSTALLMENT, {
+        ulbSelections: selections,
+        idempotencyKey: this.createIdempotencyKey(selections),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (claim) => {
@@ -657,7 +719,7 @@ export class ClaimLetterDetailComponent implements OnInit {
         error: (err: unknown) => {
           console.error('Failed to create Claim Letter draft', err);
           this.isSaving.set(false);
-          this.handleSaveError(err, 'Unable to create the claim letter draft. Please try again.');
+          this.handleSaveError(err, 'Unable to create the claim letter draft. Please try again.', selections);
         },
       });
   }
@@ -673,7 +735,7 @@ export class ClaimLetterDetailComponent implements OnInit {
     if (!claim || !claimLetterId) return;
 
     const selections = this.buildUlbSelections();
-    if (sameAsSaved(selections, this.savedUlbRows())) {
+    if (sameAsSaved(selections, this.savedUlbRows(), this.claimAmountEditable())) {
       this.utilityService.triggerSnackbar('No changes to save.', 'snackbar-warn');
       return;
     }
@@ -692,6 +754,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private updateDraft(claimLetterId: string, selections: ClaimLetterUlbSelection[], revision: number): void {
     this.isSaving.set(true);
     this.formLevelErrors.set([]);
+    this.rejectedRows.set(new Map());
 
     this.claimLetterService
       .updateDraft(claimLetterId, { ulbSelections: selections, expectedRevision: revision })
@@ -705,7 +768,7 @@ export class ClaimLetterDetailComponent implements OnInit {
         error: (err: unknown) => {
           console.error('Failed to update Claim Letter draft', err);
           this.isSaving.set(false);
-          this.handleSaveError(err, 'Unable to save changes. Please try again.');
+          this.handleSaveError(err, 'Unable to save changes. Please try again.', selections);
         },
       });
   }
@@ -732,13 +795,13 @@ export class ClaimLetterDetailComponent implements OnInit {
       .subscribe({
         next: () => {
           this.isAbandoning.set(false);
-          this.utilityService.triggerSnackbar('Claim letter draft abandoned.', 'snackbar-success');
+          this.utilityService.triggerSnackbar('Claim letter draft discarded.', 'snackbar-success');
           this.loadDetail();
         },
         error: (err: unknown) => {
           console.error('Failed to abandon Claim Letter draft', err);
           this.isAbandoning.set(false);
-          this.handleSaveError(err, 'Unable to abandon the draft. Please try again.');
+          this.handleSaveError(err, 'Unable to discard the draft. Please try again.');
         },
       });
   }
@@ -761,7 +824,26 @@ export class ClaimLetterDetailComponent implements OnInit {
     this.router.navigate(['/xvifc', this.yearId, 'claim-letter']);
   }
 
+  /** The last create attempt. Re-sending the same selection reuses its key, so a create that timed out
+   *  but finished on the server returns that batch instead of colliding with its own locks; a changed
+   *  selection gets a new key. */
+  private lastCreateAttempt: { selections: string; key: string } | null = null;
+
+  private createIdempotencyKey(selections: readonly ClaimLetterUlbSelection[]): string {
+    const signature = JSON.stringify(selections);
+    if (this.lastCreateAttempt?.selections !== signature) {
+      this.lastCreateAttempt = { selections: signature, key: crypto.randomUUID() };
+    }
+    return this.lastCreateAttempt.key;
+  }
+
+  /** No `claimedAmount` while the switch is off: the server stores each ULB's allocation. */
   private buildUlbSelections(): ClaimLetterUlbSelection[] {
+    if (!this.claimAmountEditable()) {
+      return this.rows.controls
+        .filter((row) => row.controls.ulbId.value !== null)
+        .map((row) => ({ ulbId: row.controls.ulbId.value as string }));
+    }
     return this.rows.controls
       .filter((row) => row.controls.ulbId.value !== null && row.controls.claimedAmount.value !== null)
       .map((row) => ({
@@ -770,15 +852,17 @@ export class ClaimLetterDetailComponent implements OnInit {
       }));
   }
 
-  /** At least one row and every row valid: a claim draft has no partial-save mode. */
+  /** At least one row and every row valid: a claim draft has no partial-save mode. The hidden
+   *  claim amount is not checked while the switch is off. */
   private validateRows(): boolean {
     let valid = this.rows.length > 0;
+    const claimAmountEditable = this.claimAmountEditable();
 
     for (const row of this.rows.controls) {
-      if (row.invalid) {
+      if (claimAmountEditable ? row.invalid : row.controls.ulbId.invalid) {
         valid = false;
         row.controls.ulbId.markAsTouched();
-        row.controls.claimedAmount.markAsTouched();
+        if (claimAmountEditable) row.controls.claimedAmount.markAsTouched();
       }
     }
 
@@ -788,15 +872,45 @@ export class ClaimLetterDetailComponent implements OnInit {
     return valid;
   }
 
-  private handleSaveError(err: unknown, fallbackMessage: string): void {
+  /** Drops the given rows in one structural change, then asks for a fresh save. */
+  removeUlbRows(ulbIds: ReadonlySet<string>): void {
+    if (!this.canEdit() || this.isSaving() || ulbIds.size === 0) return;
+
+    // From the end, so the indexes still to visit stay valid.
+    for (let i = this.rows.length - 1; i >= 0; i--) {
+      const ulbId = this.rows.at(i).controls.ulbId.value;
+      if (ulbId && ulbIds.has(ulbId)) this.rows.removeAt(i, { emitEvent: false });
+    }
+    this.rows.updateValueAndValidity();
+    this.forgetRejected([...ulbIds]);
+    this.formLevelErrors.set([]);
+    const n = ulbIds.size;
+    this.utilityService.triggerSnackbar(
+      `Removed ${n} ${n === 1 ? 'ULB' : 'ULBs'}. Save again to continue.`,
+      'snackbar-success',
+    );
+  }
+
+  /** A removed ULB's refusal goes with it, so adding it back later shows no stale mark. */
+  forgetRejected(ulbIds: readonly string[]): void {
+    const current = this.rejectedRows();
+    if (!ulbIds.some((ulbId) => current.has(ulbId))) return;
+    const next = new Map(current);
+    for (const ulbId of ulbIds) next.delete(ulbId);
+    this.rejectedRows.set(next);
+  }
+
+  /** `sent`: the selections a save sent, which its row errors point into; other requests have none. */
+  private handleSaveError(err: unknown, fallbackMessage: string, sent?: readonly ClaimLetterUlbSelection[]): void {
     const api = readApiError(err);
     const message = api.message ?? fallbackMessage;
     this.utilityService.triggerSnackbar(message, 'snackbar-danger');
     this.formLevelErrors.set([message]);
+    if (!sent) return;
 
     // A bare class-validator message array (no `errors` map) still points at rows.
     const errors = api.errors ?? this.buildErrorMapFromMessages(api.messages ?? []);
-    if (errors) this.applyRowApiErrors(errors);
+    if (errors) this.applyRowApiErrors(errors, sent);
   }
 
   /** Class-validator messages to row error keys; unmatched ones go under `_form`, shown only in the banner. */
@@ -815,21 +929,34 @@ export class ClaimLetterDetailComponent implements OnInit {
     return Object.keys(errors).length ? errors : undefined;
   }
 
-  /** Payload indexes match `rows.controls` because a save only goes out once every row is complete. */
-  private applyRowApiErrors(errors: ClaimLetterApiErrorMap): void {
+  /** Each key indexes the request that was `sent`, so it resolves through that request's ULB id, never
+   *  through a row position, which could have moved since (the table is locked while saving, too). */
+  private applyRowApiErrors(errors: ClaimLetterApiErrorMap, sent: readonly ClaimLetterUlbSelection[]): void {
+    const rowByUlbId = new Map(this.rows.controls.map((row) => [row.controls.ulbId.value, row]));
+    const rejected = new Map<string, ClaimRowRejection>();
     for (const [key, fieldErrors] of Object.entries(errors)) {
       if (!fieldErrors?.length) continue;
 
       const rowMatch = CLAIM_ROW_ERROR_KEY_PATTERN.exec(key);
       if (!rowMatch) continue;
 
-      const row = this.rows.controls[Number(rowMatch[1])];
-      const control = row?.controls[rowMatch[2] as 'ulbId' | 'claimedAmount'];
-      if (!control) continue;
+      const selection = sent[Number(rowMatch[1])];
+      const row = selection ? rowByUlbId.get(selection.ulbId) : undefined;
+      if (!selection || !row) continue;
 
+      const field = rowMatch[2] as 'ulbId' | 'claimedAmount';
+      const control = row.controls[field];
       control.setErrors({ ...(control.errors ?? {}), apiErrors: fieldErrors.map((e) => e.message) });
       control.markAsTouched();
+
+      // A refused ULB can only be removed; a refused amount is fixed by editing it.
+      const message = fieldErrors.map((e) => e.message).join(' ');
+      const entry: ClaimRowRejection = { ...rejected.get(selection.ulbId) };
+      if (field === 'ulbId') entry.ulbId = message;
+      else entry.claimedAmount = { message, sentAmount: selection.claimedAmount ?? null };
+      rejected.set(selection.ulbId, entry);
     }
+    this.rejectedRows.set(rejected);
 
     // Same OnPush nudge as validateRows().
     this.claimTable()?.refreshValidationDisplay();

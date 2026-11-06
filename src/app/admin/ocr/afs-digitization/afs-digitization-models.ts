@@ -31,6 +31,7 @@ export interface DigitizationJobStatusResponse {
   error_message: string | null;
   confidence_score: number | null;
   accuracy_score: number | null;
+  overall_assessment?: string | null;
   arithmetic_assessment: string | null;
   enable_document_classification: boolean;
   detected_document_type: AfsDocumentType | null;

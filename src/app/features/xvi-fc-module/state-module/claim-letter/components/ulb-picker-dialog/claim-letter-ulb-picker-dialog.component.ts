@@ -1,13 +1,22 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { AmountDisplayModeService } from '../../../../../../core/services/amount-display-mode.service';
-import { ClaimLetterInstallment, ClaimLetterUlbOption } from '../../claim-letter.models';
+import { CLAIM_LETTER_MAX_ULBS, ClaimLetterInstallment, ClaimLetterUlbOption } from '../../claim-letter.models';
 import { ClaimLetterService } from '../../claim-letter.service';
 import { humanizeToken } from '../../claim-letter.utils';
 
@@ -21,9 +30,12 @@ export interface ClaimLetterUlbPickerDialogData {
   excludeUlbIds: string[];
   /** Lets this draft's own locked ULBs show as selectable; undefined in create mode. */
   claimLetterId?: string;
+  /** The last batch slot: the picker notes the ULBs still in no batch, which block its submit. */
+  isFinalBatch?: boolean;
 }
 
 const CLAIM_LETTER_ULB_PICKER_PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 150;
 
 const EMPTY_SEARCH_MESSAGE = 'No ULBs found for the current search.';
 const EMPTY_FILTER_MESSAGES: Record<ClaimLetterEligibilityFilter, string> = {
@@ -33,7 +45,23 @@ const EMPTY_FILTER_MESSAGES: Record<ClaimLetterEligibilityFilter, string> = {
   IN_OTHER_BATCH: 'No ULBs are in another batch.',
 };
 
-/** Server-searched, paged, multi-select picker, like FC Unspent's plus server eligibility and a filter. */
+/** Same rules as the backend's `eligibilityFilter`. */
+function matchesFilter(option: ClaimLetterUlbOption, filter: ClaimLetterEligibilityFilter): boolean {
+  if (filter === 'ELIGIBLE') return option.eligible;
+  if (filter === 'INELIGIBLE') return !option.eligible && !option.claimedInBatch;
+  if (filter === 'IN_OTHER_BATCH') return option.claimedInBatch !== null;
+  return true;
+}
+
+const ulbsAre = (n: number) => (n === 1 ? 'ULB is' : 'ULBs are');
+
+/** Same rule as the backend's search: a case-insensitive substring of name, Census Code or SB Code. */
+function matchesSearch(option: ClaimLetterUlbOption, lowerTerm: string): boolean {
+  return [option.ulbName, option.censusCode, option.sbCode].some((v) => !!v && v.toLowerCase().includes(lowerTerm));
+}
+
+/** Multi-select picker over every ULB of the State, loaded in one call (at most `CLAIM_LETTER_MAX_ULBS`)
+ *  and then searched, filtered, paged and selected locally, so "select all" counts are exact. */
 @Component({
   selector: 'app-claim-letter-ulb-picker-dialog',
   imports: [ReactiveFormsModule, MatDialogModule, MatButtonModule, MatButtonToggleModule, MatTooltipModule],
@@ -45,77 +73,144 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   private readonly service = inject(ClaimLetterService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialogRef = inject(MatDialogRef<ClaimLetterUlbPickerDialogComponent, ClaimLetterUlbOption[]>);
+  private readonly amountDisplay = inject(AmountDisplayModeService);
   readonly data = inject<ClaimLetterUlbPickerDialogData>(MAT_DIALOG_DATA);
 
   readonly search = new FormControl('', { nonNullable: true });
-
-  readonly options = signal<readonly ClaimLetterUlbOption[]>([]);
-  readonly total = signal(0);
-  readonly page = signal(1);
-  readonly limit = CLAIM_LETTER_ULB_PICKER_PAGE_SIZE;
+  /** Trimmed and debounced, so typing does not refilter on every key. */
+  readonly searchTerm = toSignal(
+    this.search.valueChanges.pipe(
+      debounceTime(SEARCH_DEBOUNCE_MS),
+      map((value) => value.trim()),
+      distinctUntilChanged(),
+    ),
+    { initialValue: '' },
+  );
   readonly eligibilityFilter = signal<ClaimLetterEligibilityFilter>('ALL');
+
+  /** Every ULB, in the backend's order: eligible, ineligible, in another batch, each A-Z. */
+  readonly allOptions = signal<readonly ClaimLetterUlbOption[]>([]);
+  /** The State has more ULBs than one load returns. */
+  readonly loadedOfTotal = signal<{ loaded: number; total: number } | null>(null);
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
   readonly isConfirming = signal(false);
-  /** For the search and filter the shown list was loaded with, not what is typed since. */
-  readonly emptyMessage = signal(EMPTY_FILTER_MESSAGES.ALL);
+
+  readonly filtered = computed(() => {
+    const lowerTerm = this.searchTerm().toLowerCase();
+    const filter = this.eligibilityFilter();
+    return this.allOptions().filter((o) => matchesFilter(o, filter) && (!lowerTerm || matchesSearch(o, lowerTerm)));
+  });
+  readonly emptyMessage = computed(() =>
+    this.searchTerm() ? EMPTY_SEARCH_MESSAGE : EMPTY_FILTER_MESSAGES[this.eligibilityFilter()],
+  );
+
+  readonly limit = CLAIM_LETTER_ULB_PICKER_PAGE_SIZE;
+  /** Back to page 1 whenever the search or filter changes. */
+  readonly page = linkedSignal({
+    source: () => [this.searchTerm(), this.eligibilityFilter()],
+    computation: () => 1,
+  });
+  readonly total = computed(() => this.filtered().length);
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.limit)));
+  readonly hasPrev = computed(() => this.page() > 1);
+  readonly hasNext = computed(() => this.page() < this.totalPages());
+  readonly pageRows = computed(() => this.filtered().slice((this.page() - 1) * this.limit, this.page() * this.limit));
 
   /** Keeps selection order, and survives search, page and filter changes. */
   readonly selectedUlbs = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
   readonly selectedCount = computed(() => this.selectedUlbs().size);
+  readonly selectedTotalAmount = computed(() => {
+    let sum = 0;
+    for (const option of this.selectedUlbs().values()) sum += option.allocationAmount ?? 0;
+    return sum;
+  });
+  /** Eligible today only through an exemption MoHUA has not decided yet; Submit asks about these. */
+  readonly selectedUnderReviewCount = computed(() => {
+    let count = 0;
+    for (const option of this.selectedUlbs().values()) {
+      if (option.exemptionNotes?.some((n) => n.status === 'UNDER_REVIEW')) count++;
+    }
+    return count;
+  });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.limit)));
-  readonly hasPrev = computed(() => this.page() > 1);
-  readonly hasNext = computed(() => this.page() < this.totalPages());
+  private readonly excludeSet = new Set(this.data.excludeUlbIds);
+  readonly selectableInView = computed(() => this.filtered().filter((o) => this.isSelectable(o)));
+  readonly selectableOnPage = computed(() => this.pageRows().filter((o) => this.isSelectable(o)));
 
-  private readonly excludeSet = computed(() => new Set(this.data.excludeUlbIds));
-  private readonly amountDisplay = inject(AmountDisplayModeService);
+  /** The header checkbox: how many of this page's selectable rows are ticked. */
+  readonly pageSelection = computed<'none' | 'some' | 'all'>(() => {
+    const rows = this.selectableOnPage();
+    const selected = this.selectedUlbs();
+    const ticked = rows.filter((o) => selected.has(o.ulbId)).length;
+    if (ticked === 0) return 'none';
+    return ticked === rows.length ? 'all' : 'some';
+  });
+  /** The bar under the toolbar: offers every selectable row in view once the page is ticked, then
+   *  confirms it. Hidden when the view fits on this page. */
+  readonly selectAllBar = computed<'offer' | 'done' | null>(() => {
+    const inView = this.selectableInView();
+    if (this.pageSelection() !== 'all' || inView.length <= this.selectableOnPage().length) return null;
+    const selected = this.selectedUlbs();
+    return inView.every((o) => selected.has(o.ulbId)) ? 'done' : 'offer';
+  });
+
+  /** Final batch only: the ULBs still in no batch, which keep it from being submitted. ULBs ticked
+   *  here count as added, since confirming adds them. */
+  readonly finalBatchNote = computed<string | null>(() => {
+    if (!this.data.isFinalBatch) return null;
+    const selected = this.selectedUlbs();
+    let eligibleNotAdded = 0;
+    let ineligibleInNoBatch = 0;
+    for (const option of this.allOptions()) {
+      if (this.isExcluded(option.ulbId) || selected.has(option.ulbId)) continue;
+      if (option.eligible) eligibleNotAdded++;
+      else if (!option.claimedInBatch) ineligibleInNoBatch++;
+    }
+    const parts: string[] = [];
+    if (eligibleNotAdded) parts.push(`${eligibleNotAdded} eligible ${ulbsAre(eligibleNotAdded)} not yet added`);
+    if (ineligibleInNoBatch)
+      parts.push(`${ineligibleInNoBatch} ineligible ${ulbsAre(ineligibleInNoBatch)} in no batch`);
+    if (!parts.length) return null;
+    return `This is the final batch. It can be submitted only when every ULB is in a batch: ${parts.join(', and ')}.`;
+  });
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
+  readonly formatTotal = (value: number | null | undefined) => this.amountDisplay.format(value, 'auto');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
   readonly humanizeToken = humanizeToken;
 
-  /** Drops a response that arrives after a newer request was made. */
-  private loadRequestId = 0;
+  /** Last row ticked or unticked; a shift-click applies the same change to every row in between on
+   *  this page. A new page, search or filter drops it, so a range never reaches rows not in view. */
+  private readonly anchorUlbId = linkedSignal<unknown, string | null>({
+    source: () => [this.page(), this.searchTerm(), this.eligibilityFilter()],
+    computation: () => null,
+  });
 
   ngOnInit(): void {
     this.loadOptions();
-
-    this.search.valueChanges
-      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.page.set(1);
-        this.loadOptions();
-      });
   }
 
   loadOptions(): void {
-    const requestId = ++this.loadRequestId;
     this.isLoading.set(true);
     this.loadError.set(false);
 
-    const normalizedSearch = this.search.value.trim();
-    const filter = this.eligibilityFilter();
-
     this.service
       .getUlbOptions(this.data.stateId, this.data.yearId, this.data.installment, {
-        search: normalizedSearch || undefined,
-        eligibilityFilter: filter === 'ALL' ? undefined : filter,
         claimLetterId: this.data.claimLetterId,
-        page: this.page(),
-        limit: this.limit,
+        page: 1,
+        limit: CLAIM_LETTER_MAX_ULBS,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result) => {
-          if (requestId !== this.loadRequestId) return;
-          this.options.set(result.options);
-          this.total.set(result.total);
-          this.emptyMessage.set(normalizedSearch ? EMPTY_SEARCH_MESSAGE : EMPTY_FILTER_MESSAGES[filter]);
+          this.allOptions.set(result.options);
+          this.loadedOfTotal.set(
+            result.total > result.options.length ? { loaded: result.options.length, total: result.total } : null,
+          );
           this.isLoading.set(false);
         },
         error: () => {
-          if (requestId !== this.loadRequestId) return;
           this.loadError.set(true);
           this.isLoading.set(false);
         },
@@ -123,25 +218,29 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
   }
 
   setEligibilityFilter(filter: ClaimLetterEligibilityFilter): void {
-    if (this.eligibilityFilter() === filter) return;
     this.eligibilityFilter.set(filter);
-    this.page.set(1);
-    this.loadOptions();
   }
 
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.page.set(page);
-    this.loadOptions();
   }
 
-  /** Already in this draft's table, or ineligible. */
+  /** Eligible and not already in this draft's table. */
+  isSelectable(option: ClaimLetterUlbOption): boolean {
+    return option.eligible && !this.excludeSet.has(option.ulbId);
+  }
+
   isDisabled(option: ClaimLetterUlbOption): boolean {
-    return this.excludeSet().has(option.ulbId) || !option.eligible;
+    return !this.isSelectable(option);
   }
 
   isExcluded(ulbId: string): boolean {
-    return this.excludeSet().has(ulbId);
+    return this.excludeSet.has(ulbId);
+  }
+
+  isSelected(ulbId: string): boolean {
+    return this.selectedUlbs().has(ulbId);
   }
 
   claimedBadgeText(option: ClaimLetterUlbOption): string {
@@ -164,28 +263,64 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
     return batchNumber ? `Batch #${batchNumber}` : 'another batch';
   }
 
-  isSelected(ulbId: string): boolean {
-    return this.selectedUlbs().has(ulbId);
-  }
+  /** With `range`, every selectable row between the anchor and this one (on this page) takes this
+   *  row's new state; otherwise only this row flips. */
+  toggle(option: ClaimLetterUlbOption, range = false): void {
+    if (!this.isSelectable(option)) return;
+    const select = !this.isSelected(option.ulbId);
 
-  toggle(option: ClaimLetterUlbOption): void {
-    if (this.isDisabled(option)) return;
-
-    this.selectedUlbs.update((map) => {
-      const next = new Map(map);
-      if (next.has(option.ulbId)) {
-        next.delete(option.ulbId);
-      } else {
-        next.set(option.ulbId, option);
+    let targets = [option];
+    const anchor = this.anchorUlbId();
+    if (range && anchor) {
+      const rows = this.pageRows();
+      const from = rows.findIndex((o) => o.ulbId === anchor);
+      const to = rows.findIndex((o) => o.ulbId === option.ulbId);
+      if (from !== -1 && to !== -1) {
+        targets = rows.slice(Math.min(from, to), Math.max(from, to) + 1).filter((o) => this.isSelectable(o));
       }
-      return next;
-    });
+    }
+
+    this.setSelected(targets, select);
+    this.anchorUlbId.set(option.ulbId);
   }
 
-  /** Ignores clicks on the checkbox, whose own `(change)` already toggled the row. */
-  onRowClick(option: ClaimLetterUlbOption, event: Event): void {
+  /** Keeps a shift-click from selecting the page text between the anchor and this row; a plain
+   *  drag still selects text, so names and codes can be copied. */
+  onRowMouseDown(event: MouseEvent): void {
+    if (event.shiftKey) event.preventDefault();
+  }
+
+  onCheckboxClick(option: ClaimLetterUlbOption, event: MouseEvent): void {
+    this.toggle(option, event.shiftKey);
+  }
+
+  /** Ignores clicks on the checkbox, whose own click handler already toggled the row. */
+  onRowClick(option: ClaimLetterUlbOption, event: MouseEvent): void {
     if (event.target instanceof HTMLInputElement) return;
-    this.toggle(option);
+    this.toggle(option, event.shiftKey);
+  }
+
+  /** Header checkbox: ticks this page's selectable rows, or unticks them when all are ticked. */
+  togglePage(): void {
+    this.setSelected(this.selectableOnPage(), this.pageSelection() !== 'all');
+  }
+
+  /** Every selectable row matching the current search and filter, across all pages. */
+  selectAllInView(): void {
+    this.setSelected(this.selectableInView(), true);
+  }
+
+  /** The bar's "Clear these N": unticks only the rows matching the current search and filter, so
+   *  picks made under another search stay. */
+  clearInView(): void {
+    this.setSelected(this.selectableInView(), false);
+    this.anchorUlbId.set(null);
+  }
+
+  /** The footer's "Clear all". */
+  clearSelection(): void {
+    this.selectedUlbs.set(new Map());
+    this.anchorUlbId.set(null);
   }
 
   confirm(): void {
@@ -196,5 +331,17 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
 
   cancel(): void {
     this.dialogRef.close(undefined);
+  }
+
+  /** One signal write for the whole set, so ticking hundreds of rows recomputes once. */
+  private setSelected(options: readonly ClaimLetterUlbOption[], select: boolean): void {
+    this.selectedUlbs.update((current) => {
+      const next = new Map(current);
+      for (const option of options) {
+        if (select) next.set(option.ulbId, option);
+        else next.delete(option.ulbId);
+      }
+      return next;
+    });
   }
 }

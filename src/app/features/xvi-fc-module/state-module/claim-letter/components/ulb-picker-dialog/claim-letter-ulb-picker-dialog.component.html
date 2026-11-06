@@ -6,7 +6,7 @@
 </h2>
 
 <mat-dialog-content class="p-0 claim-letter-ulb-picker-dialog-content">
-  <div class="px-3 py-2 d-flex flex-wrap align-items-end justify-content-between gap-2">
+  <div class="px-3 py-2 border-bottom d-flex flex-wrap align-items-end justify-content-between gap-2">
     <div>
       <label class="form-label small fw-semibold mb-1" for="claim-letter-ulb-picker-search">Search</label>
       <input
@@ -30,8 +30,62 @@
       <mat-button-toggle value="IN_OTHER_BATCH">In other batches</mat-button-toggle>
     </mat-button-toggle-group>
   </div>
-  <div class="border-bottom px-3 pb-2 small text-secondary" data-cy="claim-letter-ulb-picker-hover-note">
-    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Hover over a status pill for more details.
+
+  @if (finalBatchNote(); as note) {
+    <div
+      class="alert alert-warning small rounded-0 border-0 border-bottom mb-0 py-2 px-3"
+      data-cy="claim-letter-ulb-picker-final-batch-note"
+    >
+      <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>{{ note }}
+    </div>
+  }
+
+  @if (loadedOfTotal(); as counts) {
+    <div
+      class="alert alert-info small rounded-0 border-0 border-bottom mb-0 py-2 px-3"
+      data-cy="claim-letter-ulb-picker-truncated-note"
+    >
+      Showing the first {{ counts.loaded }} of {{ counts.total }} ULBs.
+    </div>
+  }
+
+  <!-- The select-all messages; the tips fill the row while there is none. -->
+  <div
+    class="px-3 py-1 small border-bottom claim-letter-ulb-picker-select-all-bar"
+    data-cy="claim-letter-ulb-picker-select-all-bar"
+  >
+    <span aria-live="polite">
+      @if (selectAllBar() === 'offer') {
+        All {{ selectableOnPage().length }} eligible ULBs on this page are selected.
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 align-baseline fw-semibold"
+          (click)="selectAllInView()"
+          data-cy="claim-letter-ulb-picker-select-all"
+        >
+          Select all {{ selectableInView().length }} eligible ULBs{{
+            searchTerm() ? ' matching "' + searchTerm() + '"' : ''
+          }}
+        </button>
+      } @else if (selectAllBar() === 'done') {
+        All {{ selectableInView().length }} eligible ULBs{{ searchTerm() ? ' matching "' + searchTerm() + '"' : '' }}
+        are selected.
+        <button
+          type="button"
+          class="btn btn-link btn-sm p-0 align-baseline fw-semibold"
+          (click)="clearInView()"
+          data-cy="claim-letter-ulb-picker-clear-selection"
+        >
+          Clear these {{ selectableInView().length }}
+        </button>
+      }
+    </span>
+    @if (!selectAllBar()) {
+      <span class="text-secondary" data-cy="claim-letter-ulb-picker-tips">
+        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Tips: hover a status pill for details &middot;
+        Shift+click to select a range
+      </span>
+    }
   </div>
 
   <div class="table-responsive claim-letter-ulb-picker-table-wrap">
@@ -47,7 +101,7 @@
           <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Retry
         </button>
       </div>
-    } @else if (!options().length) {
+    } @else if (!pageRows().length) {
       <div class="text-center py-5 text-secondary small" data-cy="claim-letter-ulb-picker-empty">
         {{ emptyMessage() }}
       </div>
@@ -58,15 +112,27 @@
             <th scope="col" class="ps-3 small fw-semibold">ULB Name</th>
             <th scope="col" class="small fw-semibold">Census Code</th>
             <th scope="col" class="small fw-semibold text-end">Allocation</th>
-            <th scope="col" class="small fw-semibold">Eligibility</th>
-            <th scope="col" class="small fw-semibold text-end pe-3">Select</th>
+            <th scope="col" class="small fw-semibold text-center">Eligibility</th>
+            <th scope="col" class="small fw-semibold text-end pe-3">
+              <input
+                type="checkbox"
+                class="form-check-input mt-0"
+                [checked]="pageSelection() === 'all'"
+                [indeterminate]="pageSelection() === 'some'"
+                [disabled]="!selectableOnPage().length"
+                (click)="togglePage()"
+                aria-label="Select all eligible ULBs on this page"
+                data-cy="claim-letter-ulb-picker-select-page"
+              />
+            </th>
           </tr>
         </thead>
         <tbody>
-          @for (option of options(); track option.ulbId) {
+          @for (option of pageRows(); track option.ulbId) {
             <tr
               [class.text-muted]="isDisabled(option)"
               [class.claim-letter-ulb-picker-row-selectable]="!isDisabled(option)"
+              (mousedown)="onRowMouseDown($event)"
               (click)="onRowClick(option, $event)"
               data-cy="claim-letter-ulb-picker-row"
             >
@@ -75,7 +141,7 @@
               <td class="small text-end" [title]="formatAmountExact(option.allocationAmount)">
                 {{ formatAmount(option.allocationAmount) }}
               </td>
-              <td class="small">
+              <td class="small text-center">
                 @if (option.eligible) {
                   <span class="badge text-bg-success">Eligible</span>
                 } @else if (option.claimedInBatch) {
@@ -109,7 +175,7 @@
                     class="form-check-input mt-0"
                     [checked]="isSelected(option.ulbId)"
                     [disabled]="isDisabled(option)"
-                    (change)="toggle(option)"
+                    (click)="onCheckboxClick(option, $event)"
                     [attr.aria-label]="checkboxLabel(option)"
                     data-cy="claim-letter-ulb-picker-checkbox"
                   />
@@ -126,6 +192,28 @@
 <mat-dialog-actions class="border-top px-3 py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
   <span class="small text-secondary" aria-live="polite" data-cy="claim-letter-ulb-picker-selected-count">
     {{ selectedCount() }} {{ selectedCount() === 1 ? 'ULB' : 'ULBs' }} selected
+    @if (selectedCount() > 0) {
+      <span [title]="formatAmountExact(selectedTotalAmount())" data-cy="claim-letter-ulb-picker-selected-total">
+        &middot; {{ formatTotal(selectedTotalAmount()) }}
+      </span>
+    }
+    @if (selectedUnderReviewCount() > 0) {
+      <span class="text-warning-emphasis" data-cy="claim-letter-ulb-picker-under-review-count">
+        &middot; {{ selectedUnderReviewCount() }} {{ selectedUnderReviewCount() === 1 ? 'relies' : 'rely' }} on an
+        exemption under review
+      </span>
+    }
+    @if (selectedCount() > 0) {
+      &middot;
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 align-baseline"
+        (click)="clearSelection()"
+        data-cy="claim-letter-ulb-picker-clear-all"
+      >
+        Clear all
+      </button>
+    }
   </span>
 
   @if (total() > 0) {

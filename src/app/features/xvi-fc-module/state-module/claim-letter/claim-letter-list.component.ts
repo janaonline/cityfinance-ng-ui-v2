@@ -18,8 +18,10 @@ import {
 } from './claim-letter.models';
 import { ClaimLetterEligibilityChecklistComponent } from './components/eligibility-checklist/claim-letter-eligibility-checklist.component';
 import {
+  CLAIM_LETTER_TILE_LABELS,
   ClaimLetterSummaryTile,
   ClaimLetterSummaryTilesComponent,
+  claimsUnderReviewTotal,
 } from './components/summary-tiles/claim-letter-summary-tiles.component';
 import { ClaimLetterService } from './claim-letter.service';
 const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
@@ -133,16 +135,15 @@ export class ClaimLetterListComponent implements OnInit {
     return eligibility.batchSlotsMax - eligibility.batchSlotsUsed === 1 && eligibility.remainingUlbCount > 0;
   });
 
-  /** State-wide figures only (no batch in view); the full five-figure breakdown appears only here. */
+  /** State-wide figures only (no batch in view); the full four-figure breakdown appears only here. */
   readonly summaryTiles = computed<ClaimLetterSummaryTile[]>(() => {
     const overview = this.eligibility()?.financialOverview;
     if (!overview) return [];
     return [
-      { label: 'Available to Claim', value: overview.availableToClaim, emphasized: true },
-      { label: 'Total Allocation', value: overview.totalInstallmentAllocation },
-      { label: 'Already Claimed (Acknowledged)', value: overview.totalAlreadyAcknowledged },
-      { label: 'Claim in Progress (Under Review)', value: overview.totalClaimInProgress },
-      { label: 'Claim in Draft', value: overview.totalClaimInDraft },
+      { label: CLAIM_LETTER_TILE_LABELS.available, value: overview.availableToClaim, emphasized: true },
+      { label: CLAIM_LETTER_TILE_LABELS.total, value: overview.totalInstallmentAllocation },
+      { label: CLAIM_LETTER_TILE_LABELS.underReview, value: claimsUnderReviewTotal(overview) },
+      { label: CLAIM_LETTER_TILE_LABELS.draft, value: overview.totalClaimInDraft },
     ];
   });
 
