@@ -6,6 +6,22 @@ import {
   ClaimLetterUlbEligibilityTally,
 } from './claim-letter.models';
 
+/** Codes named in a refusal message; the rows themselves are marked one by one. */
+const MAX_NAMED_ULBS = 5;
+
+/** The backend's refusal wording: "2 selected ULBs are ineligible or have an invalid claimed amount:
+ *  a, b." Past five codes, it names the first five ("..., including a, b, c, d and e."). */
+export function ineligibleUlbsMessage(identifiers: readonly string[]): string {
+  const n = identifiers.length;
+  const subject =
+    n === 1
+      ? '1 selected ULB is ineligible or has an invalid claimed amount'
+      : `${n} selected ULBs are ineligible or have an invalid claimed amount`;
+  if (n <= MAX_NAMED_ULBS) return `${subject}: ${identifiers.join(', ')}.`;
+  const named = identifiers.slice(0, MAX_NAMED_ULBS);
+  return `${subject}, including ${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}.`;
+}
+
 /** Typing-time preview only; the backend decides at save. */
 export function computeClaimDifferencePercentage(allocationAmount: number, claimedAmount: number): number {
   if (allocationAmount === 0) return 0;

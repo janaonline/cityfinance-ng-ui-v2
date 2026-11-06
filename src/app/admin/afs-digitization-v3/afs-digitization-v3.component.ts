@@ -35,6 +35,7 @@ import {
 import {
   AfsDigitizationV3Service,
   DigitizationV3Metrics,
+  DigitizationV3OverallMetrics,
   DigitizationV3Query,
   DigitizationV3Row,
   DigitizationV3Status,
@@ -49,6 +50,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   auditor_report: "Auditor's Report",
   unknown: 'Unidentified',
 };
+
+type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
 
 interface MetricCard {
   key: keyof DigitizationV3Metrics;
@@ -98,6 +101,14 @@ export class AfsDigitizationV3Component implements OnInit {
     { key: 'mismatch', title: 'Mismatch', icon: 'bi bi-exclamation-triangle', class: 'text-danger' },
   ];
 
+  /** Overall cards: every year, audit type and doc type, whatever the filters say */
+  readonly overallCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
+    { key: 'total', title: 'Total files', icon: 'bi bi-collection', class: 'text-info' },
+    { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
+    { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
+    { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
+  ];
+
   readonly statusOptions: { value: DigitizationV3Status | ''; label: string }[] = [
     { value: '', label: 'All' },
     { value: 'not-digitized', label: 'Not digitized' },
@@ -124,6 +135,7 @@ export class AfsDigitizationV3Component implements OnInit {
 
   rows = signal<DigitizationV3Row[]>([]);
   metrics = signal<DigitizationV3Metrics | null>(null);
+  overall = signal<DigitizationV3OverallMetrics | null>(null);
   totalCount = signal(0);
   loading = signal(false);
   queueing = signal(false);
@@ -214,6 +226,32 @@ export class AfsDigitizationV3Component implements OnInit {
   reload(): void {
     this.loading.set(true);
     this.load$.next();
+    this.loadOverall();
+  }
+
+  /** The overall cards do not depend on the filters, but are refreshed with every list load so they track the queue. */
+  private loadOverall(): void {
+    this.api
+      .getOverallMetrics()
+      .pipe(
+        // The cards are secondary: a failure leaves the last numbers (or dashes) and does not interrupt the page
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((overall) => this.overall.set(overall));
+  }
+
+  overallValue(key: OverallKey): number | string {
+    const o = this.overall();
+    if (!o) return '–';
+    // Same as the per-selection cards: "Queued" includes files being processed
+    return (key === 'queued' ? o.queued + o.processing : o[key]).toLocaleString('en-IN');
+  }
+
+  overallHint(key: OverallKey): string {
+    const o = this.overall();
+    if (key === 'total' && o?.totalPages != null) return `${o.totalPages.toLocaleString('en-IN')} pages`;
+    return '';
   }
 
   /** One list request at a time: a newer request cancels the one still in flight, so old responses never win. */

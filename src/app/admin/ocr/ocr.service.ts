@@ -280,10 +280,16 @@ export class OcrService {
   readonly source = 'ocr';
 
   readonly models: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
     {
       value: 'gemini-3.6-flash',
       label: 'Gemini 3.6 Flash',
-      pricing: { inputPerM: 1.5, outputPerM: 7.5, thinkingPerM: 7.5 },
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
     },
     {
       value: 'gemini-3.5-flash',
@@ -806,6 +812,31 @@ export class OcrService {
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<DurJobListResponse>(environment.api.url3 + 'dur-validation/jobs', {
       params: queryParams,
+    });
+  }
+
+  dumpDurValidationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    grant_type?: DurGrantType;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.grant_type) queryParams['grant_type'] = params.grant_type;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'dur-validation/jobs/dump', {
+      params: queryParams,
+      responseType: 'blob',
     });
   }
 

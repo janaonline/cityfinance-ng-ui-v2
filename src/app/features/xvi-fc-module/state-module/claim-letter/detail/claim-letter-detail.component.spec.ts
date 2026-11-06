@@ -80,6 +80,8 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     // about other behavior don't also have to specify permissions explicitly.
     permissions: { canView: true, canEdit: true, canFinalSubmit: true },
     stateName: 'Test State',
+    // Switch on keeps the claim-amount tests on the editable mode; off has its own describe.
+    claimAmountEditable: true,
     ...overrides,
   };
 }
@@ -99,6 +101,7 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
       availableToClaim: 15,
     },
     remainingUlbCount: 0,
+    claimAmountEditable: true,
     varianceLowerPercent: 90,
     varianceUpperPercent: 110,
     // Create-mode's canEdit() reads this — default to creatable for the same reason as above.
@@ -195,15 +198,20 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.stateName()).toBe('Test State');
     });
 
+    it('is the final batch only when the next batch takes the last slot', () => {
+      expect(component.isFinalBatch()).toBe(false);
+      component.eligibilityOverview.set(buildClaimContext({ nextBatchNumber: 3, batchSlotsUsed: 2 }));
+      expect(component.isFinalBatch()).toBe(true);
+    });
+
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
       expect(claimLetterService.getClaimContext).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
-      // Same 3-tile shape as the list page — the full 5-figure breakdown lives there only; this page
-      // stays lean and lets the narrative bullets carry the "in progress"/"in draft" nuance instead.
-      // "Available to Claim" is the server-computed field, not a client subtraction.
+      // 3 tiles; the full 4-figure breakdown lives on the list page only. Under review adds the
+      // acknowledged amount, and "Balance Available for Claim" is the server-computed field.
       expect(component.summaryTiles()).toEqual([
-        { label: 'Total Allocation', value: 25 },
-        { label: 'Already Claimed (Acknowledged)', value: 5 },
-        { label: 'Available to Claim', value: 15 },
+        { label: 'Total Allocation for 1st Installment', value: 25 },
+        { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
+        { label: 'Balance Available for Claim', value: 15 },
       ]);
     });
 
@@ -273,11 +281,29 @@ describe('ClaimLetterDetailComponent', () => {
 
       expect(claimLetterService.createDraft).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1, {
         ulbSelections: [{ ulbId: 'ulb-1', claimedAmount: 21 }],
+        idempotencyKey: jasmine.any(String),
       });
       expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(jasmine.any(String), 'snackbar-success');
       expect(router.navigate).toHaveBeenCalledWith(['/xvifc', 'year-test-id', 'claim-letter', 'claim-new'], {
         replaceUrl: true,
       });
+    });
+
+    it('createDraft reuses its idempotency key for the same selection, and renews it for a changed one', () => {
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: 21 }));
+      const createSpy = spyOn(claimLetterService, 'createDraft').and.returnValue(
+        throwError(() => ({ success: false, message: 'Timed out.' })),
+      );
+
+      component.createDraft();
+      component.createDraft();
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+      component.createDraft();
+
+      const keys = createSpy.calls.allArgs().map((args) => args[3].idempotencyKey);
+      expect(keys[0]).toEqual(jasmine.any(String));
+      expect(keys[1]).toBe(keys[0]);
+      expect(keys[2]).not.toBe(keys[0]);
     });
 
     it('createDraft surfaces the backend message on failure', () => {
@@ -373,8 +399,8 @@ describe('ClaimLetterDetailComponent', () => {
       );
 
       expect(component.summaryTiles()).toEqual([
-        { label: 'Total Allocation', value: 25 },
-        { label: 'Already Claimed (Acknowledged)', value: 5 },
+        { label: 'Total Allocation for 1st Installment', value: 25 },
+        { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
         { label: 'Claimed in This Batch', value: 21 },
         { label: 'Remaining After This Batch', value: -5 }, // 25 - 5 - 3 - 1 - 21
       ]);
@@ -420,7 +446,7 @@ describe('ClaimLetterDetailComponent', () => {
 
       expect(component.hasInvalidRows()).toBe(true);
       expect(component.rowValidationMessage()).toBe(
-        'The following ULBs are ineligible or have an invalid claimed amount: 800123',
+        '1 selected ULB is ineligible or has an invalid claimed amount: 800123.',
       );
     });
 
@@ -641,6 +667,189 @@ describe('ClaimLetterDetailComponent', () => {
       component.saveChanges();
 
       expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
+    });
+
+    it('is the final batch when this batch holds the last slot', async () => {
+      await setupEdit(buildClaim({ batchNumber: 3 }));
+      expect(component.isFinalBatch()).toBe(true);
+    });
+
+    it('marks the ULB rows a save refused, and removes exactly them in one click', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-3', claimedAmount: 9 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          code: 'CLAIM_LETTER_ULBS_REJECTED',
+          message: '1 selected ULB is already locked in another active claim.',
+          errors: {
+            'ulbSelections.1.ulbId': [
+              { field: 'ulbId', code: 'IN_ANOTHER_CLAIM', message: 'Already in Claim Batch #2.' },
+            ],
+          },
+        })),
+      );
+
+      fixture.detectChanges();
+      component.saveChanges();
+      fixture.detectChanges();
+
+      expect(component.rejectedRows()).toEqual(new Map([['ulb-2', { ulbId: 'Already in Claim Batch #2.' }]]));
+      expect([...component.refusedUlbIds()]).toEqual(['ulb-2']);
+      expect(fixture.debugElement.queryAll(By.css('[data-cy="claim-ulb-table-ulb-error"]')).length).toBe(1);
+      const button = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'));
+      expect((button.nativeElement as HTMLButtonElement).textContent?.trim()).toBe('Remove this ULB');
+
+      button.nativeElement.click();
+      fixture.detectChanges();
+
+      expect(component.rows.controls.map((row) => row.controls.ulbId.value)).toEqual(['ulb-1', 'ulb-3']);
+      expect(component.formLevelErrors()).toEqual([]);
+      expect(component.refusedUlbIds().size).toBe(0);
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        'Removed 1 ULB. Save again to continue.',
+        'snackbar-success',
+      );
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'))).toBeNull();
+    });
+
+    it('does not offer to remove a row whose claim amount was refused; that is fixed by editing it', async () => {
+      await setupEdit(buildClaim({ revision: 4 }));
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(
+        throwError(() => ({
+          success: false,
+          code: 'CLAIM_LETTER_ULBS_REJECTED',
+          message: '1 selected ULB is ineligible or has an invalid claimed amount: 800123.',
+          errors: {
+            'ulbSelections.0.claimedAmount': [
+              { field: 'claimedAmount', code: 'INVALID_CLAIMED_AMOUNT', message: 'Not allowed.' },
+            ],
+          },
+        })),
+      );
+
+      component.rows.at(0).controls.claimedAmount.setValue(19);
+      component.saveChanges();
+
+      expect(component.refusedUlbIds().size).toBe(0);
+      // Kept off the control too, so the message survives a re-render, while the amount is unchanged.
+      expect(component.rejectedRows().get('ulb-1')).toEqual({
+        claimedAmount: { message: 'Not allowed.', sentAmount: 19 },
+      });
+    });
+
+    /** ulb-1 (saved) plus ulb-2 and ulb-3, then a save whose response is held until the test sends it. */
+    async function setupPendingSave(): Promise<Subject<ClaimLetterBatchSummary>> {
+      await setupEdit(buildClaim({ revision: 4 }));
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-3', claimedAmount: 9 }));
+      const response$ = new Subject<ClaimLetterBatchSummary>();
+      spyOn(claimLetterService, 'updateDraft').and.returnValue(response$);
+      fixture.detectChanges();
+      component.saveChanges();
+      fixture.detectChanges();
+      return response$;
+    }
+
+    const lockedRowTwo = {
+      success: false,
+      code: 'CLAIM_LETTER_ULBS_REJECTED',
+      message: '1 selected ULB is already locked in another active claim.',
+      errors: {
+        'ulbSelections.1.ulbId': [{ field: 'ulbId', code: 'IN_ANOTHER_CLAIM', message: 'Already in Claim Batch #2.' }],
+      },
+    };
+
+    it('marks the ULB the save sent at the refused index, even if the rows moved meanwhile', async () => {
+      const response$ = await setupPendingSave();
+
+      // The table blocks this while saving; the page must not depend on that.
+      component.rows.removeAt(0);
+      response$.error(lockedRowTwo);
+      fixture.detectChanges();
+
+      // Request row 1 was ulb-2, now at index 0; ulb-3, now at index 1, is untouched.
+      expect([...component.refusedUlbIds()]).toEqual(['ulb-2']);
+      expect(component.rows.at(0).controls.ulbId.hasError('apiErrors')).toBeTrue();
+      expect(component.rows.at(1).controls.ulbId.errors).toBeNull();
+    });
+
+    it('locks adding and removing rows while a save is in flight', async () => {
+      const response$ = await setupPendingSave();
+      const el = fixture.nativeElement as HTMLElement;
+      const addButton = () => el.querySelector<HTMLButtonElement>('[data-cy="claim-ulb-table-add"]');
+
+      expect(addButton()?.disabled).toBeTrue();
+      expect(el.querySelector<HTMLButtonElement>('[data-cy="claim-ulb-table-remove-all"]')?.disabled).toBeTrue();
+      expect(el.querySelector<HTMLButtonElement>('[aria-label="Remove row"]')?.disabled).toBeTrue();
+      expect(el.querySelector<HTMLInputElement>('[data-cy="claim-ulb-table-claim-amount"]')?.readOnly).toBeTrue();
+
+      response$.error({ success: false, message: 'Network down.' });
+      fixture.detectChanges();
+
+      expect(addButton()?.disabled).toBeFalse();
+    });
+
+    it('forgets a refused ULB once the user removes it, so adding it back shows no stale mark', async () => {
+      const response$ = await setupPendingSave();
+      response$.error(lockedRowTwo);
+      fixture.detectChanges();
+
+      // A-Z with unnamed rows last: ulb-1, ulb-2, ulb-3.
+      const removeButtons = fixture.debugElement.queryAll(By.css('[aria-label="Remove row"]'));
+      (removeButtons[1].nativeElement as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(component.rejectedRows().size).toBe(0);
+
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+      fixture.detectChanges();
+      expect(component.refusedUlbIds().size).toBe(0);
+      expect(fixture.debugElement.queryAll(By.css('[data-cy="claim-ulb-table-ulb-error"]')).length).toBe(0);
+    });
+
+    it('loads a large batch with one rows change, not one per row', async () => {
+      await setup('claim-1');
+      const many = Array.from({ length: 800 }, (_, i) => ({ ...SAVED_ULB_ROWS[0], ulbId: `ulb-${i}` }));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(many));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      let emissions = 0;
+      component.rows.valueChanges.subscribe(() => emissions++);
+
+      fixture.detectChanges();
+
+      expect(component.rows.length).toBe(800);
+      expect(emissions).toBe(1);
+    });
+
+    async function setupWithSavedRows(rows: ClaimLetterUlbRow[]): Promise<void> {
+      await setup('claim-1');
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(rows));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      fixture.detectChanges();
+      fixture.detectChanges();
+    }
+
+    it('lists a known-ineligible ULB in the backend wording and offers to remove it', async () => {
+      await setupWithSavedRows([{ ...SAVED_ULB_ROWS[0], eligible: false, stateGatePassed: true }]);
+
+      expect(component.rowValidationMessage()).toBe(
+        '1 selected ULB is ineligible or has an invalid claimed amount: 800123.',
+      );
+      const button = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'));
+      expect((button.nativeElement as HTMLButtonElement).textContent?.trim()).toBe('Remove this ULB');
+    });
+
+    it('names a State-level failure instead of listing every ULB, and offers no removal', async () => {
+      await setupWithSavedRows([{ ...SAVED_ULB_ROWS[0], eligible: false, stateGatePassed: false }]);
+
+      expect(component.rowValidationMessage()).toBe(
+        'The State-level eligibility conditions are not met, so no ULB can be claimed right now. Removing ULBs will not fix this. See the eligibility checklist on the Claim Letters page.',
+      );
+      expect(component.ineligibleUlbIdsToRemove().size).toBe(0);
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'))).toBeNull();
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
@@ -998,7 +1207,7 @@ describe('ClaimLetterDetailComponent', () => {
       expect(claimLetterService.submit).not.toHaveBeenCalled();
     });
 
-    it('disables Abandon Draft and Save Changes while Submit is in flight', async () => {
+    it('disables Discard Draft and Save Changes while Submit is in flight', async () => {
       await setupSigned();
       spyOn(claimLetterService, 'submit').and.returnValue(new Subject<ClaimLetterBatchSummary>());
       dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
@@ -1152,6 +1361,78 @@ describe('ClaimLetterDetailComponent', () => {
     it('exposes the claim status as a FormStatusValue for the stepper', async () => {
       await setupEdit(buildClaim({ currentFormStatus: 5 }));
       expect(component.currentFormStatusValue()).toBe(5);
+    });
+  });
+
+  // ─── Claim-amount switch off (claim = allocation) ───────────────────────────
+
+  describe('with the claim-amount switch off', () => {
+    it('create mode posts ULB ids only and ignores an empty hidden claim amount', async () => {
+      await setup('new');
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+        of(buildClaimContext({ claimAmountEditable: false })),
+      );
+      fixture.detectChanges();
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: null }));
+      spyOn(claimLetterService, 'createDraft').and.returnValue(of(buildClaim({ claimLetterId: 'claim-new' })));
+
+      component.createDraft();
+
+      expect(claimLetterService.createDraft).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1, {
+        ulbSelections: [{ ulbId: 'ulb-1' }],
+        idempotencyKey: jasmine.any(String),
+      });
+    });
+
+    describe('edit mode', () => {
+      beforeEach(async () => {
+        await setup('claim-1');
+        spyOn(claimLetterService, 'getDetail').and.returnValue(
+          of(buildClaim({ revision: 4, claimAmountEditable: false })),
+        );
+        spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+        spyOn(claimLetterService, 'getClaimContext').and.returnValue(
+          of(buildClaimContext({ claimAmountEditable: false })),
+        );
+        fixture.detectChanges();
+      });
+
+      it('titles the card "Selected ULBs" and does not ask for claim amounts', () => {
+        const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+        expect(text).toContain('Selected ULBs');
+        expect(text).not.toContain('Verify Claim Amount');
+        expect(text).toContain('Select the ULBs against which claims are being submitted under Installment 1.');
+        expect(text).not.toContain("enter each ULB's claim amount");
+      });
+
+      it('totals the batch claim as the allocation', () => {
+        // SAVED_ULB_ROWS: allocation 20, stored claim 21.
+        expect(component.summaryTiles()).toContain({ label: 'Claimed in This Batch', value: 20 });
+      });
+
+      it('treats the same ULBs as unchanged, whatever the hidden claim amount holds', () => {
+        component.rows.at(0).controls.claimedAmount.setValue(19);
+        expect(component.hasUnsavedRowChanges()).toBe(false);
+
+        const updateSpy = spyOn(claimLetterService, 'updateDraft');
+        component.saveChanges();
+
+        expect(updateSpy).not.toHaveBeenCalled();
+        expect(utilityService.triggerSnackbar).toHaveBeenCalledWith('No changes to save.', 'snackbar-warn');
+      });
+
+      it('saves a ULB change with ULB ids only', () => {
+        component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-2', claimedAmount: 7 }));
+        expect(component.hasUnsavedRowChanges()).toBe(true);
+        spyOn(claimLetterService, 'updateDraft').and.returnValue(of(buildClaim({ revision: 5 })));
+
+        component.saveChanges();
+
+        expect(claimLetterService.updateDraft).toHaveBeenCalledWith('claim-1', {
+          ulbSelections: [{ ulbId: 'ulb-1' }, { ulbId: 'ulb-2' }],
+          expectedRevision: 4,
+        });
+      });
     });
   });
 });

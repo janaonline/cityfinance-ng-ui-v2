@@ -8,8 +8,11 @@ export type ClaimLetterBatchNumber = 1 | 2 | 3;
 export type ClaimLetterAssemblyStatus = 'BUILDING' | 'READY';
 export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
 
-/** The backend's per-request max (`CLAIM_LETTER_PAGINATION_MAX_LIMIT`), used by `getAllUlbs`. */
-export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = 100;
+/** The backend's `CLAIM_LETTER_MAX_ULBS`: most ULBs per batch, and per ULB-picker load. */
+export const CLAIM_LETTER_MAX_ULBS = 1000;
+
+/** `getAllUlbs` page size: the rows endpoint's max, so a whole batch loads in one request. */
+export const CLAIM_LETTER_ULB_ROWS_PAGE_SIZE = CLAIM_LETTER_MAX_ULBS;
 
 export interface ClaimLetterUlbEligibilityTally {
   eligible: number;
@@ -104,6 +107,8 @@ export interface ClaimLetterEligibilitySummary {
   remainingUlbCount: number;
   /** The batch in progress or under MoHUA review (one at a time); null when a new claim can start. */
   activeBatchNumber: number | null;
+  /** formjson 26 switch: off means each ULB's claim is its allocation, so no claim column or ±10% text. */
+  claimAmountEditable: boolean;
 }
 
 /** Lean sibling of `ClaimLetterEligibilitySummary` for the create/edit page (`GET .../claim-context`, no checklist). */
@@ -115,7 +120,10 @@ export interface ClaimLetterClaimContext {
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
-  /** Claimed-vs-allocated band from the backend; pass it straight to `isClaimWithinVariance`. */
+  /** As in `ClaimLetterEligibilitySummary`. */
+  claimAmountEditable: boolean;
+  /** Claimed-vs-allocated band from the backend; pass it straight to `isClaimWithinVariance`. Used
+   *  only while `claimAmountEditable` is on. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
   /** PREPARE_GRANT_LETTERS and no active batch; stands in for `permissions.canEdit` before a batch exists. */
@@ -168,6 +176,9 @@ export interface ClaimLetterUlbRow {
   claimAmount: number;
   differencePercentage: number;
   eligible: boolean;
+  /** The State-level gate, the same on every row. False makes every row ineligible for a reason that
+   *  removing ULBs cannot fix. */
+  stateGatePassed?: boolean;
   exemptionNotes?: ClaimLetterExemptionNote[];
 }
 
@@ -236,6 +247,7 @@ export interface ClaimLetterBatchSummary {
   /** Formjson fields except the letter details (those come from `GET .../letter-details`). */
   questions?: ConditionalFieldConfig[];
   stateName?: string;
+  claimAmountEditable?: boolean;
   varianceLowerPercent?: number;
   varianceUpperPercent?: number;
   /** Mandatory letter details saved and valid (Submit needs them). */
@@ -318,6 +330,9 @@ export interface ClaimLetterListMeta {
   heading: string;
   subheading: string;
   total: number;
+  /** The Total row, in `columns` order: the Tied / Untied sums of this list's rows. Absent from a
+   *  document cached before the backend added it. */
+  totalCells?: string[];
 }
 
 export interface ClaimLetterDocument {
@@ -390,6 +405,8 @@ export const CLAIM_LETTER_ERROR_CODE = {
   FINAL_PDF_OUTDATED: 'FINAL_PDF_OUTDATED',
   FINAL_PDF_SOURCE_UNREADABLE: 'FINAL_PDF_SOURCE_UNREADABLE',
   BATCH_BLOCKED: 'CLAIM_LETTER_BATCH_BLOCKED',
+  /** A save refused some ULBs; `errors` names their rows (`ulbSelections.<index>.<field>`). */
+  ULBS_REJECTED: 'CLAIM_LETTER_ULBS_REJECTED',
 } as const;
 
 export interface ClaimLetterHistoryQuery {
@@ -408,7 +425,8 @@ export interface ClaimLetterHistoryResult {
 /** Only what the State chose; allocation and eligibility are resolved server-side. */
 export interface ClaimLetterUlbSelection {
   ulbId: string;
-  claimedAmount: number;
+  /** Sent only while `claimAmountEditable` is on; otherwise the server stores the allocation. */
+  claimedAmount?: number;
 }
 
 export interface CreateClaimLetterDraftPayload {
