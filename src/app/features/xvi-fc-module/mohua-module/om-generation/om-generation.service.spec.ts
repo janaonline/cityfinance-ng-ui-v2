@@ -34,7 +34,8 @@ describe('OmGenerationService', () => {
   });
 
   it('generates as a file download, keeping the name the API sends', () => {
-    let fileName: string | null = null;
+    // No initializer: `= null` would narrow the type to null and break the toBe() below.
+    let fileName: string | null | undefined;
     service.generate('c1').subscribe((f) => (fileName = f.fileName));
 
     const req = http.expectOne((r) => r.url.endsWith('xvi-fc/mohua/om/letter/c1/generate'));
