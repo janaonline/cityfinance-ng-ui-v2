@@ -440,6 +440,22 @@ describe('ClaimLetterDocumentPreviewDialogComponent', () => {
       expect(service.downloadDocumentDocx).toHaveBeenCalledOnceWith('claim-1');
       expect(saveAs).toHaveBeenCalled();
     });
+
+    it('does not download when a conflict reloads the details meanwhile', async () => {
+      create();
+      const save = new Subject<ClaimLetterLetterDetailsSaveResult>();
+      service.saveLetterDetails.and.returnValue(save);
+      setValue('gtcTransferredInTime', 'yes');
+      component.onFieldCommitted('gtcTransferredInTime');
+      const done = component.download();
+
+      service.getLetterDetails.and.returnValue(new Subject<ClaimLetterLetterDetails>());
+      save.error(apiError(409, { message: 'Changed elsewhere.', code: 'LETTER_DETAILS_CHANGED' }));
+      await done;
+
+      expect(service.downloadDocumentDocx).not.toHaveBeenCalled();
+      expect(component.downloading()).toBeFalse();
+    });
   });
 
   describe('close', () => {
@@ -464,6 +480,33 @@ describe('ClaimLetterDocumentPreviewDialogComponent', () => {
 
       expect(confirm).toHaveBeenCalledTimes(1);
       expect(dialogRef.close).not.toHaveBeenCalled();
+    });
+
+    it('stays open when a conflict reloads the details meanwhile', async () => {
+      create();
+      const save = new Subject<ClaimLetterLetterDetailsSaveResult>();
+      service.saveLetterDetails.and.returnValue(save);
+      setValue('departmentName', 'Housing');
+      component.onFieldCommitted('departmentName');
+      const done = component.close();
+
+      service.getLetterDetails.and.returnValue(new Subject<ClaimLetterLetterDetails>());
+      save.error(apiError(409, { message: 'Changed elsewhere.', code: 'LETTER_DETAILS_CHANGED' }));
+      await done;
+
+      expect(dialogRef.close).not.toHaveBeenCalled();
+      expect(component.closing()).toBeFalse();
+    });
+
+    it('still closes while the details are first loading', async () => {
+      service.getLetterDetails.and.returnValue(new Subject<ClaimLetterLetterDetails>());
+      fixture = TestBed.createComponent(ClaimLetterDocumentPreviewDialogComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      await component.close();
+
+      expect(dialogRef.close).toHaveBeenCalledOnceWith({ saved: false });
     });
   });
 });
