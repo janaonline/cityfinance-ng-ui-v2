@@ -330,6 +330,9 @@ export interface ClaimLetterListMeta {
   heading: string;
   subheading: string;
   total: number;
+  /** The Total row, in `columns` order: the Tied / Untied sums of this list's rows. Absent from a
+   *  document cached before the backend added it. */
+  totalCells?: string[];
 }
 
 export interface ClaimLetterDocument {
