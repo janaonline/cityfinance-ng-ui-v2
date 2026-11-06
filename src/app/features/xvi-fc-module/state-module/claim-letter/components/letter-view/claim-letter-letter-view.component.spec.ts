@@ -63,6 +63,7 @@ function documentWith(totals: { eligible: number; ineligible: number }): ClaimLe
           heading: '1. List of Eligible ULBs',
           subheading: 'ULBs in this proposal.',
           total: totals.eligible,
+          totalCells: ['', 'Total', '640.12'],
         },
         {
           key: 'INELIGIBLE',
@@ -145,6 +146,34 @@ describe('ClaimLetterLetterViewComponent', () => {
     expect(cells[2].classList).toContain('text-end');
     expect(el.querySelector('[data-cy="claim-letter-list-INELIGIBLE"]')).toBeNull();
     expect(el.textContent).toContain('Nil');
+  });
+
+  it("ends a list's table with its Total row, in bold, aligned like its column", () => {
+    const el = render({ eligible: 1, ineligible: 0 });
+
+    const row = el.querySelector('[data-cy="claim-letter-list-total-ELIGIBLE"]');
+    const cells = Array.from(row?.querySelectorAll('td') ?? []);
+    expect(cells.map((c) => c.textContent?.trim())).toEqual(['', 'Total', '640.12']);
+    expect(cells[2].classList).toContain('text-end');
+    expect(row?.closest('tfoot')).not.toBeNull();
+  });
+
+  it('says the Total covers every page when the list is paged', () => {
+    const el = render({ eligible: 45, ineligible: 0 });
+
+    const row = el.querySelector('[data-cy="claim-letter-list-total-ELIGIBLE"]');
+    expect(row?.querySelectorAll('td')[1].textContent?.trim()).toBe('Total (all 45 ULBs)');
+  });
+
+  it('shows no Total row for a document that has none', () => {
+    fixture = TestBed.createComponent(ClaimLetterLetterViewComponent);
+    const doc = documentWith({ eligible: 1, ineligible: 0 });
+    delete doc.annexure.lists[0].totalCells;
+    fixture.componentRef.setInput('document', doc);
+    fixture.componentRef.setInput('pages', { ELIGIBLE: page([['1', 'Sample Town', '617.28']]), INELIGIBLE: page([]) });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('tfoot')).toBeNull();
   });
 
   it('pages a list over 20 rows and reports the page change', () => {

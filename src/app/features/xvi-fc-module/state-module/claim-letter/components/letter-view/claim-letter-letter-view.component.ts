@@ -10,6 +10,7 @@ import {
   ClaimLetterColumnKind,
   ClaimLetterDocument,
   ClaimLetterListKey,
+  ClaimLetterListMeta,
   ClaimLetterRun,
 } from '../../claim-letter.models';
 import { ClaimLetterLetterFieldComponent } from '../letter-field/claim-letter-letter-field.component';
@@ -60,6 +61,12 @@ export class ClaimLetterLetterViewComponent {
 
   alignClass(kind: ClaimLetterColumnKind): string {
     return kind === 'name' ? 'text-start' : kind === 'amount' ? 'text-end' : 'text-center';
+  }
+
+  /** A Total row cell; on a paged list the label says it covers every page, not just this one. */
+  totalCellText(list: ClaimLetterListMeta, cell: string, index: number): string {
+    const isName = this.document().annexure.columns[index]?.kind === 'name';
+    return isName && list.total > this.pageSize ? `Total (all ${list.total} ULBs)` : cell;
   }
 
   slotEditor(run: ClaimLetterRun): SlotEditor | null {

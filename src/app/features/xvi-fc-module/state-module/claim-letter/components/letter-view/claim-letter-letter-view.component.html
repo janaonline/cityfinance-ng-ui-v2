@@ -130,6 +130,17 @@
                 </tr>
               }
             </tbody>
+            @if (list.totalCells; as totalCells) {
+              <tfoot>
+                <tr class="cl-total-row" [attr.data-cy]="'claim-letter-list-total-' + list.key">
+                  @for (cell of totalCells; track $index) {
+                    <td [class]="alignClass(doc.annexure.columns[$index].kind)">
+                      {{ totalCellText(list, cell, $index) }}
+                    </td>
+                  }
+                </tr>
+              </tfoot>
+            }
           </table>
         </div>
         @if (list.total > pageSize) {
