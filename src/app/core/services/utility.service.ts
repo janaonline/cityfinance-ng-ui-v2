@@ -32,11 +32,16 @@ export class UtilityService {
   }
 
   // Helper: Trigger snack-bar.
-  triggerSnackbar(msg: string, className: SnackbarClass = 'snackbar-success'): void {
+  // `persistent: true` disables auto-dismiss; the snackbar closes only via the 'Close' button.
+  triggerSnackbar(
+    msg: string,
+    className: SnackbarClass = 'snackbar-success',
+    options?: { persistent?: boolean },
+  ): void {
     this._snackBar.open(msg, 'Close', {
       horizontalPosition: 'end',
       verticalPosition: 'top',
-      duration: 3000,
+      duration: options?.persistent ? 0 : 3000,
       panelClass: [className],
     });
   }

@@ -1,0 +1,25 @@
+@if (mode() === 'clamp') {
+  <div class="truncated-text">
+    <span
+      #textEl
+      class="truncated-text__clamp"
+      [class.truncated-text__clamp--collapsed]="!expanded()"
+      [style.--truncated-text-lines]="lines()"
+      >{{ text() }}</span
+    >
+    @if (isOverflowing()) {
+      <button type="button" class="btn btn-link btn-sm p-0 truncated-text__toggle" (click)="toggleExpanded()">
+        {{ expanded() ? 'Show less' : 'Show more' }}
+      </button>
+    }
+  </div>
+} @else {
+  <span
+    #textEl
+    class="truncated-text__ellipsis"
+    [matTooltip]="text() ?? ''"
+    [matTooltipDisabled]="!isOverflowing()"
+    matTooltipPosition="above"
+    >{{ text() }}</span
+  >
+}
