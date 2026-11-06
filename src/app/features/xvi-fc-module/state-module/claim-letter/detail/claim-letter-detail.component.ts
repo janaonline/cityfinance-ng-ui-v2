@@ -832,7 +832,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   private createIdempotencyKey(selections: readonly ClaimLetterUlbSelection[]): string {
     const signature = JSON.stringify(selections);
     if (this.lastCreateAttempt?.selections !== signature) {
-      this.lastCreateAttempt = { selections: signature, key: crypto.randomUUID() };
+      // randomUUID exists only on HTTPS and localhost; `npm run host` / `net` serve plain HTTP.
+      const key =
+        typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+      this.lastCreateAttempt = { selections: signature, key };
     }
     return this.lastCreateAttempt.key;
   }

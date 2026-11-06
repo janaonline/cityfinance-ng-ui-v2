@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ClaimLetterApiErrorMap,
   ClaimLetterApiErrorResponse,
@@ -184,7 +185,9 @@ function isApiErrorMap(value: unknown): value is ClaimLetterApiErrorMap {
 /** Status, message(s), `code` and field errors from an `HttpErrorResponse` body or a thrown
  *  `success: false` response; empty when the error carries none. */
 export function readApiError(err: unknown): ClaimLetterApiErrorResponse {
-  const body = isRecord(err) && isRecord(err['error']) ? err['error'] : err;
+  // An HttpErrorResponse is never the body: a non-JSON body (gateway HTML, empty) would leak Angular's message.
+  const body =
+    err instanceof HttpErrorResponse ? err.error : isRecord(err) && isRecord(err['error']) ? err['error'] : err;
   if (!isRecord(body)) return {};
   const raw = body['message'];
   const messages = typeof raw === 'string' ? [raw] : isStringArray(raw) ? raw : [];
