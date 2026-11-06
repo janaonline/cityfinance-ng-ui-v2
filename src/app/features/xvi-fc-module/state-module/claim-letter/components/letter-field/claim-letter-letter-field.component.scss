@@ -1,0 +1,196 @@
+// Every tint follows the xvi-fc theme colour (`--color-primary`), so a theme change restyles the boxes.
+:host {
+  --cl-accent: var(--color-primary, #1f6f6b);
+  --cl-ring: color-mix(in srgb, var(--cl-accent) 15%, transparent);
+  --cl-dashed: color-mix(in srgb, var(--cl-accent) 25%, #e0e0e0);
+  --cl-placeholder: color-mix(in srgb, var(--cl-accent) 12%, #bcbcbc);
+  --cl-filled-bg: color-mix(in srgb, var(--cl-accent) 8%, #fff);
+  --cl-filled-border: color-mix(in srgb, var(--cl-accent) 22%, #fff);
+  --cl-text: #1b1b1b;
+  --cl-required: #c2410c;
+  --cl-error-bg: #fff4ee;
+
+  display: inline;
+}
+
+.cl-field {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  max-width: 100%;
+  margin: 0.2rem 0;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.6;
+}
+
+// Address and penal interest: a wide box; in a table cell it fills the line after its "c)" label.
+.cl-field-wide {
+  width: 70%;
+}
+
+:host-context(td) .cl-field-wide {
+  width: calc(100% - 1.75rem);
+}
+
+.cl-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 100px;
+  max-width: 100%;
+  padding: 0.1rem 10px;
+  border: 1.5px dashed var(--cl-dashed);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--cl-text);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--cl-accent);
+  }
+}
+
+.cl-field-strong .cl-box {
+  min-width: 200px;
+  font-weight: 600;
+}
+
+.cl-field-wide .cl-box {
+  display: flex;
+  width: 100%;
+}
+
+.cl-box-filled {
+  border: 1.5px solid var(--cl-filled-border);
+  background: var(--cl-filled-bg);
+}
+
+.cl-box-invalid,
+.cl-box-invalid:hover {
+  border: 1.5px solid var(--cl-required);
+  background: var(--cl-error-bg);
+}
+
+// The box being edited wins over every other state.
+.cl-box:focus-within {
+  border: 1.5px solid var(--cl-accent);
+  box-shadow: 0 0 0 4px var(--cl-ring);
+}
+
+.cl-box-disabled {
+  opacity: 0.6;
+}
+
+// The sizer sets the width (the visible placeholder when empty, a hidden copy of the value when
+// filled); the control sits on top of it, so the box fits the real font exactly.
+.cl-stack {
+  position: relative;
+  display: inline-block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.cl-sizer {
+  display: block;
+  overflow: hidden;
+  padding-right: 2px;
+  white-space: nowrap;
+  visibility: hidden;
+}
+
+.cl-sizer-ghost {
+  visibility: visible;
+  color: var(--cl-placeholder);
+  font-weight: 400;
+}
+
+// Room for the select's own arrow.
+.cl-stack-select .cl-sizer {
+  padding-right: 1.4rem;
+}
+
+.cl-control {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+}
+
+// Text areas grow downwards in normal flow; their placeholder is drawn over them instead.
+.cl-stack-block {
+  display: block;
+  width: 100%;
+
+  .cl-control {
+    position: static;
+    display: block;
+    resize: none;
+    overflow: hidden;
+  }
+}
+
+// An empty select hides its own text; the sizer shows the placeholder (and "*") beneath it.
+select.cl-control {
+  cursor: pointer;
+
+  &.cl-control-empty {
+    color: transparent;
+  }
+
+  option {
+    color: var(--cl-text);
+  }
+}
+
+.cl-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--cl-placeholder);
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.cl-required {
+  color: var(--cl-required);
+  font-weight: 700;
+}
+
+.cl-date-button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cl-placeholder);
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    color: var(--cl-accent);
+  }
+}
+
+.cl-box:focus-within .cl-date-button {
+  color: var(--cl-accent);
+}
+
+.cl-field-error {
+  margin-top: 0.15rem;
+  color: var(--cl-required);
+  font-family: system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
