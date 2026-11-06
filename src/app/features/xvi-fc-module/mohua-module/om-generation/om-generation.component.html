@@ -1,0 +1,87 @@
+<div class="cs-page">
+  <app-om-steps [current]="2" />
+
+  <h1 class="cs-title">
+    Generate OM
+    @if (data(); as d) {
+      <span class="cs-year">FY {{ d.year.label }}</span>
+    }
+  </h1>
+  <p class="cs-subtitle">
+    Each verified Claim Letter gets its own OM. An OM covers one State only. The OM fills in from the letter.
+  </p>
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading verified claim letters" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else if (data()) {
+    @let d = data()!;
+    @if (d.states.length === 0) {
+      <div class="cs-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p>No claim letter has been verified yet. Verified letters appear here.</p>
+      </div>
+    } @else {
+      <div class="cs-table-wrap">
+        <table class="cs-table">
+          <caption class="visually-hidden">Verified claim letters</caption>
+          <thead>
+            <tr>
+              <th scope="col">Claim letter no.</th>
+              <th scope="col" class="num">ULBs</th>
+              <th scope="col" class="num">Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span class="visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          @for (state of d.states; track state.stateId) {
+            <!-- One group per State: its name across the table, then its claim letters, one OM each. -->
+            <tbody>
+              <tr class="om-state-row">
+                <th scope="rowgroup" colspan="5">
+                  <i class="bi bi-geo-alt" aria-hidden="true"></i> {{ state.stateName }}
+                  <span class="om-state-row__count">
+                    {{ state.claimLetters.length }} claim {{ state.claimLetters.length === 1 ? 'letter' : 'letters' }}
+                  </span>
+                </th>
+              </tr>
+              @for (letter of state.claimLetters; track letter.claimLetterId) {
+                <tr>
+                  <td class="strong om-letter-cell">{{ letter.claimLetterRefNo }}</td>
+                  <td class="num">{{ letter.ulbCount }}</td>
+                  <td class="num">{{ formatCrore(letter.amount) }}</td>
+                  <td>
+                    @if (isIssued(letter.omStatus)) {
+                      <span class="cs-badge cs-badge--good">OM {{ statusLabel[letter.omStatus!] }}</span>
+                    } @else {
+                      <span class="cs-badge cs-badge--good">Verified by MoHUA</span>
+                    }
+                  </td>
+                  <td class="om-action">
+                    <a
+                      class="cs-btn cs-btn--ghost"
+                      [routerLink]="['om-generation', 'letter', letter.claimLetterId]"
+                      [relativeTo]="mohuaRoute"
+                    >
+                      {{ isIssued(letter.omStatus) ? 'View OM' : 'Generate OM' }}
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          }
+        </table>
+      </div>
+    }
+  }
+
+  <p class="om-history-link">
+    <a [routerLink]="['om-history']" [relativeTo]="mohuaRoute">
+      <i class="bi bi-clock-history" aria-hidden="true"></i> OM Generation History
+    </a>
+  </p>
+</div>

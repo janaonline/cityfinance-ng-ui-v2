@@ -125,6 +125,23 @@ export const MOHUA_ROUTES: Routes = [
           ),
       },
       {
+        path: 'om-generation',
+        loadComponent: () =>
+          import('./om-generation/om-generation.component').then((m) => m.OmGenerationComponent),
+      },
+      {
+        path: 'om-generation/letter/:claimLetterId',
+        // Keeps "Generate OM" highlighted in the sidebar on the letter's page.
+        data: { menuGroup: 'om-generation' },
+        loadComponent: () =>
+          import('./om-generation/om-letter/om-letter.component').then((m) => m.OmLetterComponent),
+      },
+      {
+        path: 'om-history',
+        loadComponent: () =>
+          import('./om-generation/om-history/om-history.component').then((m) => m.OmHistoryComponent),
+      },
+      {
         path: '**',
         redirectTo: 'overview',
       },
