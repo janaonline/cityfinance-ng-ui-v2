@@ -64,6 +64,8 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
     activeBatchNumber: null,
+    // Switch on keeps the claim-amount tests below on the editable mode; off is tested on its own.
+    claimAmountEditable: true,
     ...overrides,
   };
 }
@@ -307,13 +309,12 @@ describe('ClaimLetterListComponent', () => {
     ]);
   });
 
-  it('derives all 5 tiles from financialOverview, with Available to Claim emphasized first', () => {
+  it('derives 4 tiles from financialOverview, with the balance emphasized first and acknowledged counted under review', () => {
     expect(component.summaryTiles()).toEqual([
-      { label: 'Available to Claim', value: 15, emphasized: true },
-      { label: 'Total Allocation', value: 25 },
-      { label: 'Already Claimed (Acknowledged)', value: 5 },
-      { label: 'Claim in Progress (Under Review)', value: 3 },
-      { label: 'Claim in Draft', value: 2 },
+      { label: 'Balance Available for Claim', value: 15, emphasized: true },
+      { label: 'Total Allocation for 1st Installment', value: 25 },
+      { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
+      { label: 'Claims in Draft', value: 2 },
     ]);
   });
 
@@ -413,6 +414,23 @@ describe('ClaimLetterListComponent', () => {
 
     component.toggleInstructions();
     expect(component.showInstructions()).toBeFalse();
+  });
+
+  it('instructions follow the claim-amount switch: the ±10% rule only while it is on', () => {
+    const instructionsText = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-cy="claim-letter-instructions"]')?.textContent ?? '';
+    component.toggleInstructions();
+    fixture.detectChanges();
+    expect(instructionsText()).toContain('±10%');
+
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ claimAmountEditable: false })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(instructionsText()).not.toContain('±10%');
+    expect(instructionsText()).toContain('each ULB is claimed at its full');
   });
 
   it('goToPage ignores out-of-range page numbers', () => {

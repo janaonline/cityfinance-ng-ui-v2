@@ -14,10 +14,7 @@
         <h1 class="page-title mb-2">Generate Claim Letter</h1>
 
         <p class="page-subtitle text-secondary mb-0">
-          Select ULBs and claim amounts against your state's Installment {{ installment }} allocation, fill in the claim
-          letter, then upload the signed copy and submit it to MoHUA. You can create up to the number of batches shown
-          below, one at a time: the next batch can start once MoHUA acknowledges the current one, or its draft is
-          abandoned.
+          Generate a claim letter for the release of Installment {{ installment }} by selecting the ULBs.
         </p>
       </div>
 
@@ -145,14 +142,21 @@
                     Click <strong>New Claim</strong> to start. Only ULBs meeting every eligibility criterion above will
                     be selectable in the picker.
                   </li>
-                  <li>
-                    Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its full
-                    allocation amount, which you can adjust from there.
-                  </li>
-                  <li>
-                    Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
-                    outside that range will be rejected.
-                  </li>
+                  @if (eligibility()?.claimAmountEditable) {
+                    <li>
+                      Pick ULBs and select <strong>Add selected ULBs</strong> - each one starts pre-filled with its full
+                      allocation amount, which you can adjust from there.
+                    </li>
+                    <li>
+                      Each ULB's claim amount must stay within <strong>&plusmn;10%</strong> of its allocation - saving
+                      outside that range will be rejected.
+                    </li>
+                  } @else {
+                    <li>
+                      Pick ULBs and select <strong>Add selected ULBs</strong> - each ULB is claimed at its full
+                      allocation amount.
+                    </li>
+                  }
                   <li>
                     Submitting to MoHUA requires the signed claim letter upload first; until then your batch stays an
                     editable draft.
