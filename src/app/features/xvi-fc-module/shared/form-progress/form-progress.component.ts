@@ -188,7 +188,7 @@ function getFormStatusSteps(formType: FormType, status: FormStatusValue): readon
  * @param status - Numeric form status from {@link FORM_STATUS}.
  * @returns Display label for the status pill.
  */
-function getCurrentStatusLabel(formType: FormType, status: FormStatusValue): string {
+export function getCurrentStatusLabel(formType: FormType, status: FormStatusValue): string {
   const map = formType === 'state' ? STATE_STATUS_LABEL : ULB_STATUS_LABEL;
   return map[status] ?? 'Not Started';
 }

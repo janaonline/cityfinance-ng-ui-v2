@@ -4,6 +4,12 @@ import { FormActor } from '../../shared/form-progress/form-progress.component';
 
 export type SubmitType = 'saveAsDraft' | 'finalSubmit';
 
+/**
+ * Backend-configured remarks character limit, used for live character counts.
+ * Backend validation remains the source of truth if the limit changes or drifts.
+ */
+export const EULB_ROW_REMARKS_MAX_LENGTH = 250;
+
 export interface ApiFieldError {
   field?: string;
   message: string;

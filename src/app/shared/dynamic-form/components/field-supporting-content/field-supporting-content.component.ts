@@ -29,9 +29,10 @@ export class DynamicFieldSupportingContentComponent {
   /** The key of the parent field — included in emitted action events. */
   readonly fieldKey = input<string>('');
 
-  /** Whether the parent form is editable.
-   * Template-download/action items are shown only in `'edit'` mode, as they require form input.
-   * Informational items (`info`/`warning`, etc.) remain visible in all modes.
+  /** Whether the parent form is editable. Every supporting-content type is shown only in
+   * `'edit'` mode — none of them (download/action prompts, info/warning text, sample-columns,
+   * readonly-card) have meaning once a form is locked for viewing (State view-only or PMU
+   * review).
    */
   readonly mode = input<DynamicFormMode>('edit');
 
@@ -52,29 +53,33 @@ export class DynamicFieldSupportingContentComponent {
     );
   });
 
-  readonly infoItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly infoItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'info' }> => item.type === 'info',
-    ),
-  );
+    );
+  });
 
-  readonly warningItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly warningItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'warning' }> => item.type === 'warning',
-    ),
-  );
+    );
+  });
 
-  readonly sampleColumnsItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly sampleColumnsItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'sample-columns' }> => item.type === 'sample-columns',
-    ),
-  );
+    );
+  });
 
-  readonly readonlyCardItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly readonlyCardItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'readonly-card' }> => item.type === 'readonly-card',
-    ),
-  );
+    );
+  });
 
   readonly actionItems = computed(() => {
     if (this.mode() !== 'edit') return [];
