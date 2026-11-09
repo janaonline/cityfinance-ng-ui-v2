@@ -28,6 +28,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
+import { AfsLogModalComponent } from '../afs-dashboard/afs-log-modal/afs-log-modal.component';
 import {
   AfsDigitizationV3ResultDialogComponent,
   DigitizationV3ResultDialogData,
@@ -332,6 +333,11 @@ export class AfsDigitizationV3Component implements OnInit {
   viewLog(row: DigitizationV3Row): void {
     const afsDigitizationJobId = row.digitization?.jobId;
     if (!afsDigitizationJobId) return;
+    // Old-flow jobs have no FastAPI job: their id is the old request id, so use the afs-dashboard request log
+    if (row.digitization.isLegacy) {
+      this.dialog.open(AfsLogModalComponent, { data: { requestId: afsDigitizationJobId }, panelClass: 'col-8' });
+      return;
+    }
     this.dialog.open(AfsDigitizationV3LogDialogComponent, {
       width: '640px',
       maxWidth: '95vw',
