@@ -284,8 +284,7 @@ export class AfsDigitizationV3Component implements OnInit {
     if (!total || this.queueing()) return;
 
     const confirmed = confirm(
-      `Digitize all ${total} filtered file(s)?\n\n` +
-        'Files with no PDF, or already queued or digitized, are skipped.',
+      `Digitize all ${total} filtered file(s)?\n\n` + 'Files with no PDF, or already queued or digitized, are skipped.',
     );
     if (!confirmed) return;
 
@@ -373,7 +372,10 @@ export class AfsDigitizationV3Component implements OnInit {
     if (f.populationCategory) query.populationCategory = f.populationCategory;
 
     if (opts.pageFilters) {
-      if (this.digitizationV3Status) query.digitizationV3Status = this.digitizationV3Status;
+      // The shared sidebar's "Digitization Status" (same values as v3 minus 'processing') applies unless the page's own Status is set
+      const sidebarStatus = f.digitizationStatus as DigitizationV3Status | '' | undefined;
+      const status = this.digitizationV3Status || sidebarStatus;
+      if (status) query.digitizationV3Status = status;
       if (this.contentFilter) query.isConsolidated = this.contentFilter === 'consolidated';
       if (this.mismatchFilter) query.isMismatch = this.mismatchFilter === 'mismatch';
     }
