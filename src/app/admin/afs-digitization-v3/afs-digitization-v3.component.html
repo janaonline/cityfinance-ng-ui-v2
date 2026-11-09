@@ -205,7 +205,9 @@
             <ng-container matColumnDef="contents">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
               <td mat-cell *matCellDef="let row">
-                @if (row.digitization.status === 'digitized') {
+                @if (row.digitization.isLegacy) {
+                  <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
+                } @else if (row.digitization.status === 'digitized') {
                   @for (seg of row.digitization.segments; track $index) {
                     <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
                       {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}

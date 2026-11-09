@@ -19,6 +19,8 @@ export interface DigitizationV3Info {
   segments?: DigitizationV3Segment[];
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** Digitized by the old flow: contents unknown; can be re-queued for v3 */
+  isLegacy?: boolean;
   expectedDocType?: string;
   noOfPages?: number;
   /** FastAPI job id (`job_id` from `POST /afs-digitization/jobs`) */
