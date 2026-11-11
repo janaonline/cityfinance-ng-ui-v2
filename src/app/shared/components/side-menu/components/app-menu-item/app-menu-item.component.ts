@@ -12,6 +12,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLinkActive, RouterModule } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { StateNotificationService } from '../../../../../features/xvi-fc-module/state-module/state-notification.service';
 import { UlbNotificationService } from '../../../../../features/xvi-fc-module/ulb-module/ulb-notification.service';
 import { MenuItem } from '../../models/menu.model';
 
@@ -24,17 +25,19 @@ import { MenuItem } from '../../models/menu.model';
 })
 export class AppMenuItemComponent {
   private readonly ulbNotifications = inject(UlbNotificationService);
+  private readonly stateNotifications = inject(StateNotificationService);
   private readonly router = inject(Router);
 
   readonly item = input.required<MenuItem>();
   readonly root = input<boolean>(false);
   readonly collapsed = input<boolean>(false);
 
-  /** Colored-dot severity for this item's route, if it has a pending ULB notification. */
+  /** Colored-dot severity for this item's route, if it has a pending ULB or State notification (only
+   *  the signed-in role's service ever has any, so no role check is needed here). */
   readonly badgeSeverity = computed(() => {
     const key = this.routeKey(this.item().routerLink);
     if (!key) return undefined;
-    return this.ulbNotifications.severityByRoute().get(key);
+    return this.ulbNotifications.severityByRoute().get(key) ?? this.stateNotifications.severityByRoute().get(key);
   });
 
   /** Last path segment of a routerLink, array or string form. */

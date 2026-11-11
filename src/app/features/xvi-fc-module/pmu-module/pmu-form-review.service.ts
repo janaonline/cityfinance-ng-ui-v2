@@ -89,6 +89,19 @@ export class PmuFormReviewService {
       .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
   }
 
+  /** Reverses PMU's own approve/return back to Under Review by PMU — the one shared undo endpoint,
+   *  with the form picked by `type` (the same `PmuReviewFormId` the rest of this module uses). */
+  undoForm(form: PmuFormOption, stateId: string, yearId: string, installment?: 1 | 2): Observable<PmuFormSubmitData> {
+    return this.http
+      .post<PmuApiResponse<PmuFormSubmitData>>(`${environment.api.url2}xvi-fc/pmu/undo`, {
+        type: form.value,
+        stateId,
+        yearId,
+        ...(installment !== undefined && { installment }),
+      })
+      .pipe(map((response) => ensureSuccessfulResponse(response).data as PmuFormSubmitData));
+  }
+
   rejectForm(
     form: PmuFormOption,
     stateId: string,

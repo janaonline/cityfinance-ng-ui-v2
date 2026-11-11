@@ -27,7 +27,8 @@
     />
   } @else {
     <app-overview-card
-      [overviewData]="ulbOverviewData"
+      [overviewData]="ulbOverviewData()"
+      [class.allocation-ready]="hasAllocation()"
       [initialSelectedGrantId]="'basic'"
       [isLoading]="isLoading()"
       [selectedYear]="selectedYear"

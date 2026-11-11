@@ -43,7 +43,7 @@ export class ReviewAcknowledgmentComponent {
   readonly canReject = input(false);
   readonly busy = input(false);
   readonly approveLabel = input('Approve');
-  readonly rejectLabel = input('Reject');
+  readonly rejectLabel = input('Return');
   readonly approveConfirmDialog = input<ConfirmDialogData>(DEFAULT_APPROVE_CONFIRM_DIALOG);
 
   readonly approveClicked = output<void>();
