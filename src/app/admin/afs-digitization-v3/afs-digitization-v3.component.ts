@@ -15,6 +15,10 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatInputModule } from '@angular/material/input';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { EMPTY, Subject, catchError, switchMap } from 'rxjs';
@@ -70,13 +74,17 @@ interface MetricCard {
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatMenuModule,
+    MatNativeDateModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatSortModule,
     MatTableModule,
     MatTooltipModule,
     AfsFilterComponent,
@@ -90,7 +98,7 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'contents', 'flags', 'actions'];
+  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -144,6 +152,31 @@ export class AfsDigitizationV3Component implements OnInit {
 
   pageIndex = 0;
   pageSize = 25;
+  /** Digitized date range from the picker; null = no limit on that side */
+  digitizedFrom: Date | null = null;
+  digitizedTo: Date | null = null;
+  readonly today = new Date();
+
+  /** Fires on every start / end pick; the list only reloads once the range is complete (or fully cleared). */
+  onDigitizedRangeChange(): void {
+    if (this.digitizedFrom && !this.digitizedTo) return;
+    this.onPageFilterChanged();
+  }
+
+  clearDigitizedRange(): void {
+    this.digitizedFrom = null;
+    this.digitizedTo = null;
+    this.onPageFilterChanged();
+  }
+  sortBy: 'digitizedAt' | 'pages' | '' = '';
+  sortDir: 'asc' | 'desc' | '' = '';
+
+  onSort(sort: Sort): void {
+    this.sortBy = sort.direction ? (sort.active as 'digitizedAt' | 'pages') : '';
+    this.sortDir = sort.direction;
+    this.pageIndex = 0;
+    this.reload();
+  }
 
   /** Selected ULB ids. Kept across pages, cleared when the filters change. */
   readonly selection = new SelectionModel<string>(true, []);
@@ -355,6 +388,18 @@ export class AfsDigitizationV3Component implements OnInit {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
+
+  /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */
+  formatElapsed(ms: number | null | undefined): string {
+    if (ms == null || ms < 0) return '–';
+    if (ms < 1000) return `${Math.round(ms)} ms`;
+    const totalSec = ms / 1000;
+    if (totalSec < 60) return `${totalSec.toFixed(1)} s`;
+    const totalMin = Math.floor(totalSec / 60);
+    if (totalMin < 60) return `${totalMin}m ${Math.round(totalSec % 60)}s`;
+    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+  }
+
   pageRange(start: number, end: number): string {
     return start === end ? `p${start}` : `p${start}–${end}`;
   }
@@ -384,6 +429,23 @@ export class AfsDigitizationV3Component implements OnInit {
       if (status) query.digitizationV3Status = status;
       if (this.contentFilter) query.isConsolidated = this.contentFilter === 'consolidated';
       if (this.mismatchFilter) query.isMismatch = this.mismatchFilter === 'mismatch';
+    }
+    if (opts.pageFilters) {
+      // Whole local days: from 00:00:00.000 of the first day to 23:59:59.999 of the last
+      if (this.digitizedFrom) {
+        const from = new Date(this.digitizedFrom);
+        from.setHours(0, 0, 0, 0);
+        query.digitizedFrom = from.toISOString();
+      }
+      if (this.digitizedTo) {
+        const to = new Date(this.digitizedTo);
+        to.setHours(23, 59, 59, 999);
+        query.digitizedTo = to.toISOString();
+      }
+    }
+    if (opts.pageFilters && this.sortBy && this.sortDir) {
+      query.sortColumn = this.sortBy;
+      query.sortDirection = this.sortDir;
     }
     if (opts.paged) {
       query.page = this.pageIndex + 1;
