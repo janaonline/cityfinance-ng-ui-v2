@@ -62,7 +62,7 @@ describe('PmuFormReviewDetailComponent — PMU review vs MoHUA view-only', () =>
 
     expect(fixture.componentInstance.viewOnly).toBeFalse();
     expect(text(fixture)).toContain('then approve or reject');
-    expect(buttons(fixture)).toEqual(['Reject', 'Approve']);
+    expect(buttons(fixture)).toEqual(['Return', 'Approve']);
     expect(fixture.componentInstance.breadcrumbLinks().map((link) => link.label)).toEqual([
       'Review State Submissions',
       'SFC Status',

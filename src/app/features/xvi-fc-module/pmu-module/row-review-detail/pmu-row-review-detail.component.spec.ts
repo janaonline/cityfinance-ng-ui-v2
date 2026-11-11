@@ -78,7 +78,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
 
       expect(fixture.componentInstance.viewOnly).toBeFalse();
       expect(text(fixture)).toContain('Approve Form');
-      expect(text(fixture)).toContain('Reject Form');
+      expect(text(fixture)).toContain('Return Form');
       expect(text(fixture)).not.toContain('Approve Selected');
       expect(text(fixture)).not.toContain('Reject Selected');
       expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
@@ -102,7 +102,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
 
       expect(fixture.componentInstance.viewOnly).toBeTrue();
       expect(text(fixture)).not.toContain('Approve Form');
-      expect(text(fixture)).not.toContain('Reject Form');
+      expect(text(fixture)).not.toContain('Return Form');
       expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]').length).toBe(0);
       expect(fixture.componentInstance.colSpan()).toBe(3 + 4);
     });
