@@ -134,4 +134,48 @@ describe('RequirementsComponent — status tooltip', () => {
 
     expect(component.conditionsToBeMet()[0].statusLabel).toBe('');
   });
+
+  it('derives each row button from the source status, and counts submitted rows as submitted', () => {
+    httpMock
+      .expectOne((req) => req.url.endsWith('/dashboard'))
+      .flush({
+        success: true,
+        message: '',
+        data: { context: { financialYear: '2026-27' }, metrics: { allocatedAmount: 1000 } },
+      });
+
+    httpMock
+      .expectOne((req) => req.url.endsWith('/eligibility-summary'))
+      .flush({
+        success: true,
+        message: '',
+        data: {
+          stateName: 'Test State',
+          expectedUlbCount: 10,
+          stateLevelGate: {
+            passed: false,
+            sources: [
+              { formType: 'a', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: null },
+              { formType: 'b', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 2 },
+              { formType: 'c', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 13 },
+              { formType: 'd', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 14 },
+              { formType: 'e', result: 'PASSED', reasonCode: 'x', statusAtEvaluation: 7 },
+              { formType: 'f', result: 'EXEMPTED', reasonCode: 'x', statusAtEvaluation: null },
+            ],
+          },
+        },
+      });
+
+    fixture.detectChanges();
+
+    expect(component.conditionsToBeMet().map((c) => c.buttonLabel)).toEqual([
+      'Start',
+      'Continue',
+      'Submitted',
+      'Resubmit',
+      'Acknowledged',
+      'Exempted',
+    ]);
+    expect(component.conditionsToBeMet().map((c) => c.passed)).toEqual([false, false, true, false, true, true]);
+  });
 });

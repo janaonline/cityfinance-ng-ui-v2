@@ -17,14 +17,43 @@ import {
   describeEligibilitySourceLabel,
 } from '../claim-letter/claim-letter.utils';
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
-import { getCurrentStatusLabel } from '../../shared/form-progress/form-progress.component';
+import {
+  FORM_STATUS,
+  FormStatusValue,
+  getCurrentStatusLabel,
+} from '../../shared/form-progress/form-progress.component';
+
+type ConditionTier = 'pending' | 'success' | 'warning';
+
+interface ConditionStatusDisplay {
+  buttonLabel: string;
+  tier: ConditionTier;
+}
+
+/** State-form status → how a requirement row looks. Not shared with the ULB page's table (its ids
+ *  mean different things on ULB forms). PMU's 13/14 read exactly like MoHUA's 5/6 — the State-facing
+ *  UI never names PMU (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
+const STATE_CONDITION_DISPLAY: Readonly<Partial<Record<FormStatusValue, ConditionStatusDisplay>>> = {
+  [FORM_STATUS.NO_STATUS]: { buttonLabel: 'Start', tier: 'pending' },
+  [FORM_STATUS.NOT_STARTED]: { buttonLabel: 'Start', tier: 'pending' },
+  [FORM_STATUS.IN_PROGRESS]: { buttonLabel: 'Continue', tier: 'pending' },
+  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: { buttonLabel: 'Submitted', tier: 'success' },
+  [FORM_STATUS.UNDER_REVIEW_BY_PMU]: { buttonLabel: 'Submitted', tier: 'success' },
+  [FORM_STATUS.RETURNED_BY_MOHUA]: { buttonLabel: 'Resubmit', tier: 'warning' },
+  [FORM_STATUS.RETURNED_BY_PMU]: { buttonLabel: 'Resubmit', tier: 'warning' },
+  [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: { buttonLabel: 'Acknowledged', tier: 'success' },
+};
+
+const EXEMPTED_DISPLAY: ConditionStatusDisplay = { buttonLabel: 'Exempted', tier: 'success' };
+const DEFAULT_DISPLAY: ConditionStatusDisplay = { buttonLabel: 'View', tier: 'pending' };
 
 interface RequirementCondition {
   label: string;
   desc: string;
   /** Backend's own technical eligibility copy shown in the info tooltip.*/
   info: string;
-  iconClass: string;
+  /** Drives the same round status icon the ULB forms page uses (see `.condition-icon` in the SCSS). */
+  iconTier: ConditionTier;
   buttonLabel: string;
   routerLink: string;
   passed: boolean;
@@ -114,18 +143,31 @@ export class RequirementsComponent implements OnInit {
    *  changes, same as `label`/`info` below already do. */
   private buildConditions(sources: ClaimLetterEligibilitySource[]): RequirementCondition[] {
     return sources.map((source) => {
-      const passed = source.result === 'PASSED' || source.result === 'EXEMPTED';
+      const display = this.resolveDisplay(source);
+      // "Passed" is the backend's accepted-status verdict; a submitted form still awaiting review also
+      // counts here, since this page tracks what the State has submitted, not what is acknowledged.
+      const passed = source.result === 'PASSED' || source.result === 'EXEMPTED' || display.tier === 'success';
       return {
         label: describeEligibilitySourceLabel(source),
         desc: source.checklistSummary ?? describeEligibilitySourceDescription(source),
         info: describeEligibilitySourceDescription(source),
-        iconClass: passed ? 'bi bi-check-circle text-success' : 'bi bi-record-circle text-cfPrimary',
-        buttonLabel: 'View',
+        iconTier: passed && display.tier !== 'success' ? 'success' : display.tier,
+        buttonLabel: display.buttonLabel,
         routerLink: source.checklistRoute ?? '../requirements',
         passed,
         statusLabel: source.statusAtEvaluation != null ? getCurrentStatusLabel('state', source.statusAtEvaluation) : '',
       };
     });
+  }
+
+  /** An approved whole-state exemption always wins; otherwise the form's own status decides. A source
+   *  with no document yet (`null` status) reads as not started; one with no status field at all (a
+   *  ULB-only criterion) keeps the plain "View". */
+  private resolveDisplay(source: ClaimLetterEligibilitySource): ConditionStatusDisplay {
+    if (source.result === 'EXEMPTED') return EXEMPTED_DISPLAY;
+    if (source.statusAtEvaluation === null) return STATE_CONDITION_DISPLAY[FORM_STATUS.NOT_STARTED] ?? DEFAULT_DISPLAY;
+    if (source.statusAtEvaluation === undefined) return DEFAULT_DISPLAY;
+    return STATE_CONDITION_DISPLAY[source.statusAtEvaluation] ?? DEFAULT_DISPLAY;
   }
 
   private resolveStateId(): string {

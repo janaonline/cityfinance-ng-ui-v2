@@ -39,3 +39,44 @@
 .pmu-df-rows-table tbody tr {
   min-height: 48px;
 }
+
+// Undo sits under the status pill, so it is pill-shaped too — an amber outline (a reversible,
+// attention-worthy action, not a primary one) that fills on hover/focus.
+.pmu-undo-btn {
+  --undo-color: #b45309;
+  --undo-bg: #fef3c7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--undo-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--undo-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  .bi {
+    font-size: 0.95rem;
+  }
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: var(--undo-bg);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.2);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--undo-color);
+    color: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
