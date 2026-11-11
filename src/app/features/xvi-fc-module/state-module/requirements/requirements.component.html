@@ -83,11 +83,19 @@
               class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-3 px-2 px-md-3 py-2 border"
             >
               <div class="d-flex align-items-center gap-3 gap-md-4 flex-grow-1">
-                <i
-                  class="fs-4 {{ item.iconClass }}"
+                <span
+                  class="condition-icon condition-icon--{{ item.iconTier }}"
+                  role="img"
+                  [attr.aria-label]="item.statusLabel || item.buttonLabel"
                   [matTooltip]="item.statusLabel"
                   [matTooltipDisabled]="!item.statusLabel"
-                ></i>
+                >
+                  @if (item.iconTier === 'success') {
+                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                  } @else if (item.iconTier === 'warning') {
+                    <i class="bi bi-exclamation-lg" aria-hidden="true"></i>
+                  }
+                </span>
 
                 <div>
                   <p class="fw-semibold m-0">
@@ -98,7 +106,13 @@
                 </div>
               </div>
 
-              <button type="button" matButton="outlined" class="condition-action-btn" [routerLink]="item.routerLink">
+              <button
+                type="button"
+                matButton="filled"
+                class="condition-action-btn"
+                [class.condition-action-btn--warning]="item.iconTier === 'warning'"
+                [routerLink]="item.routerLink"
+              >
                 {{ item.buttonLabel }}
               </button>
             </div>
