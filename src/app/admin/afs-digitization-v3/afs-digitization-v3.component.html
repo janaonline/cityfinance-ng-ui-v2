@@ -56,7 +56,21 @@
   </div>
 
   <div class="content">
-    <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
+    <h3 class="fw-bold mb-3">AFS Digitization V3</h3>
+
+    <div class="active-filters mb-4" aria-label="Applied filters">
+      <span class="fw-semibold me-2">Filters:</span>
+      @for (chip of activeFilters(); track chip.label) {
+      <span class="filter-chip">
+        <span class="text-muted">{{ chip.label }}:</span> <strong>{{ chip.value }}</strong>
+        @if (chip.clear) {
+        <button type="button" class="chip-clear" [attr.aria-label]="'Clear ' + chip.label" (click)="chip.clear()">
+          <i class="bi bi-x"></i>
+        </button>
+        }
+      </span>
+      }
+    </div>
 
     <h6 class="fw-bold mb-2">Overall</h6>
     <div class="metric-grid mb-3">

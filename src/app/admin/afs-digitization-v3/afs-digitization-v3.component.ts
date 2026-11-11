@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -152,6 +152,55 @@ export class AfsDigitizationV3Component implements OnInit {
 
   pageIndex = 0;
   pageSize = 25;
+  /** The shared sidebar filter: its option lists turn the ids in `filters` into names */
+  @ViewChild(AfsFilterComponent) private sidebarFilter?: AfsFilterComponent;
+
+  /** Chips for the filters currently applied, shown above the metrics. `clear` is set for the ones this page owns. */
+  activeFilters(): { label: string; value: string; clear?: () => void }[] {
+    const f = this.filters;
+    const opts = this.sidebarFilter?.filters;
+    const chips: { label: string; value: string; clear?: () => void }[] = [];
+
+    const year = opts?.years?.find((y) => y._id === f.yearId)?.year;
+    if (f.yearId) chips.push({ label: 'Year', value: year ?? '…' });
+    if (f.docType) chips.push({ label: 'Document', value: opts?.documentTypes?.find((d) => d.key === f.docType)?.name ?? this.docLabel(f.docType) });
+    if (f.auditType) chips.push({ label: 'Audit', value: opts?.auditTypes?.find((a) => a.key === f.auditType)?.name ?? f.auditType });
+    if (f.populationCategory) chips.push({ label: 'Population', value: f.populationCategory });
+
+    if (f.stateId?.length) {
+      const names = f.stateId.map((id) => this.sidebarFilter?.states.find((s) => s._id === id)?.name).filter(Boolean) as string[];
+      chips.push({ label: 'State', value: f.stateId.length <= 3 && names.length === f.stateId.length ? names.join(', ') : `${f.stateId.length} selected` });
+    }
+    if (f.ulbId?.length) {
+      const names = f.ulbId.map((id) => this.sidebarFilter?.cities.find((c) => c._id === id)?.name).filter(Boolean) as string[];
+      chips.push({ label: 'City', value: f.ulbId.length <= 3 && names.length === f.ulbId.length ? names.join(', ') : `${f.ulbId.length} selected` });
+    }
+
+    const status = this.digitizationV3Status || f.digitizationStatus;
+    if (status) {
+      const label = this.statusOptions.find((o) => o.value === status)?.label ?? status;
+      chips.push({ label: 'Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
+    }
+    if (this.contentFilter) {
+      chips.push({ label: 'Contents', value: this.contentFilter === 'consolidated' ? 'Consolidated' : 'Single type', clear: () => this.clearPageFilter('content') });
+    }
+    if (this.mismatchFilter) {
+      chips.push({ label: 'Uploaded type', value: this.mismatchFilter === 'mismatch' ? 'Mismatch' : 'Matches', clear: () => this.clearPageFilter('mismatch') });
+    }
+    if (this.digitizedFrom || this.digitizedTo) {
+      const fmt = (d: Date | null) => (d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '…');
+      chips.push({ label: 'Digitized', value: `${fmt(this.digitizedFrom)} – ${fmt(this.digitizedTo)}`, clear: () => this.clearDigitizedRange() });
+    }
+    return chips;
+  }
+
+  private clearPageFilter(which: 'status' | 'content' | 'mismatch'): void {
+    if (which === 'status') this.digitizationV3Status = '';
+    else if (which === 'content') this.contentFilter = '';
+    else this.mismatchFilter = '';
+    this.onPageFilterChanged();
+  }
+
   /** Digitized date range from the picker; null = no limit on that side */
   digitizedFrom: Date | null = null;
   digitizedTo: Date | null = null;
