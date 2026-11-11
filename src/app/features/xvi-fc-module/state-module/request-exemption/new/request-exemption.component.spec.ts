@@ -148,6 +148,19 @@ describe('RequestExemptionComponent', () => {
     expect(getControl('supportingDetails')).toBeTruthy();
   }));
 
+  it("merges this page's stateId/yearId into the ulb field's remoteSearch.extraParams " +
+    "(formjsons' own extraParams is static config, so it can't carry per-page context)", fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const ulbField = component.fields().find((f) => f.key === 'ulb');
+    expect(ulbField?.remoteSearch?.extraParams).toEqual({
+      isActive: true,
+      stateId: 'state-test-id',
+      yearId: 'year-test-id',
+    });
+  }));
+
   it('builds a breadcrumb back to the Exemption Status list', fakeAsync(() => {
     createComponent();
     completeInitialLoad();

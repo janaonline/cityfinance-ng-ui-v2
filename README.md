@@ -62,7 +62,7 @@ Before entering their workspace, every user first selects the financial/grant ye
 | Elected body status | State | Confirm elected urban local body status, including bulk Excel upload and post-submission corrections |
 | Devolution formula | State | Submit the state's fund-allocation formula data |
 | Unspent fund declaration | State, MOHUA (review) | Declare (and review) any unspent 16th-FC grant funds, broken down by ULB |
-| Claim letter | State | Select ULBs and per-ULB claim amounts against the state's Devolution allocation, upload a signed claim letter, and submit to MoHUA |
+| Claim letter | State | Select ULBs, each claimed at its Devolution allocation, upload a signed claim letter, and submit to MoHUA |
 | Scheduled reminders | Admin | Manage automated email reminder templates and schedules |
 | Roles & teams directory | All roles | Browse relevant contacts and team roles |
 | Support hours | All roles | View helpdesk support hours |
@@ -247,7 +247,7 @@ Like the rest of the app, the XVI FC module uses RxJS `BehaviorSubject`s in serv
 - **`elected-body-status`** — elected ULB status form with Excel bulk upload/validation and a post-submission correction flow.
 - **`devolution-formula`** — devolution/allocation formula data submission.
 - **`fc-unspent-declaration`** — Yes/No branching declaration of unspent grant funds, with a searchable/paginated ULB picker.
-- **`claim-letter`** — select ULBs and per-ULB claim amounts against the state's Installment 1 Devolution allocation, upload a signed claim letter, and submit to MoHUA; supports up to 3 concurrent claim batches with a searchable/paginated ULB picker.
+- **`claim-letter`** — select ULBs, each claimed at its Installment 1 Devolution allocation (a picker that loads every ULB of the State once, then searches, pages and selects locally, with select all, shift-click ranges and a running total; the batch table searches, pages 50 at a time A-Z and can remove all, and a save that refuses ULBs marks those rows for one-click removal; an editable per-ULB claim amount within a band comes back when the API's formjson 26 switch `claimAmountEditable` is on), fill in the letter details directly in the letter preview and download it as .docx, and upload the signed copy. That copy merged with its enclosures is the final claim letter: it shows on the page, Submit sends it to MoHUA, and it stays viewable after submission. Up to 3 batches per installment, but only one in progress at a time.
 - **`ulb-list`** (+ `register-ulb`) — manages the state's registry of ULBs.
 - **`ulb-submissions`, `requirements`, `insights`, `special-infrastructure`, `urbanisation-premium`, `doe-status`** — submission tracking and informational pages.
 - **`overview`, `roles-teams-overview`, `support-hours`** — landing dashboard, contacts directory, helpdesk hours.

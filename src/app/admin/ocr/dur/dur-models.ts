@@ -59,6 +59,8 @@ export interface DurJobStatusResponse {
   progress_step: string | null;
   error_message: string | null;
   checks: DurChecks | null;
+  total_tokens?: number | null;
+  price_inr?: number | null;
   created_at: string | null;
   updated_at: string | null;
   started_at: string | null;
@@ -78,6 +80,7 @@ export interface DurJobResultResponse {
   started_at: string | null;
   completed_at: string | null;
   result: DurValidationResult | null;
+  price_inr?: number | null;
   message: string;
 }
 

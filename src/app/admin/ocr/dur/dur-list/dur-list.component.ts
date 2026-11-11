@@ -6,6 +6,7 @@ import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/p
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { saveAs } from 'file-saver';
 import { finalize } from 'rxjs';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
@@ -27,6 +28,7 @@ interface DurListRow {
   signaturePresent: boolean | null;
   overallValid: boolean | null;
   errorMessage: string;
+  priceInr: number | null;
   createdAt: string;
 }
 
@@ -68,6 +70,7 @@ export class DurListComponent implements OnInit {
   readonly sortOrder = signal<'asc' | 'desc'>('desc');
   readonly dataSource = new MatTableDataSource<DurListRow>([]);
   readonly loading = signal(false);
+  readonly exporting = signal(false);
 
   pageSize = 10;
   pageIndex = 0;
@@ -113,6 +116,38 @@ export class DurListComponent implements OnInit {
     this.pageIndex = 0;
     this.paginator?.firstPage();
     this.loadJobs();
+  }
+
+  exportToExcel(): void {
+    if (this.exporting()) return;
+    const { status, filename, ulbName, financialYear, grantType, dateFrom, dateTo } = this.filterForm.getRawValue();
+    this.exporting.set(true);
+
+    this.ocrService
+      .dumpDurValidationJobs({
+        status: status || undefined,
+        filename: filename.trim() || undefined,
+        ulb_name: ulbName.trim() || undefined,
+        financial_year: financialYear.trim() || undefined,
+        grant_type: grantType || undefined,
+        sort_order: this.sortOrder(),
+        date_from: dateFrom ? this.toStartOfDay(dateFrom) : undefined,
+        date_to: dateTo ? this.toEndOfDay(dateTo) : undefined,
+      })
+      .pipe(finalize(() => this.exporting.set(false)))
+      .subscribe({
+        next: (blob) => {
+          const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
+          saveAs(blob, `dur_validation_jobs_${timestamp}.xlsx`);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Export failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
   }
 
   getStatusClass(status: string): string {
@@ -190,6 +225,7 @@ export class DurListComponent implements OnInit {
       signaturePresent: item.checks?.signature_present ?? null,
       overallValid: item.checks?.overall_valid ?? null,
       errorMessage: item.error_message || '—',
+      priceInr: item.price_inr ?? null,
       createdAt: this.formatDate(item.created_at),
     };
   }

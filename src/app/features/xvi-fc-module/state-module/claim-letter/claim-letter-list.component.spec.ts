@@ -32,6 +32,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
   ulbCount: 3,
   isAbandoned: false,
   hasSignedFile: false,
+  finalClaimLetterStage: null,
   financialSummary,
   revision: 0,
   submittedAt: null,
@@ -62,6 +63,9 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     ulbLevelCriteria: [],
     ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
+    activeBatchNumber: null,
+    // Switch on keeps the claim-amount tests below on the editable mode; off is tested on its own.
+    claimAmountEditable: true,
     ...overrides,
   };
 }
@@ -94,10 +98,6 @@ describe('ClaimLetterListComponent', () => {
 
     fixture = TestBed.createComponent(ClaimLetterListComponent);
     component = fixture.componentInstance;
-    // Claim Letter submission is gated behind a temporary flag (defaults to `false`, see the
-    // "default locked state" describe block below) - flip it on here so the rest of this spec
-    // keeps exercising the live eligibility/history page exactly as before.
-    (component as any).claimLetterSubmissionEnabled = true;
     fixture.detectChanges();
   });
 
@@ -309,13 +309,12 @@ describe('ClaimLetterListComponent', () => {
     ]);
   });
 
-  it('derives all 5 tiles from financialOverview, with Available to Claim emphasized first', () => {
+  it('derives 4 tiles from financialOverview, with the balance emphasized first and acknowledged counted under review', () => {
     expect(component.summaryTiles()).toEqual([
-      { label: 'Available to Claim', value: 15, emphasized: true },
-      { label: 'Total Allocation', value: 25 },
-      { label: 'Already Claimed (Acknowledged)', value: 5 },
-      { label: 'Claim in Progress (Under Review)', value: 3 },
-      { label: 'Claim in Draft', value: 2 },
+      { label: 'Balance Available for Claim', value: 15, emphasized: true },
+      { label: 'Total Allocation for 1st Installment', value: 25 },
+      { label: 'Claims Under Review by MoHUA', value: 8 }, // acknowledged 5 + under review 3
+      { label: 'Claims in Draft', value: 2 },
     ]);
   });
 
@@ -334,6 +333,19 @@ describe('ClaimLetterListComponent', () => {
     expect(component.canCreateNewClaim()).toBeFalse();
     expect(component.newClaimDisabledReason()).toBe(
       "You've used all 3 claim batch slots for this installment. Resolve or wait on an existing batch before starting another.",
+    );
+  });
+
+  it('disables New Claim while another batch is active (one batch at a time)', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 1, batchSlotsMax: 3, activeBatchNumber: 1 })),
+    );
+
+    component.loadAll();
+
+    expect(component.canCreateNewClaim()).toBeFalse();
+    expect(component.newClaimDisabledReason()).toBe(
+      'Only one claim batch can be processed at a time. Batch 1 is still in progress or under MoHUA review.',
     );
   });
 
@@ -404,6 +416,23 @@ describe('ClaimLetterListComponent', () => {
     expect(component.showInstructions()).toBeFalse();
   });
 
+  it('instructions follow the claim-amount switch: the ±10% rule only while it is on', () => {
+    const instructionsText = (): string =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-cy="claim-letter-instructions"]')?.textContent ?? '';
+    component.toggleInstructions();
+    fixture.detectChanges();
+    expect(instructionsText()).toContain('±10%');
+
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ claimAmountEditable: false })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(instructionsText()).not.toContain('±10%');
+    expect(instructionsText()).toContain('each ULB is claimed at its full');
+  });
+
   it('goToPage ignores out-of-range page numbers', () => {
     (claimLetterService.listHistory as jasmine.Spy).calls.reset();
 
@@ -411,45 +440,5 @@ describe('ClaimLetterListComponent', () => {
     component.goToPage(999);
 
     expect(claimLetterService.listHistory).not.toHaveBeenCalled();
-  });
-});
-
-describe('ClaimLetterListComponent - default locked state', () => {
-  // claimLetterSubmissionEnabled defaults to false - the feature isn't complete yet, so this
-  // route ships a static locked message and must never call the eligibility/history APIs.
-  let fixture: ComponentFixture<ClaimLetterListComponent>;
-  let claimLetterService: ClaimLetterService;
-
-  beforeEach(async () => {
-    localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
-
-    const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
-    moduleService.yearId.and.returnValue('year-test-id');
-
-    await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, RouterTestingModule, ClaimLetterListComponent],
-      providers: [{ provide: XvifcModuleService, useValue: moduleService }],
-    }).compileComponents();
-
-    claimLetterService = TestBed.inject(ClaimLetterService);
-    spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(buildEligibility()));
-    spyOn(claimLetterService, 'listHistory').and.returnValue(of({ claims: [], page: 1, limit: 10, total: 0 }));
-
-    fixture = TestBed.createComponent(ClaimLetterListComponent);
-    fixture.detectChanges();
-  });
-
-  afterEach(() => {
-    localStorage.removeItem('userData');
-  });
-
-  it('shows the static locked message and never calls the eligibility/history APIs', () => {
-    expect(claimLetterService.getEligibilitySummary).not.toHaveBeenCalled();
-    expect(claimLetterService.listHistory).not.toHaveBeenCalled();
-
-    const message = fixture.debugElement.query(By.css('[data-cy="claim-letter-locked-message"]'));
-    expect(message).not.toBeNull();
-    expect(message.nativeElement.textContent).toContain('Submit a ULB Claim Letter');
-    expect(message.nativeElement.textContent).toContain('This section will be enabled once the State forms are approved.');
   });
 });

@@ -33,6 +33,19 @@
           <button type="button" mat-icon-button [disabled]="loading()" (click)="refresh()" title="Refresh">
             <mat-icon>refresh</mat-icon>
           </button>
+          <button
+            type="button"
+            mat-icon-button
+            [disabled]="loading() || exporting()"
+            (click)="exportToExcel()"
+            title="Export filtered jobs to Excel"
+          >
+            @if (exporting()) {
+              <mat-icon>hourglass_empty</mat-icon>
+            } @else {
+              <mat-icon>download</mat-icon>
+            }
+          </button>
         </div>
       </div>
 
@@ -106,6 +119,9 @@
               </div>
               <div class="file-meta-row">
                 <span class="file-meta-chip">{{ row.model }}</span>
+                @if (row.priceInr !== null) {
+                  <span class="file-meta-chip" title="Gemini cost">₹{{ row.priceInr | number: '1.2-4' }}</span>
+                }
               </div>
             </td>
           </ng-container>

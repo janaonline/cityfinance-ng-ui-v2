@@ -19,6 +19,8 @@ export interface DigitizationV3Info {
   segments?: DigitizationV3Segment[];
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** Digitized by the old flow: contents unknown; can be re-queued for v3 */
+  isLegacy?: boolean;
   expectedDocType?: string;
   noOfPages?: number;
   /** FastAPI job id (`job_id` from `POST /afs-digitization/jobs`) */
@@ -67,11 +69,26 @@ export interface DigitizationV3Metrics {
   mismatch: number;
 }
 
+/** Overall counts across every year, audit type and doc type (not tied to the filters). */
+export interface DigitizationV3OverallMetrics {
+  /** Unique files to digitize; null pages until the uniqueness baseline has been built */
+  total: number;
+  totalPages: number | null;
+  digitized: number;
+  queued: number;
+  processing: number;
+  failed: number;
+  updatedAt: string | null;
+}
+
 export interface EnqueueSummary {
   success: boolean;
+  /** Groups the jobs queued by this call (also stored on each file and in FastAPI) */
+  batchId?: string;
   matched: number;
   queued: number;
   skippedNoPdf: number;
+  skippedDuplicate?: number;
   skippedAlreadyQueued: number;
   skippedAlreadyDigitized: number;
   failedToQueue: number;
@@ -120,6 +137,12 @@ export class AfsDigitizationV3Service {
 
   list(query: DigitizationV3Query) {
     return this.http.post<DigitizationV3ListResponse>(`${this.base}/list`, query);
+  }
+
+  getOverallMetrics() {
+    return this.http
+      .get<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics`)
+      .pipe(map((res) => res.data));
   }
 
   getJobLog(afsDigitizationJobId: string) {

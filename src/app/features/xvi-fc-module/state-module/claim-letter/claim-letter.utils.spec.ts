@@ -1,12 +1,50 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   buildBatchNarrative,
+  buildExemptionBadges,
   computeClaimDifferencePercentage,
+  formatUnderReviewSuffix,
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
   formatUlbBreakdown,
   humanizeToken,
   isClaimWithinVariance,
+  readApiError,
 } from './claim-letter.utils';
+
+describe('readApiError', () => {
+  it('reads an HttpErrorResponse body, joining a class-validator message array', () => {
+    const api = readApiError({
+      error: { statusCode: 400, message: ['a must be a number', 'b is required'], code: 'X' },
+    });
+    expect(api).toEqual({
+      statusCode: 400,
+      message: 'a must be a number b is required',
+      messages: ['a must be a number', 'b is required'],
+      code: 'X',
+      errors: undefined,
+    });
+  });
+
+  it('reads a thrown success:false response and keeps a well-formed errors map only', () => {
+    expect(readApiError({ success: false, message: 'Bad.', errors: { a: [{ message: 'Too long.' }] } }).errors).toEqual(
+      {
+        a: [{ message: 'Too long.' }],
+      },
+    );
+    expect(readApiError({ error: { message: 'Bad.', errors: { a: 'not a list' } } }).errors).toBeUndefined();
+  });
+
+  it('is empty-handed for an error without a body', () => {
+    expect(readApiError(null)).toEqual({});
+    expect(readApiError({ error: { statusCode: 500 } }).message).toBeUndefined();
+  });
+
+  it('ignores the HttpErrorResponse message when the body is not JSON or is empty', () => {
+    expect(readApiError(new HttpErrorResponse({ status: 502, error: '<html>Bad Gateway</html>' }))).toEqual({});
+    expect(readApiError(new HttpErrorResponse({ status: 504, error: null }))).toEqual({});
+  });
+});
 
 describe('computeClaimDifferencePercentage', () => {
   it('returns 0 when allocation is 0 (avoids divide-by-zero)', () =>
@@ -68,15 +106,59 @@ describe('describeEligibilitySourceDescription', () => {
         ulbBreakdown: { eligible: 100, ineligible: 20, exempted: 3, total: 123 },
       }),
     ).toBe(
-      'Elected Body constitution must be submitted by the state. (100 eligible, 20 ineligible, 3 exempted out of 123 ULBs)',
+      'Elected Body constitution must be submitted by the state. (100 eligible, 3 exempted, 20 ineligible out of 123 ULBs)',
     ));
 });
 
 describe('formatUlbBreakdown', () => {
-  it('formats the tally as "N eligible, N ineligible, N exempted out of N ULBs"', () =>
+  it('formats the tally as "N eligible, N exempted, N ineligible out of N ULBs"', () =>
     expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, total: 123 })).toBe(
-      '100 eligible, 20 ineligible, 3 exempted out of 123 ULBs',
+      '100 eligible, 3 exempted, 20 ineligible out of 123 ULBs',
     ));
+
+  it('adds how many exempted ULBs rest on a request still under MoHUA review', () =>
+    expect(formatUlbBreakdown({ eligible: 100, ineligible: 20, exempted: 3, exemptedUnderReview: 1, total: 123 })).toBe(
+      '100 eligible, 3 exempted (1 under review), 20 ineligible out of 123 ULBs',
+    ));
+});
+
+describe('formatUnderReviewSuffix', () => {
+  it('is empty unless an exemption is still under review', () => {
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, exemptedUnderReview: 2, total: 3 })).toBe(
+      ' (2 under review)',
+    );
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, exemptedUnderReview: 0, total: 3 })).toBe(
+      '',
+    );
+    expect(formatUnderReviewSuffix({ eligible: 1, ineligible: 0, exempted: 2, total: 3 })).toBe('');
+  });
+});
+
+describe('buildExemptionBadges', () => {
+  it('makes one badge per status, under review first, naming the criteria', () =>
+    expect(
+      buildExemptionBadges([
+        { label: 'Provisional Accounts', status: 'REJECTED' },
+        { label: 'Audited Accounts', status: 'UNDER_REVIEW' },
+        { label: 'Election Status', status: 'UNDER_REVIEW' },
+      ]),
+    ).toEqual([
+      {
+        status: 'UNDER_REVIEW',
+        text: 'Exemption under review',
+        tooltip: 'Exemption request under MoHUA review: Audited Accounts, Election Status',
+      },
+      {
+        status: 'REJECTED',
+        text: 'Exemption rejected by MoHUA',
+        tooltip: 'Exemption request rejected by MoHUA: Provisional Accounts',
+      },
+    ]));
+
+  it('makes none without notes', () => {
+    expect(buildExemptionBadges(undefined)).toEqual([]);
+    expect(buildExemptionBadges([])).toEqual([]);
+  });
 });
 
 describe('buildBatchNarrative', () => {

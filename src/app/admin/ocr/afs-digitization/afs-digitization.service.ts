@@ -34,6 +34,22 @@ export class AfsDigitizationService {
   private readonly http = inject(HttpClient);
 
   readonly geminiModels: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.6-flash',
+      label: 'Gemini 3.6 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.5-flash-lite',
+      label: 'Gemini 3.5 Flash-Lite',
+      pricing: { inputPerM: 0.3, outputPerM: 2.5, thinkingPerM: 2.5 },
+    },
     {
       value: 'gemini-3.1-pro-preview',
       label: 'Gemini 3.1 Pro Preview',
@@ -105,6 +121,7 @@ export class AfsDigitizationService {
     ocrEngine: DigitizationOcrEngine = 'gemini',
     enableDocumentClassification = true,
     notes?: string | null,
+    arithmeticModel?: string | null,
   ) {
     const formData = new FormData();
     // A string is an S3 path to a PDF already in the CityFinance bucket.
@@ -115,6 +132,7 @@ export class AfsDigitizationService {
     }
     formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
+    if (arithmeticModel) formData.append('arithmetic_model', arithmeticModel);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
@@ -200,11 +218,25 @@ export class AfsDigitizationService {
     financial_year?: string;
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
+    overall_assessment?: string;
+    arithmetic_assessment?: string;
+    accuracy_min?: number;
+    accuracy_max?: number;
+    confidence_min?: number;
+    confidence_max?: number;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
   }) {
-    const queryParams: Record<string, string> = {};
+    const queryParams: Record<string, string | number> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
+    if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
+    if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
+    if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;
+    if (params?.confidence_max !== undefined) queryParams['confidence_max'] = params.confidence_max;
     if (params?.status) queryParams['status'] = params.status;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
@@ -227,6 +259,13 @@ export class AfsDigitizationService {
     financial_year?: string;
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
+    overall_assessment?: string;
+    arithmetic_assessment?: string;
+    accuracy_min?: number;
+    accuracy_max?: number;
+    confidence_min?: number;
+    confidence_max?: number;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
@@ -234,6 +273,13 @@ export class AfsDigitizationService {
     limit?: number;
   }) {
     const queryParams: Record<string, string | number> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
+    if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
+    if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
+    if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;
+    if (params?.confidence_max !== undefined) queryParams['confidence_max'] = params.confidence_max;
     if (params?.status) queryParams['status'] = params.status;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;

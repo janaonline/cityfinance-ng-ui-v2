@@ -1,6 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ClaimLetterSummaryTilesComponent } from './claim-letter-summary-tiles.component';
+import {
+  CLAIM_LETTER_TILE_LABELS,
+  ClaimLetterSummaryTilesComponent,
+  claimsUnderReviewTotal,
+} from './claim-letter-summary-tiles.component';
+
+describe('claim letter tile labels and totals', () => {
+  it('names the total after the installment', () => {
+    expect(CLAIM_LETTER_TILE_LABELS.total).toBe('Total Allocation for 1st Installment');
+  });
+
+  it('counts acknowledged batches under review', () => {
+    expect(claimsUnderReviewTotal({ totalAlreadyAcknowledged: 5, totalClaimInProgress: 3 })).toBe(8);
+    expect(claimsUnderReviewTotal({ totalAlreadyAcknowledged: 0, totalClaimInProgress: 0 })).toBe(0);
+  });
+});
 
 describe('ClaimLetterSummaryTilesComponent', () => {
   let fixture: ComponentFixture<ClaimLetterSummaryTilesComponent>;

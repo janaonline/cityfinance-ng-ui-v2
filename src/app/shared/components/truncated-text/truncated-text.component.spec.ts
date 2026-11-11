@@ -36,6 +36,18 @@ describe('TruncatedTextComponent', () => {
 
       expect(fixture.componentInstance.isOverflowing()).toBeTrue();
     });
+
+    it('re-measures when the text changes without the element resizing', () => {
+      setup('60px');
+      fixture.componentRef.setInput('text', 'Hi');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.isOverflowing()).toBeFalse();
+
+      fixture.componentRef.setInput('text', LONG_TEXT);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.isOverflowing()).toBeTrue();
+    });
   });
 
   describe('clamp mode', () => {

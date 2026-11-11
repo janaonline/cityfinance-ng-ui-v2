@@ -71,6 +71,11 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Batch ID</mat-label>
+          <input matInput formControlName="batchId" placeholder="e.g. 20261029-153012-a1b2" (keydown.enter)="applyFilters()" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Financial Year</mat-label>
           <mat-select formControlName="financialYear">
             <mat-option value="">All</mat-option>
@@ -86,6 +91,42 @@
             <mat-option value="">All</mat-option>
             @for (dt of docTypeOptions; track dt.value) {
               <mat-option [value]="dt.value">{{ dt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Overall Assessment</mat-label>
+          <mat-select formControlName="overall">
+            @for (opt of assessmentOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Arithmetic Assessment</mat-label>
+          <mat-select formControlName="arithmetic">
+            @for (opt of arithmeticOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Accuracy Score</mat-label>
+          <mat-select formControlName="accuracy">
+            @for (opt of scoreThresholdOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Confidence Score</mat-label>
+          <mat-select formControlName="confidence">
+            @for (opt of scoreThresholdOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -180,6 +221,21 @@
                   </button>
                 </span>
                 <span class="small fw-medium">{{ row.pageCount ?? '—' }} pg · {{ row.fileSizeLabel }}</span>
+                @if (row.batchId !== '—') {
+                  <span class="d-flex align-items-center gap-1" title="Batch ID">
+                    <span class="small text-uppercase text-body-secondary">Batch</span>
+                    <span class="small fw-medium font-monospace text-truncate">{{ row.batchId }}</span>
+                    <button
+                      type="button"
+                      class="copy-btn btn btn-outline-primary rounded-circle p-0 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                      [attr.aria-label]="isCopied('Batch ID', row.batchId) ? 'Copied' : 'Copy batch ID'"
+                      [attr.title]="isCopied('Batch ID', row.batchId) ? 'Copied' : 'Copy batch ID'"
+                      (click)="copyValue('Batch ID', row.batchId)"
+                    >
+                      <mat-icon>{{ isCopied('Batch ID', row.batchId) ? 'check' : 'content_copy' }}</mat-icon>
+                    </button>
+                  </span>
+                }
               </div>
             </td>
           </ng-container>
@@ -233,6 +289,18 @@
                   <span class="small text-uppercase text-body-secondary me-1">Accuracy</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.accuracyScore)">
                     {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Overall</span>
+                  <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.overallAssessment)">
+                    {{ row.overallAssessment ?? '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Arithmetic</span>
+                  <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.arithmeticAssessment)">
+                    {{ row.arithmeticAssessment ?? '—' }}
                   </span>
                 </div>
               </div>

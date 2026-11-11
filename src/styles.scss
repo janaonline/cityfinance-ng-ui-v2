@@ -386,6 +386,11 @@ mat-form-field {
   }
 }
 
+// Full-screen dialogs square corners.
+.cl-fullscreen-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: 0 !important;
+}
+
 .custom-mat-card {
   position: relative;
   // box-shadow: 0 12px 32px rgba(23, 32, 51, 0.06) !important;

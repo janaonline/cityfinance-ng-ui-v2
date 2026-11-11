@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnDestroy, input, signal, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, OnDestroy, afterRenderEffect, input, signal, viewChild } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 export type TruncatedTextMode = 'ellipsis' | 'clamp';
@@ -32,6 +32,16 @@ export class TruncatedTextComponent implements AfterViewInit, OnDestroy {
 
   readonly isOverflowing = signal(false);
   readonly expanded = signal(false);
+
+  constructor() {
+    // New text, mode or lines may not resize the element, so the resize observer alone would miss them.
+    afterRenderEffect(() => {
+      this.text();
+      this.mode();
+      this.lines();
+      this.checkOverflow();
+    });
+  }
 
   ngAfterViewInit(): void {
     this.checkOverflow();

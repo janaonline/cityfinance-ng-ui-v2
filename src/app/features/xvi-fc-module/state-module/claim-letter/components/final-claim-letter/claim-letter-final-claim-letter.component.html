@@ -1,0 +1,103 @@
+<mat-card appearance="outlined" data-cy="claim-letter-final">
+  <mat-card-header>
+    <mat-card-title class="small fw-semibold">{{ title() }}</mat-card-title>
+    <mat-card-subtitle class="small">
+      @if (submitted()) {
+        Submitted on {{ claim().submittedAt | date: 'mediumDate' }}. This is the copy MoHUA received.
+      } @else {
+        The signed claim letter merged with its enclosures. This is the copy sent to MoHUA.
+      }
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content class="p-3">
+    @let pdf = finalPdf();
+    @if (error(); as message) {
+      <div
+        class="alert alert-danger d-flex align-items-start gap-2 py-2 mb-0"
+        role="alert"
+        data-cy="claim-letter-final-error"
+      >
+        <i class="bi bi-x-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+        <span class="small flex-grow-1">{{ message }}</span>
+        <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0" (click)="retry()">
+          <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Retry
+        </button>
+      </div>
+    } @else if (pdf) {
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 small">
+          <i class="bi bi-file-earmark-pdf-fill fs-5 text-danger" aria-hidden="true"></i>
+          <span class="fw-semibold text-break" data-cy="claim-letter-final-name">{{ pdf.fileName }}</span>
+          @if (pdf.pageCount) {
+            <span class="text-body-secondary">{{ pdf.pageCount }} {{ pdf.pageCount === 1 ? 'page' : 'pages' }}</span>
+          }
+          @if (loading()) {
+            <span class="spinner-border spinner-border-sm text-body-secondary" role="status">
+              <span class="visually-hidden">Checking for changes</span>
+            </span>
+          }
+        </div>
+        <div class="d-flex gap-2">
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="busy()"
+            (click)="view()"
+            data-cy="claim-letter-final-view"
+          >
+            <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>View
+          </button>
+          <button
+            type="button"
+            matButton="outlined"
+            [disabled]="busy()"
+            (click)="download()"
+            data-cy="claim-letter-final-download"
+          >
+            @if (busy()) {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            } @else {
+              <i class="bi bi-download me-1" aria-hidden="true"></i>
+            }
+            Download
+          </button>
+        </div>
+      </div>
+
+      <ul class="cl-final-list list-unstyled small mt-3 mb-0" data-cy="claim-letter-final-included">
+        @for (label of pdf.included; track label) {
+          <li><i class="bi bi-check-circle-fill text-success me-2" aria-hidden="true"></i>{{ label }}</li>
+        }
+        @for (label of pdf.missing; track label) {
+          @if (missingRequired().has(label)) {
+            <li class="text-danger" data-cy="claim-letter-final-missing-required">
+              <i class="bi bi-x-circle-fill me-2" aria-hidden="true"></i>{{ label }} (required, not uploaded)
+            </li>
+          } @else {
+            <li class="text-warning-emphasis" data-cy="claim-letter-final-missing">
+              <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>{{ label }} (not included)
+            </li>
+          }
+        }
+      </ul>
+
+      @if (pdf.missingRequired.length) {
+        <div class="alert alert-danger small py-2 mt-2 mb-0" role="alert" data-cy="claim-letter-final-required-alert">
+          Upload the missing required documents in their forms before submitting.
+        </div>
+      }
+
+      @if (actionError(); as message) {
+        <div class="alert alert-danger small py-2 mt-2 mb-0" role="alert" data-cy="claim-letter-final-action-error">
+          {{ message }}
+        </div>
+      }
+    } @else {
+      <div class="d-flex align-items-center gap-2 small text-body-secondary" role="status">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Preparing the final claim letter...
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
