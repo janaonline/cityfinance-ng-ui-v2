@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   buildBatchNarrative,
   buildExemptionBadges,
@@ -37,6 +38,11 @@ describe('readApiError', () => {
   it('is empty-handed for an error without a body', () => {
     expect(readApiError(null)).toEqual({});
     expect(readApiError({ error: { statusCode: 500 } }).message).toBeUndefined();
+  });
+
+  it('ignores the HttpErrorResponse message when the body is not JSON or is empty', () => {
+    expect(readApiError(new HttpErrorResponse({ status: 502, error: '<html>Bad Gateway</html>' }))).toEqual({});
+    expect(readApiError(new HttpErrorResponse({ status: 504, error: null }))).toEqual({});
   });
 });
 

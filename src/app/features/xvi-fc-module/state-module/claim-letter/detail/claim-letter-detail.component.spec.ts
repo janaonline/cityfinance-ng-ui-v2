@@ -306,6 +306,19 @@ describe('ClaimLetterDetailComponent', () => {
       expect(keys[2]).not.toBe(keys[0]);
     });
 
+    it('createDraft still gets an idempotency key where crypto.randomUUID is missing (plain HTTP)', () => {
+      component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: 21 }));
+      const createSpy = spyOn(claimLetterService, 'createDraft').and.returnValue(of(buildClaim()));
+      Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+      try {
+        component.createDraft();
+      } finally {
+        delete (crypto as { randomUUID?: unknown }).randomUUID;
+      }
+
+      expect(createSpy.calls.argsFor(0)[3].idempotencyKey).toMatch(/^[0-9a-f]{32}$/);
+    });
+
     it('createDraft surfaces the backend message on failure', () => {
       component.rows.push(createClaimUlbRowGroup(true, { ulbId: 'ulb-1', claimedAmount: 21 }));
       spyOn(claimLetterService, 'createDraft').and.returnValue(

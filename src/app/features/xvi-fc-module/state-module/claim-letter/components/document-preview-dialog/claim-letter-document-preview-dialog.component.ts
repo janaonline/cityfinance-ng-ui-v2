@@ -183,7 +183,13 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
   async close(): Promise<void> {
     if (this.closing()) return;
     this.closing.set(true);
+    const wasLoading = this.loading();
     await this.autosaver.whenIdle();
+    // A conflict reloaded the details meanwhile: stay open so the State sees the notice.
+    if (this.loading() && !wasLoading) {
+      this.closing.set(false);
+      return;
+    }
     const unsaved = this.autosaver.hasPending || this.hasUnsavedValue();
     if (!unsaved) {
       this.dialogRef.close({ saved: this.autosaver.savedAny });
@@ -277,6 +283,11 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
     this.downloading.set(true);
     this.downloadError.set(null);
     await this.autosaver.whenIdle();
+    // A conflict reloaded the details meanwhile: the State reviews them before downloading.
+    if (this.loading()) {
+      this.downloading.set(false);
+      return;
+    }
 
     const problem = this.letterEditor() ? this.firstProblemKey() : null;
     if (this.status() === 'failed' || problem) {
