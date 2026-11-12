@@ -113,6 +113,16 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
     component = fixture.componentInstance;
   });
 
+  it('offers Request Manual Review only for a real validation FAIL, not a technical failure', () => {
+    const failedTwice = { ...fakeDoc(requiredDoc, 'pending'), retryValidationCount: 2 };
+
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'FAIL' })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'fail' })).toBe(true);
+    // The OCR job crashed: no validationStatus, so Retry / Re-upload stay instead.
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: null })).toBe(false);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'PASS' })).toBe(false);
+  });
+
   it('excludes an optional, unfilled document from totalCount/passedCount', () => {
     component.config.set(config);
     component.documents.set([fakeDoc(requiredDoc, 'passed'), fakeDoc(optionalDoc, 'pending')]);

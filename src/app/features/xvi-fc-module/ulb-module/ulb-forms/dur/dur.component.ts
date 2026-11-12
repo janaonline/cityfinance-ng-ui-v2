@@ -27,6 +27,7 @@ import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } 
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { isValidationFail } from '../../../../../shared/components/document-action-row/resolve-document-actions';
 import type {
   ActionGate,
   DocumentRuntimeState,
@@ -102,6 +103,8 @@ interface DurDocument {
   uploadedAt: Date | null;
   uploadId: string | null;
   ocrProgressStep: string | null;
+  /** 'PASS' / 'FAIL' from the OCR result; null while processing or after a technical failure. */
+  validationStatus: string | null;
   validationDetails: string | null;
   failedChecks: string[];
   validationError: string | null;
@@ -127,6 +130,7 @@ function emptyDoc(id: DurDocId): DurDocument {
     uploadedAt: null,
     uploadId: null,
     ocrProgressStep: null,
+    validationStatus: null,
     validationDetails: null,
     failedChecks: [],
     validationError: null,
@@ -251,8 +255,14 @@ export class DurComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
+  /** Only a real validation FAIL qualifies (the server refuses anything else); a technical failure
+   *  keeps Retry / Re-upload instead. */
   isEligibleForManualReview(doc: DurDocument): boolean {
-    return doc.status === 'failed' && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
+    return (
+      doc.status === 'failed' &&
+      isValidationFail(doc.validationStatus) &&
+      (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1)
+    );
   }
 
   isUploadBlocked(doc: DurDocument): boolean {
@@ -512,6 +522,7 @@ export class DurComponent implements OnInit, OnDestroy {
             uploadId: upload.uploadId,
             uploadedAt: new Date(upload.uploadedAt),
             ocrProgressStep: null,
+            validationStatus: null,
             validationDetails: null,
             failedChecks: [],
           };
@@ -539,6 +550,7 @@ export class DurComponent implements OnInit, OnDestroy {
               status: 'processing',
               uploadedAt: new Date(),
               ocrProgressStep: null,
+              validationStatus: null,
               validationDetails: null,
               failedChecks: [],
               isManualReviewRequested: false,
@@ -687,6 +699,7 @@ export class DurComponent implements OnInit, OnDestroy {
             file: { originalName: string; sizeKb: number; fileUrl?: string | null };
             ocrInfo: {
               progressStep: string | null;
+              validationStatus?: string | null;
               validationDetails: string | null;
               failedChecks: string[];
               isManualReviewRequested: boolean;
@@ -725,6 +738,7 @@ export class DurComponent implements OnInit, OnDestroy {
             uploadId: cu.uploadId,
             uploadedAt: new Date(cu.uploadedAt),
             ocrProgressStep: cu.ocrInfo?.progressStep ?? null,
+            validationStatus: cu.ocrInfo?.validationStatus ?? null,
             validationDetails: cu.ocrInfo?.validationDetails ?? null,
             failedChecks: cu.ocrInfo?.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo?.isManualReviewRequested ?? false,
@@ -788,6 +802,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 uploadId: string;
                 ocrInfo: {
                   progressStep: string | null;
+                  validationStatus?: string | null;
                   validationDetails: string | null;
                   failedChecks: string[];
                   isManualReviewRequested: boolean;
@@ -816,6 +831,7 @@ export class DurComponent implements OnInit, OnDestroy {
               const unchanged =
                 newStatus === doc.status &&
                 (remote.currentUpload.ocrInfo?.progressStep ?? null) === doc.ocrProgressStep &&
+                (remote.currentUpload.ocrInfo?.validationStatus ?? null) === doc.validationStatus &&
                 (remote.currentUpload.ocrInfo?.validationDetails ?? null) === doc.validationDetails &&
                 (remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false) === doc.isManualReviewRequested &&
                 (remote.currentUpload.retryValidationCount ?? 0) === doc.retryValidationCount &&
@@ -829,6 +845,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 ...doc,
                 status: newStatus,
                 ocrProgressStep: remote.currentUpload.ocrInfo?.progressStep ?? null,
+                validationStatus: remote.currentUpload.ocrInfo?.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo?.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo?.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false,
