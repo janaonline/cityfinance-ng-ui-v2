@@ -175,6 +175,31 @@
                 } @else {
                 <span class="text-muted">No PDF</span>
                 }
+
+                <div class="mt-2 d-flex align-items-center gap-2">
+                  <span>AFS :</span>
+                  @if (row.afsPdfUrlSigned) {
+                  <a [href]="row.afsPdfUrlSigned" target="_blank" rel="noopener" matTooltip="Uploaded from this page">
+                    <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  </a>
+                  @if (row.afsPdfPageCount; as afsPages) {
+                  <strong>{{ afsPages }} {{ afsPages === 1 ? 'page' : 'pages' }}</strong>
+                  }
+                  } @else {
+                  <strong>N/A</strong>
+                  }
+                  <button type="button" class="btn btn-sm btn-primary upload-btn shadow ms-auto" [disabled]="isUploading(row)"
+                    [matTooltip]="row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF'"
+                    [attr.aria-label]="row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF'"
+                    (click)="afsFileInput.click()">
+                    <i class="bi" [class.bi-upload]="!row.afsPdfUrl" [class.bi-arrow-repeat]="row.afsPdfUrl"></i>
+                  </button>
+                  @if (isUploading(row)) {
+                  <mat-spinner diameter="16"></mat-spinner>
+                  }
+                  <input #afsFileInput type="file" accept="application/pdf" class="d-none"
+                    (change)="onFileSelected($event, row)" />
+                </div>
               </td>
             </ng-container>
 

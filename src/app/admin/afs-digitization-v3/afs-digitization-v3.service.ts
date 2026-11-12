@@ -43,6 +43,10 @@ export interface DigitizationV3Row {
   docType: string;
   pdfUrl: string | null;
   pdfUrlSigned: string | null;
+  /** PDF uploaded from this page (same slot as the AFS dashboard's Upload); null until one is uploaded */
+  afsPdfUrl?: string | null;
+  afsPdfUrlSigned?: string | null;
+  afsPdfPageCount?: number | null;
   /** Digitized Excel, signed by the API like the PDF; null until the file is digitized */
   excelUrl: string | null;
   excelUrlSigned: string | null;

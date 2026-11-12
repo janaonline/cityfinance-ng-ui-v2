@@ -1,6 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +21,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EMPTY, Subject, catchError, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, filter, switchMap } from 'rxjs';
+import { FileService } from '../../shared/dynamic-form/components/file/file.service';
 import {
   AFS_FILTER_KEY,
   AfsFilterComponent,
@@ -30,7 +31,7 @@ import {
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
 import { environment } from '../../../environments/environment';
-import { FilterValues } from '../afs-dashboard/afs.service';
+import { AfsService, FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import { AfsLogModalComponent } from '../afs-dashboard/afs-log-modal/afs-log-modal.component';
 import {
@@ -55,6 +56,9 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   auditor_report: "Auditor's Report",
   unknown: 'Unidentified',
 };
+
+/** How long the presigned S3 upload URL stays valid */
+const SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
 type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
 
@@ -97,6 +101,8 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fileService = inject(FileService);
+  private readonly afsService = inject(AfsService);
 
   readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'contents', 'flags', 'actions'];
 
@@ -401,6 +407,80 @@ export class AfsDigitizationV3Component implements OnInit {
       disableClose: true,
       data,
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // AFS PDF upload (same flow as the AFS dashboard: presigned S3 PUT, then save on afs_xl_files)
+  // ---------------------------------------------------------------------------
+
+  /** ULB ids with an upload in flight */
+  readonly uploading = signal<ReadonlySet<string>>(new Set());
+
+  isUploading(row: DigitizationV3Row): boolean {
+    return this.uploading().has(row.ulb);
+  }
+
+  private setUploading(ulb: string, on: boolean): void {
+    this.uploading.update((current) => {
+      const next = new Set(current);
+      if (on) next.add(ulb);
+      else next.delete(ulb);
+      return next;
+    });
+  }
+
+  onFileSelected(event: Event, row: DigitizationV3Row): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset so picking the same file again still fires `change`
+    input.value = '';
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      this.notify('Please upload a valid PDF file.');
+      return;
+    }
+    if (this.isUploading(row)) return;
+
+    const folder = `afs/uploads/${row.ulbCode}/${this.filters.docType}`;
+    this.setUploading(row.ulb, true);
+
+    this.fileService
+      .getSignedUrls([
+        { fileName: file.name, folder, mimeType: file.type, fileSize: file.size, expiresIn: SIGNED_URL_EXPIRES_IN_SECONDS },
+      ])
+      .pipe(
+        switchMap(([signed]) => {
+          const { url, path } = signed ?? {};
+          if (!url || !path) throw new Error('No upload URL was returned');
+          return this.fileService.newUploadFileToS3(file, url).pipe(
+            filter((event) => event.type === HttpEventType.Response),
+            switchMap(() =>
+              this.afsService.uploadAfsFile({
+                pdfUrl: path,
+                ulb: row.ulb,
+                year: this.filters.yearId,
+                auditType: this.filters.auditType,
+                docType: this.filters.docType,
+                uploadedBy: 'AFS',
+              }),
+            ),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.setUploading(row.ulb, false);
+          this.notify(`Uploaded ${file.name} for ${row.ulbName}`);
+          // The list carries the signed link and page count of the new PDF
+          this.reload();
+        },
+        error: (err: HttpErrorResponse | Error) => {
+          this.setUploading(row.ulb, false);
+          this.notify(err instanceof HttpErrorResponse ? this.errorMessage(err, 'Could not upload the PDF') : err.message);
+        },
+      });
   }
 
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
