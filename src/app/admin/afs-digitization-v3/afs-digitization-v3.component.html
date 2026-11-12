@@ -174,8 +174,15 @@
                 }
                 } @else {
                 <span class="text-muted">No PDF</span>
+                @if (!row.afsPdfUrlSigned) {
+                <button type="button" mat-icon-button class="ms-1 align-middle" matTooltip="Upload AFS PDF"
+                  aria-label="Upload AFS PDF" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
+                  <mat-icon class="text-primary">upload_file</mat-icon>
+                </button>
+                }
                 }
 
+                @if (row.afsPdfUrlSigned || isUploading(row)) {
                 <div class="mt-2 d-flex align-items-center gap-2">
                   <span>AFS :</span>
                   @if (row.afsPdfUrlSigned) {
@@ -185,21 +192,12 @@
                   @if (row.afsPdfPageCount; as afsPages) {
                   <strong>{{ afsPages }} {{ afsPages === 1 ? 'page' : 'pages' }}</strong>
                   }
-                  } @else {
-                  <strong>N/A</strong>
                   }
-                  <button type="button" class="btn btn-sm btn-primary upload-btn shadow ms-auto" [disabled]="isUploading(row)"
-                    [matTooltip]="row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF'"
-                    [attr.aria-label]="row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF'"
-                    (click)="afsFileInput.click()">
-                    <i class="bi" [class.bi-upload]="!row.afsPdfUrl" [class.bi-arrow-repeat]="row.afsPdfUrl"></i>
-                  </button>
                   @if (isUploading(row)) {
                   <mat-spinner diameter="16"></mat-spinner>
                   }
-                  <input #afsFileInput type="file" accept="application/pdf" class="d-none"
-                    (change)="onFileSelected($event, row)" />
                 </div>
+                }
               </td>
             </ng-container>
 
@@ -301,8 +299,15 @@
           [pageSizeOptions]="[10, 25, 50, 100]" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
       </mat-card>
 
+      <!-- One input for every row: the menu item picks the row, then opens it -->
+      <input #afsFileInput type="file" accept="application/pdf" class="d-none" (change)="onFileSelected($event)" />
+
       <mat-menu #rowMenu="matMenu">
         <ng-template matMenuContent let-row="row">
+          <button mat-menu-item type="button" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
+            <mat-icon>{{ row.afsPdfUrl ? 'published_with_changes' : 'upload_file' }}</mat-icon>
+            <span>{{ row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF' }}</span>
+          </button>
           <button mat-menu-item type="button" [disabled]="!row.digitization.jobId" (click)="viewLog(row)">
             <mat-icon>article</mat-icon>
             <span>{{ row.digitization.jobId ? 'View log' : 'No job yet' }}</span>

@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -429,12 +429,24 @@ export class AfsDigitizationV3Component implements OnInit {
     });
   }
 
-  onFileSelected(event: Event, row: DigitizationV3Row): void {
+  @ViewChild('afsFileInput') private afsFileInput?: ElementRef<HTMLInputElement>;
+  /** The row whose menu opened the file picker */
+  private uploadTarget: DigitizationV3Row | null = null;
+
+  /** "Upload AFS PDF" in the row menu */
+  pickAfsPdf(row: DigitizationV3Row): void {
+    this.uploadTarget = row;
+    this.afsFileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    const row = this.uploadTarget;
     // Reset so picking the same file again still fires `change`
     input.value = '';
-    if (!file) return;
+    this.uploadTarget = null;
+    if (!file || !row) return;
 
     if (file.type !== 'application/pdf') {
       this.notify('Please upload a valid PDF file.');
