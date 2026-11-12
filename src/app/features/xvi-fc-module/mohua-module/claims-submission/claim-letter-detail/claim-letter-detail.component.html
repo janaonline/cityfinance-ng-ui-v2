@@ -1,0 +1,280 @@
+<div class="cs-page">
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading claim letter" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    @if (letter(); as l) {
+    <a class="cs-back" [routerLink]="['claims-submission', stateId]" [relativeTo]="mohuaRoute">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to {{ l.state.name }} Claim Letters
+    </a>
+
+    <h1 class="cs-title">{{ l.number }} — {{ l.state.name }}</h1>
+    <p class="cs-subtitle">ULB-level eligibility review for this claim letter.</p>
+
+    <section class="cl-doc" aria-label="Claim letter document">
+      <div class="cl-doc__info">
+        <p class="cl-doc__eyebrow">Claim letter document</p>
+        @if (l.signedClaimFile; as file) {
+          <p class="cl-doc__name">{{ file.name }}</p>
+        } @else {
+          <p class="cl-doc__name">No signed claim letter attached</p>
+        }
+        <p class="cl-doc__meta">
+          {{ l.state.name }} State DMA · Received {{ formatDate(l.receivedOn) }} · {{ l.summary.totalCities }} ULBs ·
+          {{ formatCrore(l.summary.claimAmountReceived) }}
+        </p>
+      </div>
+      @if (l.signedClaimFile; as file) {
+        <a class="cs-btn cs-btn--ghost" [href]="file.url" target="_blank" rel="noopener noreferrer">
+          <i class="bi bi-eye" aria-hidden="true"></i> View PDF
+        </a>
+      }
+    </section>
+
+    <p class="cl-forms">
+      <span class="cl-forms__label">State forms:</span>
+      <span class="cs-badge" [class]="badgeClass(l.status)">{{ statusLabel(l.status, l.statusLabel) }}</span>
+      <a [routerLink]="['review-state-submissions', l.state.id]" [relativeTo]="mohuaRoute">
+        View State forms (read-only)
+      </a>
+    </p>
+
+    @if (l.returnDetails; as r) {
+      <section class="cl-return" aria-label="Return details">
+        <p class="cl-return__title">
+          <i class="bi bi-arrow-return-left" aria-hidden="true"></i>
+          Returned for correction{{ r.returnedBy ? ' by ' + r.returnedBy : '' }} on {{ formatDate(r.returnedAt) }}
+        </p>
+        <dl class="cl-return__list">
+          @if (r.stateForms.length) {
+            <dt>State forms returned</dt>
+            <dd>
+              @for (form of r.stateForms; track form.formId; let last = $last) {
+                {{ stateFormLabel(form) }}{{ last ? '' : ', ' }}
+              }
+            </dd>
+          }
+          @if (r.ulbForms.length) {
+            <dt>ULB forms returned</dt>
+            <dd>
+              @for (form of r.ulbForms; track form.formId; let last = $last) {
+                {{ ulbFormLabel(form) }}{{ last ? '' : ', ' }}
+              }
+            </dd>
+          }
+          <dt>ULBs returned</dt>
+          <dd>{{ r.returnedUlbCount }} of {{ l.summary.totalCities }}</dd>
+          @if (r.stateRemark) {
+            <dt>Remark to State</dt>
+            <dd class="cl-return__remark">{{ r.stateRemark }}</dd>
+          }
+        </dl>
+      </section>
+    }
+
+    <section class="cl-tiles" aria-label="Summary">
+      <div class="cl-tile">
+        <p class="cl-tile__value">{{ formatCrore(l.summary.claimAmountReceived) }}</p>
+        <p class="cl-tile__label">Claim amount received</p>
+      </div>
+      <div class="cl-tile">
+        <p class="cl-tile__value">{{ l.summary.totalCities }}</p>
+        <p class="cl-tile__label">Total cities</p>
+      </div>
+      <div class="cl-tile">
+        <p class="cl-tile__value">{{ l.summary.exemptionsApplied }}</p>
+        <p class="cl-tile__label">Exemptions applied</p>
+      </div>
+    </section>
+
+    <div class="cl-toolbar">
+    <div class="cl-search">
+      <label class="visually-hidden" for="cl-ulb-search">Search ULBs</label>
+      <input
+        id="cl-ulb-search"
+        type="search"
+        class="cl-search__input"
+        placeholder="Search ULB name or census code"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+    @if (canReview()) {
+      <div class="cl-actions">
+        <button
+          type="button"
+          class="cs-btn cs-btn--ghost"
+          [disabled]="busy()"
+          [attr.aria-busy]="returning()"
+          (click)="openReturnDialog()"
+        >
+          @if (returning()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Returning…
+          } @else {
+            Return for correction{{ returnedUlbCount() > 0 ? ' (' + returnedUlbCount() + ')' : '' }}
+          }
+        </button>
+        <button
+          type="button"
+          class="cs-btn"
+          [disabled]="busy() || returnedUlbCount() > 0"
+          [attr.aria-busy]="approving()"
+          [attr.title]="returnedUlbCount() > 0 ? 'Some ULBs are marked returned: return the letter, or clear those marks' : null"
+          (click)="approve()"
+        >
+          @if (approving()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Approving…
+          } @else {
+            Approve
+          }
+        </button>
+      </div>
+    }
+    </div>
+
+    <p class="cl-hint">
+      <i class="bi bi-info-circle" aria-hidden="true"></i> Click on a ULB to view its forms.
+      @if (canReview()) {
+        Use <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> to mark a ULB for return; unmarked ULBs
+        are approved with the letter.
+        <span class="cl-hint__counts">{{ l.returnedUlbCount }} of {{ l.summary.totalCities }} ULBs marked for return</span>
+      }
+    </p>
+
+    @if (ulbsError()) {
+      <div class="cs-state cs-error" role="alert">
+        <p>{{ ulbsError() }}</p>
+        <button type="button" class="cs-btn cs-btn--ghost" (click)="loadUlbs()">Try again</button>
+      </div>
+    } @else {
+    @if (ulbs(); as u) {
+      <div class="cs-table-wrap" [attr.aria-busy]="ulbsLoading()">
+        <table class="cs-table">
+          <caption class="visually-hidden">
+            ULBs in this claim letter
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">ULB</th>
+              <th scope="col" class="num">Installment {{ installment }} share</th>
+              <th scope="col">ULB status</th>
+              <th scope="col">Review status</th>
+              @if (canReview()) {
+                <th scope="col" class="cl-decide">Decision</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of u.items; track row.ulbId; let i = $index) {
+              <tr [class.cl-row--returned]="row.soDecision?.status === 'RETURNED'">
+                <td class="muted">{{ firstRowNumber() + i }}</td>
+                <td class="strong">
+                  <a
+                    class="cl-ulb-link"
+                    [routerLink]="['review-state-submissions', stateId, 'ulb', row.ulbId]"
+                    [relativeTo]="mohuaRoute"
+                    [queryParams]="{ claimLetter: claimLetterId }"
+                    >{{ row.name }}</a
+                  >
+                </td>
+                <td class="num">{{ formatCrore(row.installmentShare) }}</td>
+                <td>
+                  <span
+                    class="cs-badge"
+                    [class.cs-badge--good]="row.ulbStatus === 'ELIGIBLE'"
+                    [class.cs-badge--info]="row.ulbStatus === 'ELIGIBLE_VIA_EXEMPTION'"
+                  >
+                    {{ row.ulbStatus === 'ELIGIBLE' ? 'Eligible' : 'Eligible via exemption' }}
+                  </span>
+                </td>
+                <td>
+                  @if (canReview()) {
+                    @if (row.soDecision) {
+                      <span class="cs-badge cs-badge--bad">Returned</span>
+                      <p class="cl-returned-forms">
+                        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+                        Returned: {{ decisionFormsText(row.soDecision!) }}{{
+                          row.soDecision!.remark ? ' — ' + row.soDecision!.remark : ''
+                        }}
+                        <button type="button" class="cl-link-btn" [disabled]="busy()" (click)="clearDecision(row)">
+                          Clear
+                        </button>
+                      </p>
+                    }
+                  } @else if (row.reviewStatus !== null) {
+                    <span class="cs-badge" [class]="badgeClass(row.reviewStatus)">{{
+                      statusLabel(row.reviewStatus, row.reviewStatusLabel ?? '')
+                    }}</span>
+                    @if (row.returnedFormIds.length) {
+                      <p class="cl-returned-forms">
+                        {{ formLabels(row.returnedFormIds) }}{{ row.soDecision?.remark ? ' — ' + row.soDecision!.remark : '' }}
+                      </p>
+                    }
+                  } @else {
+                    <span class="muted" aria-hidden="true">—</span><span class="visually-hidden">Not returned</span>
+                  }
+                </td>
+                @if (canReview()) {
+                  <td class="cl-decide">
+                    @if (decidingUlbId() === row.ulbId) {
+                      <span class="spinner-border spinner-border-sm text-secondary" role="status">
+                        <span class="visually-hidden">Saving</span>
+                      </span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="cl-icon-btn cl-icon-btn--return"
+                        [class.cl-icon-btn--active]="!!row.soDecision"
+                        [disabled]="busy()"
+                        [attr.aria-label]="(row.soDecision ? 'Edit return of ' : 'Return ') + row.name"
+                        [attr.title]="row.soDecision ? 'Edit return' : 'Return for correction'"
+                        (click)="openUlbReturn(row)"
+                      >
+                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="canReview() ? 6 : 5" class="cs-state">No ULBs match.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (u.pagination.totalPages > 1) {
+        <nav class="cl-pager" aria-label="ULB pages">
+          <button
+            type="button"
+            class="cs-btn cs-btn--ghost"
+            [disabled]="u.pagination.page <= 1"
+            (click)="goToPage(u.pagination.page - 1)"
+          >
+            Previous
+          </button>
+          <span>Page {{ u.pagination.page }} of {{ u.pagination.totalPages }} · {{ u.pagination.total }} ULBs</span>
+          <button
+            type="button"
+            class="cs-btn cs-btn--ghost"
+            [disabled]="u.pagination.page >= u.pagination.totalPages"
+            (click)="goToPage(u.pagination.page + 1)"
+          >
+            Next
+          </button>
+        </nav>
+      }
+    } @else if (ulbsLoading()) {
+      <app-mohua-page-loader label="Loading ULBs" />
+    }
+    }
+    }
+  }
+</div>

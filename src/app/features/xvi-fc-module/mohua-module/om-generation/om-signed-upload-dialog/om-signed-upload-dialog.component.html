@@ -1,0 +1,40 @@
+<div class="osu">
+  @if (data.justGenerated) {
+    <div class="osu-head">
+      <i class="bi bi-check-circle osu-icon" aria-hidden="true"></i>
+      <h2 mat-dialog-title class="osu-title">OM Generated Successfully</h2>
+      <p class="osu-lead">
+        <strong>{{ data.refNo }}</strong> has been created for {{ data.ulbCount }} cities. The PDF includes the claim letter's annexures.
+      </p>
+      <p class="osu-download" role="status"><i class="bi bi-download" aria-hidden="true"></i> Your download has started.</p>
+    </div>
+  } @else {
+    <h2 mat-dialog-title class="osu-title osu-title--left">Upload the signed OM — {{ data.refNo }}</h2>
+  }
+
+  <mat-dialog-content>
+    <section class="osu-box" aria-labelledby="osu-upload-heading">
+      <h3 id="osu-upload-heading" class="osu-box__title">Upload the signed OM</h3>
+      <p class="osu-box__text">
+        Send the draft for approval and signature in e-Office. Then upload the signed copy here. The State and ULBs see
+        the OM only after you upload it.
+      </p>
+      <app-file [field]="fileField" [group]="form" />
+      <p class="osu-box__hint">Accepted format: PDF only · Max 5 MB</p>
+    </section>
+    @if (error()) {
+      <p class="osu-error" role="alert">{{ error() }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="osu-actions">
+    <button matButton="outlined" type="button" [disabled]="saving()" (click)="later()">Upload later</button>
+    <button matButton="filled" type="button" [disabled]="!hasFile() || saving()" (click)="upload()">
+      @if (saving()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Uploading…
+      } @else {
+        Upload Signed OM
+      }
+    </button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,139 @@
+<div class="cs-page">
+  <a class="cs-back" [routerLink]="['om-generation']" [relativeTo]="mohuaRoute">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Generate OM
+  </a>
+
+  <app-om-steps [current]="issued() ? 3 : 2" />
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading the Office Memorandum" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else if (view()) {
+    @let v = view()!;
+    <h1 class="cs-title">
+      Generate OM — {{ v.content.claimLetterRefNo }}
+      <span class="cs-year">FY {{ v.content.designYearLabel }}</span>
+    </h1>
+    <p class="cs-subtitle">
+      {{ v.content.stateName }}. One OM for this claim letter, covering every ULB on it. The figures come from the
+      verified letter.
+    </p>
+
+    <section class="oml-tiles" aria-label="Claim letter summary">
+      <div class="oml-tile">
+        <p class="oml-tile__value">{{ v.content.ulbCount }}</p>
+        <p class="oml-tile__label">ULBs in this OM</p>
+      </div>
+      <div class="oml-tile">
+        <p class="oml-tile__value">{{ formatCrore(v.content.totalAmount) }}</p>
+        <p class="oml-tile__label">Amount recommended</p>
+      </div>
+      <div class="oml-tile">
+        <p class="oml-tile__value">
+          <span class="cs-badge" [class.cs-badge--good]="issued()" [class.cs-badge--review]="!issued()">
+            {{ issued() ? 'OM ' + statusLabel[v.status] : 'Verified by MoHUA' }}
+          </span>
+        </p>
+        <p class="oml-tile__label">{{ v.refNo ? 'Issued as ' + v.refNo : 'OM not generated yet' }}</p>
+      </div>
+    </section>
+
+    <!-- The letter's ULBs, collapsed by default so the OM stays close to the top. -->
+    <section class="oml-ulbs">
+      <button
+        type="button"
+        class="oml-ulbs__toggle"
+        [attr.aria-expanded]="ulbsOpen()"
+        aria-controls="oml-ulb-list"
+        (click)="toggleUlbs()"
+      >
+        <i class="bi" [class.bi-chevron-down]="ulbsOpen()" [class.bi-chevron-right]="!ulbsOpen()" aria-hidden="true"></i>
+        ULBs in this claim letter ({{ v.ulbs.length }})
+        <span class="oml-ulbs__total">{{ formatCrore(totalClaimed()) }} claimed</span>
+      </button>
+      @if (ulbsOpen()) {
+        <div class="cs-table-wrap" id="oml-ulb-list">
+          <table class="cs-table">
+            <caption class="visually-hidden">ULBs in claim letter {{ v.content.claimLetterRefNo }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">ULB</th>
+                <th scope="col">Census code</th>
+                <th scope="col" class="num">Allocation</th>
+                <th scope="col" class="num">Claimed</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ulb of v.ulbs; track ulb.ulbId; let i = $index) {
+                <tr>
+                  <td class="muted">{{ i + 1 }}</td>
+                  <td class="strong">{{ ulb.name }}</td>
+                  <td>{{ ulb.censusCode ?? '—' }}</td>
+                  <td class="num">{{ formatCrore(ulb.allocatedAmount) }}</td>
+                  <td class="num">{{ formatCrore(ulb.claimedAmount) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="cs-state">No ULBs on this claim letter.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <section class="om-editor" aria-label="Office Memorandum">
+      <header class="om-editor__bar">
+        <div>
+          <p class="om-editor__title">Office Memorandum</p>
+          <p class="om-editor__sub" aria-live="polite">{{ issued() ? 'Issued — read-only' : saveText() }}</p>
+        </div>
+        @if (!issued()) {
+          <div class="om-editor__count">
+            <span>Required: {{ filledCount() }} of {{ requiredKeys().length }} filled</span>
+            <button
+              type="button"
+              class="cs-btn cs-btn--ghost"
+              [disabled]="filledCount() === requiredKeys().length"
+              (click)="nextEmpty()"
+            >
+              Next empty box <i class="bi bi-arrow-down" aria-hidden="true"></i>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="cs-btn"
+            [disabled]="!canGenerate() || generating()"
+            [attr.title]="canGenerate() ? null : 'Fill in the OM No. first'"
+            (click)="confirmGenerate()"
+          >
+            @if (generating()) {
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Generating…
+            } @else {
+              <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Generate OM
+            }
+          </button>
+        } @else {
+          <div class="om-editor__actions">
+            <button type="button" class="cs-btn cs-btn--ghost" (click)="download()">
+              <i class="bi bi-download" aria-hidden="true"></i> Download OM (PDF)
+            </button>
+            <button type="button" class="cs-btn" (click)="uploadSigned()">
+              <i class="bi bi-upload" aria-hidden="true"></i>
+              {{ v.status === 'SIGNED_UPLOADED' ? 'Replace signed OM' : 'Upload signed OM' }}
+            </button>
+          </div>
+        }
+      </header>
+      <div class="om-editor__body">
+        <app-om-document [content]="v.content" [editor]="editor()" (fieldCommitted)="onFieldCommitted($event)" />
+      </div>
+    </section>
+  }
+</div>

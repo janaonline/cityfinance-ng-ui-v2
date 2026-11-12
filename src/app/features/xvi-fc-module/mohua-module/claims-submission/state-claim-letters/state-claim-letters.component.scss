@@ -1,0 +1,53 @@
+@use '../claims-shared';
+
+// The summary band under the letters table: ULB counts and the money claimed against the balance.
+.cl-band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.9rem;
+  margin: 0.75rem 0 0;
+  padding: 0.7rem 1rem;
+  border: 1px solid #e3e8ea;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 0.8rem;
+  color: #5b6b73;
+
+  strong {
+    color: #0f1f26;
+    font-weight: 700;
+  }
+
+  &__item {
+    position: relative;
+    white-space: nowrap;
+
+    // A dot between items, never before the first.
+    & + & {
+      padding-left: 0.9rem;
+
+      &::before {
+        content: '·';
+        position: absolute;
+        left: 0;
+        color: #9aa7ad;
+      }
+    }
+
+    &--good {
+      font-weight: 600;
+      color: #15803d;
+    }
+
+    &--review {
+      font-weight: 600;
+      color: #b45309;
+    }
+
+    &--bad {
+      font-weight: 600;
+      color: #b91c1c;
+    }
+  }
+}

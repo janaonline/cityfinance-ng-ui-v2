@@ -22,7 +22,7 @@ export interface XviFcBankAccountProofFile {
   fileUrl: string | null;
 }
 
-export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+export type FormStatusType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 16;
 
 export const FORM_STATUS = {
   NO_STATUS: 0,
@@ -37,6 +37,8 @@ export const FORM_STATUS = {
   AWAITING_CLAIM_LETTER: 9,
   UNDO: 10,
   ACTION_REQUIRED: 11,
+  /** The MoHUA Section Officer returned the claim letter this form was in. */
+  RETURNED_BY_SO: 16,
 } as const satisfies Record<string, FormStatusType>;
 
 export interface SubmitXviFcBankAccountPayload {

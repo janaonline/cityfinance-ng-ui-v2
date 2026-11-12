@@ -102,6 +102,42 @@ export const MOHUA_ROUTES: Routes = [
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
       },
       {
+        path: 'claims-submission',
+        loadComponent: () =>
+          import('./claims-submission/claims-submission.component').then((m) => m.ClaimsSubmissionComponent),
+      },
+      {
+        path: 'claims-submission/:stateId',
+        loadComponent: () =>
+          import('./claims-submission/state-claim-letters/state-claim-letters.component').then(
+            (m) => m.StateClaimLettersComponent,
+          ),
+      },
+      {
+        path: 'claims-submission/:stateId/letter/:claimLetterId',
+        loadComponent: () =>
+          import('./claims-submission/claim-letter-detail/claim-letter-detail.component').then(
+            (m) => m.ClaimLetterDetailComponent,
+          ),
+      },
+      {
+        path: 'om-generation',
+        loadComponent: () =>
+          import('./om-generation/om-generation.component').then((m) => m.OmGenerationComponent),
+      },
+      {
+        path: 'om-generation/letter/:claimLetterId',
+        // Keeps "Generate OM" highlighted in the sidebar on the letter's page.
+        data: { menuGroup: 'om-generation' },
+        loadComponent: () =>
+          import('./om-generation/om-letter/om-letter.component').then((m) => m.OmLetterComponent),
+      },
+      {
+        path: 'om-history',
+        loadComponent: () =>
+          import('./om-generation/om-history/om-history.component').then((m) => m.OmHistoryComponent),
+      },
+      {
         path: '**',
         redirectTo: 'overview',
       },

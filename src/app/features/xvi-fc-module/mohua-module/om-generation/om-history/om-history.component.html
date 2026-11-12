@@ -1,0 +1,82 @@
+<div class="cs-page">
+  <app-om-steps [current]="3" />
+
+  <h1 class="cs-title">OM Generation History</h1>
+  <p class="cs-subtitle">All issued OMs and their downstream status with DoE.</p>
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading OM history" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else if (rows()) {
+    @let list = rows()!;
+    @if (list.length === 0) {
+      <div class="cs-state">
+        <i class="bi bi-inbox" aria-hidden="true"></i>
+        <p>No OM has been issued yet.</p>
+      </div>
+    } @else {
+      <div class="cs-table-wrap">
+        <table class="cs-table">
+          <caption class="visually-hidden">Issued Office Memorandums</caption>
+          <thead>
+            <tr>
+              <th scope="col">OM no.</th>
+              <th scope="col">State</th>
+              <th scope="col" class="num">Cities</th>
+              <th scope="col">Date issued</th>
+              <th scope="col" class="num">Total allocation</th>
+              <th scope="col">OM status</th>
+              <th scope="col">DoE status</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of list; track row.omId) {
+              <tr>
+                <td>
+                  <span class="strong omh-ref">{{ row.refNo }}</span>
+                  @if (row.omNumber) {
+                    <span class="omh-sub">No. {{ row.omNumber }}</span>
+                  }
+                </td>
+                <td>{{ row.stateCode || row.stateName }}</td>
+                <td class="num">{{ row.ulbCount }} cities</td>
+                <td>{{ formatDate(row.issuedOn) }}</td>
+                <td class="num">{{ formatCrore(row.totalAmount) }}</td>
+                <td>
+                  <span class="cs-badge" [class.cs-badge--good]="row.status === 'SIGNED_UPLOADED'" [class.cs-badge--info]="row.status !== 'SIGNED_UPLOADED'">
+                    {{ statusLabel[row.status] }}
+                  </span>
+                </td>
+                <td><span class="cs-badge cs-badge--review">Pending</span></td>
+                <td class="omh-actions">
+                  @if (row.signedFile; as file) {
+                    <a class="cs-btn cs-btn--ghost" [href]="file.url" target="_blank" rel="noopener noreferrer">
+                      <i class="bi bi-eye" aria-hidden="true"></i> View PDF
+                    </a>
+                  }
+                  <button type="button" class="cs-btn cs-btn--ghost" (click)="upload(row)">
+                    <i class="bi bi-upload" aria-hidden="true"></i> {{ row.signedFile ? 'Replace' : 'Upload signed OM' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="cs-btn cs-btn--ghost"
+                    [disabled]="downloadingId() === row.omId"
+                    [attr.aria-label]="'Download ' + row.refNo + ' with its annexures as PDF'"
+                    (click)="download(row)"
+                  >
+                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> OM (PDF)
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

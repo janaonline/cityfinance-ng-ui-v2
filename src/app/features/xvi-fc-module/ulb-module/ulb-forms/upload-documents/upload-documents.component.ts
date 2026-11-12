@@ -195,7 +195,8 @@ type AnnualAccountFormStatus =
   | 'AWAITING_CLAIM_LETTER'
   | 'EXEMPTION_PENDING'
   | 'EXEMPTION_REJECTED'
-  | 'EXEMPTED_ACKNOWLEDGED';
+  | 'EXEMPTED_ACKNOWLEDGED'
+  | 'RETURNED_BY_SO';
 
 /** When state requests a form for exemption, below are the possible statuses*/
 type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
@@ -206,6 +207,7 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
   'IN_PROGRESS',
   'RETURNED_BY_STATE',
   'RETURNED_BY_MOHUA',
+  'RETURNED_BY_SO',
 ]);
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
@@ -406,11 +408,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   // Note attached to the state/MoHUA decision that most recently returned this section, if any.
   private readonly sectionReturnNote = signal<string | null>(null);
 
-  // Shown when the section was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
-  // even though the section itself is editable again at that point.
+  // Shown when the section was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA/RETURNED_BY_SO) — explains why,
+  // even though the section itself is editable again at that point. The SO is part of MoHUA.
   readonly returnNotice = computed(() => {
     const status = this.sectionStatus();
-    if (status !== 'RETURNED_BY_STATE' && status !== 'RETURNED_BY_MOHUA') return null;
+    if (status !== 'RETURNED_BY_STATE' && status !== 'RETURNED_BY_MOHUA' && status !== 'RETURNED_BY_SO') return null;
     const actor = status === 'RETURNED_BY_STATE' ? 'the state' : 'MoHUA';
     const note = this.sectionReturnNote();
     return note ? `Returned by ${actor}: ${note}` : `This section was returned by ${actor} for correction.`;
@@ -1068,7 +1070,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       this.sectionReturnNote.set(
         (sectionData?.form_status === 'RETURNED_BY_STATE'
           ? sectionData.stateDecision?.note
-          : sectionData?.form_status === 'RETURNED_BY_MOHUA'
+          : sectionData?.form_status === 'RETURNED_BY_MOHUA' || sectionData?.form_status === 'RETURNED_BY_SO'
             ? sectionData.mohuaDecision?.note
             : null) ?? null,
       );
