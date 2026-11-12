@@ -27,7 +27,10 @@ export interface DigitizationV3Info {
   jobId?: string;
   summary?: string;
   error?: string;
+  /** When the job finished (completed or failed) */
   digitizedAt?: string;
+  /** How long the job took to run, in milliseconds */
+  elapsedMs?: number;
 }
 
 export interface DigitizationV3Row {
@@ -46,6 +49,9 @@ export interface DigitizationV3Row {
   /** From the annual account's PDF metadata; null until backfilled */
   pdfPageCount: number | null;
   pdfSizeBytes: number | null;
+  /** Same file as an earlier slot: not digitized itself, follows `duplicateOfDocType` */
+  isDuplicate?: boolean;
+  duplicateOfDocType?: string | null;
   digitization: DigitizationV3Info;
 }
 
@@ -125,6 +131,11 @@ export interface DigitizationV3Query {
   digitizationV3Status?: DigitizationV3Status;
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** ISO instants; the page sends the start / end of the picked local days */
+  digitizedFrom?: string;
+  digitizedTo?: string;
+  sortColumn?: 'digitizedAt' | 'pages';
+  sortDirection?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }

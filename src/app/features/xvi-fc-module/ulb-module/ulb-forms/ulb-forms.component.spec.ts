@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { convertToParamMap, ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { AnnualAccountStateService, FormStatusData } from '../annual-account-state.service';
+import { AnnualAccountStateService, FormStatusData, StateConditionData } from '../annual-account-state.service';
 import { UlbFormsComponent } from './ulb-forms.component';
 
 describe('UlbFormsComponent', () => {
@@ -186,5 +186,80 @@ describe('UlbFormsComponent', () => {
 
     expect(row.querySelector('.submitted-badge')?.textContent).toContain('SUBMITTED');
     expect(row.querySelector('.preview-icon-btn')).toBeTruthy();
+  });
+
+  describe('State-filed conditions', () => {
+    const hidden: StateConditionData = { form_status: 'IN_PROGRESS', form_status_id: 2, visible: false, value: null, amount: null };
+    const shown = (patch: Partial<StateConditionData>): StateConditionData => ({
+      form_status: 'UNDER_REVIEW_BY_MOHUA',
+      form_status_id: 5,
+      visible: true,
+      value: null,
+      amount: null,
+      ...patch,
+    });
+    const conditions = (patch: Partial<NonNullable<FormStatusData['stateConditions']>> = {}) => ({
+      sfcStatus: hidden,
+      electedBody: hidden,
+      devolution: hidden,
+      fcUnspent: hidden,
+      ...patch,
+    });
+
+    it('keeps "Awaiting State Upload" on all three rows and the placeholder allocation until the State forms are under MoHUA review', () => {
+      createComponent(baseStatus({ stateConditions: conditions() }));
+
+      for (const title of ['State Finance Commission Status', 'Elected Body Status', '14th FC Unspent Balance']) {
+        expect(rowFor(title).textContent).toContain('AWAITING STATE UPLOAD');
+      }
+      expect(fixture.nativeElement.querySelector('.grant-band__amount').textContent).toContain('Allocation will be displayed');
+    });
+
+    it('shows the State-filed SFC answer, elected-body status and unspent balance once visible', () => {
+      createComponent(
+        baseStatus({
+          stateConditions: conditions({
+            sfcStatus: shown({ value: 'Yes' }),
+            electedBody: shown({ value: 'Elected body in place' }),
+            fcUnspent: shown({ amount: 250000 }),
+          }),
+        }),
+      );
+
+      expect(rowFor('State Finance Commission Status').querySelector('.state-value-badge')?.textContent).toContain('Yes');
+      expect(rowFor('Elected Body Status').querySelector('.state-value-badge')?.textContent).toContain('Elected body in place');
+      const unspent = rowFor('14th FC Unspent Balance');
+      expect(unspent.querySelector('.state-value-badge')?.textContent).toMatch(/₹s?2,50,000/);
+      expect(unspent.textContent).not.toContain('AWAITING STATE UPLOAD');
+      expect(unspent.querySelector('.condition-icon--complete')).toBeTruthy();
+      expect(fixture.nativeElement.textContent).toContain('3 of 8 complete');
+    });
+
+    it("shows the ULB's allocation in the grant band once the ULB-wise allocation is visible", () => {
+      createComponent(baseStatus({ stateConditions: conditions({ devolution: shown({ amount: 1234567 }) }) }));
+
+      expect(fixture.nativeElement.querySelector('.grant-band__amount').textContent).toMatch(/₹s?12,34,567/);
+    });
+
+    it('tells the ULB to contact the State DMA when the elected body is Not Constituted', () => {
+      createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: 'Not Constituted' }) }) }));
+
+      const row = rowFor('Elected Body Status');
+      expect(row.textContent).toContain('Status: Not Constituted');
+      expect(row.textContent).toContain('If this information is incorrect, contact your State DMA');
+      expect(row.querySelector('.condition-subtitle--alert')).toBeTruthy();
+    });
+
+    it('shows no contact message when the elected body is Constituted', () => {
+      createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: 'Constituted' }) }) }));
+
+      expect(rowFor('Elected Body Status').textContent).not.toContain('contact your State DMA');
+    });
+
+    it('stays on "Awaiting State Upload" when the form is visible but has no row for this ULB', () => {
+      createComponent(baseStatus({ stateConditions: conditions({ electedBody: shown({ value: null }) }) }));
+
+      expect(rowFor('Elected Body Status').textContent).toContain('AWAITING STATE UPLOAD');
+    });
   });
 });
