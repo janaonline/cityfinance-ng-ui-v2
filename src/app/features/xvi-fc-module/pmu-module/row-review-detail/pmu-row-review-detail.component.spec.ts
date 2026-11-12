@@ -9,7 +9,7 @@ import { PmuFormReviewData, PmuRow } from '../pmu-review.models';
 import { PmuRowReviewService } from '../pmu-row-review.service';
 import { PmuRowReviewDetailComponent } from './pmu-row-review-detail.component';
 
-const review = (canAct: boolean): PmuFormReviewData => ({
+const review = (canAct: boolean, extra: Partial<PmuFormReviewData> = {}): PmuFormReviewData => ({
   formId: 'form-1',
   stateId: 'state-1',
   stateName: 'Rajasthan',
@@ -21,6 +21,7 @@ const review = (canAct: boolean): PmuFormReviewData => ({
   rowSummary: { total: 1, active: 1, updatePending: 0, rejected: 0, needsUpdate: 0 },
   permissions: { canView: true, canApproveForm: canAct, canRejectForm: canAct, canReviewRows: canAct },
   actors: [],
+  ...extra,
 });
 
 const rows = (canAct: boolean): PmuRow[] => [
@@ -39,7 +40,7 @@ const rows = (canAct: boolean): PmuRow[] => [
 
 /** Renders the screen the way each route does: PMU's own route has no `viewOnly`; MoHUA's route sets it. */
 describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => {
-  const create = (options: { viewOnly: boolean; canAct: boolean }) => {
+  const create = (options: { viewOnly: boolean; canAct: boolean; extra?: Partial<PmuFormReviewData> }) => {
     const data: Record<string, unknown> = { form: 'ELECTED_BODY', ...(options.viewOnly ? { viewOnly: true } : {}) };
     TestBed.configureTestingModule({
       imports: [PmuRowReviewDetailComponent, HttpClientTestingModule],
@@ -51,7 +52,7 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
         {
           provide: PmuRowReviewService,
           useValue: {
-            getReview: () => of(review(options.canAct)),
+            getReview: () => of(review(options.canAct, options.extra)),
             getRows: () => of({ rows: rows(options.canAct), page: 1, limit: 25, total: 1 }),
           },
         },
@@ -71,6 +72,28 @@ describe('PmuRowReviewDetailComponent — PMU review vs MoHUA view-only', () => 
   };
 
   const text = (fixture: ReturnType<typeof create>) => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+  describe('Elected Body status summary cards', () => {
+    const cards = (fixture: ReturnType<typeof create>) =>
+      (fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="status-summary-card"]');
+
+    it('shows the Eligible / Ineligible / 6th Schedule cards, without the State banner, when the API sends them', () => {
+      const fixture = create({
+        viewOnly: false,
+        canAct: true,
+        extra: { statusSummary: { totalUlbCount: 20, constitutedCount: 16, notConstitutedCount: 2, exemptCount: 2 } },
+      });
+
+      expect(cards(fixture).length).toBe(3);
+      expect(text(fixture)).toContain('Eligible - elected body constituted');
+      expect(text(fixture)).not.toContain('Elected Body Status submitted');
+    });
+
+    it('shows no cards when there is no statusSummary (e.g. FC Unspent)', () => {
+      const fixture = create({ viewOnly: false, canAct: true });
+      expect(cards(fixture).length).toBe(0);
+    });
+  });
 
   describe("PMU's own route (no viewOnly) is unchanged", () => {
     it('keeps the form-level approve and reject controls, with no row selection controls', () => {
