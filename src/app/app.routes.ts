@@ -17,6 +17,18 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    // Standalone page (no XVI-FC side-menu shell). Uses xvifcAuthGuard (not the generic
+    // authGuard) so an unauthenticated visit lands on the explicit /auth/login/16thFC form
+    // instead of the generic /auth/login page, which defaults to the unrelated "15thFC"
+    // login type and can bounce off-app on redirect.
+    path: 'xv-fc-review',
+    loadComponent: () =>
+      import('./features/xv-fc-review/xv-fc-data-review.component').then(
+        (m) => m.XvFcDataReviewComponent,
+      ),
+    canActivate: [xvifcAuthGuard],
+  },
+  {
     path: 'admin',
     loadChildren: () => import('./admin/admin.routes').then((mod) => mod.ADMIN_ROUTES),
     canActivate: [authGuard],
@@ -46,8 +58,19 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
+    // Public (no login) Superset dashboards, e.g. /fc/dalgo/rt_municipal_finance_dashboard.
+    path: 'dalgo/:pageType',
+    loadComponent: () => import('./features/dalgo/public/dalgo-public.component').then((m) => m.DalgoPublicComponent),
+  },
+  {
     path: 'afs-dashboard',
     loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'afs-digitization-v3',
+    loadComponent: () =>
+      import('./admin/afs-digitization-v3/afs-digitization-v3.component').then((m) => m.AfsDigitizationV3Component),
     canActivate: [authGuard],
   },
   {
@@ -64,6 +87,11 @@ export const routes: Routes = [
   {
     path: 'events-dashboard',
     loadComponent: () => import('./admin/events/events.component').then((m) => m.EventsComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'forum',
+    loadChildren: () => import('./features/forum/forum.routes').then((m) => m.FORUM_ROUTES),
     canActivate: [authGuard],
   },
   {

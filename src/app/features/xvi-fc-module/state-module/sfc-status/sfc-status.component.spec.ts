@@ -64,6 +64,8 @@ function createSfcFormResponse(): SfcStatusFormData {
     actors: [],
     instructions: [],
     meta: { version: 1 },
+    exemptionStatus: null,
+    exemptionMohuaRemarks: null,
     questions: [
       {
         key: 'isActiveSfc',
@@ -1332,6 +1334,101 @@ describe('SfcStatusComponent', () => {
       component.form.markAsDirty();
 
       expect(component.hasUnsavedChanges()).toBeFalse();
+    }));
+  });
+
+  // ─── Discretionary whole-state Request Exemption ──────────────────────────
+
+  describe('discretionary exemption', () => {
+    it('PENDING: shows the locked banner, disables the form, and hides the whole acknowledgement section', fakeAsync(() => {
+      getSfcStatusFormSpy.and.returnValue(
+        of({
+          ...createSfcFormResponse(),
+          permissions: { canView: true, canEdit: true, canFinalSubmit: true },
+          exemptionStatus: 'PENDING',
+        }),
+      );
+      createComponent();
+      completeInitialLoad();
+
+      expect(component.formLocked()).toBeTrue();
+      expect(component.isExempted()).toBeFalse();
+
+      const banner: HTMLElement = fixture.nativeElement.querySelector('[data-cy="sfc-status-exemption-locked-banner"]');
+      expect(banner?.textContent).toContain('pending MoHUA review');
+
+      expect(fixture.nativeElement.querySelector('[data-cy="sfc-status-cancel-test"]')).toBeFalsy();
+      expect(fixture.nativeElement.querySelector('[data-cy="sfc-status-submit-test"]')).toBeFalsy();
+      expect(fixture.nativeElement.querySelector('[data-cy="sfc-status-final-submit-test"]')).toBeFalsy();
+      expect(component.form.disabled).toBeTrue();
+    }));
+
+    it('APPROVED: shows the exemption notice in place of the form, and hides the footer', fakeAsync(() => {
+      getSfcStatusFormSpy.and.returnValue(
+        of({
+          ...createSfcFormResponse(),
+          exemptionStatus: 'APPROVED',
+        }),
+      );
+      createComponent();
+      completeInitialLoad();
+
+      expect(component.isExempted()).toBeTrue();
+      expect(fixture.nativeElement.querySelector('app-exemption-notice')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('form.content-body')).toBeFalsy();
+      expect(fixture.nativeElement.querySelector('[data-cy="sfc-status-submit-test"]')).toBeFalsy();
+    }));
+
+    it('REJECTED while still NOT_STARTED: shows the non-blocking rejected notice', fakeAsync(() => {
+      getSfcStatusFormSpy.and.returnValue(
+        of({
+          ...createSfcFormResponse(),
+          currentFormStatus: 1, // NOT_STARTED
+          exemptionStatus: 'REJECTED',
+          exemptionMohuaRemarks: 'Not eligible for this cycle.',
+        }),
+      );
+      createComponent();
+      completeInitialLoad();
+
+      expect(component.formLocked()).toBeFalse();
+      const notice: HTMLElement = fixture.nativeElement.querySelector(
+        '[data-cy="sfc-status-exemption-rejected-notice"]',
+      );
+      expect(notice?.textContent).toContain('Not eligible for this cycle.');
+      // Form stays interactive — not blocked once rejected.
+      expect(fixture.nativeElement.querySelector('[data-cy="sfc-status-submit-test"]').disabled).toBeFalse();
+    }));
+
+    it('REJECTED once the state has resumed work (IN_PROGRESS): hides the rejected notice', fakeAsync(() => {
+      getSfcStatusFormSpy.and.returnValue(
+        of({
+          ...createSfcFormResponse(),
+          currentFormStatus: 2, // IN_PROGRESS
+          exemptionStatus: 'REJECTED',
+          exemptionMohuaRemarks: 'Not eligible for this cycle.',
+        }),
+      );
+      createComponent();
+      completeInitialLoad();
+
+      expect(
+        fixture.nativeElement.querySelector('[data-cy="sfc-status-exemption-rejected-notice"]'),
+      ).toBeFalsy();
+    }));
+
+    it('no exemption on record: shows neither banner nor notice', fakeAsync(() => {
+      createComponent();
+      completeInitialLoad();
+
+      expect(component.formLocked()).toBeFalse();
+      expect(component.isExempted()).toBeFalse();
+      expect(
+        fixture.nativeElement.querySelector('[data-cy="sfc-status-exemption-locked-banner"]'),
+      ).toBeFalsy();
+      expect(
+        fixture.nativeElement.querySelector('[data-cy="sfc-status-exemption-rejected-notice"]'),
+      ).toBeFalsy();
     }));
   });
 });

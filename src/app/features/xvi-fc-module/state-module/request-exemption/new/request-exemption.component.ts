@@ -140,7 +140,7 @@ export class RequestExemptionComponent implements OnInit, CanComponentDeactivate
       .subscribe({
         next: (data) => {
           this.permissions.set(data.permissions);
-          this.fields.set(data.fields);
+          this.fields.set(this.withUlbRemoteSearchContext(data.fields, stateId, yearId));
           this.stateName.set(data.stateName);
           this.createFormControls();
           this.isLoading.set(false);
@@ -151,6 +151,23 @@ export class RequestExemptionComponent implements OnInit, CanComponentDeactivate
           this.isLoading.set(false);
         },
       });
+  }
+
+  /**
+   * The `ulb` field's `remoteSearch.extraParams` (formjsons config) can only ever hold static
+   * values - it's one shared document, not scoped per state/year - so this page's own current
+   * stateId/yearId have to be merged in here at render time instead.
+   */
+  private withUlbRemoteSearchContext(
+    fields: ConditionalFieldConfig[],
+    stateId: string,
+    yearId: string,
+  ): ConditionalFieldConfig[] {
+    return fields.map((field) =>
+      field.key === 'ulb' && field.remoteSearch
+        ? { ...field, remoteSearch: { ...field.remoteSearch, extraParams: { ...field.remoteSearch.extraParams, stateId, yearId } } }
+        : field,
+    );
   }
 
   createFormControls(): void {

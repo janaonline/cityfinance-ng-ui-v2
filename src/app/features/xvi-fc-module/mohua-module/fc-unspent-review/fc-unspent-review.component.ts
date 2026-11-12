@@ -98,6 +98,11 @@ export class FcUnspentMohuaReviewComponent implements OnInit {
 
   // ─── Rows ────────────────────────────────────────────────────────────────
   readonly rows = signal<FcUnspentMohuaRow[]>([]);
+  /** Allocation and "% of Alloc." only have data for Devolution-linked design years. */
+  readonly showAllocationColumns = computed(() => this.rows().some((r) => r.allocationAmount !== null));
+  /** Loading/empty/error-row `colspan`: 9 base columns (10 with the selection checkbox), minus the 2
+   *  allocation columns when they are hidden. */
+  readonly tableColSpan = computed(() => (this.canReviewRows() ? 10 : 9) - (this.showAllocationColumns() ? 0 : 2));
   readonly rowsTotal = signal(0);
   readonly rowsPage = signal(1);
   readonly rowsLimit = ROWS_PAGE_SIZE;

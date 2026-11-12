@@ -1,0 +1,91 @@
+<div class="history-header" mat-dialog-title>
+  <i class="bi bi-clock-history history-header__icon" aria-hidden="true"></i>
+  <div class="history-header__text">
+    <div class="history-title">Status history</div>
+    @if (data.heading) {
+      <div class="history-subtitle" [attr.title]="data.heading">{{ data.heading }}</div>
+    }
+  </div>
+</div>
+
+<mat-dialog-content class="history-content" tabindex="0" aria-label="Status history entries">
+  @if (isLoading()) {
+    <div class="history-state">
+      <mat-spinner diameter="28" aria-label="Loading status history"></mat-spinner>
+    </div>
+  } @else if (hasError()) {
+    <div class="history-state history-state--column">
+      <i class="bi bi-exclamation-circle text-danger fs-4" aria-hidden="true"></i>
+      <span class="small text-danger">Couldn't load history.</span>
+      <button type="button" matButton="outlined" (click)="load()">Retry</button>
+    </div>
+  } @else if (!entries().length) {
+    <div class="history-state history-state--column text-secondary">
+      <i class="bi bi-inbox fs-4" aria-hidden="true"></i>
+      <span class="small">No history recorded yet.</span>
+    </div>
+  } @else {
+    <ol class="timeline">
+      @for (entry of entries(); track entry.id; let first = $first) {
+        <li class="timeline-item" [class.timeline-item--current]="first">
+          <div class="timeline-rail" aria-hidden="true">
+            <span class="timeline-dot" [class]="dotClass(entry.toStatus)"></span>
+          </div>
+
+          <div class="timeline-body">
+            <div class="entry-title">
+              {{ entry.toStatusLabel }}
+              @if (first) {
+                <span class="badge rounded-pill text-bg-light border current-tag">Current</span>
+              }
+            </div>
+
+            <div class="entry-meta">
+              <span class="badge text-bg-light border role-chip">{{ entry.actorRole }}</span>
+              <i class="bi bi-calendar3" aria-hidden="true"></i>
+              <time [attr.datetime]="entry.changedAt" [attr.title]="entry.changedAt">{{
+                entry.changedAt | date: 'dd MMM yyyy, hh:mm a' : '+0530'
+              }}</time>
+            </div>
+
+            @if (entry.remarks) {
+              <div class="reason">
+                <div class="reason-label">Return reason</div>
+                <div
+                  class="reason-text"
+                  [class.reason-text--clamped]="entry.remarks.length > clampThreshold && !isExpanded(entry.id)"
+                >
+                  {{ entry.remarks }}
+                </div>
+                @if (entry.remarks.length > clampThreshold) {
+                  <button type="button" class="reason-toggle" (click)="toggleExpanded(entry.id)">
+                    {{ isExpanded(entry.id) ? 'Show less' : 'Show more' }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+
+    @if (hasMore()) {
+      <div class="load-more">
+        @if (loadMoreFailed()) {
+          <span class="small text-danger">Couldn't load older entries.</span>
+        }
+        <button type="button" matButton="outlined" [disabled]="isLoadingMore()" (click)="loadMore()">
+          @if (isLoadingMore()) {
+            <mat-spinner diameter="16" aria-label="Loading older entries"></mat-spinner>
+          } @else {
+            {{ loadMoreFailed() ? 'Retry' : 'Load more' }}
+          }
+        </button>
+      </div>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" matButton mat-dialog-close>Close</button>
+</mat-dialog-actions>

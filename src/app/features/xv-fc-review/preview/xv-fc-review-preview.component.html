@@ -1,0 +1,157 @@
+<button class="btn-back-link mb-3" type="button" (click)="onBack()">
+  <mat-icon>arrow_back</mat-icon>
+  Back to edit
+</button>
+
+<div class="text-uppercase small fw-bold text-primary mb-1" style="letter-spacing:.06em;">
+  Step 2 of 2 · Nothing is submitted yet
+</div>
+<h1 class="page-title">Review before you submit</h1>
+<p class="text-muted mb-4">
+  This is exactly what the CityFinance team will receive for FY {{ fy }}. Check it over, then confirm.
+</p>
+
+<div class="summary-strip mb-4">
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>fact_check</mat-icon></div>
+    <div>
+      <div class="s-label">Decision</div>
+      <div class="s-value" [class.s-value-accent]="action === 'ACCEPT_NO_CHANGES'">
+        {{ action === 'ACCEPT_NO_CHANGES' ? 'Accept - no changes' : 'Submit with comments' }}
+      </div>
+    </div>
+  </div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>list_alt</mat-icon></div>
+    <div>
+      <div class="s-label">Line items</div>
+      <div class="s-value">{{ totalItems }}</div>
+    </div>
+  </div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>flag</mat-icon></div>
+    <div>
+      <div class="s-label">Flagged</div>
+      <div class="s-value" [class.s-value-warn]="flagCount > 0">{{ flagCount }}</div>
+    </div>
+  </div>
+  <div class="summary-cell">
+    <div class="s-icon"><mat-icon>event</mat-icon></div>
+    <div>
+      <div class="s-label">Financial year</div>
+      <div class="s-value">FY {{ fy }}</div>
+    </div>
+  </div>
+</div>
+
+<mat-card class="mb-4">
+  <div class="card-head px-3 py-2 border-bottom fw-bold small">Sign-off documents</div>
+  <mat-card-content class="p-0">
+    <div class="doc-row d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+      <mat-icon class="text-muted">description</mat-icon>
+      <div class="flex-grow-1">
+        <div class="fw-bold small">{{ detail?.declaration?.file?.name }}</div>
+        <div class="text-muted small">Signed declaration</div>
+      </div>
+      <span class="badge text-bg-success-subtle text-success-emphasis">Attached</span>
+    </div>
+    @if (flagCount > 0) {
+      @if (commonSupportingDocument; as doc) {
+        <div class="doc-row d-flex align-items-center gap-2 px-3 py-2 border-bottom">
+          <mat-icon class="text-muted">attach_file</mat-icon>
+          <div class="fw-bold small">{{ doc.name }}</div>
+          <div class="text-muted small ms-auto">Supporting document</div>
+        </div>
+      } @else {
+        <div class="px-3 py-2 text-danger small">No supporting document attached yet.</div>
+      }
+    } @else {
+      <div class="px-3 py-2 text-muted small">No line items were flagged.</div>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card>
+  <div class="card-head px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+    <span class="fw-bold small">All standardised line items</span>
+    <span class="card-head-meta small">FY {{ fy }}</span>
+  </div>
+  <mat-card-content class="p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-borderless review-table mb-0">
+        <thead>
+          <tr class="border-bottom">
+            <th style="width:76px;">Code</th>
+            <th>Line item</th>
+            <th class="text-end" style="width:170px;">Amount</th>
+            <th class="text-center" style="width:130px;">Your review</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of lineItemGroups; track group.section) {
+            <tr class="section-row">
+              <td colspan="4">{{ group.section }}</td>
+            </tr>
+            @for (subGroup of group.subGroups; track subGroup.subSection ?? '') {
+              @if (subGroup.subSection) {
+                <tr class="subsection-row">
+                  <td colspan="4">{{ subGroup.subSection }}</td>
+                </tr>
+              }
+              @for (item of subGroup.items; track item.code) {
+                <tr [class.is-flagged]="item.flagged">
+                  <td class="code">{{ item.code }}</td>
+                  <td>{{ item.name }}</td>
+                  <td class="text-end num" [class.neg]="(item.standardizedAmount ?? 0) < 0">
+                    {{ formatAmount(item.standardizedAmount) }}
+                  </td>
+                  <td class="text-center">
+                    @if (item.flagged) {
+                      <span class="badge text-bg-warning-subtle text-warning-emphasis">
+                        <mat-icon inline="true" class="fs-6 align-middle">flag</mat-icon> Flagged
+                      </span>
+                    } @else {
+                      <span class="badge text-bg-success-subtle text-success-emphasis">
+                        <mat-icon inline="true" class="fs-6 align-middle">check</mat-icon> Accepted
+                      </span>
+                    }
+                  </td>
+                </tr>
+                @if (item.flagged) {
+                  <tr class="flag-note-row">
+                    <td colspan="4">
+                      <div class="flag-note">
+                        <mat-icon inline="true" class="fs-6">flag</mat-icon>
+                        <div>
+                          @if (item.proposedValue !== null) {
+                            <div><b>Correct value</b> - {{ item.proposedValue | number: '1.2-2' }}</div>
+                          }
+                          <div><b>Additional Comment</b> - {{ item.comment }}</div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<div class="sticky-footer">
+  <div class="container d-flex align-items-center justify-content-between gap-3 flex-wrap">
+    <div>
+      <div class="fw-bold">{{ action === 'ACCEPT_NO_CHANGES' ? 'Confirm - Accept, no changes' : 'Confirm - submit with comments' }}</div>
+      <div class="text-success small">You can still go back and change anything before confirming.</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-outline-custom" type="button" [disabled]="submitting" (click)="onBack()">Back to edit</button>
+      <button class="btn-primary-custom" type="button" [disabled]="submitting" (click)="onConfirm()">
+        {{ submitting ? 'Submitting…' : (action === 'ACCEPT_NO_CHANGES' ? 'Confirm acceptance' : 'Confirm submission') }}
+      </button>
+    </div>
+  </div>
+</div>

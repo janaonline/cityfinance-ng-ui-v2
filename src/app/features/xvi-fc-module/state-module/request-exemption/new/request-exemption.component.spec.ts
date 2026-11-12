@@ -47,7 +47,7 @@ function createFormResponse(overrides: Partial<RequestExemptionData> = {}): Requ
         key: 'reasonForExemption',
         label: 'Reason for Exemption',
         options: [
-          { id: '23', label: 'Election / duly constituted ULB exemption' },
+          { id: '23', label: 'Election / ULB constitution status' },
           { id: '30', label: 'Audited Financial Statement' },
           { id: '31', label: 'Provisional Financial Statement' },
         ],
@@ -148,6 +148,19 @@ describe('RequestExemptionComponent', () => {
     expect(getControl('supportingDetails')).toBeTruthy();
   }));
 
+  it("merges this page's stateId/yearId into the ulb field's remoteSearch.extraParams " +
+    "(formjsons' own extraParams is static config, so it can't carry per-page context)", fakeAsync(() => {
+    createComponent();
+    completeInitialLoad();
+
+    const ulbField = component.fields().find((f) => f.key === 'ulb');
+    expect(ulbField?.remoteSearch?.extraParams).toEqual({
+      isActive: true,
+      stateId: 'state-test-id',
+      yearId: 'year-test-id',
+    });
+  }));
+
   it('builds a breadcrumb back to the Exemption Status list', fakeAsync(() => {
     createComponent();
     completeInitialLoad();
@@ -241,7 +254,7 @@ describe('RequestExemptionComponent', () => {
       throwError(() => ({
         status: 409,
         message: 'Http failure response for http://localhost:3000/api/v2/xvi-fc/state/request-exemption/final-submit: 409 Conflict',
-        error: { success: false, message: 'This ULB already has a request for: Election / duly constituted ULB exemption (status: Under Review by MoHUA).' },
+        error: { success: false, message: 'This ULB already has a request for: Election / ULB constitution status (status: Under Review by MoHUA).' },
       })),
     );
 
@@ -261,7 +274,7 @@ describe('RequestExemptionComponent', () => {
       'snackbar-danger',
     );
     expect(component.submitError()).toBe(
-      'This ULB already has a request for: Election / duly constituted ULB exemption (status: Under Review by MoHUA).',
+      'This ULB already has a request for: Election / ULB constitution status (status: Under Review by MoHUA).',
     );
   }));
 

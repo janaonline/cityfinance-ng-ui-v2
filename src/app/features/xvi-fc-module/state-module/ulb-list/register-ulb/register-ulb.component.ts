@@ -27,6 +27,8 @@ const errMsg = 'An unexpected error occurred. Please try again later.';
 export class RegisterUlbComponent implements OnInit, CanComponentDeactivate {
   private readonly loggedInUserDetails = new UserUtility().getLoggedInUserDetails();
   readonly isState = this.loggedInUserDetails?.role === 'STATE';
+  /** An ADC viewer is read-only: it can list its ADC's ULBs but not register one. */
+  private readonly isAdcViewer = !!this.loggedInUserDetails?.adc && this.loggedInUserDetails?.accessLevel === 'VIEWER';
   private readonly ownStateId: string | null = this.loggedInUserDetails?.state ?? null;
 
   readonly yearId = this.route.snapshot.paramMap.get('yearId');
@@ -61,7 +63,7 @@ export class RegisterUlbComponent implements OnInit, CanComponentDeactivate {
 
   ngOnInit(): void {
     // ADMIN accounts have no home state to default to, so ULB creation is STATE-only for now.
-    if (!this.isState) {
+    if (!this.isState || this.isAdcViewer) {
       this.goBack();
       return;
     }

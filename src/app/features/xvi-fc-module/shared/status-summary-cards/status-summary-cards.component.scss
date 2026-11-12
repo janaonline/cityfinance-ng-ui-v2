@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+
+.summary-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+// Plain, non-interactive card: no cursor, hover or focus styling on purpose.
+.summary-card {
+  --summary-accent: var(--bs-secondary, #6c757d);
+  padding: 0.75rem 1rem 0.85rem;
+  background: #fff;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-top: 4px solid var(--summary-accent);
+  border-radius: 0.6rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  // Same colours as the history dialog's timeline dots (Bootstrap theme colours).
+  &--primary {
+    --summary-accent: var(--color-primary);
+  }
+
+  &--secondary {
+    --summary-accent: var(--bs-secondary, #6c757d);
+  }
+
+  &--warning {
+    --summary-accent: var(--bs-warning, #ffc107);
+  }
+
+  &--danger {
+    --summary-accent: var(--bs-danger, #dc3545);
+  }
+
+  &--success {
+    --summary-accent: var(--bs-success, #198754);
+  }
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color, #6c757d);
+  }
+
+  &__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  &__value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-primary);
+  }
+
+  &__sub {
+    font-size: 0.75rem;
+    color: var(--bs-secondary-color, #6c757d);
+  }
+}
+
+// ─── Loading placeholders ───────────────────────────────────────────────────
+.summary-card--placeholder {
+  min-height: 5.1rem;
+}
+
+.placeholder-line {
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eceff1 25%, #f6f8f9 50%, #eceff1 75%);
+  background-size: 200% 100%;
+  animation: summary-shimmer 1.2s linear infinite;
+
+  &--label {
+    width: 60%;
+    height: 0.7rem;
+  }
+
+  &--value {
+    width: 35%;
+    height: 1.6rem;
+    margin-top: 0.6rem;
+  }
+}
+
+@keyframes summary-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-line {
+    animation: none;
+  }
+}

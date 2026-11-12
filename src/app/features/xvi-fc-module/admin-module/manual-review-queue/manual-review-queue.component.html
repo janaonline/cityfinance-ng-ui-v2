@@ -29,10 +29,10 @@
   <mat-card class="custom-mat-card mat-elevation-z1">
     <div class="table-container mat-elevation-z8 mb-4">
       @if (!isLoading() && !loadError() && failedSources().length > 0) {
-        <div class="alert alert-warning py-2 px-3 m-3" role="alert">
-          {{ failedSourcesLabel() }} could not be loaded right now — the list below may be incomplete.
-          <button type="button" class="btn btn-link btn-sm p-0 ms-1" (click)="loadRows()">Retry</button>
-        </div>
+      <div class="alert alert-warning py-2 px-3 m-3" role="alert">
+        {{ failedSourcesLabel() }} could not be loaded right now — the list below may be incomplete.
+        <button type="button" class="btn btn-link btn-sm p-0 ms-1" (click)="loadRows()">Retry</button>
+      </div>
       }
       @if (isLoading()) {
       <app-pre-loader></app-pre-loader>
@@ -56,7 +56,8 @@
             <td mat-cell *matCellDef="let row">
               <div class="fw-bold">
                 {{ row.ulbName ?? '—' }} <span class="fw-normal">{{ row.ulbCode }}</span>
-                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">{{ formLabel(row) }}</span>
+                <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis ms-1">{{ formLabel(row)
+                  }}</span>
               </div>
               <div class="text-muted small">
                 {{ row.stateName ?? '—' }} &middot; {{ docLabel(row) }} &middot; {{ row.year }} &middot;
@@ -158,7 +159,6 @@
                   [disabled]="isDeciding(row)" (click)="onApprove(row)">
                   @if (isDeciding(row)) {
                   <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  } @else {
                   <i class="bi bi-check-lg"></i>
                   }
                   Approve

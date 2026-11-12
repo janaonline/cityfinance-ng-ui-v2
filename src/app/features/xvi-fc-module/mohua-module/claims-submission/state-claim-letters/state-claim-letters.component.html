@@ -1,0 +1,78 @@
+<div class="cs-page">
+  <a class="cs-back" [routerLink]="['claims-submission']" [relativeTo]="mohuaRoute">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Claim Letters
+  </a>
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading claim letters" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    @if (data(); as d) {
+    <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
+    <p class="cs-subtitle">All claim letters submitted so far for this state, Installment {{ installment }}.</p>
+
+    <div class="cs-table-wrap">
+      <table class="cs-table">
+        <caption class="visually-hidden">
+          Claim letters for {{ d.state.name }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Claim letter #</th>
+            <th scope="col">Received on</th>
+            <th scope="col" class="num">ULBs</th>
+            <th scope="col" class="num">Amount</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (letter of d.claimLetters; track letter.id) {
+            <tr>
+              <td class="strong">{{ letter.number }}</td>
+              <td>{{ formatDate(letter.receivedOn) }}</td>
+              <td class="num">{{ letter.ulbCount }}</td>
+              <td class="num">{{ formatCrore(letter.amount) }}</td>
+              <td>
+                <span class="cs-badge" [class]="badgeClass(letter.status)">{{ statusLabel(letter.status, letter.statusLabel) }}</span>
+              </td>
+              <td>
+                <a
+                  class="cs-btn"
+                  [routerLink]="['claims-submission', stateId, 'letter', letter.id]"
+                  [relativeTo]="mohuaRoute"
+                >
+                  View
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="cs-state">No claim letters have been submitted for this state yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (d.claimLetters.length > 0) {
+      <p class="cl-band" aria-label="Claim summary">
+        <span class="cl-band__item">
+          <strong>{{ d.summary.claimedUlbs }} ULBs claimed</strong> / {{ d.summary.pendingUlbs }} pending
+        </span>
+        <span class="cl-band__item cl-band__item--good">{{ d.summary.approvedUlbs }} approved</span>
+        <span class="cl-band__item cl-band__item--review">{{ d.summary.underReviewUlbs }} under review</span>
+        <span class="cl-band__item cl-band__item--bad">{{ d.summary.returnedUlbs }} returned</span>
+        <span class="cl-band__item">
+          <strong>{{ formatCrore(d.summary.amountClaimed) }} claimed</strong> /
+          {{ formatCrore(d.summary.balance) }} balance
+        </span>
+      </p>
+    }
+    }
+  }
+</div>

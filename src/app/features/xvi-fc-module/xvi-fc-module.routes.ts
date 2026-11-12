@@ -2,13 +2,17 @@ import { CanMatchFn, Routes } from '@angular/router';
 import { provideMaterialThemeScope } from '../../core/theming/material-theme.providers';
 import { XVIFC_THEME_CLASS } from './xvi-fc-module.constants';
 
-function readUserRole(): string {
+function readStoredUser(): { role?: string; adc?: string | null } {
   try {
     const raw = localStorage.getItem('userData');
-    return raw ? ((JSON.parse(raw) as { role?: string }).role ?? '') : '';
+    return raw ? (JSON.parse(raw) as { role?: string; adc?: string | null }) : {};
   } catch {
-    return '';
+    return {};
   }
+}
+
+function readUserRole(): string {
+  return readStoredUser().role ?? '';
 }
 
 function isUlbUserRole(role: string): boolean {
@@ -22,8 +26,12 @@ function isStateUserRole(role: string): boolean {
 }
 
 const isUlbRole: CanMatchFn = () => isUlbUserRole(readUserRole());
-const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole());
+// An ADC user is a STATE-role user with an `adc` — it gets its own route tree, never the State one.
+const isAdcRole: CanMatchFn = () => isStateUserRole(readUserRole()) && !!readStoredUser().adc;
+const isStateRole: CanMatchFn = () => isStateUserRole(readUserRole()) && !readStoredUser().adc;
 const isMohuaRole: CanMatchFn = () => readUserRole().toUpperCase() === 'MOHUA';
+const isPmuRole: CanMatchFn = () => readUserRole().toUpperCase() === 'MOHUA_PMU';
+const isDoeRole: CanMatchFn = () => readUserRole().toUpperCase() === 'XVIFC_DOE';
 const isAdminRole: CanMatchFn = () => readUserRole().toUpperCase() === 'ADMIN';
 
 export const XVIFC_ROUTES: Routes = [
@@ -59,6 +67,12 @@ export const XVIFC_ROUTES: Routes = [
       },
       {
         path: ':yearId',
+        canMatch: [isAdcRole],
+        data: { role: 'STATE_ADC' },
+        loadChildren: () => import('./adc-module/adc-module.routes').then((m) => m.ADC_ROUTES),
+      },
+      {
+        path: ':yearId',
         canMatch: [isStateRole],
         data: { role: 'STATE' },
         loadChildren: () =>
@@ -70,6 +84,19 @@ export const XVIFC_ROUTES: Routes = [
         data: { role: 'MOHUA' },
         loadChildren: () =>
           import('./mohua-module/mohua-module.routes').then((m) => m.MOHUA_ROUTES),
+      },
+      {
+        path: ':yearId',
+        canMatch: [isPmuRole],
+        data: { role: 'MOHUA_PMU' },
+        loadChildren: () =>
+          import('./pmu-module/pmu-module.routes').then((m) => m.PMU_ROUTES),
+      },
+      {
+        path: ':yearId',
+        canMatch: [isDoeRole],
+        data: { role: 'DOE' },
+        loadChildren: () => import('./doe-module/doe-module.routes').then((m) => m.DOE_ROUTES),
       },
       // Authenticated user with unsupported role, or unknown child path
       {

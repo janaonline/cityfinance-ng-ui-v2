@@ -1,0 +1,179 @@
+// Shared look of the three Claims & Submissions screens: page shell, tables, badges, buttons.
+$cs-ink: #0f1f26;
+$cs-muted: #5b6b73;
+$cs-line: #e3e8ea;
+$cs-head-bg: #f4f5f6;
+$cs-green: #15803d;
+$cs-green-soft: #dcfce7;
+$cs-amber: #b45309;
+$cs-amber-soft: #fff1e0;
+
+.cs-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cs-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $cs-ink;
+}
+
+.cs-subtitle {
+  margin: 0.2rem 0 1rem;
+  font-size: 0.8rem;
+  color: $cs-muted;
+}
+
+.cs-year {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #0f5b4a;
+  vertical-align: middle;
+}
+
+.cs-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0f5b4a;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}
+
+.cs-table-wrap {
+  border: 1px solid $cs-line;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  color: $cs-ink;
+
+  th {
+    padding: 0.8rem 1rem;
+    background: $cs-head-bg;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    color: $cs-muted;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid $cs-line;
+    vertical-align: middle;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .muted {
+    color: $cs-muted;
+  }
+
+  .strong {
+    font-weight: 600;
+  }
+}
+
+.cs-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: $cs-muted;
+  background: $cs-head-bg;
+
+  &--good {
+    color: $cs-green;
+    background: $cs-green-soft;
+  }
+
+  &--review {
+    color: $cs-amber;
+    background: $cs-amber-soft;
+  }
+
+  &--bad {
+    color: #b91c1c;
+    background: #fee2e2;
+  }
+
+  &--info {
+    color: #1d4ed8;
+    background: #e0ecff;
+  }
+}
+
+.cs-btn {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid $cs-green;
+  border-radius: 8px;
+  background: $cs-green;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-align: center;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #166534;
+  }
+
+  &--ghost {
+    background: #fff;
+    color: $cs-ink;
+    border-color: #c9d2d6;
+
+    &:hover,
+    &:focus-visible {
+      background: $cs-head-bg;
+    }
+  }
+
+  &[disabled],
+  &[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.cs-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: $cs-muted;
+}
+
+.cs-error {
+  color: #b91c1c;
+}

@@ -55,7 +55,7 @@ export class ManualReviewQueueComponent implements OnInit {
   readonly total = signal(0);
   readonly page = signal(1);
   readonly pageSize = signal(ROWS_PAGE_SIZE);
-  readonly pageSizeOptions = [10, 20, 50];
+  readonly pageSizeOptions = [10, 20, 50, 100];
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   /** Non-empty when one backend (Annual Account and/or DUR) failed to load this time — the rows

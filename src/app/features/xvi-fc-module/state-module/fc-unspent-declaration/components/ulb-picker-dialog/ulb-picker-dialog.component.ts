@@ -56,6 +56,8 @@ export class UlbPickerDialogComponent implements OnInit {
   readonly search = new FormControl('', { nonNullable: true });
 
   readonly options = signal<readonly FcUnspentUlbOption[]>([]);
+  /** The backend sends no allocation (`null`) when the design year's form is independent of Devolution. */
+  readonly hasAllocation = computed(() => this.options().some((o) => o.allocationAmount !== null));
   readonly total = signal(0);
   readonly page = signal(1);
   readonly limit = ULB_PICKER_PAGE_SIZE;

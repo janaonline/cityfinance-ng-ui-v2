@@ -1,6 +1,12 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Permission } from './permissions';
-import { STATE_ACCESS_LEVEL_PERMISSIONS, MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS } from './permission.map';
+import {
+  ADC_ACCESS_LEVEL_PERMISSIONS,
+  DOE_ACCESS_LEVEL_PERMISSIONS,
+  MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS,
+  PMU_ACCESS_LEVEL_PERMISSIONS,
+  STATE_ACCESS_LEVEL_PERMISSIONS,
+} from './permission.map';
 import { IUserLoggedInDetails } from '../models/login/userLoggedInDetails';
 
 @Injectable({
@@ -30,11 +36,23 @@ export class AuthPermissionService {
     const user = this.userSignal();
     if (!user?.role) return false;
 
+    // PMU and DoE roles are not members of the legacy USER_TYPE enum, so compare as plain strings.
+    const role: string = user.role;
+    const accessLevel = user.accessLevel ?? 'VIEWER';
+
     let base: Permission[];
-    if (user.role === 'STATE') {
-      base = STATE_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
-    } else if (user.role === 'MoHUA') {
-      base = MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS[user.accessLevel ?? 'VIEWER'] ?? MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    if (role === 'STATE' && user.adc) {
+      // An ADC user is a STATE-role user scoped to one ADC; permission overrides are ignored for it (mirrors the backend).
+      return (ADC_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? ADC_ACCESS_LEVEL_PERMISSIONS.VIEWER).includes(permission);
+    }
+    if (role === 'STATE') {
+      base = STATE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    } else if (role === 'MoHUA') {
+      base = MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    } else if (role === 'MOHUA_PMU') {
+      base = PMU_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? PMU_ACCESS_LEVEL_PERMISSIONS.VIEWER;
+    } else if (role === 'XVIFC_DOE') {
+      base = DOE_ACCESS_LEVEL_PERMISSIONS[accessLevel] ?? DOE_ACCESS_LEVEL_PERMISSIONS.VIEWER;
     } else {
       return false;
     }
@@ -64,8 +82,26 @@ export class AuthPermissionService {
     return this.role() === 'STATE';
   }
 
+  /** An ADC user is a STATE-role user with an `adc` — it sees only its own ADC's ULBs and none of the State-level forms. */
+  isAdcUser(): boolean {
+    return this.role() === 'STATE' && !!this.userSignal()?.adc;
+  }
+
   isMohuaUser(): boolean {
     return this.role() === 'MoHUA';
+  }
+
+  isPmuUser(): boolean {
+    return (this.role() as string | null) === 'MOHUA_PMU';
+  }
+
+  /** DoE is a read-only copy of the MoHUA dashboard — nothing it can see is editable. */
+  isDoeUser(): boolean {
+    return (this.role() as string | null) === 'XVIFC_DOE';
+  }
+
+  canApprovePmuSubmissions(): boolean {
+    return this.hasPermission(Permission.APPROVE_STATE_SUBMISSIONS_PMU);
   }
 
   // ── Access-level predicates (apply to any role with subroles) ────────────────

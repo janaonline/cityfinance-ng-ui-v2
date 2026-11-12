@@ -94,7 +94,16 @@ describe('LoginComponent', () => {
     expect(localFixture.componentInstance['typeKey']()).toBe('15thFC');
   });
 
+  it('should enable the DOE role for the 16th FC and XVIFC sign-in', () => {
+    for (const type of ['16thFC', 'XVIFC'] as const) {
+      component['typeKey'].set(type);
+      expect(component['roleOptions']().find((role) => role.id === 'DOE')?.disabled).toBeFalsy();
+    }
+  });
+
   it('should select enabled roles and ignore disabled roles', () => {
+    // DOE stays a disabled tile for sign-in types with no DOE access, such as Rankings.
+    component['typeKey'].set('ranking');
     const [ulbRole] = component['roleOptions']();
     const doeRole = component['roleOptions']().find((role) => role.id === 'DOE')!;
 

@@ -28,7 +28,7 @@ describe('RequestExemptionService', () => {
     expect(req.request.method).toBe('GET');
 
     const options: RequestExemptionReasonOption[] = [
-      { id: 23, label: 'Election / duly constituted ULB exemption' },
+      { id: 23, label: 'Election / ULB constitution status' },
       { id: 30, label: 'Audited Financial Statement' },
       { id: 31, label: 'Provisional Financial Statement' },
     ];

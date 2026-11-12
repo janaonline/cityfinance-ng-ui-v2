@@ -1,41 +1,35 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { ClaimLetterEligibilitySource } from '../../claim-letter.models';
-import { describeEligibilitySourceDescription, describeEligibilitySourceLabel } from '../../claim-letter.utils';
+import { NgTemplateOutlet } from '@angular/common';
+import { FORM_STATUS } from '../../../../common/constants/form-status.constants';
+import { ClaimLetterEligibilitySource, ClaimLetterUlbReadiness } from '../../claim-letter.models';
+import {
+  describeEligibilitySourceLabel,
+  describeEligibilitySourceRequirement,
+  formatUnderReviewSuffix,
+} from '../../claim-letter.utils';
 
 /**
- * Dynamic eligibility checklist — driven entirely by whatever `stateLevelGate.sources` the backend
- * returns, with no hardcoded criteria names, so a new source wired up on the backend (e.g. SFC,
- * Elected Body) appears here automatically with zero frontend changes.
- *
- * Two independent groups, each collapsing/expanding on the exact same pattern: a single summary
- * line + manual Show/Hide toggle while everything in that group passes, auto-expanded with no
- * toggle the moment anything in it fails — a returning user shouldn't have to re-verify N criteria
- * on every visit, but the detail must never be one click away from a reassuring summary once
- * something is actually blocking.
- *
- * - State-level items (`stateSources`, those with a `result`): SFC, Devolution, Elected Body/FC
- *   Unspent form status — pass/fail per `result`.
- * - ULB-only items (`ulbOnlySources`, no `result`): SLB, Provisional, Audited — rendered with a
- *   neutral info icon (no per-item pass/fail signal). The group's own pass/fail instead comes from
- *   the `ulbReadiness` input — the true intersection across every ULB-bulk criterion, not just
- *   these 3 — mirroring the same threshold `claim-letter-list.component.ts` uses to disable "New
- *   Claim", so this section and that button always agree on whether ULBs are actually pickable.
+ * Built only from the sources the backend returns, so a new criterion needs no UI change. Each group
+ * shows a one-line summary while it passes and opens itself when anything fails. The ULB group's
+ * pass/fail is `ulbReadiness`, the figure the list page uses for "New Claim", so the two agree.
  */
 @Component({
   selector: 'app-claim-letter-eligibility-checklist',
+  imports: [NgTemplateOutlet],
   templateUrl: './claim-letter-eligibility-checklist.component.html',
   styleUrl: './claim-letter-eligibility-checklist.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClaimLetterEligibilityChecklistComponent {
   readonly sources = input.required<readonly ClaimLetterEligibilitySource[]>();
-  readonly ulbReadiness = input.required<{ eligible: number; total: number }>();
+  readonly ulbReadiness = input.required<ClaimLetterUlbReadiness>();
 
   private readonly manuallyExpanded = signal(false);
   private readonly ulbManuallyExpanded = signal(false);
 
   readonly stateSources = computed(() => this.sources().filter((source) => source.result !== undefined));
   readonly ulbOnlySources = computed(() => this.sources().filter((source) => source.result === undefined));
+  readonly rowLevelSources = computed(() => this.stateSources().filter((source) => source.ulbBreakdown));
 
   readonly allPassing = computed(() => this.stateSources().every((source) => source.result !== 'FAILED'));
   readonly expanded = computed(() => !this.allPassing() || this.manuallyExpanded());
@@ -43,8 +37,11 @@ export class ClaimLetterEligibilityChecklistComponent {
   readonly ulbAllPassing = computed(() => this.ulbReadiness().eligible > 0);
   readonly ulbExpanded = computed(() => !this.ulbAllPassing() || this.ulbManuallyExpanded());
 
+  /** An Entire State exemption request still under MoHUA review. */
+  readonly exemptionUnderReviewStatus = FORM_STATUS.UNDER_REVIEW_BY_MOHUA;
   readonly describeLabel = describeEligibilitySourceLabel;
-  readonly describeDescription = describeEligibilitySourceDescription;
+  readonly describeRequirement = describeEligibilitySourceRequirement;
+  readonly underReviewSuffix = formatUnderReviewSuffix;
 
   toggleExpanded(): void {
     this.manuallyExpanded.update((value) => !value);

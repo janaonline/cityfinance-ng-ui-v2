@@ -57,8 +57,10 @@ const SAVED_ROWS: FcUnspentUlbData[] = [
     ulbName: ULB_OPTIONS[0].ulbName,
     allocationAmount: ULB_OPTIONS[0].allocationAmount,
     unspentAmount: 1.5,
+    previousFcUnspentBalance: 0.5,
     allocationPerc: 7.5,
     eligibility: true,
+    rowStatus: null,
   },
   {
     slNo: 2,
@@ -68,8 +70,10 @@ const SAVED_ROWS: FcUnspentUlbData[] = [
     ulbName: ULB_OPTIONS[1].ulbName,
     allocationAmount: ULB_OPTIONS[1].allocationAmount,
     unspentAmount: 1.2,
+    previousFcUnspentBalance: 0.4,
     allocationPerc: 15,
     eligibility: false,
+    rowStatus: null,
   },
 ];
 
@@ -95,6 +99,26 @@ const TEST_ROW_EDIT_FIELDS: ConditionalFieldConfig[] = [
       { name: 'decimal', validator: 0, message: 'Unspent amount must be a whole number (no decimals).' },
     ],
   },
+  {
+    key: 'previousFcUnspentBalance',
+    label: 'Previous FC Unspent Balance',
+    formFieldType: 'number',
+    decimal: 0,
+    validations: [
+      { name: 'required', validator: null, message: 'Previous FC unspent balance is required.' },
+      {
+        name: 'min',
+        validator: Number.MIN_VALUE,
+        message: 'Previous FC unspent balance must be greater than zero.',
+      },
+      { name: 'max', validator: 1000, message: 'Previous FC unspent balance cannot exceed 1000.' },
+      {
+        name: 'decimal',
+        validator: 0,
+        message: 'Previous FC unspent balance must be a whole number (no decimals).',
+      },
+    ],
+  },
 ];
 
 interface SetupOptions {
@@ -103,6 +127,7 @@ interface SetupOptions {
   threshold?: number;
   rowEditFields?: readonly ConditionalFieldConfig[];
   blockingMessage?: string | null;
+  showAllocation?: boolean;
 }
 
 describe('UnspentUlbTableComponent', () => {
@@ -133,6 +158,7 @@ describe('UnspentUlbTableComponent', () => {
     fixture.componentRef.setInput('yearId', 'year-1');
     fixture.componentRef.setInput('rowEditFields', options.rowEditFields ?? TEST_ROW_EDIT_FIELDS);
     fixture.componentRef.setInput('blockingMessage', options.blockingMessage ?? null);
+    fixture.componentRef.setInput('showAllocation', options.showAllocation ?? true);
     fixture.detectChanges();
   }
 
@@ -159,10 +185,12 @@ describe('UnspentUlbTableComponent', () => {
       createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
         ulbId: ULB_OPTIONS[0].ulbId,
         unspentAmount: 1.5,
+        previousFcUnspentBalance: 1,
       }),
       createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
         ulbId: ULB_OPTIONS[1].ulbId,
         unspentAmount: 1.2,
+        previousFcUnspentBalance: 1,
       }),
     ]);
 
@@ -170,9 +198,102 @@ describe('UnspentUlbTableComponent', () => {
     expect(rowEls.length).toBe(2);
   });
 
+  // `FormArray.push`/`removeAt` never mark an array dirty on their own, so without this the page's
+  // leave-page guard could not see a ULB that was added or removed without editing an amount.
+  describe('unsaved-change tracking for added/removed ULBs', () => {
+    it('marks the rows array dirty when ULBs are added through the picker', () => {
+      setupWithRows([]);
+      dialog.open.and.returnValue(dialogRefReturning([ULB_OPTIONS[0], ULB_OPTIONS[1]]));
+      expect(rows.dirty).toBeFalse();
+
+      component.addRow();
+
+      expect(rows.length).toBe(2);
+      expect(rows.dirty).toBeTrue();
+    });
+
+    it('keeps the array clean when the picker is dismissed without choosing a ULB', () => {
+      setupWithRows([]);
+      dialog.open.and.returnValue(dialogRefReturning(undefined));
+
+      component.addRow();
+
+      expect(rows.length).toBe(0);
+      expect(rows.dirty).toBeFalse();
+    });
+
+    it('marks the rows array dirty when a row is removed', () => {
+      setupWithRows([
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+          previousFcUnspentBalance: null,
+        }),
+      ]);
+      expect(rows.dirty).toBeFalse();
+
+      component.removeRow(0);
+
+      expect(rows.length).toBe(0);
+      expect(rows.dirty).toBeTrue();
+    });
+  });
+
+  describe('allocation column (Devolution-linked vs independent design years)', () => {
+    const headerTexts = (): string[] =>
+      fixture.debugElement
+        .queryAll(By.css('thead th'))
+        .map((th) => (th.nativeElement as HTMLElement).textContent!.trim());
+
+    it('shows the 16th FC Allocation column by default (Devolution-linked years)', () => {
+      setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS)]);
+      expect(headerTexts().some((t) => t.startsWith('16th FC Allocation'))).toBeTrue();
+      expect(fixture.debugElement.queryAll(By.css('colgroup col')).length).toBe(7);
+    });
+
+    it('leaves the allocation column out when the design year is independent of Devolution', () => {
+      setupWithRows([createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS)], {
+        showAllocation: false,
+      });
+      expect(headerTexts().some((t) => t.includes('Allocation'))).toBeFalse();
+      expect(fixture.debugElement.queryAll(By.css('colgroup col')).length).toBe(6);
+      // The same cells per row: one fewer data cell than the linked layout.
+      const cells = fixture.debugElement.queryAll(By.css('tbody tr:first-child td'));
+      expect(cells.length).toBe(6);
+    });
+
+    it('sizes the empty-state row to the visible columns', () => {
+      setupWithRows([], { showAllocation: false });
+      const emptyCell = fixture.debugElement.query(By.css('tbody td'));
+      expect((emptyCell.nativeElement as HTMLElement).getAttribute('colspan')).toBe('6');
+    });
+  });
+
   it('shows an empty-state row when there are no rows', () => {
     setupWithRows([]);
     expect(fixture.nativeElement.textContent).toContain('No ULBs added yet.');
+  });
+
+  it('renders the Previous FC Unspent Balance column and hides % of Alloc./Eligible?', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: 1.5,
+          previousFcUnspentBalance: 0.5,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const headerText = fixture.debugElement.query(By.css('thead')).nativeElement.textContent;
+    expect(headerText).toContain('Previous FC Unspent Balance');
+    expect(headerText).not.toContain('% of Alloc.');
+    expect(headerText).not.toContain('Eligible?');
+
+    const input = fixture.debugElement.query(By.css('input[formControlName="previousFcUnspentBalance"]'));
+    expect(input).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('.badge'))).toBeFalsy();
   });
 
   // ─── createFcUnspentUlbRowGroup requires rowEditFields to define both fields ───
@@ -191,6 +312,13 @@ describe('UnspentUlbTableComponent', () => {
     );
   });
 
+  it('throws when rowEditFields is missing the previousFcUnspentBalance config', () => {
+    const missingPreviousBalance = TEST_ROW_EDIT_FIELDS.filter((f) => f.key !== 'previousFcUnspentBalance');
+    expect(() => createFcUnspentUlbRowGroup(dynamicService, true, missingPreviousBalance)).toThrowError(
+      "FC Unspent Declaration: rowEditFields is missing the 'previousFcUnspentBalance' field config.",
+    );
+  });
+
   // ─── Snapshot-first display (no picker request required to view a saved row) ───
 
   it('renders name/codes/allocation from the saved-row snapshot with no picker interaction at all', () => {
@@ -199,10 +327,12 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[1].ulbId,
           unspentAmount: 1.2,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -227,6 +357,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1,
+          previousFcUnspentBalance: 1,
         }),
       ],
       {
@@ -243,6 +374,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[1].ulbId,
           unspentAmount: 1,
+          previousFcUnspentBalance: 1,
         }),
       ],
       {
@@ -277,6 +409,7 @@ describe('UnspentUlbTableComponent', () => {
     expect(rows.length).toBe(1);
     expect(rows.at(0).controls.ulbId.value).toBe(ULB_OPTIONS[0].ulbId);
     expect(rows.at(0).controls.unspentAmount.value).toBeNull();
+    expect(rows.at(0).controls.previousFcUnspentBalance.value).toBeNull();
   });
 
   it('passes the blockingMessage input through to the picker dialog data', () => {
@@ -339,6 +472,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
       ],
       {
@@ -359,6 +493,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -389,6 +524,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -442,10 +578,12 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1,
+          previousFcUnspentBalance: 1,
         }),
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[1].ulbId,
           unspentAmount: 1,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -466,16 +604,16 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
     );
 
+    // The "% of Alloc."/"Eligible?" columns are currently commented out of the template (not
+    // removed), so this only asserts the underlying computed preview, not rendered DOM.
     expect(component.rowViewModels()[0].allocationPerc).toBeCloseTo(7.5, 5);
     expect(component.rowViewModels()[0].eligible).toBe(true);
-
-    const badge = fixture.debugElement.query(By.css('tbody tr .badge'));
-    expect(badge.nativeElement.classList).toContain('text-bg-success');
   });
 
   it('calculates and displays an ineligible percentage against the given threshold', () => {
@@ -484,6 +622,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[1].ulbId,
           unspentAmount: 1.2,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -491,9 +630,6 @@ describe('UnspentUlbTableComponent', () => {
 
     expect(component.rowViewModels()[0].allocationPerc).toBeCloseTo(15, 5);
     expect(component.rowViewModels()[0].eligible).toBe(false);
-
-    const badge = fixture.debugElement.query(By.css('tbody tr .badge'));
-    expect(badge.nativeElement.classList).toContain('text-bg-danger');
   });
 
   it('uses the injected threshold input instead of a hardcoded value', () => {
@@ -502,6 +638,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[1].ulbId,
           unspentAmount: 1.2,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS, threshold: 20 },
@@ -510,22 +647,19 @@ describe('UnspentUlbTableComponent', () => {
     // Same 15% row that's "Not Eligible" at the default threshold (10) is "Eligible" at 20.
     expect(component.rowViewModels()[0].allocationPerc).toBeCloseTo(15, 5);
     expect(component.rowViewModels()[0].eligible).toBe(true);
-
-    const badge = fixture.debugElement.query(By.css('tbody tr .badge'));
-    expect(badge.nativeElement.classList).toContain('text-bg-success');
   });
 
-  it('shows — when allocation or entered amount is unavailable', () => {
+  it('computes null allocationPerc/eligible when allocation or entered amount is unavailable', () => {
     setupWithRows([
-      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, { ulbId: null, unspentAmount: null }),
+      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+        ulbId: null,
+        unspentAmount: null,
+        previousFcUnspentBalance: null,
+      }),
     ]);
 
     expect(component.rowViewModels()[0].allocationPerc).toBeNull();
     expect(component.rowViewModels()[0].eligible).toBeNull();
-
-    const cells = fixture.debugElement.queryAll(By.css('tbody tr td'));
-    expect(cells[5].nativeElement.textContent).toContain('—');
-    expect(cells[6].nativeElement.textContent).toContain('—');
   });
 
   // ─── Row-cell validation error icon ─────────────────────────────────────────
@@ -536,6 +670,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -557,6 +692,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: null,
+          previousFcUnspentBalance: null,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -578,6 +714,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: null,
+          previousFcUnspentBalance: null,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -599,6 +736,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: null,
+          previousFcUnspentBalance: null,
         }),
       ],
       { savedRows: SAVED_ROWS },
@@ -612,6 +750,109 @@ describe('UnspentUlbTableComponent', () => {
     const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-unspentamount-error-icon"]'));
     expect(icon).toBeTruthy();
     expect(icon.injector.get(MatTooltip).message).toBe('Unspent amount must be a whole number (no decimals).');
+  });
+
+  it('shows a hover error icon on previousFcUnspentBalance with the apiErrors text once the control is touched', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: 1.5,
+          previousFcUnspentBalance: 1,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.previousFcUnspentBalance;
+    control.setErrors({ apiErrors: ['Previous FC unspent balance must be greater than zero.'] });
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-prevbalance-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Previous FC unspent balance must be greater than zero.');
+  });
+
+  it('shows the min-validator message on previousFcUnspentBalance once a 0 amount is entered and the control is touched', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+          previousFcUnspentBalance: null,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.previousFcUnspentBalance;
+    control.setValue(0);
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-prevbalance-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Previous FC unspent balance must be greater than zero.');
+  });
+
+  it('shows the max-validator message on previousFcUnspentBalance once an amount over 1000 is entered and the control is touched', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+          previousFcUnspentBalance: null,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.previousFcUnspentBalance;
+    control.setValue(1001);
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-prevbalance-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe('Previous FC unspent balance cannot exceed 1000.');
+  });
+
+  it('shows the decimal-validator message on previousFcUnspentBalance once a non-whole amount is entered and the control is touched', () => {
+    setupWithRows(
+      [
+        createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+          ulbId: ULB_OPTIONS[0].ulbId,
+          unspentAmount: null,
+          previousFcUnspentBalance: null,
+        }),
+      ],
+      { savedRows: SAVED_ROWS },
+    );
+
+    const control = rows.at(0).controls.previousFcUnspentBalance;
+    control.setValue(100.5);
+    control.markAsTouched();
+    fixture.detectChanges();
+
+    const icon = fixture.debugElement.query(By.css('[data-cy="fc-unspent-row-prevbalance-error-icon"]'));
+    expect(icon).toBeTruthy();
+    expect(icon.injector.get(MatTooltip).message).toBe(
+      'Previous FC unspent balance must be a whole number (no decimals).',
+    );
+  });
+
+  it('clears a previousFcUnspentBalance apiErrors entry as soon as its value changes', () => {
+    const group = createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+      ulbId: ULB_OPTIONS[0].ulbId,
+      unspentAmount: 1.5,
+      previousFcUnspentBalance: 1,
+    });
+    group.controls.previousFcUnspentBalance.setErrors({ apiErrors: ['Must be greater than zero.'] });
+
+    group.controls.previousFcUnspentBalance.setValue(5);
+
+    expect(group.controls.previousFcUnspentBalance.errors?.['apiErrors']).toBeUndefined();
   });
 
   it('shows the message from the current rowEditFields input, not a hardcoded string', () => {
@@ -629,6 +870,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, distinctRowEditFields, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: null,
+          previousFcUnspentBalance: null,
         }),
       ],
       { savedRows: SAVED_ROWS, rowEditFields: distinctRowEditFields },
@@ -646,7 +888,11 @@ describe('UnspentUlbTableComponent', () => {
 
   it('hides the error icon for an invalid control that has not been touched yet', () => {
     setupWithRows([
-      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, { ulbId: null, unspentAmount: null }),
+      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+        ulbId: null,
+        unspentAmount: null,
+        previousFcUnspentBalance: null,
+      }),
     ]);
 
     expect(rows.at(0).controls.unspentAmount.invalid).toBe(true);
@@ -656,7 +902,11 @@ describe('UnspentUlbTableComponent', () => {
 
   it('exposes refreshValidationDisplay() so an ancestor can force a re-render after touching a row control', () => {
     setupWithRows([
-      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, { ulbId: null, unspentAmount: null }),
+      createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
+        ulbId: null,
+        unspentAmount: null,
+        previousFcUnspentBalance: null,
+      }),
     ]);
     const cdr = (component as unknown as { cdr: ChangeDetectorRef }).cdr;
     spyOn(cdr, 'markForCheck');
@@ -670,6 +920,7 @@ describe('UnspentUlbTableComponent', () => {
     const group = createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
       ulbId: ULB_OPTIONS[0].ulbId,
       unspentAmount: 1.5,
+      previousFcUnspentBalance: 1,
     });
     group.controls.unspentAmount.setErrors({ apiErrors: ['Must be greater than zero.'] });
 
@@ -684,6 +935,7 @@ describe('UnspentUlbTableComponent', () => {
         createFcUnspentUlbRowGroup(dynamicService, true, TEST_ROW_EDIT_FIELDS, {
           ulbId: ULB_OPTIONS[0].ulbId,
           unspentAmount: 1,
+          previousFcUnspentBalance: 1,
         }),
       ],
       { canEdit: false, savedRows: SAVED_ROWS },

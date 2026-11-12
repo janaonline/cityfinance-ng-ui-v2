@@ -114,15 +114,17 @@ describe('EulbEditableFieldCellComponent', () => {
     expect(input.nativeElement.getAttribute('max')).toBe('2027-01-01');
   });
 
-  it('renders an edit-mode remarks input', () => {
+  it('renders an edit-mode remarks textarea with a live character counter', () => {
     host.field = 'remarks';
     host.isEditing = true;
     host.editControl = new FormControl<string | null>('Updated remarks');
     fixture.detectChanges();
 
-    const input = fixture.debugElement.query(By.css('input[aria-label="Remarks"]'));
-    expect(input).not.toBeNull();
-    expect(input.nativeElement.getAttribute('placeholder')).toBe('Remarks');
+    const textarea = fixture.debugElement.query(By.css('textarea[aria-label="Remarks"]'));
+    expect(textarea).not.toBeNull();
+    expect(textarea.nativeElement.getAttribute('placeholder')).toBe('Remarks');
+    expect(textarea.nativeElement.getAttribute('maxlength')).toBe('250');
+    expect(fixture.nativeElement.textContent).toContain('15/250');
   });
 
   it('renders the error icon and exposes the error tooltip message', () => {

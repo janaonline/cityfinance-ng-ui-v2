@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import {
+  DynamicFormMode,
   FieldSupportingAction,
   FieldSupportingActionEvent,
   FieldSupportingBadge,
@@ -28,6 +29,13 @@ export class DynamicFieldSupportingContentComponent {
   /** The key of the parent field — included in emitted action events. */
   readonly fieldKey = input<string>('');
 
+  /** Whether the parent form is editable. Every supporting-content type is shown only in
+   * `'edit'` mode — none of them (download/action prompts, info/warning text, sample-columns,
+   * readonly-card) have meaning once a form is locked for viewing (State view-only or PMU
+   * review).
+   */
+  readonly mode = input<DynamicFormMode>('edit');
+
   /** Emitted when an action button (without a URL) is clicked. */
   readonly supportingAction = output<FieldSupportingActionEvent>();
 
@@ -37,42 +45,48 @@ export class DynamicFieldSupportingContentComponent {
     return items.filter((item) => (item.position ?? 'before') === pos);
   });
 
-  readonly templateDownloadItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly templateDownloadItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'template-download' }> =>
         item.type === 'template-download',
-    ),
-  );
+    );
+  });
 
-  readonly infoItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly infoItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'info' }> => item.type === 'info',
-    ),
-  );
+    );
+  });
 
-  readonly warningItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly warningItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'warning' }> => item.type === 'warning',
-    ),
-  );
+    );
+  });
 
-  readonly sampleColumnsItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly sampleColumnsItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'sample-columns' }> => item.type === 'sample-columns',
-    ),
-  );
+    );
+  });
 
-  readonly readonlyCardItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly readonlyCardItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'readonly-card' }> => item.type === 'readonly-card',
-    ),
-  );
+    );
+  });
 
-  readonly actionItems = computed(() =>
-    this.itemsForPosition().filter(
+  readonly actionItems = computed(() => {
+    if (this.mode() !== 'edit') return [];
+    return this.itemsForPosition().filter(
       (item): item is Extract<FieldSupportingContent, { type: 'actions' }> => item.type === 'actions',
-    ),
-  );
+    );
+  });
 
   visibleActions(actions?: FieldSupportingAction[]): FieldSupportingAction[] {
     return (actions ?? []).filter((a) => a.visible !== false);

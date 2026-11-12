@@ -50,19 +50,19 @@ describe('MohuaRemarksDialogComponent', () => {
     expect(feedback.nativeElement.textContent).toContain('Remarks are required');
   });
 
-  it('trims and submits mohuaRemarks, closing with true on success', () => {
+  it('trims and submits rejectionRemarks, closing with true on success', () => {
     const submitSpy = spyOn(service, 'rejectForm').and.returnValue(of({ currentFormStatus: 6, currentFormStatusLabel: 'Returned' }));
     component.remarks.setValue('  Needs revision  ');
 
     component.submit();
 
-    expect(submitSpy).toHaveBeenCalledWith('state-1', 'year-1', { mohuaRemarks: 'Needs revision' });
+    expect(submitSpy).toHaveBeenCalledWith('state-1', 'year-1', { rejectionRemarks: 'Needs revision' });
     expect(dialogRef.close).toHaveBeenCalledWith(true);
   });
 
   it('stays open, preserves the entered value, and shows the backend error on failure', () => {
     spyOn(service, 'rejectForm').and.returnValue(
-      throwError(() => ({ success: false, message: 'Validation failed.', errors: { mohuaRemarks: [{ field: 'mohuaRemarks', message: 'Too short.' }] } })),
+      throwError(() => ({ success: false, message: 'Validation failed.', errors: { rejectionRemarks: [{ field: 'rejectionRemarks', message: 'Too short.' }] } })),
     );
     component.remarks.setValue('short');
 

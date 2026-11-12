@@ -269,10 +269,10 @@ export class ManualReviewHistoryComponent implements OnInit {
     this.loadRows();
   }
 
-  /** Excel dump of every row matching the current filters, ignoring pagination. */
-  exportToExcel(): void {
-    const formType = this.currentFormType();
-    if (this.isExporting() || !formType) return;
+  /** Excel dump of every row of the chosen form matching the current filters, ignoring pagination.
+   *  The Form Type filter is not used here — the menu choice decides which backend to export. */
+  exportToExcel(formType: ManualReviewFormType): void {
+    if (this.isExporting()) return;
     this.isExporting.set(true);
 
     const { formType: _formType, ...filters } = this.currentFilters();
@@ -282,18 +282,13 @@ export class ManualReviewHistoryComponent implements OnInit {
       .subscribe({
         next: (blob) => {
           const timestamp = formatDate(new Date(), 'yyyyMMdd_HHmmss', 'en-IN', 'Asia/Kolkata');
-          saveAs(blob, `manual-review-history_${timestamp}.xlsx`);
+          const formSlug = formType === 'DUR' ? 'dur' : 'annual-accounts';
+          saveAs(blob, `manual-review-history_${formSlug}_${timestamp}.xlsx`);
         },
         error: () => {
           this.utilityService.triggerSnackbar('Unable to export the manual-review history. Please try again.', 'snackbar-danger');
         },
       });
-  }
-
-  /** Export requires a specific Form Type — merging two backends' Excel workbooks isn't practical
-   *  client-side, so the button is disabled until "All types" is narrowed down. */
-  canExport(): boolean {
-    return !!this.currentFormType();
   }
 
   /** Direct download link for the OCR job's source file — a plain URL, no auth header needed.

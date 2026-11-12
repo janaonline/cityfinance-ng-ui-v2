@@ -81,9 +81,10 @@ export interface FcUnspentMohuaRow {
   censusCode: string | null;
   sbCode: string | null;
   ulbName: string;
-  allocationAmount: number;
+  /** `null` when the design year's form is independent of Devolution (no allocation stored). */
+  allocationAmount: number | null;
   unspentAmount: number;
-  allocationPerc: number;
+  allocationPerc: number | null;
   eligibility: boolean;
   rowStatus: RowStatusType | null;
   rejectionRemark: string | null;
@@ -140,5 +141,5 @@ export interface FcUnspentMohuaSubmitData {
 }
 
 export interface FcUnspentMohuaRejectFormPayload {
-  mohuaRemarks: string;
+  rejectionRemarks: string;
 }

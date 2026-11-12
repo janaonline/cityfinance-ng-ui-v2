@@ -1,0 +1,520 @@
+// Colours come from the XVI FC theme tokens (--color-primary teal, --clr-primary orange); status colours are fixed.
+// Surfaces are transparent so the page background shows through — only outlines and tints carry colour.
+:host {
+  --ud-muted: #5b7083;
+  --ud-line: color-mix(in srgb, var(--color-primary, #12535c) 22%, transparent);
+  --ud-paper: #fff;
+
+  display: block;
+}
+
+.ud-tone--teal {
+  --t: var(--color-primary, #12535c);
+}
+.ud-tone--orange {
+  --t: var(--clr-primary, #d9730d);
+}
+.ud-tone--good {
+  --t: #1d7a46;
+}
+.ud-tone--grey {
+  --t: #5f6f7c;
+}
+.ud-tone--bad {
+  --t: #c0322b;
+}
+
+.ud-page {
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 12px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// ── Breadcrumb + header ──────────────────────────────────────────────────────
+.ud-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.6875rem;
+  color: var(--ud-muted);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--color-primary, #12535c);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.ud-head {
+  --mat-card-outlined-container-color: transparent;
+  --mat-card-outlined-outline-color: color-mix(in srgb, var(--color-primary, #12535c) 28%, transparent);
+
+  padding: 12px 14px;
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--color-primary, #12535c) 28%, transparent);
+  border-radius: 12px;
+}
+
+.ud-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.ud-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--ud-muted);
+
+  b {
+    color: inherit;
+  }
+}
+
+.ud-amount {
+  font-weight: 700;
+  color: #0f2a3d;
+}
+
+.ud-chip {
+  --t: #5f6f7c;
+  --mat-chip-container-height: 20px;
+  --mat-chip-label-text-size: 0.58rem;
+  --mat-chip-label-text-color: var(--t);
+  --mat-chip-elevated-container-color: color-mix(in srgb, var(--t) 14%, transparent);
+
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// ── Five-form tab strip ──────────────────────────────────────────────────────
+.ud-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ud-tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 10px;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--t) 28%, transparent);
+  border-radius: 10px;
+  transition:
+    translate 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    translate: 0 -2px;
+    box-shadow: 0 6px 14px rgba(15, 42, 61, 0.08);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary, #12535c);
+    outline-offset: 2px;
+  }
+
+  &[aria-selected='true'] {
+    background: color-mix(in srgb, var(--t) 12%, transparent);
+    border-color: var(--t);
+    box-shadow: inset 0 -3px 0 var(--t);
+  }
+}
+
+.ud-tab__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  color: var(--t);
+  background: color-mix(in srgb, var(--t) 14%, transparent);
+  border-radius: 50%;
+}
+
+.ud-tab__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ud-tab__name {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ud-tab__status {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--t);
+}
+
+// ── Panel ────────────────────────────────────────────────────────────────────
+.ud-panel {
+  --mat-card-outlined-container-color: transparent;
+  --mat-card-outlined-outline-color: var(--ud-line);
+
+  min-width: 0;
+  overflow: hidden;
+  background-color: transparent;
+  border-color: var(--ud-line);
+  border-radius: 12px;
+}
+
+// Re-created by @switch / tab change, so it slides in each time a tab is picked.
+.ud-pane {
+  animation: ud-swap 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ud-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 11px 14px 6px;
+
+  h2 {
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ud-muted);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: var(--ud-muted);
+  }
+}
+
+.ud-doc {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-primary, #12535c) 12%, transparent);
+  animation: ud-row 0.4s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+
+  &:hover {
+    background: color-mix(in srgb, var(--color-primary, #12535c) 5%, transparent);
+  }
+}
+
+.ud-doc__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  color: var(--t);
+  background: color-mix(in srgb, var(--t) 12%, transparent);
+  border-radius: 8px;
+}
+
+.ud-doc__name {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ud-doc__sub {
+  font-size: 0.656rem;
+  color: var(--ud-muted);
+}
+
+.ud-preview {
+  --mat-button-outlined-container-height: 28px;
+  --mat-button-outlined-label-text-size: 0.6875rem;
+  --mat-button-outlined-label-text-color: var(--color-primary, #12535c);
+
+  align-self: flex-start;
+}
+
+.ud-doc .ud-preview {
+  align-self: center;
+}
+.ud-kv .ud-preview {
+  margin-top: 4px;
+}
+
+.ud-kv {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 4px 14px 12px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--color-primary, #12535c) 18%, transparent);
+    border-radius: 9px;
+  }
+
+  .k {
+    font-size: 0.594rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ud-muted);
+  }
+
+  .v {
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+}
+
+.ud-slb {
+  padding: 6px 14px 12px;
+}
+
+.ud-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 8px 14px 14px;
+  padding: 9px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1d7a46;
+  background: color-mix(in srgb, #1d7a46 11%, transparent);
+  border: 1px solid color-mix(in srgb, #1d7a46 35%, transparent);
+  border-radius: 9px;
+  animation: ud-pop 0.45s ease both;
+  animation-delay: 0.25s;
+
+  i {
+    font-size: 1rem;
+  }
+}
+
+.ud-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 14px 20px;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--ud-muted);
+
+  p {
+    margin: 0;
+  }
+}
+
+.ud-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  font-size: 1.15rem;
+  color: var(--color-primary, #12535c);
+  background: color-mix(in srgb, var(--color-primary, #12535c) 14%, transparent);
+  border-radius: 50%;
+}
+
+.ud-link {
+  font-weight: 600;
+  color: var(--color-primary, #12535c);
+}
+
+// ── "What the system checked" ────────────────────────────────────────────────
+.ud-checks {
+  --mat-expansion-container-background-color: transparent;
+  --mat-expansion-header-text-size: 0.6875rem;
+  --mat-expansion-header-collapsed-state-height: 40px;
+  --mat-expansion-header-expanded-state-height: 40px;
+
+  border-top: 1px solid var(--ud-line);
+  border-radius: 0;
+  box-shadow: none;
+
+  mat-panel-title {
+    font-weight: 700;
+    color: var(--color-primary, #12535c);
+  }
+
+  h3 {
+    margin: 6px 0 4px;
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ud-muted);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 0.72rem;
+  }
+}
+
+.ud-checks__caption {
+  margin: 2px 0 6px;
+  font-size: 0.72rem;
+  color: var(--ud-muted);
+}
+
+.ud-ok {
+  color: #1d7a46;
+}
+.ud-no li i {
+  color: var(--ud-muted);
+}
+
+// ── Motion ───────────────────────────────────────────────────────────────────
+.rv {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--d, 0ms);
+
+  &.in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ud-swap {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ud-row {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ud-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 860px) {
+  .ud-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ud-kv {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .ud-tabs {
+    grid-template-columns: 1fr;
+  }
+  .ud-doc {
+    grid-template-columns: auto 1fr;
+  }
+  .ud-doc .ud-chip,
+  .ud-doc .ud-preview {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .ud-pane,
+  .ud-doc,
+  .ud-banner {
+    animation: none;
+  }
+  .ud-tab:hover {
+    translate: none;
+  }
+}
+
+.ud-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ud-muted);
+
+  p {
+    margin: 0;
+  }
+}
+
+.ud-note {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 0.7rem;
+  color: var(--ud-muted);
+}
+
+.ud-doc__fail {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 0.656rem;
+  color: #c0322b;
+}

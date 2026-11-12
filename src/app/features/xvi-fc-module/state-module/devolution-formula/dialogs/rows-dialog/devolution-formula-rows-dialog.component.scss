@@ -82,19 +82,12 @@ mat-dialog-content.df-rows-dialog-content {
 }
 
 .df-rows-table td {
-  overflow: hidden;
   vertical-align: middle;
-  height: 48px;
+  min-height: 48px;
 }
 
 .df-rows-table tbody tr {
   min-height: 48px;
-}
-
-.df-cell-formula {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .df-cell-invalid {

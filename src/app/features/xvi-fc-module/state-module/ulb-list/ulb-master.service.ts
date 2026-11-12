@@ -55,6 +55,11 @@ export class UlbMasterService {
     return this.http.patch<IApiEnvelope<IUlbMaster>>(`${this.baseUrl}/${id}/reject`, { reason });
   }
 
+  /** ADMIN only — sets the ULB's owning ADC; `null` moves it back to the State DMA. */
+  assignAdc(id: string, adcId: string | null): Observable<IApiEnvelope<IUlbMaster>> {
+    return this.http.patch<IApiEnvelope<IUlbMaster>>(`${this.baseUrl}/${id}/adc`, { adcId });
+  }
+
   /** xvi-fc dynamic year access (ADMIN only) — current startYear/yearAccess plus the exemptable-form list. */
   getYearAccess(id: string): Observable<IApiEnvelope<IUlbYearAccess>> {
     return this.http.get<IApiEnvelope<IUlbYearAccess>>(`${this.baseUrl}/${id}/year-access`);

@@ -63,6 +63,8 @@ interface AnnualAccountSubmissionRow {
   lastUpdatedAt: string | null;
   enteredReviewAt: string | null;
   annualAccountId: string | null;
+  adcName?: string | null;
+  canReview?: boolean;
 }
 
 interface AnnualAccountListResponse {
@@ -82,6 +84,8 @@ interface BankAccountSubmissionRow {
   lastUpdatedAt: string | null;
   enteredReviewAt: string | null;
   bankAccountId: string | null;
+  adcName?: string | null;
+  canReview?: boolean;
 }
 
 interface BankAccountListResponse {
@@ -101,6 +105,8 @@ interface DurSubmissionRow {
   lastUpdatedAt: string | null;
   enteredReviewAt: string | null;
   durId: string | null;
+  adcName?: string | null;
+  canReview?: boolean;
 }
 
 interface DurListResponse {
@@ -119,6 +125,8 @@ interface SlbSubmissionRow {
   formStatus: number;
   lastUpdatedAt: string | null;
   slbFormId: string | null;
+  adcName?: string | null;
+  canReview?: boolean;
 }
 
 interface SlbListResponse {
@@ -186,6 +194,8 @@ export class UlbSubmissionsService {
           lastUpdatedAt: row.lastUpdatedAt,
           enteredReviewAt: row.enteredReviewAt,
           recordId: row.annualAccountId,
+          adcName: row.adcName ?? null,
+          canReview: row.canReview,
         }));
 
         return { total: raw.total, page: raw.page, pageSize: raw.pageSize, rows, counts: raw.counts };
@@ -222,6 +232,8 @@ export class UlbSubmissionsService {
           lastUpdatedAt: row.lastUpdatedAt,
           enteredReviewAt: row.enteredReviewAt,
           recordId: row.bankAccountId,
+          adcName: row.adcName ?? null,
+          canReview: row.canReview,
         }));
         const counts = Object.fromEntries(
           Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
@@ -259,6 +271,8 @@ export class UlbSubmissionsService {
           lastUpdatedAt: row.lastUpdatedAt,
           enteredReviewAt: row.enteredReviewAt,
           recordId: row.durId,
+          adcName: row.adcName ?? null,
+          canReview: row.canReview,
         }));
         const counts = Object.fromEntries(
           Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),
@@ -300,6 +314,8 @@ export class UlbSubmissionsService {
           // review workflow), so there's no equivalent timestamp to project here.
           enteredReviewAt: null,
           recordId: row.slbFormId,
+          adcName: row.adcName ?? null,
+          canReview: row.canReview,
         }));
         const counts = Object.fromEntries(
           Object.entries(raw.counts).map(([numeric, count]) => [NUMERIC_TO_REVIEW_STATUS[Number(numeric)], count]),

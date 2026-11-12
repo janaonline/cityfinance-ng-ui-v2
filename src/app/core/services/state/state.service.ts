@@ -11,7 +11,10 @@ export class StateService {
 
   constructor(private http: HttpClient) {}
 
-  getStates(): Observable<IApiEnvelope<IState[]>> {
-    return this.http.get<IApiEnvelope<IState[]>>(this.baseUrl);
+  getStates(excludeUT = false): Observable<IApiEnvelope<IState[]>> {
+    return this.http.get<IApiEnvelope<IState[]>>(
+      this.baseUrl,
+      excludeUT ? { params: { excludeUT: 'true' } } : {},
+    );
   }
 }
