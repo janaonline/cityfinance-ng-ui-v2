@@ -161,30 +161,31 @@
                 style="width: 220px">
                 Uploaded PDF
               </th>
-              <td mat-cell *matCellDef="let row" class="nowrap-cell">
-                @if (row.pdfUrlSigned) {
-                <a [href]="row.pdfUrlSigned" target="_blank" rel="noopener" [matTooltip]="docLabel(row.docType)">
-                  <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
-                </a>
-                @if (row.pdfPageCount ?? row.digitization.noOfPages; as pages) {
-                <strong> {{ pages }} {{ pages === 1 ? 'page' : 'pages' }}</strong>
-                }
-                @if (row.pdfSizeBytes) {
-                <span class="text-muted small"> · {{ formatBytes(row.pdfSizeBytes) }}</span>
-                }
-                } @else {
-                <span class="text-muted">No PDF</span>
-                @if (!row.afsPdfUrlSigned) {
-                <button type="button" mat-icon-button class="ms-1 align-middle" matTooltip="Upload AFS PDF"
-                  aria-label="Upload AFS PDF" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
-                  <mat-icon class="text-primary">upload_file</mat-icon>
-                </button>
-                }
-                }
-
-                @if (row.afsPdfUrlSigned || isUploading(row)) {
-                <div class="mt-2 d-flex align-items-center gap-2">
-                  <span>AFS :</span>
+              <td mat-cell *matCellDef="let row" class="nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half split-start">
+                  @if (row.afsPdfUrl) {
+                  <span class="split-label">ULB :</span>
+                  }
+                  @if (row.pdfUrlSigned) {
+                  <a [href]="row.pdfUrlSigned" target="_blank" rel="noopener" [matTooltip]="docLabel(row.docType)">
+                    <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
+                  </a>
+                  @if (row.pdfPageCount ?? row.digitization.noOfPages; as pages) {
+                  <strong>{{ pages }} {{ pages === 1 ? 'page' : 'pages' }}</strong>
+                  }
+                  @if (row.pdfSizeBytes) {
+                  <span class="text-muted small">· {{ formatBytes(row.pdfSizeBytes) }}</span>
+                  }
+                  } @else {
+                  <span class="text-muted">No PDF</span>
+                  }
+                  @if (!row.afsPdfUrl && isUploading(row)) {
+                  <mat-spinner diameter="16"></mat-spinner>
+                  }
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-start split-bottom">
+                  <span class="split-label">AFS :</span>
                   @if (row.afsPdfUrlSigned) {
                   <a [href]="row.afsPdfUrlSigned" target="_blank" rel="noopener" matTooltip="Uploaded from this page">
                     <i class="bi bi-filetype-pdf fs-4 text-danger"></i>
@@ -203,85 +204,124 @@
 
             <ng-container matColumnDef="status">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
-                <span class="badge" [ngClass]="'status-' + row.digitization.status"
-                  [matTooltip]="row.digitization.error || ''">
-                  {{ row.digitization.status }}
-                </span> @if (row.excelUrlSigned) {
-                <a [href]="row.excelUrlSigned" target="_blank" rel="noopener" class="ms-2"
-                  matTooltip="Download digitized Excel">
-                  <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
-                </a>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half">
+                  <span class="badge" [ngClass]="'status-' + row.digitization.status"
+                    [matTooltip]="row.digitization.error || ''">
+                    {{ row.digitization.status }}
+                  </span> @if (row.excelUrlSigned) {
+                  <a [href]="row.excelUrlSigned" target="_blank" rel="noopener" class="ms-2"
+                    matTooltip="Download digitized Excel">
+                    <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
+                  </a>
+                  }
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="digitizedAt">
               <th class="fw-bold text-center" mat-header-cell mat-sort-header="digitizedAt" start="desc" *matHeaderCellDef>Digitized at</th>
-              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
-                @if (row.digitization.digitizedAt) {
-                {{ row.digitization.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
-                } @else {
-                <span class="text-muted">–</span>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half">
+                  @if (row.digitization.digitizedAt) {
+                  {{ row.digitization.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="elapsed">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Elapsed time</th>
-              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
-                @if (row.digitization.elapsedMs != null) {
-                {{ formatElapsed(row.digitization.elapsedMs) }}
-                } @else {
-                <span class="text-muted">–</span>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half">
+                  @if (row.digitization.elapsedMs != null) {
+                  {{ formatElapsed(row.digitization.elapsedMs) }}
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="contents">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
-              <td mat-cell *matCellDef="let row">
-                @if (row.digitization.isLegacy) {
-                <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
-                } @else if (row.digitization.status === 'digitized') {
-                @for (seg of row.digitization.segments; track $index) {
-                <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
-                  {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
-                </span>
-                } @empty {
-                <span class="text-muted">Nothing identified</span>
-                }
-                } @else {
-                <span class="text-muted">–</span>
+              <td mat-cell *matCellDef="let row" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half split-start">
+                  @if (row.digitization.isLegacy) {
+                  <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
+                  } @else if (row.digitization.status === 'digitized') {
+                  <span>
+                  @for (seg of row.digitization.segments; track $index) {
+                  <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
+                    {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
+                  </span>
+                  } @empty {
+                  <span class="text-muted">Nothing identified</span>
+                  }
+                  </span>
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-start split-bottom"><span class="text-muted">N/A</span></div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="flags">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Flags</th>
-              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell">
-                @if (row.isDuplicate) {
-                <span class="badge bg-warning text-dark me-1"
-                  [matTooltip]="'Same file as ' + docLabel(row.duplicateOfDocType)">Duplicate</span>
-                <div class="small text-muted">of {{ docLabel(row.duplicateOfDocType) }}</div>
-                }
-                @if (row.digitization.isConsolidated) {
-                <span class="badge bg-primary me-1">Consolidated</span>
-                }
-                @if (row.digitization.isMismatch) {
-                <span class="badge bg-danger"
-                  [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
+              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half">
+                  <div>
+                    @if (row.isDuplicate) {
+                    <span class="badge bg-warning text-dark me-1"
+                      [matTooltip]="'Same file as ' + docLabel(row.duplicateOfDocType)">Duplicate</span>
+                    <div class="small text-muted">of {{ docLabel(row.duplicateOfDocType) }}</div>
+                    }
+                    @if (row.digitization.isConsolidated) {
+                    <span class="badge bg-primary me-1">Consolidated</span>
+                    }
+                    @if (row.digitization.isMismatch) {
+                    <span class="badge bg-danger"
+                      [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
+                    }
+                  </div>
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="actions">
               <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 56px"></th>
-              <td mat-cell *matCellDef="let row" class="text-center">
-                <button type="button" mat-icon-button aria-label="Row actions" [matMenuTriggerFor]="rowMenu"
-                  [matMenuTriggerData]="{ row: row }">
-                  <mat-icon>more_vert</mat-icon>
-                </button>
+              <td mat-cell *matCellDef="let row" class="text-center" [class.split-cell]="!!row.afsPdfUrl">
+                <div class="split-half">
+                  <button type="button" mat-icon-button aria-label="ULB row actions" [matMenuTriggerFor]="rowMenu"
+                    [matMenuTriggerData]="{ row: row }">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                </div>
+                @if (row.afsPdfUrl) {
+                <div class="split-half split-bottom">
+                  <button type="button" mat-icon-button aria-label="AFS row actions" [matMenuTriggerFor]="afsMenu"
+                    [matMenuTriggerData]="{ row: row }">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                </div>
+                }
               </td>
             </ng-container>
 
@@ -304,10 +344,13 @@
 
       <mat-menu #rowMenu="matMenu">
         <ng-template matMenuContent let-row="row">
+          <!-- Before the first upload there is no AFS half, so the upload lives here -->
+          @if (!row.afsPdfUrl) {
           <button mat-menu-item type="button" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
-            <mat-icon>{{ row.afsPdfUrl ? 'published_with_changes' : 'upload_file' }}</mat-icon>
-            <span>{{ row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF' }}</span>
+            <mat-icon>upload_file</mat-icon>
+            <span>Upload AFS PDF</span>
           </button>
+          }
           <button mat-menu-item type="button" [disabled]="!row.digitization.jobId" (click)="viewLog(row)">
             <mat-icon>article</mat-icon>
             <span>{{ row.digitization.jobId ? 'View log' : 'No job yet' }}</span>
@@ -323,6 +366,16 @@
             <span>View job</span>
           </button>
           }
+        </ng-template>
+      </mat-menu>
+
+      <!-- Actions for the AFS half of the row -->
+      <mat-menu #afsMenu="matMenu">
+        <ng-template matMenuContent let-row="row">
+          <button mat-menu-item type="button" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
+            <mat-icon>{{ row.afsPdfUrl ? 'published_with_changes' : 'upload_file' }}</mat-icon>
+            <span>{{ row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF' }}</span>
+          </button>
         </ng-template>
       </mat-menu>
     </div>
