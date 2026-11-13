@@ -58,6 +58,11 @@ export const routes: Routes = [
     loadComponent: () => import('./shared/components/map/map.component').then((m) => m.MapComponent),
   },
   {
+    // Public (no login) Superset dashboards, e.g. /fc/dalgo/rt_municipal_finance_dashboard.
+    path: 'dalgo/:pageType',
+    loadComponent: () => import('./features/dalgo/public/dalgo-public.component').then((m) => m.DalgoPublicComponent),
+  },
+  {
     path: 'afs-dashboard',
     loadComponent: () => import('./admin/afs-dashboard/afs-dashboard.component').then((m) => m.AfsDashboardComponent),
     canActivate: [authGuard],
