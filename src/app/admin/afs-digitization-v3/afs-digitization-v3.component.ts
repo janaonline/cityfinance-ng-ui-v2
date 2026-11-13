@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,9 +15,14 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatInputModule } from '@angular/material/input';
+import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EMPTY, Subject, catchError, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, filter, switchMap } from 'rxjs';
+import { FileService } from '../../shared/dynamic-form/components/file/file.service';
 import {
   AFS_FILTER_KEY,
   AfsFilterComponent,
@@ -26,7 +31,7 @@ import {
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
 import { environment } from '../../../environments/environment';
-import { FilterValues } from '../afs-dashboard/afs.service';
+import { AfsService, FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import { AfsLogModalComponent } from '../afs-dashboard/afs-log-modal/afs-log-modal.component';
 import {
@@ -38,6 +43,7 @@ import {
   DigitizationV3Metrics,
   DigitizationV3OverallMetrics,
   DigitizationV3Query,
+  DigitizationV3Info,
   DigitizationV3Row,
   DigitizationV3Status,
 } from './afs-digitization-v3.service';
@@ -51,6 +57,9 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   auditor_report: "Auditor's Report",
   unknown: 'Unidentified',
 };
+
+/** How long the presigned S3 upload URL stays valid */
+const SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
 type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
 
@@ -70,13 +79,17 @@ interface MetricCard {
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatMenuModule,
+    MatNativeDateModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatSortModule,
     MatTableModule,
     MatTooltipModule,
     AfsFilterComponent,
@@ -89,8 +102,10 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fileService = inject(FileService);
+  private readonly afsService = inject(AfsService);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'contents', 'flags', 'actions'];
+  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -144,6 +159,80 @@ export class AfsDigitizationV3Component implements OnInit {
 
   pageIndex = 0;
   pageSize = 25;
+  /** The shared sidebar filter: its option lists turn the ids in `filters` into names */
+  @ViewChild(AfsFilterComponent) private sidebarFilter?: AfsFilterComponent;
+
+  /** Chips for the filters currently applied, shown above the metrics. `clear` is set for the ones this page owns. */
+  activeFilters(): { label: string; value: string; clear?: () => void }[] {
+    const f = this.filters;
+    const opts = this.sidebarFilter?.filters;
+    const chips: { label: string; value: string; clear?: () => void }[] = [];
+
+    const year = opts?.years?.find((y) => y._id === f.yearId)?.year;
+    if (f.yearId) chips.push({ label: 'Year', value: year ?? '…' });
+    if (f.docType) chips.push({ label: 'Document', value: opts?.documentTypes?.find((d) => d.key === f.docType)?.name ?? this.docLabel(f.docType) });
+    if (f.auditType) chips.push({ label: 'Audit', value: opts?.auditTypes?.find((a) => a.key === f.auditType)?.name ?? f.auditType });
+    if (f.populationCategory) chips.push({ label: 'Population', value: f.populationCategory });
+
+    if (f.stateId?.length) {
+      const names = f.stateId.map((id) => this.sidebarFilter?.states.find((s) => s._id === id)?.name).filter(Boolean) as string[];
+      chips.push({ label: 'State', value: f.stateId.length <= 3 && names.length === f.stateId.length ? names.join(', ') : `${f.stateId.length} selected` });
+    }
+    if (f.ulbId?.length) {
+      const names = f.ulbId.map((id) => this.sidebarFilter?.cities.find((c) => c._id === id)?.name).filter(Boolean) as string[];
+      chips.push({ label: 'City', value: f.ulbId.length <= 3 && names.length === f.ulbId.length ? names.join(', ') : `${f.ulbId.length} selected` });
+    }
+
+    const status = this.digitizationV3Status || f.digitizationStatus;
+    if (status) {
+      const label = this.statusOptions.find((o) => o.value === status)?.label ?? status;
+      chips.push({ label: 'Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
+    }
+    if (this.contentFilter) {
+      chips.push({ label: 'Contents', value: this.contentFilter === 'consolidated' ? 'Consolidated' : 'Single type', clear: () => this.clearPageFilter('content') });
+    }
+    if (this.mismatchFilter) {
+      chips.push({ label: 'Uploaded type', value: this.mismatchFilter === 'mismatch' ? 'Mismatch' : 'Matches', clear: () => this.clearPageFilter('mismatch') });
+    }
+    if (this.digitizedFrom || this.digitizedTo) {
+      const fmt = (d: Date | null) => (d ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '…');
+      chips.push({ label: 'Digitized', value: `${fmt(this.digitizedFrom)} – ${fmt(this.digitizedTo)}`, clear: () => this.clearDigitizedRange() });
+    }
+    return chips;
+  }
+
+  private clearPageFilter(which: 'status' | 'content' | 'mismatch'): void {
+    if (which === 'status') this.digitizationV3Status = '';
+    else if (which === 'content') this.contentFilter = '';
+    else this.mismatchFilter = '';
+    this.onPageFilterChanged();
+  }
+
+  /** Digitized date range from the picker; null = no limit on that side */
+  digitizedFrom: Date | null = null;
+  digitizedTo: Date | null = null;
+  readonly today = new Date();
+
+  /** Fires on every start / end pick; the list only reloads once the range is complete (or fully cleared). */
+  onDigitizedRangeChange(): void {
+    if (this.digitizedFrom && !this.digitizedTo) return;
+    this.onPageFilterChanged();
+  }
+
+  clearDigitizedRange(): void {
+    this.digitizedFrom = null;
+    this.digitizedTo = null;
+    this.onPageFilterChanged();
+  }
+  sortBy: 'digitizedAt' | 'pages' | '' = '';
+  sortDir: 'asc' | 'desc' | '' = '';
+
+  onSort(sort: Sort): void {
+    this.sortBy = sort.direction ? (sort.active as 'digitizedAt' | 'pages') : '';
+    this.sortDir = sort.direction;
+    this.pageIndex = 0;
+    this.reload();
+  }
 
   /** Selected ULB ids. Kept across pages, cleared when the filters change. */
   readonly selection = new SelectionModel<string>(true, []);
@@ -292,10 +381,9 @@ export class AfsDigitizationV3Component implements OnInit {
     this.enqueue(this.buildQuery({ paged: false, pageFilters: true }));
   }
 
-  private enqueue(query: DigitizationV3Query): void {
+  private enqueue(query: DigitizationV3Query, which: 'ulb' | 'afs' = 'ulb'): void {
     this.queueing.set(true);
-    this.api
-      .enqueueByFilter(query)
+    (which === 'afs' ? this.api.enqueueAfs(query) : this.api.enqueueByFilter(query))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -321,20 +409,125 @@ export class AfsDigitizationV3Component implements OnInit {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // AFS PDF upload (same flow as the AFS dashboard: presigned S3 PUT, then save on afs_xl_files)
+  // ---------------------------------------------------------------------------
+
+  /** ULB ids with an upload in flight */
+  readonly uploading = signal<ReadonlySet<string>>(new Set());
+
+  isUploading(row: DigitizationV3Row): boolean {
+    return this.uploading().has(row.ulb);
+  }
+
+  private setUploading(ulb: string, on: boolean): void {
+    this.uploading.update((current) => {
+      const next = new Set(current);
+      if (on) next.add(ulb);
+      else next.delete(ulb);
+      return next;
+    });
+  }
+
+  @ViewChild('afsFileInput') private afsFileInput?: ElementRef<HTMLInputElement>;
+  /** The row whose menu opened the file picker */
+  private uploadTarget: DigitizationV3Row | null = null;
+
+  /** "Upload AFS PDF" in the row menu */
+  pickAfsPdf(row: DigitizationV3Row): void {
+    this.uploadTarget = row;
+    this.afsFileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const row = this.uploadTarget;
+    // Reset so picking the same file again still fires `change`
+    input.value = '';
+    this.uploadTarget = null;
+    if (!file || !row) return;
+
+    if (file.type !== 'application/pdf') {
+      this.notify('Please upload a valid PDF file.');
+      return;
+    }
+    if (this.isUploading(row)) return;
+
+    const folder = `afs/uploads/${row.ulbCode}/${this.filters.docType}`;
+    this.setUploading(row.ulb, true);
+
+    this.fileService
+      .getSignedUrls([
+        { fileName: file.name, folder, mimeType: file.type, fileSize: file.size, expiresIn: SIGNED_URL_EXPIRES_IN_SECONDS },
+      ])
+      .pipe(
+        switchMap(([signed]) => {
+          const { url, path } = signed ?? {};
+          if (!url || !path) throw new Error('No upload URL was returned');
+          return this.fileService.newUploadFileToS3(file, url).pipe(
+            filter((event) => event.type === HttpEventType.Response),
+            switchMap(() =>
+              this.afsService.uploadAfsFile({
+                pdfUrl: path,
+                ulb: row.ulb,
+                year: this.filters.yearId,
+                auditType: this.filters.auditType,
+                docType: this.filters.docType,
+                uploadedBy: 'AFS',
+              }),
+            ),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.setUploading(row.ulb, false);
+          this.notify(`Uploaded ${file.name} for ${row.ulbName}`);
+          // The list carries the signed link and page count of the new PDF
+          this.reload();
+        },
+        error: (err: HttpErrorResponse | Error) => {
+          this.setUploading(row.ulb, false);
+          this.notify(err instanceof HttpErrorResponse ? this.errorMessage(err, 'Could not upload the PDF') : err.message);
+        },
+      });
+  }
+
+  /** The AFS upload can be digitized unless it is already queued, processing or digitized */
+  canDigitizeAfs(row: DigitizationV3Row): boolean {
+    if (!row.afsPdfUrl) return false;
+    const status = row.afsDigitization?.status;
+    return status !== 'queued' && status !== 'processing' && status !== 'digitized';
+  }
+
+  /** "Digitize" in the AFS half's menu: queues the uploaded PDF of this row only */
+  digitizeAfs(row: DigitizationV3Row): void {
+    if (!this.canDigitizeAfs(row) || this.queueing()) return;
+    this.enqueue({ ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb] }, 'afs');
+  }
+
+  /** The digitization info of one half of the row: the ULB's PDF, or the uploaded AFS PDF */
+  private infoOf(row: DigitizationV3Row, which: 'ulb' | 'afs'): DigitizationV3Info | null | undefined {
+    return which === 'afs' ? row.afsDigitization : row.digitization;
+  }
+
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
-  jobUrl(row: DigitizationV3Row): string | null {
-    const afsDigitizationJobId = row.digitization?.jobId;
+  jobUrl(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): string | null {
+    const afsDigitizationJobId = this.infoOf(row, which)?.jobId;
     if (!afsDigitizationJobId) return null;
     const base = environment.ui.urlV2.replace(/\/+$/, '');
     return `${base}/ocr/afs-digitization/upload?jobId=${encodeURIComponent(afsDigitizationJobId)}`;
   }
 
   /** "View log" in the row's three-dot menu: FastAPI's log for the job saved on the file. */
-  viewLog(row: DigitizationV3Row): void {
-    const afsDigitizationJobId = row.digitization?.jobId;
-    if (!afsDigitizationJobId) return;
+  viewLog(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): void {
+    const info = this.infoOf(row, which);
+    const afsDigitizationJobId = info?.jobId;
+    if (!info || !afsDigitizationJobId) return;
     // Old-flow jobs have no FastAPI job: their id is the old request id, so use the afs-dashboard request log
-    if (row.digitization.isLegacy) {
+    if (info.isLegacy) {
       this.dialog.open(AfsLogModalComponent, { data: { requestId: afsDigitizationJobId }, panelClass: 'col-8' });
       return;
     }
@@ -355,6 +548,18 @@ export class AfsDigitizationV3Component implements OnInit {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
+
+  /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */
+  formatElapsed(ms: number | null | undefined): string {
+    if (ms == null || ms < 0) return '–';
+    if (ms < 1000) return `${Math.round(ms)} ms`;
+    const totalSec = ms / 1000;
+    if (totalSec < 60) return `${totalSec.toFixed(1)} s`;
+    const totalMin = Math.floor(totalSec / 60);
+    if (totalMin < 60) return `${totalMin}m ${Math.round(totalSec % 60)}s`;
+    return `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+  }
+
   pageRange(start: number, end: number): string {
     return start === end ? `p${start}` : `p${start}–${end}`;
   }
@@ -384,6 +589,23 @@ export class AfsDigitizationV3Component implements OnInit {
       if (status) query.digitizationV3Status = status;
       if (this.contentFilter) query.isConsolidated = this.contentFilter === 'consolidated';
       if (this.mismatchFilter) query.isMismatch = this.mismatchFilter === 'mismatch';
+    }
+    if (opts.pageFilters) {
+      // Whole local days: from 00:00:00.000 of the first day to 23:59:59.999 of the last
+      if (this.digitizedFrom) {
+        const from = new Date(this.digitizedFrom);
+        from.setHours(0, 0, 0, 0);
+        query.digitizedFrom = from.toISOString();
+      }
+      if (this.digitizedTo) {
+        const to = new Date(this.digitizedTo);
+        to.setHours(23, 59, 59, 999);
+        query.digitizedTo = to.toISOString();
+      }
+    }
+    if (opts.pageFilters && this.sortBy && this.sortDir) {
+      query.sortColumn = this.sortBy;
+      query.sortDirection = this.sortDir;
     }
     if (opts.paged) {
       query.page = this.pageIndex + 1;

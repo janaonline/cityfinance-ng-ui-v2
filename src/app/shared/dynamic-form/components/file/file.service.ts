@@ -36,6 +36,14 @@ export interface ApiResponse<T> {
 export class FileService {
   constructor(private http: HttpClient) {}
 
+  /**
+   *
+   * old flow for getting signed URL for file upload. This method is used for both S3 and Azure storage types.
+   * @param fileName Name of the file to be uploaded
+   * @param fileType MIME type of the file to be uploaded
+   * @param folderName Optional folder name where the file will be uploaded
+   * @returns Observable of S3FileURLResponse containing the signed URL and other details for file upload
+   */
   newGetURLForFileUpload(fileName: File['name'], fileType: File['type'], folderName?: string) {
     const headers = new HttpHeaders();
     // for s3 endpoints == getS3Url

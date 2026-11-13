@@ -27,7 +27,10 @@ export interface DigitizationV3Info {
   jobId?: string;
   summary?: string;
   error?: string;
+  /** When the job finished (completed or failed) */
   digitizedAt?: string;
+  /** How long the job took to run, in milliseconds */
+  elapsedMs?: number;
 }
 
 export interface DigitizationV3Row {
@@ -40,12 +43,22 @@ export interface DigitizationV3Row {
   docType: string;
   pdfUrl: string | null;
   pdfUrlSigned: string | null;
+  /** PDF uploaded from this page (same slot as the AFS dashboard's Upload); null until one is uploaded */
+  afsPdfUrl?: string | null;
+  afsPdfUrlSigned?: string | null;
+  afsPdfPageCount?: number | null;
+  /** Digitization of the uploaded AFS PDF; null until a PDF is uploaded */
+  afsDigitization?: DigitizationV3Info | null;
+  afsExcelUrlSigned?: string | null;
   /** Digitized Excel, signed by the API like the PDF; null until the file is digitized */
   excelUrl: string | null;
   excelUrlSigned: string | null;
   /** From the annual account's PDF metadata; null until backfilled */
   pdfPageCount: number | null;
   pdfSizeBytes: number | null;
+  /** Same file as an earlier slot: not digitized itself, follows `duplicateOfDocType` */
+  isDuplicate?: boolean;
+  duplicateOfDocType?: string | null;
   digitization: DigitizationV3Info;
 }
 
@@ -125,6 +138,11 @@ export interface DigitizationV3Query {
   digitizationV3Status?: DigitizationV3Status;
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** ISO instants; the page sends the start / end of the picked local days */
+  digitizedFrom?: string;
+  digitizedTo?: string;
+  sortColumn?: 'digitizedAt' | 'pages';
+  sortDirection?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }
@@ -153,5 +171,10 @@ export class AfsDigitizationV3Service {
 
   enqueueByFilter(query: DigitizationV3Query) {
     return this.http.post<EnqueueSummary>(`${this.base}/enqueue-by-filter`, query);
+  }
+
+  /** Digitizes the PDFs uploaded from this page for the ULBs in `query.ulbId` */
+  enqueueAfs(query: DigitizationV3Query) {
+    return this.http.post<EnqueueSummary>(`${this.base}/enqueue-afs`, query);
   }
 }

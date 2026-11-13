@@ -120,6 +120,38 @@
   white-space: nowrap;
 }
 
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid #d0d7e2;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 0.85rem;
+}
+
+.chip-clear {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #6b7280;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: #b3261e;
+  }
+}
+
 .chip-duplicate {
   background: #fdf0d5;
   color: #7a5200;
@@ -169,6 +201,36 @@ mat-card {
     border-right: none;
   }
 }
+/* Each row is split into a ULB half (top) and an AFS half (bottom), aligned across every column */
+.split-cell {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.split-half {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Only rows with an uploaded AFS PDF are split: equal-height halves so every column lines up */
+.split-cell .split-half {
+  min-height: 56px;
+}
+
+.split-start {
+  justify-content: flex-start;
+}
+
+.split-bottom {
+  border-top: 1px dashed rgba(0, 0, 0, 0.2);
+}
+
+.split-label {
+  min-width: 2.6rem;
+}
+
 /* Badge and icon stay on one line */
 .nowrap-cell {
   white-space: nowrap;
