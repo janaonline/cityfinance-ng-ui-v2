@@ -193,6 +193,9 @@
                   @if (row.afsPdfPageCount; as afsPages) {
                   <strong>{{ afsPages }} {{ afsPages === 1 ? 'page' : 'pages' }}</strong>
                   }
+                  @if (row.afsPdfSizeBytes) {
+                  <span class="text-muted small">· {{ formatBytes(row.afsPdfSizeBytes) }}</span>
+                  }
                   }
                   @if (isUploading(row)) {
                   <mat-spinner diameter="16"></mat-spinner>

@@ -47,6 +47,8 @@ export interface DigitizationV3Row {
   afsPdfUrl?: string | null;
   afsPdfUrlSigned?: string | null;
   afsPdfPageCount?: number | null;
+  /** Size of the uploaded AFS PDF in bytes; null for uploads made before the size was stored */
+  afsPdfSizeBytes?: number | null;
   /** Digitization of the uploaded AFS PDF; null until a PDF is uploaded */
   afsDigitization?: DigitizationV3Info | null;
   afsExcelUrlSigned?: string | null;
