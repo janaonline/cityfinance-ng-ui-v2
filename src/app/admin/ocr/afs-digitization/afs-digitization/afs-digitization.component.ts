@@ -96,6 +96,7 @@ export class AfsDigitizationComponent implements OnInit {
     PROPERTY_TAX_TOTAL_NON_NEGATIVE: 'Property Tax total not negative',
     KEY_TOTAL_NON_ZERO: 'Key totals not zero',
     NUMERIC_AMOUNTS: 'Amounts are numeric',
+    MISSING_VALUES: 'No missing amounts',
   };
 
   selectedFile: File | null = null;
