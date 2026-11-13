@@ -43,6 +43,7 @@ import {
   DigitizationV3Metrics,
   DigitizationV3OverallMetrics,
   DigitizationV3Query,
+  DigitizationV3Info,
   DigitizationV3Row,
   DigitizationV3Status,
 } from './afs-digitization-v3.service';
@@ -380,10 +381,9 @@ export class AfsDigitizationV3Component implements OnInit {
     this.enqueue(this.buildQuery({ paged: false, pageFilters: true }));
   }
 
-  private enqueue(query: DigitizationV3Query): void {
+  private enqueue(query: DigitizationV3Query, which: 'ulb' | 'afs' = 'ulb'): void {
     this.queueing.set(true);
-    this.api
-      .enqueueByFilter(query)
+    (which === 'afs' ? this.api.enqueueAfs(query) : this.api.enqueueByFilter(query))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -495,20 +495,39 @@ export class AfsDigitizationV3Component implements OnInit {
       });
   }
 
+  /** The AFS upload can be digitized unless it is already queued, processing or digitized */
+  canDigitizeAfs(row: DigitizationV3Row): boolean {
+    if (!row.afsPdfUrl) return false;
+    const status = row.afsDigitization?.status;
+    return status !== 'queued' && status !== 'processing' && status !== 'digitized';
+  }
+
+  /** "Digitize" in the AFS half's menu: queues the uploaded PDF of this row only */
+  digitizeAfs(row: DigitizationV3Row): void {
+    if (!this.canDigitizeAfs(row) || this.queueing()) return;
+    this.enqueue({ ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb] }, 'afs');
+  }
+
+  /** The digitization info of one half of the row: the ULB's PDF, or the uploaded AFS PDF */
+  private infoOf(row: DigitizationV3Row, which: 'ulb' | 'afs'): DigitizationV3Info | null | undefined {
+    return which === 'afs' ? row.afsDigitization : row.digitization;
+  }
+
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
-  jobUrl(row: DigitizationV3Row): string | null {
-    const afsDigitizationJobId = row.digitization?.jobId;
+  jobUrl(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): string | null {
+    const afsDigitizationJobId = this.infoOf(row, which)?.jobId;
     if (!afsDigitizationJobId) return null;
     const base = environment.ui.urlV2.replace(/\/+$/, '');
     return `${base}/ocr/afs-digitization/upload?jobId=${encodeURIComponent(afsDigitizationJobId)}`;
   }
 
   /** "View log" in the row's three-dot menu: FastAPI's log for the job saved on the file. */
-  viewLog(row: DigitizationV3Row): void {
-    const afsDigitizationJobId = row.digitization?.jobId;
-    if (!afsDigitizationJobId) return;
+  viewLog(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): void {
+    const info = this.infoOf(row, which);
+    const afsDigitizationJobId = info?.jobId;
+    if (!info || !afsDigitizationJobId) return;
     // Old-flow jobs have no FastAPI job: their id is the old request id, so use the afs-dashboard request log
-    if (row.digitization.isLegacy) {
+    if (info.isLegacy) {
       this.dialog.open(AfsLogModalComponent, { data: { requestId: afsDigitizationJobId }, panelClass: 'col-8' });
       return;
     }

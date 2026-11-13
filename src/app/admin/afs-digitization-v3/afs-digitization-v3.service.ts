@@ -47,6 +47,9 @@ export interface DigitizationV3Row {
   afsPdfUrl?: string | null;
   afsPdfUrlSigned?: string | null;
   afsPdfPageCount?: number | null;
+  /** Digitization of the uploaded AFS PDF; null until a PDF is uploaded */
+  afsDigitization?: DigitizationV3Info | null;
+  afsExcelUrlSigned?: string | null;
   /** Digitized Excel, signed by the API like the PDF; null until the file is digitized */
   excelUrl: string | null;
   excelUrlSigned: string | null;
@@ -168,5 +171,10 @@ export class AfsDigitizationV3Service {
 
   enqueueByFilter(query: DigitizationV3Query) {
     return this.http.post<EnqueueSummary>(`${this.base}/enqueue-by-filter`, query);
+  }
+
+  /** Digitizes the PDFs uploaded from this page for the ULBs in `query.ulbId` */
+  enqueueAfs(query: DigitizationV3Query) {
+    return this.http.post<EnqueueSummary>(`${this.base}/enqueue-afs`, query);
   }
 }

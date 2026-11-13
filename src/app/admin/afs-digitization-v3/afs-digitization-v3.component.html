@@ -217,7 +217,17 @@
                   }
                 </div>
                 @if (row.afsPdfUrl) {
-                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
+                <div class="split-half split-bottom">
+                  <span class="badge" [ngClass]="'status-' + (row.afsDigitization?.status || 'not-digitized')"
+                    [matTooltip]="row.afsDigitization?.error || ''">
+                    {{ row.afsDigitization?.status || 'not-digitized' }}
+                  </span>
+                  @if (row.afsExcelUrlSigned) {
+                  <a [href]="row.afsExcelUrlSigned" target="_blank" rel="noopener" matTooltip="Download digitized Excel">
+                    <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
+                  </a>
+                  }
+                </div>
                 }
               </td>
             </ng-container>
@@ -233,7 +243,13 @@
                   }
                 </div>
                 @if (row.afsPdfUrl) {
-                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
+                <div class="split-half split-bottom">
+                  @if (row.afsDigitization?.digitizedAt) {
+                  {{ row.afsDigitization?.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
                 }
               </td>
             </ng-container>
@@ -249,7 +265,13 @@
                   }
                 </div>
                 @if (row.afsPdfUrl) {
-                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
+                <div class="split-half split-bottom">
+                  @if (row.afsDigitization?.elapsedMs != null) {
+                  {{ formatElapsed(row.afsDigitization?.elapsedMs) }}
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
                 }
               </td>
             </ng-container>
@@ -275,7 +297,23 @@
                   }
                 </div>
                 @if (row.afsPdfUrl) {
-                <div class="split-half split-start split-bottom"><span class="text-muted">N/A</span></div>
+                <div class="split-half split-start split-bottom">
+                  @if (row.afsDigitization?.isLegacy) {
+                  <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
+                  } @else if (row.afsDigitization?.status === 'digitized') {
+                  <span>
+                  @for (seg of row.afsDigitization?.segments; track $index) {
+                  <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
+                    {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
+                  </span>
+                  } @empty {
+                  <span class="text-muted">Nothing identified</span>
+                  }
+                  </span>
+                  } @else {
+                  <span class="text-muted">–</span>
+                  }
+                </div>
                 }
               </td>
             </ng-container>
@@ -300,7 +338,15 @@
                   </div>
                 </div>
                 @if (row.afsPdfUrl) {
-                <div class="split-half split-bottom"><span class="text-muted">N/A</span></div>
+                <div class="split-half split-bottom">
+                  @if (row.afsDigitization?.isConsolidated) {
+                  <span class="badge bg-primary me-1">Consolidated</span>
+                  }
+                  @if (row.afsDigitization?.isMismatch) {
+                  <span class="badge bg-danger"
+                    [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
+                  }
+                </div>
                 }
               </td>
             </ng-container>
@@ -372,10 +418,34 @@
       <!-- Actions for the AFS half of the row -->
       <mat-menu #afsMenu="matMenu">
         <ng-template matMenuContent let-row="row">
+          <!-- Only while the uploaded PDF is not queued, processing or digitized -->
+          @if (canDigitizeAfs(row)) {
+          <button mat-menu-item type="button" [disabled]="queueing()" (click)="digitizeAfs(row)">
+            <mat-icon>play_circle</mat-icon>
+            <span>Digitize</span>
+          </button>
+          }
           <button mat-menu-item type="button" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">
             <mat-icon>{{ row.afsPdfUrl ? 'published_with_changes' : 'upload_file' }}</mat-icon>
             <span>{{ row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF' }}</span>
           </button>
+          <!-- Log and job only once the uploaded PDF has been digitized -->
+          <button mat-menu-item type="button" [disabled]="row.afsDigitization?.status !== 'digitized' || !row.afsDigitization?.jobId"
+            (click)="viewLog(row, 'afs')">
+            <mat-icon>article</mat-icon>
+            <span>{{ row.afsDigitization?.status === 'digitized' && row.afsDigitization?.jobId ? 'View log' : 'No job yet' }}</span>
+          </button>
+          @if (row.afsDigitization?.status === 'digitized' && !row.afsDigitization?.isLegacy && jobUrl(row, 'afs'); as url) {
+          <a mat-menu-item [href]="url" target="_blank" rel="noopener">
+            <mat-icon>open_in_new</mat-icon>
+            <span>View job</span>
+          </a>
+          } @else {
+          <button mat-menu-item type="button" disabled>
+            <mat-icon>open_in_new</mat-icon>
+            <span>View job</span>
+          </button>
+          }
         </ng-template>
       </mat-menu>
     </div>
