@@ -315,13 +315,13 @@
                   <!-- Score cards -->
                   <div class="score-cards">
                     <div class="score-card">
-                      <span class="score-card__label">Confidence Score ({{ ocrEngineLabel(job.result.ocr_engine) }})</span>
+                      <span class="score-card__label">{{ ocrEngineLabel(job.result.ocr_engine) }} Confidence</span>
                       <span class="score-card__value" [ngClass]="getScoreClass(job.result.confidence_score)">
                         {{ job.result.confidence_score !== null ? (job.result.confidence_score | number: '1.0-1') + '%' : '—' }}
                       </span>
                     </div>
                     <div class="score-card">
-                      <span class="score-card__label">Accuracy Score (Gemini cross-check)</span>
+                      <span class="score-card__label">Crosscheck Confidence</span>
                       <span class="score-card__value" [ngClass]="getScoreClass(job.result.accuracy_score)">
                         {{ job.result.accuracy_score !== null ? (job.result.accuracy_score | number: '1.0-1') + '%' : '—' }}
                       </span>
@@ -333,7 +333,7 @@
                       </span>
                     </div>
                     <div class="score-card">
-                      <span class="score-card__label">Arithmetic Assessment (Gemini)</span>
+                      <span class="score-card__label">Arithmetic Accuracy</span>
                       <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.arithmetic_assessment)">
                         {{ job.result.arithmetic_assessment ?? 'NOT RUN' }}
                       </span>

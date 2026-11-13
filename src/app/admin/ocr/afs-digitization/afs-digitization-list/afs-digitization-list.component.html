@@ -1,22 +1,14 @@
 <div class="wrapper app-wrapper container-fluid">
   <section class="digitization-list-page">
     <!-- Hero -->
-    <div class="hero-card text-white rounded-4 px-4 py-4">
-      <h3 class="h4 mb-1">AFS Digitization Jobs</h3>
-      <p class="small opacity-75 mb-0">Browse past digitization jobs, filter by status or ULB, and download the
-        generated Excel workbooks.</p>
-    </div>
-
-    <!-- Quick nav -->
-    <div class="card-grid">
-      <article class="d-flex align-items-center justify-content-between gap-3 bg-white border rounded-3 p-3 px-md-4">
-        <div>
-          <h2 class="h6 mb-1">New Digitization</h2>
-          <p class="small text-body-secondary mb-0">Upload a scanned financial-statement PDF and start a new Textract +
-            Gemini digitization job.</p>
-        </div>
-        <a class="btn btn-outline-primary flex-shrink-0" routerLink="/ocr/afs-digitization/upload">New Job</a>
-      </article>
+    <div class="hero-card text-white rounded-4 px-4 py-4 d-flex align-items-center justify-content-between gap-3">
+      <div>
+        <h3 class="h4 mb-1">AFS Digitization Jobs</h3>
+        <p class="small opacity-75 mb-0">Browse past digitization jobs, filter by status or ULB, and download the
+          generated Excel workbooks.</p>
+      </div>
+      <a class="btn btn-light flex-shrink-0" routerLink="/ocr/afs-digitization/upload"
+        title="Upload a scanned financial-statement PDF and start a new Textract + Gemini digitization job">New Job</a>
     </div>
 
     <!-- List section -->
@@ -104,7 +96,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Arithmetic Assessment</mat-label>
+          <mat-label>Arithmetic Accuracy</mat-label>
           <mat-select formControlName="arithmetic">
             @for (opt of arithmeticOptions; track opt.value) {
             <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
@@ -113,7 +105,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Accuracy Score</mat-label>
+          <mat-label>Crosscheck Confidence</mat-label>
           <mat-select formControlName="accuracy">
             @for (opt of scoreThresholdOptions; track opt.value) {
             <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
@@ -122,7 +114,7 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Confidence Score</mat-label>
+          <mat-label>Textract Confidence</mat-label>
           <mat-select formControlName="confidence">
             @for (opt of scoreThresholdOptions; track opt.value) {
             <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
@@ -256,13 +248,13 @@
             <td mat-cell *matCellDef="let row">
               <div class="d-flex flex-column gap-1">
                 <div>
-                  <span class="small text-uppercase text-body-secondary me-1">Confidence</span>
+                  <span class="small text-uppercase text-body-secondary me-1">Textract Confidence</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.confidenceScore)">
                     {{ row.confidenceScore !== null ? (row.confidenceScore | number: '1.0-1') + '%' : '—' }}
                   </span>
                 </div>
                 <div>
-                  <span class="small text-uppercase text-body-secondary me-1">Accuracy</span>
+                  <span class="small text-uppercase text-body-secondary me-1">Crosscheck Confidence</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.accuracyScore)">
                     {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
                   </span>
@@ -274,7 +266,7 @@
                   </span>
                 </div>
                 <div>
-                  <span class="small text-uppercase text-body-secondary me-1">Arithmetic</span>
+                  <span class="small text-uppercase text-body-secondary me-1">Arithmetic Accuracy</span>
                   <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.arithmeticAssessment)">
                     {{ row.arithmeticAssessment ?? '—' }}
                   </span>
