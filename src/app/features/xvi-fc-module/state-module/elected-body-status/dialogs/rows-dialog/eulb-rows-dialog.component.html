@@ -269,14 +269,14 @@
                     @if (isRowApproved(row) && canEditRows) {
                       <span
                         class="badge rounded-pill bg-success-subtle text-success-emphasis small"
-                        matTooltip="Approved by PMU — this row can no longer be edited."
+                        matTooltip="Approved — this row can no longer be edited."
                         matTooltipPosition="above"
                         >Approved</span
                       >
                     } @else if (isRowPendingPmuReview(row) && canEditRows) {
                       <span
                         class="badge rounded-pill bg-warning-subtle text-warning-emphasis small"
-                        matTooltip="Pending PMU review — this row can no longer be edited."
+                        matTooltip="Pending review — this row can no longer be edited."
                         matTooltipPosition="above"
                         >Pending Review</span
                       >
@@ -291,7 +291,13 @@
                       class="eulb-row-btn"
                       aria-label="Edit row"
                       [disabled]="editingRowId() !== null || !canEditRow(row)"
-                      [matTooltip]="canEditRow(row) ? '' : 'Approved by PMU — this row can no longer be edited.'"
+                      [matTooltip]="
+                        isRowApproved(row)
+                          ? 'Approved — this row can no longer be edited.'
+                          : isRowPendingPmuReview(row)
+                            ? 'Pending review — this row can no longer be edited.'
+                            : ''
+                      "
                       matTooltipPosition="above"
                       (click)="startEdit(row)"
                     >

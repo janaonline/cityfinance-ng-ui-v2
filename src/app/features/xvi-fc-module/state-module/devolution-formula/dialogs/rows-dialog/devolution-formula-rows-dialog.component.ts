@@ -21,6 +21,7 @@ import { DecimalLimitDirective } from '../../../../../../core/directives/decimal
 import { ZeroOnStepChangeDirective } from '../../../../../../core/directives/zero-on-step-change.directive';
 import { AmountDisplayToggleComponent } from '../../../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
+import { TruncatedTextComponent } from '../../../../../../shared/components/truncated-text/truncated-text.component';
 import { DynamicFormService } from '../../../../../../shared/dynamic-form/dynamic-form.service';
 import { ConditionalFieldConfig } from '../../../../dynamic-form-visibility.service';
 import { DevolutionValidationBadgeComponent } from '../../components/validation-badge/devolution-validation-badge.component';
@@ -61,6 +62,7 @@ function toStringArray(value: unknown): string[] {
     DevolutionValidationBadgeComponent,
     AmountDisplayToggleComponent,
     InfoIconComponent,
+    TruncatedTextComponent,
     DecimalLimitDirective,
     ZeroOnStepChangeDirective,
   ],

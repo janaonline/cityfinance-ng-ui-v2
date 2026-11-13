@@ -14,3 +14,50 @@
 .eulb-error-icon {
   line-height: 1;
 }
+
+// Fixed layout aligns column widths with the sibling dialog, keeping long ULB names and remarks consistent.
+.eulb-post-update-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.eulb-post-col-row-number {
+  width: 48px;
+}
+
+.eulb-post-col-census {
+  width: 110px;
+}
+
+.eulb-post-col-ulb-name {
+  width: 180px;
+}
+
+.eulb-post-col-status {
+  width: 160px;
+}
+
+.eulb-post-col-date {
+  width: 150px;
+}
+
+.eulb-post-col-remarks {
+  width: 180px;
+}
+
+.eulb-post-col-validation {
+  width: 80px;
+}
+
+.eulb-post-col-actions {
+  width: 84px;
+}
+
+.eulb-post-update-table td {
+  vertical-align: middle;
+  min-height: 48px;
+}
+
+.eulb-post-update-table tbody tr {
+  min-height: 48px;
+}

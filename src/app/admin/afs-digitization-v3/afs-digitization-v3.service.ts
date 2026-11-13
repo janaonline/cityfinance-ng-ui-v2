@@ -19,13 +19,18 @@ export interface DigitizationV3Info {
   segments?: DigitizationV3Segment[];
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** Digitized by the old flow: contents unknown; can be re-queued for v3 */
+  isLegacy?: boolean;
   expectedDocType?: string;
   noOfPages?: number;
   /** FastAPI job id (`job_id` from `POST /afs-digitization/jobs`) */
   jobId?: string;
   summary?: string;
   error?: string;
+  /** When the job finished (completed or failed) */
   digitizedAt?: string;
+  /** How long the job took to run, in milliseconds */
+  elapsedMs?: number;
 }
 
 export interface DigitizationV3Row {
@@ -44,6 +49,9 @@ export interface DigitizationV3Row {
   /** From the annual account's PDF metadata; null until backfilled */
   pdfPageCount: number | null;
   pdfSizeBytes: number | null;
+  /** Same file as an earlier slot: not digitized itself, follows `duplicateOfDocType` */
+  isDuplicate?: boolean;
+  duplicateOfDocType?: string | null;
   digitization: DigitizationV3Info;
 }
 
@@ -65,6 +73,18 @@ export interface DigitizationV3Metrics {
   failed: number;
   consolidated: number;
   mismatch: number;
+}
+
+/** Overall counts across every year, audit type and doc type (not tied to the filters). */
+export interface DigitizationV3OverallMetrics {
+  /** Unique files to digitize; null pages until the uniqueness baseline has been built */
+  total: number;
+  totalPages: number | null;
+  digitized: number;
+  queued: number;
+  processing: number;
+  failed: number;
+  updatedAt: string | null;
 }
 
 export interface EnqueueSummary {
@@ -111,6 +131,11 @@ export interface DigitizationV3Query {
   digitizationV3Status?: DigitizationV3Status;
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** ISO instants; the page sends the start / end of the picked local days */
+  digitizedFrom?: string;
+  digitizedTo?: string;
+  sortColumn?: 'digitizedAt' | 'pages';
+  sortDirection?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }
@@ -123,6 +148,12 @@ export class AfsDigitizationV3Service {
 
   list(query: DigitizationV3Query) {
     return this.http.post<DigitizationV3ListResponse>(`${this.base}/list`, query);
+  }
+
+  getOverallMetrics() {
+    return this.http
+      .get<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics`)
+      .pipe(map((res) => res.data));
   }
 
   getJobLog(afsDigitizationJobId: string) {

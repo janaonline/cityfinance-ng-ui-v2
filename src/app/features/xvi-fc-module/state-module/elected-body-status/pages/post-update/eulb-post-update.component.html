@@ -181,10 +181,23 @@
                     No eligible rows found for the current filters.
                   </div>
                 } @else {
-                  <table class="table table-sm table-hover align-middle mb-0">
+                  <table class="table table-sm table-hover align-middle mb-0 eulb-post-update-table">
                     <caption class="visually-hidden">
                       Eligible ULBs for post-submission elected body status update
                     </caption>
+                    <colgroup>
+                      <col class="eulb-post-col-row-number" />
+                      <col class="eulb-post-col-census" />
+                      <col class="eulb-post-col-ulb-name" />
+                      <col class="eulb-post-col-status" />
+                      <col class="eulb-post-col-date" />
+                      <col class="eulb-post-col-date" />
+                      <col class="eulb-post-col-remarks" />
+                      <col class="eulb-post-col-validation" />
+                      @if (canEditRows()) {
+                        <col class="eulb-post-col-actions" />
+                      }
+                    </colgroup>
                     <thead class="table-light border-bottom border-top">
                       <tr class="py-3">
                         <th scope="col" class="small align-middle text-center text-nowrap fw-semibold">#</th>
@@ -214,7 +227,7 @@
                           <td class="small">{{ row.censusCode }}</td>
                           <td class="small fw-medium">
                             <div class="d-flex align-items-center gap-2">
-                              <span>{{ row.ulbName }}</span>
+                              <app-truncated-text [text]="row.ulbName" class="min-w-0" />
                               @if (vm.isModified) {
                                 <span class="badge rounded px-1 small text-bg-warning rounded-pill"> Modified </span>
                               }

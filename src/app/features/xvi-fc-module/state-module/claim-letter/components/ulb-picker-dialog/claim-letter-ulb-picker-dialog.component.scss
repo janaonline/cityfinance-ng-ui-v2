@@ -1,8 +1,13 @@
 .claim-letter-ulb-picker-table-wrap {
-  max-height: 50vh;
+  // max-height: 50vh;
   overflow-y: auto;
 }
 
 .claim-letter-ulb-picker-row-selectable {
   cursor: pointer;
+}
+
+// Keeps the table from jumping when the bar's text appears.
+.claim-letter-ulb-picker-select-all-bar {
+  min-height: 1.75rem;
 }

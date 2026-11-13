@@ -96,6 +96,42 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Overall Assessment</mat-label>
+          <mat-select formControlName="overall">
+            @for (opt of assessmentOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Arithmetic Assessment</mat-label>
+          <mat-select formControlName="arithmetic">
+            @for (opt of arithmeticOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Accuracy Score</mat-label>
+          <mat-select formControlName="accuracy">
+            @for (opt of scoreThresholdOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Confidence Score</mat-label>
+          <mat-select formControlName="confidence">
+            @for (opt of scoreThresholdOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Date From</mat-label>
           <input matInput [matDatepicker]="fromPicker" formControlName="dateFrom" />
           <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
@@ -253,6 +289,18 @@
                   <span class="small text-uppercase text-body-secondary me-1">Accuracy</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.accuracyScore)">
                     {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Overall</span>
+                  <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.overallAssessment)">
+                    {{ row.overallAssessment ?? '—' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="small text-uppercase text-body-secondary me-1">Arithmetic</span>
+                  <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.arithmeticAssessment)">
+                    {{ row.arithmeticAssessment ?? '—' }}
                   </span>
                 </div>
               </div>
