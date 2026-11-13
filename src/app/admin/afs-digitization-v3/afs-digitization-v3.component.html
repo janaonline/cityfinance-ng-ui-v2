@@ -193,6 +193,9 @@
                   @if (row.afsPdfPageCount; as afsPages) {
                   <strong>{{ afsPages }} {{ afsPages === 1 ? 'page' : 'pages' }}</strong>
                   }
+                  @if (row.afsPdfSizeBytes) {
+                  <span class="text-muted small">· {{ formatBytes(row.afsPdfSizeBytes) }}</span>
+                  }
                   }
                   @if (isUploading(row)) {
                   <mat-spinner diameter="16"></mat-spinner>
@@ -397,6 +400,12 @@
             <span>Upload AFS PDF</span>
           </button>
           }
+          @if (canRedigitize(row, 'ulb')) {
+          <button mat-menu-item type="button" [disabled]="queueing()" (click)="redigitize(row, 'ulb')">
+            <mat-icon>restart_alt</mat-icon>
+            <span>Redigitize</span>
+          </button>
+          }
           <button mat-menu-item type="button" [disabled]="!row.digitization.jobId" (click)="viewLog(row)">
             <mat-icon>article</mat-icon>
             <span>{{ row.digitization.jobId ? 'View log' : 'No job yet' }}</span>
@@ -423,6 +432,12 @@
           <button mat-menu-item type="button" [disabled]="queueing()" (click)="digitizeAfs(row)">
             <mat-icon>play_circle</mat-icon>
             <span>Digitize</span>
+          </button>
+          }
+          @if (canRedigitize(row, 'afs')) {
+          <button mat-menu-item type="button" [disabled]="queueing()" (click)="redigitize(row, 'afs')">
+            <mat-icon>restart_alt</mat-icon>
+            <span>Redigitize</span>
           </button>
           }
           <button mat-menu-item type="button" [disabled]="isUploading(row)" (click)="pickAfsPdf(row)">

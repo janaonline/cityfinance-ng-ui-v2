@@ -35,6 +35,10 @@ import { AfsService, FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import { AfsLogModalComponent } from '../afs-dashboard/afs-log-modal/afs-log-modal.component';
 import {
+  AfsDigitizationV3ConfirmDialogComponent,
+  DigitizationV3ConfirmDialogData,
+} from './afs-digitization-v3-confirm-dialog.component';
+import {
   AfsDigitizationV3ResultDialogComponent,
   DigitizationV3ResultDialogData,
 } from './afs-digitization-v3-result-dialog.component';
@@ -373,12 +377,14 @@ export class AfsDigitizationV3Component implements OnInit {
     const total = this.totalCount();
     if (!total || this.queueing()) return;
 
-    const confirmed = confirm(
-      `Digitize all ${total} filtered file(s)?\n\n` + 'Files with no PDF, or already queued or digitized, are skipped.',
+    this.confirmThen(
+      {
+        title: `Digitize all ${total} filtered file(s)?`,
+        message: 'Files with no PDF, or already queued or digitized, are skipped.',
+        confirmLabel: 'Digitize',
+      },
+      () => this.enqueue(this.buildQuery({ paged: false, pageFilters: true })),
     );
-    if (!confirmed) return;
-
-    this.enqueue(this.buildQuery({ paged: false, pageFilters: true }));
   }
 
   private enqueue(query: DigitizationV3Query, which: 'ulb' | 'afs' = 'ulb'): void {
@@ -506,6 +512,40 @@ export class AfsDigitizationV3Component implements OnInit {
   digitizeAfs(row: DigitizationV3Row): void {
     if (!this.canDigitizeAfs(row) || this.queueing()) return;
     this.enqueue({ ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb] }, 'afs');
+  }
+
+  /** Only a file that is already digitized can be re-digitized */
+  canRedigitize(row: DigitizationV3Row, which: 'ulb' | 'afs'): boolean {
+    return this.infoOf(row, which)?.status === 'digitized';
+  }
+
+  /** "Redigitize" in the row menus: queues this row's already-digitized file again */
+  redigitize(row: DigitizationV3Row, which: 'ulb' | 'afs'): void {
+    if (!this.canRedigitize(row, which) || this.queueing()) return;
+    this.confirmThen(
+      {
+        title: `Re-digitize ${row.ulbName}?`,
+        message:
+          'The PDF is processed again (OCR and Gemini are charged again) and the previous result is replaced.',
+        confirmLabel: 'Redigitize',
+      },
+      () =>
+        this.enqueue(
+          { ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb], redigitize: true },
+          which,
+        ),
+    );
+  }
+
+  /** Opens the confirm modal and runs `action` only if the user confirms. */
+  private confirmThen(data: DigitizationV3ConfirmDialogData, action: () => void): void {
+    this.dialog
+      .open(AfsDigitizationV3ConfirmDialogComponent, { width: '460px', maxWidth: '95vw', data })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (confirmed === true) action();
+      });
   }
 
   /** The digitization info of one half of the row: the ULB's PDF, or the uploaded AFS PDF */
