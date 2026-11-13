@@ -123,6 +123,7 @@ export class AfsDigitizationListComponent implements OnInit {
   readonly downloadingPdfJobId = signal<string | null>(null);
   readonly revalidatingJobId = signal<string | null>(null);
   readonly regeneratingJobId = signal<string | null>(null);
+  readonly redigitizingJobId = signal<string | null>(null);
 
   pageSize = 10;
   pageIndex = 0;
@@ -323,6 +324,31 @@ export class AfsDigitizationListComponent implements OnInit {
         error: (err) => {
           this.utilityService.swalPopup(
             'Revalidate failed',
+            err?.error?.detail || err?.error?.message || 'Please try again.',
+            'error',
+          );
+        },
+      });
+  }
+
+  redigitizeJob(row: DigitizationListRow): void {
+    if (this.redigitizingJobId()) return;
+    this.redigitizingJobId.set(row.jobId);
+    this.digitizationService
+      .redigitizeDigitizationJob(row.jobId)
+      .pipe(finalize(() => this.redigitizingJobId.set(null)))
+      .subscribe({
+        next: () => {
+          this.utilityService.swalPopup(
+            'Redigitization queued',
+            'The full pipeline is re-running on the stored source PDF. A new Excel version will be added when it finishes.',
+            'success',
+          );
+          this.loadJobs();
+        },
+        error: (err) => {
+          this.utilityService.swalPopup(
+            'Redigitize failed',
             err?.error?.detail || err?.error?.message || 'Please try again.',
             'error',
           );

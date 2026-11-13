@@ -368,6 +368,12 @@
                       ? 'hourglass_empty' : 'refresh' }}</mat-icon>
                     <span>Regenerate Excel</span>
                   </button>
+                  <button mat-menu-item [disabled]="redigitizingJobId() === row.jobId" (click)="redigitizeJob(row)"
+                    title="Re-run the full pipeline (OCR + Gemini) on the stored source PDF">
+                    <mat-icon [class.spin-icon]="redigitizingJobId() === row.jobId">{{ redigitizingJobId() === row.jobId
+                      ? 'hourglass_empty' : 'restart_alt' }}</mat-icon>
+                    <span>Redigitize</span>
+                  </button>
                   }
                 </mat-menu>
               </div>

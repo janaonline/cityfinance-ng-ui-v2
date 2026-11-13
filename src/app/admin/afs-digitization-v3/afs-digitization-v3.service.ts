@@ -140,6 +140,8 @@ export interface DigitizationV3Query {
   digitizationV3Status?: DigitizationV3Status;
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** Enqueue only: also queue files that are already digitized */
+  redigitize?: boolean;
   /** ISO instants; the page sends the start / end of the picked local days */
   digitizedFrom?: string;
   digitizedTo?: string;
