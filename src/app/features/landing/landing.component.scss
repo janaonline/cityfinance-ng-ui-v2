@@ -9,7 +9,51 @@ $accent-colors: (
 .landing {
   padding: 24px;
   background: #eef1ee;
-  min-height: 100%;
+}
+
+.landing__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.landing__title {
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2422;
+}
+
+.landing__role {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4b5563;
+  background: #e2e6e2;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.landing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.role-card__subtitle--comingSoon {
+  color: #8a9089 !important;
+}
+
+.role-card__subtitle--readonly {
+  color: #c2571c !important;
+}
+
+.role-card__subtitle--live {
+  color: #1f6b3f !important;
 }
 
 .role-card {

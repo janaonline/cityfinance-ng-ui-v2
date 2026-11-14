@@ -12,6 +12,9 @@ export interface IUserLoggedInDetails {
   accessLevel?: AccessLevel;
   subRole?: StateSubRole;
   state?: ObjectID;
+  // Resolved by the backend (buildUserResponsePayload / GET auth/me) as a sibling of `state`,
+  // not nested under it — see municipal-data-hub.eligibility.ts for why this matters.
+  stateName?: string | null;
   ulb?: ObjectID;
   isXVIFCProfileVerified?: boolean;
   permissionOverrides?: {
