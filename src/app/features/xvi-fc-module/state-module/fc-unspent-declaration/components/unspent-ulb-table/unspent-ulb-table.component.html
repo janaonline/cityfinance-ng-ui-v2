@@ -5,7 +5,9 @@
         <col class="col-slno" />
         <col class="col-ulb" />
         <col class="col-code" />
-        <col class="col-alloc" />
+        @if (showAllocation()) {
+          <col class="col-alloc" />
+        }
         <col class="col-unspent" />
         <col class="col-prev-unspent" />
         <!-- <col class="col-pct" /> -->
@@ -17,7 +19,9 @@
           <th scope="col" class="ps-3 text-center small fw-semibold">#</th>
           <th scope="col" class="text-center small fw-semibold">ULB</th>
           <th scope="col" class="text-center small fw-semibold">Census Code</th>
-          <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in {{ unitSuffix() }})</th>
+          @if (showAllocation()) {
+            <th scope="col" class="text-center small fw-semibold">16th FC Allocation (in {{ unitSuffix() }})</th>
+          }
           <th scope="col" class="text-center small fw-semibold">
             {{ applicableFcLabel() }} FC Unspent (in {{ canEdit() ? '₹' : unitSuffix() }})
           </th>
@@ -32,7 +36,7 @@
       <tbody>
         @if (rows().controls.length === 0) {
           <tr>
-            <td colspan="7" class="text-center text-secondary small py-3">No ULBs added yet.</td>
+            <td [attr.colspan]="columnCount()" class="text-center text-secondary small py-3">No ULBs added yet.</td>
           </tr>
         }
         @for (row of rows().controls; track row; let i = $index) {
@@ -45,6 +49,21 @@
                   <span class="text-truncate" [title]="rowViewModels()[i].ulbName ?? ''">
                     {{ rowViewModels()[i].ulbName ?? 'Selected ULB' }}
                   </span>
+                  @if (rowViewModels()[i].approved) {
+                    <span
+                      class="badge rounded-pill bg-success-subtle text-success-emphasis small flex-shrink-0"
+                      matTooltip="Approved — this row can no longer be edited."
+                      matTooltipPosition="above"
+                      >Approved</span
+                    >
+                  } @else if (rowViewModels()[i].locked) {
+                    <span
+                      class="badge rounded-pill bg-warning-subtle text-warning-emphasis small flex-shrink-0"
+                      matTooltip="Pending review — this row can no longer be edited."
+                      matTooltipPosition="above"
+                      >Pending Review</span
+                    >
+                  }
                 </div>
                 @if (ulbIdErrorText) {
                   <button
@@ -64,14 +83,16 @@
             <td class="small text-center text-secondary text-nowrap text-truncate">
               {{ rowViewModels()[i].censusCode ?? rowViewModels()[i].sbCode ?? '—' }}
             </td>
-            <td
-              class="small text-end pe-3 text-secondary"
-              [title]="formatAmountExact(rowViewModels()[i].allocationAmount)"
-            >
-              {{ formatAmount(rowViewModels()[i].allocationAmount) }}
-            </td>
+            @if (showAllocation()) {
+              <td
+                class="small text-end pe-3 text-secondary"
+                [title]="formatAmountExact(rowViewModels()[i].allocationAmount)"
+              >
+                {{ formatAmount(rowViewModels()[i].allocationAmount) }}
+              </td>
+            }
             <td class="text-end pe-3">
-              @if (canEdit()) {
+              @if (canEdit() && !rowViewModels()[i].locked) {
                 @let unspentAmountErrorText = rowFieldErrorText(row, 'unspentAmount');
                 <label class="visually-hidden" [attr.for]="'fc-unspent-amount-' + i">Unspent amount</label>
                 <div class="d-flex align-items-center gap-2">
@@ -113,7 +134,7 @@
               }
             </td>
             <td class="text-end pe-3">
-              @if (canEdit()) {
+              @if (canEdit() && !rowViewModels()[i].locked) {
                 @let previousFcUnspentBalanceErrorText = rowFieldErrorText(row, 'previousFcUnspentBalance');
                 <label class="visually-hidden" [attr.for]="'fc-unspent-prev-balance-' + i"
                   >Previous FC unspent balance</label
@@ -179,7 +200,15 @@
                 type="button"
                 matButton="outlined"
                 class="unspent-row-btn"
-                [disabled]="!canEdit()"
+                [disabled]="!canEdit() || rowViewModels()[i].locked"
+                [matTooltip]="
+                  rowViewModels()[i].approved
+                    ? 'Approved — this row cannot be removed.'
+                    : rowViewModels()[i].locked
+                      ? 'Pending review — this row cannot be removed.'
+                      : ''
+                "
+                matTooltipPosition="above"
                 (click)="removeRow(i)"
                 aria-label="Remove row"
               >

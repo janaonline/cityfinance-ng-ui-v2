@@ -108,7 +108,7 @@ describe('resolveDocumentActions', () => {
       expect(result.map((a) => a.action)).toEqual(['retry', 'reupload']);
     });
 
-    it('hides Re-upload once all 3 post-rejection attempts are used, leaving only Request Manual Review (rendered separately)', () => {
+    it('still offers Re-upload once all 3 post-rejection attempts are used but the cooldown has since passed — a fresh batch opens, alongside Request Manual Review (rendered separately)', () => {
       const result = resolveDocumentActions(
         'ULB',
         2,
@@ -118,9 +118,10 @@ describe('resolveDocumentActions', () => {
           processingStatus: 'FAILED',
           manualReviewReturned: true,
           manualReviewAttemptsExhausted: true,
+          isUploadBlocked: false,
         }),
       );
-      expect(result).toEqual([]);
+      expect(result.map((a) => a.action)).toEqual(['reupload']);
     });
 
     it('hides everything (even Re-upload) while a document is blocked in its post-rejection cooldown', () => {

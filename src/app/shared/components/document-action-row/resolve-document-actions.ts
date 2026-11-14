@@ -85,12 +85,15 @@ export function resolveDocumentActions(
       // a "blocked until" message instead).
       if (doc.isUploadBlocked) return [];
       // Once ADMIN has declined a manual-review request, retrying OCR on the same file would
-      // just fail the same way again — only Re-upload makes sense at that point, and only while
-      // self-service attempts remain. Once exhausted, Request Manual Review (rendered separately)
-      // re-opens as the only path forward — self-service ends, but a human escalation always stays
-      // reachable rather than a pure time-based lockout.
+      // just fail the same way again — only Re-upload makes sense at that point. isUploadBlocked
+      // above already gates the real 24h cooldown once self-service attempts run out; once that
+      // passes, a fresh batch of attempts opens (see manual-review-cooldown.util.ts's
+      // fresh-batch-after-unlock logic), so Re-upload stays offered here even while
+      // manualReviewAttemptsExhausted is still true — that flag only updates reactively, on the
+      // *next* validation result, not the moment the cooldown timestamp itself expires. Request
+      // Manual Review (rendered separately) stays available alongside it the whole time, so a
+      // human escalation is always reachable too, not just the self-service path.
       if (doc.manualReviewReturned === true) {
-        if (doc.manualReviewAttemptsExhausted) return [];
         return (['reupload'] as const).filter(gated).map((a) => build(a, false));
       }
       // Eligible for manual review but hasn't asked yet — Request Manual Review (rendered

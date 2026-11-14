@@ -1,0 +1,19 @@
+@use '../../claims-submission/claims-shared';
+
+.omh-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.omh-sub {
+  display: block;
+  font-size: 0.7rem;
+  color: #5b6b73;
+}
+
+.omh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  white-space: nowrap;
+}

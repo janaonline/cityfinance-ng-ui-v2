@@ -405,8 +405,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   // TS-1262: one unified role picker for every sign-in — ULB, State, MoHUA, Institutional, DoE —
-  // no longer conditioned on which portal URL the user arrived from. Supersedes development's own
-  // narrower "DOE only for 15thFC" variant — the ticket wants every role always selectable.
+  // no longer conditioned on which portal URL the user arrived from. Supersedes every prior
+  // type-conditioned variant of this computed (including whatever development currently has).
   protected readonly roleOptions = computed<readonly RoleOption[]>(() => [
     { id: 'ULB', label: 'ULB', icon: 'ulb', biIcon: 'bi-buildings-fill' },
     { id: 'STATE', label: 'STATE', icon: 'state', biIcon: 'bi-bank' },
@@ -558,7 +558,9 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.setLoginType();
     this.xvifcService.clearResolvedContext();
-    this.loginService.loadRecaptchaScript();
+    // Fresh Google client on every visit — one left over from before a login/logout round trip
+    // hands back blank tokens ("reCAPTCHA verification failed").
+    this.loginService.resetRecaptcha();
     this.loginService.showRecaptchaBadge();
   }
 
@@ -573,6 +575,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loginService.hideRecaptchaBadge();
     this.grantEnvelopeChart?.destroy();
     this.scrollRevealObserver?.disconnect();
+    this.loginService.teardownRecaptcha();
   }
 
   // ─── Route type detection ─────────────────────────────────────────────────────

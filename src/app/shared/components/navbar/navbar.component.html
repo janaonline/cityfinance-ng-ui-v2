@@ -120,20 +120,20 @@
         <button
           type="button"
           class="notification-bell"
-          [class.notification-bell--ring]="ulbNotifications.notifications().length > 0"
+          [class.notification-bell--ring]="bellNotifications.length > 0"
           [matMenuTriggerFor]="notificationMenu"
-          [attr.aria-label]="ulbNotifications.notifications().length + ' notifications'"
+          [attr.aria-label]="bellNotifications.length + ' notifications'"
         >
           <i class="bi bi-bell-fill"></i>
-          @if (ulbNotifications.notifications().length > 0) {
-            <span class="notification-bell__badge">{{ ulbNotifications.notifications().length }}</span>
+          @if (bellNotifications.length > 0) {
+            <span class="notification-bell__badge">{{ bellNotifications.length }}</span>
           }
         </button>
         <mat-menu #notificationMenu="matMenu" class="notification-menu-panel">
-          @if (ulbNotifications.notifications().length === 0) {
+          @if (bellNotifications.length === 0) {
             <p class="notification-menu-empty mb-0 px-3 py-2">No updates right now.</p>
           } @else {
-            @for (n of ulbNotifications.notifications(); track n.route) {
+            @for (n of bellNotifications; track n.route) {
               <button
                 type="button"
                 mat-menu-item

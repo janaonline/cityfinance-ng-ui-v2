@@ -41,14 +41,15 @@ export function daysPending(row: Pick<UlbSubmissionRow, 'formStatus' | 'lastUpda
   return Math.max(0, Math.floor(elapsedMs / (24 * 60 * 60 * 1000)));
 }
 
-/** A row can be bulk-approved/returned only while it's awaiting state action. */
+/** A row can be bulk-approved/returned only while it's awaiting state action and the caller owns it —
+ *  a State user can't act on an ADC-owned ULB (`canReview === false`). */
 export function isRowReviewable(row: UlbSubmissionRow): boolean {
-  return row.formStatus === 'UNDER_REVIEW_BY_STATE';
+  return row.formStatus === 'UNDER_REVIEW_BY_STATE' && row.canReview !== false;
 }
 
 /** Action-column label: `null` means the row has nothing actionable right now. */
 export function getRowActionLabel(row: UlbSubmissionRow): 'Review' | 'View' | null {
   if (!row.recordId) return null;
-  if (row.formStatus === 'UNDER_REVIEW_BY_STATE') return 'Review';
+  if (isRowReviewable(row)) return 'Review';
   return 'View';
 }

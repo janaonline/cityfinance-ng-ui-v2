@@ -3,13 +3,16 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   Injector,
   computed,
   inject,
   input,
+  linkedSignal,
+  output,
   signal,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,10 +22,19 @@ import { AmountDisplayModeService } from '../../../../../../core/services/amount
 import { DecimalLimitDirective } from '../../../../../../core/directives/decimal-limit.directive';
 import { ZeroOnStepChangeDirective } from '../../../../../../core/directives/zero-on-step-change.directive';
 import { decimalPlacesValidator } from '../../../../../../core/validators/decimal-places.validator';
-import { resolveThemeClass } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  resolveThemeClass,
+  themedDialogConfig,
+} from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogService } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
 import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
-import { computeClaimDifferencePercentage, isClaimWithinVariance } from '../../claim-letter.utils';
+import {
+  ClaimLetterExemptionBadge,
+  buildExemptionBadges,
+  computeClaimDifferencePercentage,
+  isClaimWithinVariance,
+} from '../../claim-letter.utils';
 import {
   ClaimLetterUlbPickerDialogComponent,
   ClaimLetterUlbPickerDialogData,
@@ -35,6 +47,35 @@ export interface ClaimUlbRowForm {
 
 export type ClaimUlbRowGroup = FormGroup<ClaimUlbRowForm>;
 
+/** Rows per table page; a batch can hold hundreds of ULBs. */
+const CLAIM_ULB_TABLE_PAGE_SIZE = 50;
+
+/** One collator for every comparison; `localeCompare` with options builds one per call. */
+const ULB_NAME_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+/** A-Z by ULB name, unnamed rows last. */
+function compareUlbNames(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return ULB_NAME_COLLATOR.compare(a, b);
+}
+
+/** Name, Census Code and SB Code of one row: what the A-Z order and the search read. */
+type ClaimUlbRowSearchFields = readonly [string | null, string | null, string | null];
+
+function sameSearchFields(a: readonly ClaimUlbRowSearchFields[], b: readonly ClaimUlbRowSearchFields[]): boolean {
+  return a.length === b.length && a.every((row, i) => row[0] === b[i][0] && row[1] === b[i][1] && row[2] === b[i][2]);
+}
+
+/** Why the last save refused a row, by field. Kept off the controls, whose set errors a re-render
+ *  drops (see the detail page). */
+export interface ClaimRowRejection {
+  ulbId?: string;
+  /** Shown only while the amount is still the one that was sent. */
+  claimedAmount?: { message: string; sentAmount: number | null };
+}
+
 interface ClaimUlbRowValue {
   ulbId: string | null;
   claimedAmount: number | null;
@@ -45,21 +86,17 @@ interface ClaimUlbRowViewModel {
   censusCode: string | null;
   sbCode: string | null;
   allocationAmount: number | null;
-  /** Server-known, from the picked option's/saved row's own eligibility gate re-verification —
-   *  never re-derived client-side. */
+  /** From the saved row or picked option; never re-derived here. */
   eligible: boolean | null;
-  /** Server-known difference, populated only once this row has actually been saved (a picked-but-
-   *  unsaved row has no such value yet) — see `liveDifferencePercentage` for the typing-time preview. */
+  exemptionBadges: ClaimLetterExemptionBadge[];
+  /** Saved rows only; `liveDifferencePercentage` is the typing-time preview. */
   savedDifferencePercentage: number | null;
-  /** Always-live ±10% preview, recomputed on every keystroke from the current `claimedAmount` value —
-   *  a client preview only; the backend remains authoritative at save time. */
+  /** Recomputed on every keystroke; the backend decides at save. */
   liveDifferencePercentage: number | null;
   liveWithinVariance: boolean | null;
 }
 
-/** No backend `rowEditFields`-style metadata exists for claim-letter rows (unlike FC Unspent) — the
- *  DTO validation is just `ulbId: MongoId`, `claimedAmount: whole Rupee, min(1)`, so this builds each
- *  row with plain Validators instead of the shared `DynamicFormService`/backend-field-config route. */
+/** Plain validators: claim-letter rows have no backend field config (unlike FC Unspent's). */
 export function createClaimUlbRowGroup(
   canEdit: boolean,
   existingRow?: { ulbId: string | null; claimedAmount: number | null },
@@ -73,9 +110,7 @@ export function createClaimUlbRowGroup(
 
   if (!canEdit) group.disable({ emitEvent: false });
 
-  // Clear a server-injected `apiErrors` entry as soon as the user edits that control — mirrors
-  // FC Unspent's createFcUnspentUlbRowGroup, applied per-row here since each row is its own
-  // short-lived FormGroup rather than one shared edit-session form.
+  // A server apiErrors entry clears as soon as the user edits that control.
   for (const control of Object.values(group.controls)) {
     control.valueChanges.subscribe(() => {
       if (!control.errors?.['apiErrors']) return;
@@ -88,8 +123,7 @@ export function createClaimUlbRowGroup(
   return group;
 }
 
-/** A backend `apiErrors` entry always wins (most specific/authoritative), matching FC Unspent's
- *  `firstControlErrorText`. */
+/** A backend `apiErrors` entry wins over the local messages. */
 function claimedAmountErrorText(control: AbstractControl): string | null {
   if (!control.touched || !control.errors) return null;
   const apiErrors = control.errors['apiErrors'];
@@ -117,18 +151,17 @@ function claimedAmountErrorText(control: AbstractControl): string | null {
 })
 export class ClaimUlbTableComponent {
   private readonly dialog = inject(MatDialog);
+  private readonly confirmDialogService = inject(ConfirmDialogService);
+  private readonly dialogConfig = themedDialogConfig();
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly amountDisplay = inject(AmountDisplayModeService);
   private readonly themeClass = resolveThemeClass();
-  /** Passed through to `MatDialog.open` so the picker resolves against this component's own
-   *  injector rather than the root one — kept for parity with FC Unspent's table even though the
-   *  claim-letter picker has no feature-scoped cache service to resolve today. */
+  /** Gives the picker this component's injector; kept like FC Unspent's table, though nothing needs it yet. */
   private readonly injector = inject(Injector);
 
   readonly rows = input.required<FormArray<ClaimUlbRowGroup>>();
-  /** Backend-supplied snapshot of already-saved rows (from `GET :claimLetterId/ulbs`) — already
-   *  server-computed (`differencePercentage`/`eligible` re-verified at read time). Saved rows render
-   *  from this directly; it must never require a ULB-options request. */
+  /** Saved rows from `GET :claimLetterId/ulbs`; they render without a ulb-options request. */
   readonly savedRows = input<readonly ClaimLetterUlbRow[]>([]);
   readonly canEdit = input(false);
   readonly stateId = input.required<string>();
@@ -136,18 +169,31 @@ export class ClaimUlbTableComponent {
   /** Forwarded to the picker so a draft's own already-locked ULBs show as selectable. `undefined` in
    *  create mode (no id yet). */
   readonly claimLetterId = input<string | undefined>(undefined);
-  /** Claimed-vs-allocated variance band, sourced from the backend (`ClaimLetterClaimContext`/
-   *  `ClaimLetterBatchSummary`'s `varianceLowerPercent`/`varianceUpperPercent`) — never hardcoded here. */
+  /** formjson 26 switch from the backend. Off: each claim is its allocation, so the claim and
+   *  difference columns are hidden and the `claimedAmount` controls are ignored. */
+  readonly claimAmountEditable = input(false);
+  /** Claimed-vs-allocated band from the backend; used only while `claimAmountEditable` is on. */
   readonly varianceLowerPercent = input.required<number>();
   readonly varianceUpperPercent = input.required<number>();
+  /** The last batch slot; passed to the picker, which then notes the ULBs still in no batch. */
+  readonly isFinalBatch = input(false);
+  /** Rows the last save refused, by ULB id: a refused ULB shows "Not accepted", a refused amount its
+   *  message. */
+  readonly rejectedRows = input<ReadonlyMap<string, ClaimRowRejection>>(new Map());
+  /** A save is in flight: the rows it sent must not change under it, so adding and removing wait.
+   *  Separate from `canEdit`, which also decides whether the row controls are disabled. */
+  readonly locked = input(false);
+  /** ULB ids taken out by the user (Remove or Remove all), so the page can forget their refusals. */
+  readonly ulbsRemoved = output<string[]>();
 
-  /** Display data for ULBs picked via the dialog this session — the only ULB-options data ever kept
-   *  locally, and only for rows a user actually chose. */
-  readonly pickedUlbByUlbId = signal<ReadonlyMap<string, ClaimLetterUlbOption>>(new Map());
+  /** Data for ULBs re-picked since `savedRows` last changed. Takes priority over saved data and can be reset because rows are rebuilt from `savedRows`. */
+  readonly pickedUlbByUlbId = linkedSignal<readonly ClaimLetterUlbRow[], ReadonlyMap<string, ClaimLetterUlbOption>>({
+    source: this.savedRows,
+    computation: () => new Map(),
+  });
 
-  /** Bridges the FormArray's own `valueChanges` into a signal, including structural push/removeAt
-   *  changes — a raw FormArray reference isn't itself change-detection-reactive. `getRawValue()` (not
-   *  `.value`) is used for the initial snapshot so a disabled (read-only) row's value is still read. */
+  /** `rows` as a signal, structural changes included; the first value uses `getRawValue()` so
+   *  disabled (read-only) rows are read too. */
   private readonly rowValues = toSignal(
     toObservable(this.rows).pipe(
       switchMap((formArray) => formArray.valueChanges.pipe(startWith(formArray.getRawValue()))),
@@ -169,21 +215,24 @@ export class ClaimUlbTableComponent {
   readonly rowViewModels = computed<ClaimUlbRowViewModel[]>(() => {
     const savedByUlbId = this.savedRowsByUlbId();
     const pickedByUlbId = this.pickedUlbByUlbId();
+    const claimAmountEditable = this.claimAmountEditable();
 
     return this.rowValues().map((value) => {
       const saved = value.ulbId ? savedByUlbId.get(value.ulbId) : undefined;
       const picked = value.ulbId ? pickedByUlbId.get(value.ulbId) : undefined;
 
-      const allocationAmount = saved?.allocationAmount ?? picked?.allocationAmount ?? null;
-      const hasLiveInputs = allocationAmount !== null && allocationAmount > 0 && value.claimedAmount !== null;
+      const allocationAmount = picked?.allocationAmount ?? saved?.allocationAmount ?? null;
+      const hasLiveInputs =
+        claimAmountEditable && allocationAmount !== null && allocationAmount > 0 && value.claimedAmount !== null;
 
       return {
-        ulbName: saved?.ulbName ?? picked?.ulbName ?? null,
-        censusCode: saved?.censusCode ?? picked?.censusCode ?? null,
-        sbCode: saved?.sbCode ?? picked?.sbCode ?? null,
+        ulbName: picked?.ulbName ?? saved?.ulbName ?? null,
+        censusCode: picked?.censusCode ?? saved?.censusCode ?? null,
+        sbCode: picked?.sbCode ?? saved?.sbCode ?? null,
         allocationAmount,
-        eligible: saved?.eligible ?? picked?.eligible ?? null,
-        savedDifferencePercentage: saved?.differencePercentage ?? null,
+        eligible: picked?.eligible ?? saved?.eligible ?? null,
+        exemptionBadges: buildExemptionBadges(picked?.exemptionNotes ?? saved?.exemptionNotes),
+        savedDifferencePercentage: claimAmountEditable ? (saved?.differencePercentage ?? null) : null,
         liveDifferencePercentage: hasLiveInputs
           ? computeClaimDifferencePercentage(allocationAmount as number, value.claimedAmount as number)
           : null,
@@ -199,48 +248,150 @@ export class ClaimUlbTableComponent {
     });
   });
 
-  /** Rows we can already say, with certainty, will be rejected server-side — mirrors the backend's
-   *  own `buildChildren()` validation (ineligible or outside the ±10% band). Rows with not-yet-known
-   *  state (`null`) are excluded here; that's `validateRows()`'s required-field concern, not this one. */
+  /** Rows the backend will surely reject (ineligible, or outside the band); incomplete rows are
+   *  `validateRows()`'s concern. `liveWithinVariance` is null while the switch is off. */
   readonly invalidRowIdentifiers = computed(() =>
     this.rowViewModels()
       .filter((row) => row.eligible === false || row.liveWithinVariance === false)
       .map((row) => row.censusCode ?? row.sbCode ?? row.ulbName ?? 'Unknown ULB'),
   );
 
-  /** Client-computed running totals — always available from the live FormArray, independent of
-   *  whether a real `financialSummary` exists yet on the backend (create mode has none). */
+  /** Rows known to be ineligible from saved or picked data; the page offers to remove them. */
+  readonly ineligibleUlbIds = computed(() => {
+    const viewModels = this.rowViewModels();
+    return this.rowValues().flatMap((value, i) =>
+      value.ulbId && viewModels[i].eligible === false ? [value.ulbId] : [],
+    );
+  });
+
+  /** Matches ULB name, Census Code or SB Code. */
+  readonly tableSearch = signal('');
+  /** Equal across claim-amount edits, so a keystroke neither re-sorts nor re-searches the rows. */
+  private readonly rowSearchFields = computed(
+    () => this.rowViewModels().map((vm): ClaimUlbRowSearchFields => [vm.ulbName, vm.censusCode, vm.sbCode]),
+    { equal: sameSearchFields },
+  );
+  /** Row indexes A-Z by ULB name. The FormArray keeps the picked order, so the payload is unaffected. */
+  private readonly sortedIndexes = computed(() => {
+    const fields = this.rowSearchFields();
+    return fields.map((_, i) => i).sort((a, b) => compareUlbNames(fields[a][0], fields[b][0]) || a - b);
+  });
+  /** Row indexes in display order: the search over the A-Z order. */
+  readonly displayIndexes = computed(() => {
+    const term = this.tableSearch().trim().toLowerCase();
+    if (!term) return this.sortedIndexes();
+    const fields = this.rowSearchFields();
+    return this.sortedIndexes().filter((i) => fields[i].some((v) => !!v && v.toLowerCase().includes(term)));
+  });
+  /** Back to page 1 on a new search. */
+  readonly tablePage = linkedSignal({ source: this.tableSearch, computation: () => 1 });
+  readonly tablePageCount = computed(() =>
+    Math.max(1, Math.ceil(this.displayIndexes().length / CLAIM_ULB_TABLE_PAGE_SIZE)),
+  );
+  /** Clamped, so removing the last row of the last page shows the page before it. */
+  readonly currentTablePage = computed(() => Math.min(this.tablePage(), this.tablePageCount()));
+  readonly visibleRows = computed(() => {
+    const start = (this.currentTablePage() - 1) * CLAIM_ULB_TABLE_PAGE_SIZE;
+    const controls = this.rows().controls;
+    const viewModels = this.rowViewModels();
+    return this.displayIndexes()
+      .slice(start, start + CLAIM_ULB_TABLE_PAGE_SIZE)
+      .map((index, i) => ({ index, position: start + i + 1, row: controls[index], vm: viewModels[index] }));
+  });
+  /** "Showing 1-50 of 640"; the total is the search's matches. */
+  readonly rangeLabel = computed(() => {
+    const total = this.displayIndexes().length;
+    if (total === 0) return 'Showing 0 of 0';
+    const start = (this.currentTablePage() - 1) * CLAIM_ULB_TABLE_PAGE_SIZE;
+    return `Showing ${start + 1}-${Math.min(start + CLAIM_ULB_TABLE_PAGE_SIZE, total)} of ${total}`;
+  });
+  /** The footer total covers every row, which is not obvious while a search or paging hides some. */
+  readonly isPartialView = computed(() => !!this.tableSearch().trim() || this.tablePageCount() > 1);
+
+  /** From the live rows, so they exist before any `financialSummary` (create mode). */
   readonly totalAllocation = computed(() =>
     this.rowViewModels().reduce((sum, row) => sum + (row.allocationAmount ?? 0), 0),
   );
-  readonly totalClaim = computed(() => this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0));
+  /** The allocation total while the switch is off, since that is what the server stores. */
+  readonly totalClaim = computed(() =>
+    this.claimAmountEditable()
+      ? this.rowValues().reduce((sum, row) => sum + (row.claimedAmount ?? 0), 0)
+      : this.totalAllocation(),
+  );
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
-  /** Unit label for a column whose display follows the global override — both Allocation (always)
-   *  and Claim Amount (once it's no longer an editable input) use this, since both are `'inr'`
-   *  pageDefault. */
+  /** Unit label for the read-only amount columns, which follow the global display mode. */
   readonly unitSuffix = () => this.amountDisplay.unitSuffix('inr');
-  /** Info-icon tooltip for the editable claim-amount input — the whole-number instruction plus the
-   *  currently-typed value spelled out in words. */
+  /** Info-icon tooltip on the claim-amount input: the whole-number rule and the value in words. */
   readonly wholeNumberInfoText = (value: number | null | undefined) => this.amountDisplay.wholeNumberInfoText(value);
-  readonly claimedAmountErrorText = claimedAmountErrorText;
+  /** The control's own message, else the last save's refusal while the amount is still the one sent. */
+  amountErrorText(control: FormControl<number | null>, rejection: ClaimRowRejection | undefined): string | null {
+    const own = claimedAmountErrorText(control);
+    if (own) return own;
+    const refused = rejection?.claimedAmount;
+    return refused && control.value === refused.sentAmount ? refused.message : null;
+  }
 
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */
   addRow(): void {
-    if (!this.canEdit()) return;
+    if (!this.canEdit() || this.locked()) return;
 
     this.openPicker(this.currentUlbIds(), (options) => {
+      const rows = this.rows();
+      // One valueChanges for the whole pick, not one per row: a pick can hold hundreds.
       for (const option of options) {
-        this.rows().push(
+        rows.push(
           createClaimUlbRowGroup(this.canEdit(), { ulbId: option.ulbId, claimedAmount: option.allocationAmount }),
+          { emitEvent: false },
         );
       }
+      rows.updateValueAndValidity();
     });
   }
 
   removeRow(index: number): void {
+    if (this.locked()) return;
+    const ulbId = this.rows().at(index).controls.ulbId.value;
     this.rows().removeAt(index);
+    if (ulbId) this.ulbsRemoved.emit([ulbId]);
+  }
+
+  /** Confirms, then empties the table; nothing is saved until the page saves. */
+  removeAll(): void {
+    const count = this.rows().length;
+    if (!this.canEdit() || this.locked() || count === 0) return;
+
+    this.confirmDialogService
+      .confirm(
+        {
+          title: 'Remove all ULBs?',
+          message: `All ${count} ${count === 1 ? 'ULB' : 'ULBs'} will be removed from the table. Nothing is saved until you save.`,
+          confirmText: 'Remove all',
+          cancelText: 'Cancel',
+          confirmButtonColor: 'warn',
+          icon: 'bi-trash',
+        },
+        this.dialogConfig,
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (!confirmed || this.locked()) return;
+        const ulbIds = this.currentUlbIds();
+        this.rows().clear();
+        this.tableSearch.set('');
+        this.ulbsRemoved.emit(ulbIds);
+        this.cdr.markForCheck();
+      });
+  }
+
+  onTableSearch(event: Event): void {
+    this.tableSearch.set((event.target as HTMLInputElement).value);
+  }
+
+  goToTablePage(page: number): void {
+    if (page < 1 || page > this.tablePageCount()) return;
+    this.tablePage.set(page);
   }
 
   /** Lets an ancestor request a re-render after mutating a row control's touched/errors state from
@@ -257,14 +408,15 @@ export class ClaimUlbTableComponent {
       installment: CLAIM_LETTER_INSTALLMENT,
       excludeUlbIds,
       claimLetterId: this.claimLetterId(),
+      isFinalBatch: this.isFinalBatch(),
     };
 
     const dialogRef = this.dialog.open(ClaimLetterUlbPickerDialogComponent, {
       panelClass,
-      width: '65vw',
-      maxWidth: '65vw',
-      height: '80vh',
-      maxHeight: '80vh',
+      width: '90vw',
+      maxWidth: '1100px',
+      height: '85vh',
+      maxHeight: '850px',
       injector: this.injector,
       data,
     });
@@ -272,9 +424,7 @@ export class ClaimUlbTableComponent {
     dialogRef.afterClosed().subscribe((options: ClaimLetterUlbOption[] | undefined) => {
       if (!options || options.length === 0) return;
 
-      // Defensive recheck — never apply a selection that duplicates a row that changed elsewhere
-      // while the picker was open, and never apply the same ulbId twice from one confirmed batch.
-      // Backend duplicate validation remains authoritative regardless.
+      // Skip ULBs added while the picker was open and repeats within one selection.
       const currentIds = new Set(this.currentUlbIds());
       const seen = new Set<string>();
       const uniqueNewOptions = options.filter((option) => {
@@ -292,8 +442,7 @@ export class ClaimUlbTableComponent {
 
       applySelections(uniqueNewOptions);
 
-      // The dialog closes asynchronously, off a native event inside its own template rather than
-      // this component's — force a recheck so the (possibly first-ever) row actually renders.
+      // The dialog closes outside this OnPush view's events, so the new rows need a recheck.
       this.cdr.markForCheck();
     });
   }

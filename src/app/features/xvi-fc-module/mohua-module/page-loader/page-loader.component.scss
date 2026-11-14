@@ -1,0 +1,21 @@
+:host {
+  display: block;
+}
+
+.pl {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+}
+
+mat-progress-spinner {
+  --mat-progress-spinner-active-indicator-color: var(--color-primary, #12535c);
+}
+
+.pl__label {
+  font-size: 0.75rem;
+  color: #5b7083;
+}

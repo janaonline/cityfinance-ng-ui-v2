@@ -1,6 +1,7 @@
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
   [fieldKey]="fieldForRenderer.key ?? ''"
+  [mode]="mode"
   position="before"
   (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>
@@ -21,6 +22,7 @@
 <app-field-supporting-content
   [supportingContent]="fieldForRenderer.supportingContent"
   [fieldKey]="fieldForRenderer.key ?? ''"
+  [mode]="mode"
   position="after"
   (supportingAction)="supportingAction.emit($event)"
 ></app-field-supporting-content>

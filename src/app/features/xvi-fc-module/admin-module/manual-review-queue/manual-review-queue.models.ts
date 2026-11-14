@@ -42,6 +42,7 @@ export interface ManualReviewQueueQuery {
   page: number;
   pageSize: number;
   search?: string;
+  formType?: ManualReviewFormType;
 }
 
 export interface ManualReviewQueueResult {

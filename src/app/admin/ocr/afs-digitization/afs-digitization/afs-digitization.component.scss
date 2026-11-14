@@ -1,28 +1,23 @@
 .digitization-page {
-  max-width: 1100px;
-  margin: 0 auto;
+  width: 100%;
   padding: 1.5rem 1rem 3rem;
+  box-sizing: border-box;
   display: grid;
+  // minmax(0, 1fr) keeps wide result tables from stretching the track past the viewport
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
+
+  > * {
+    min-width: 0;
+  }
 }
 
+// Layout/typography come from Bootstrap utilities in the template.
 .hero-card {
   background: linear-gradient(135deg, #123b69, #2563eb);
-  border-radius: 16px;
-  padding: 1.75rem;
-  color: #fff;
 
-  h1 {
-    font-size: 1.5rem;
-    margin: 0 0 0.5rem;
-  }
-
-  .subcopy {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 0.92rem;
-    line-height: 1.5;
-    max-width: 760px;
+  p {
+    text-wrap: pretty;
   }
 }
 
@@ -319,6 +314,22 @@
     font-weight: 700;
     color: #1e3a5f;
   }
+
+  &__sub {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  &--total &__label {
+    font-weight: 700;
+    color: #475569;
+  }
+
+  &--total &__value {
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
 }
 
 .gemini-summary {
@@ -330,6 +341,33 @@
   color: #475569;
   line-height: 1.6;
   font-size: 0.88rem;
+}
+
+.segment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  td {
+    padding: 0.45rem 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    color: #374151;
+    vertical-align: top;
+  }
+
+  .segment-row--duplicate td {
+    background: #fff1f2;
+  }
 }
 
 .mismatches h5,
@@ -385,12 +423,14 @@
 
 .usage-steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 0.75rem;
+  align-items: start; // cards keep their natural height instead of stretching to the tallest
 }
 
 .usage-step-card {
   display: grid;
+  align-content: start; // rows stay packed at the top
   gap: 0.35rem;
   padding: 0.75rem 1rem;
   background: #f8fafc;
@@ -398,11 +438,13 @@
   border-radius: 12px;
 }
 
+// Title on its own line, model underneath — long titles like
+// "Gemini Arithmetic Validation" no longer squeeze the model name.
 .usage-step-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   margin-bottom: 0.35rem;
 }
 
@@ -412,15 +454,36 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #1d4ed8;
-  flex-shrink: 0;
 }
 
 .usage-step-model {
   font-family: Consolas, 'Courier New', monospace;
   font-size: 0.68rem;
   color: #475569;
-  text-align: right;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.usage-total-card {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  .usage-cost-row {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.job-total-cost__value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  font-variant-numeric: tabular-nums;
 }
 
 .usage-token-row {
@@ -451,6 +514,7 @@
 .usage-modality-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.3rem;
   margin-top: 0.25rem;
   padding-top: 0.35rem;
@@ -472,6 +536,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .usage-cost-value {
@@ -503,6 +568,8 @@
 }
 
 .usage-modality-chip {
+  line-height: 1.4;
+  white-space: nowrap;
   font-size: 0.68rem;
   font-weight: 600;
   padding: 0.1rem 0.45rem;
@@ -538,4 +605,43 @@
 
 .text-secondary {
   color: #94a3b8;
+}
+
+.notes-field {
+  grid-column: 1 / -1;
+}
+
+.job-notes {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #475569;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.job-notes__label {
+  font-weight: 600;
+  color: #1e3a5f;
+}
+
+.notes-editor {
+  margin-top: 0.5rem;
+}
+
+.notes-editor__field {
+  width: 100%;
+}
+
+.notes-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.source-toggle {
+  display: block;
+}
+
+.s3-path-field {
+  width: 100%;
 }

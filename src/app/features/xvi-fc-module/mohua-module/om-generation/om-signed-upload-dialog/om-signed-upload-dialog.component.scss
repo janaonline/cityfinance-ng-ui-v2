@@ -1,0 +1,66 @@
+.osu-head {
+  text-align: center;
+}
+
+.osu-icon {
+  display: block;
+  margin: 0.5rem auto 0;
+  font-size: 2.25rem;
+  color: #1e7a4c;
+}
+
+.osu-title {
+  font-size: 1.15rem;
+  text-align: center;
+
+  &--left {
+    text-align: left;
+  }
+}
+
+.osu-lead {
+  margin: 0 1.5rem 0.5rem;
+  font-size: 0.9rem;
+  color: #5b6b73;
+}
+
+.osu-download {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #0f5b4a;
+}
+
+.osu-box {
+  padding: 0.9rem 1rem;
+  border: 1px solid #e3e8ea;
+  border-radius: 10px;
+  background: #f7f9fa;
+
+  &__title {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  &__text,
+  &__hint {
+    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    color: #5b6b73;
+  }
+
+  &__hint {
+    margin: 0.4rem 0 0;
+  }
+}
+
+.osu-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: #b42318;
+}
+
+.osu-actions {
+  justify-content: center;
+  gap: 0.5rem;
+}

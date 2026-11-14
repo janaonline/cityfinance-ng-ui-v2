@@ -465,8 +465,8 @@
                       <tbody>
                         @if (job.result.processing_time_seconds !== null) {
                         <tr>
-                          <td class="text-secondary fw-medium ps-0" style="width: 45%">Total Time</td>
-                          <td class="fw-medium pe-0">
+                          <td class="text-secondary fw-bold fs-6 ps-0" style="width: 45%">Total Time</td>
+                          <td class="fw-bold fs-6 pe-0">
                             {{ job.result.processing_time_seconds | number: '1.1-1' }} s
                           </td>
                         </tr>

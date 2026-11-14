@@ -317,7 +317,7 @@
                   </div>
                 </td>
                 <td
-                  class="small df-cell-formula"
+                  class="small"
                   [class.df-cell-invalid]="!!vm.cellHasError['devolutionFormula']"
                   [class.df-cell-clickable]="
                     !!vm.cellHasError['devolutionFormula'] && canEdit && editingRowId() === null
@@ -327,7 +327,7 @@
                   (click)="startEditAtField(vm.row, 'devolutionFormula')"
                 >
                   <div class="d-flex align-items-center justify-content-between gap-1">
-                    <span class="text-truncate min-w-0">{{ row.devolutionFormula }}</span>
+                    <app-truncated-text [text]="row.devolutionFormula" mode="clamp" [lines]="3" class="min-w-0" />
                     @if (vm.cellHasError['devolutionFormula']) {
                       <i
                         class="bi bi-exclamation-triangle-fill text-danger flex-shrink-0 df-error-icon"

@@ -6,6 +6,8 @@ import {
   DigitizationJobStatusResponse,
   DigitizationJobSubmitResponse,
   DigitizationJobsListResponse,
+  AfsDocumentType,
+  DigitizationOcrEngine,
 } from './afs-digitization-models';
 
 export interface SelectOption<T = string> {
@@ -32,6 +34,22 @@ export class AfsDigitizationService {
   private readonly http = inject(HttpClient);
 
   readonly geminiModels: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.6-flash',
+      label: 'Gemini 3.6 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
+    {
+      value: 'gemini-3.5-flash-lite',
+      label: 'Gemini 3.5 Flash-Lite',
+      pricing: { inputPerM: 0.3, outputPerM: 2.5, thinkingPerM: 2.5 },
+    },
     {
       value: 'gemini-3.1-pro-preview',
       label: 'Gemini 3.1 Pro Preview',
@@ -54,6 +72,12 @@ export class AfsDigitizationService {
     },
   ];
 
+  readonly ocrEngines: SelectOption<DigitizationOcrEngine>[] = [
+    { value: 'textract', label: 'Amazon Textract' },
+    { value: 'sarvam', label: 'Sarvam AI (max 10 pages, no confidence score)' },
+    { value: 'gemini', label: 'Gemini (reads PDF directly, cheapest, no confidence score)' },
+  ];
+
   readonly documentTypes: SelectOption[] = [
     { value: 'BALANCE_SHEET', label: 'Balance Sheet' },
     { value: 'BALANCE_SHEET_SCHEDULE', label: 'Balance Sheet Schedule' },
@@ -63,6 +87,18 @@ export class AfsDigitizationService {
     { value: 'AUDITOR_REPORT', label: 'Auditors Report' },
     { value: 'RECEIPTS_AND_PAYMENTS', label: 'Receipts and Payments' },
   ];
+
+  /** Labels for the types the Gemini document classification can report. */
+  readonly detectedDocumentTypeLabels: Record<AfsDocumentType, string> = {
+    BALANCE_SHEET: 'Balance Sheet',
+    BALANCE_SHEET_SCHEDULE: 'Balance Sheet Schedule',
+    INCOME_EXPENDITURE: 'Income and Expenditure',
+    INCOME_EXPENDITURE_SCHEDULE: 'Income and Expenditure Schedule',
+    CASH_FLOW: 'Cash Flow Statement',
+    AUDITOR_REPORT: 'Auditors Report',
+    UNKNOWN: 'Unknown',
+    MULTIPLE_DOCUMENTS: 'Multiple Documents',
+  };
 
   readonly financialYears: SelectOption[] = [
     { value: '2025-26', label: '2025-26' },
@@ -75,20 +111,80 @@ export class AfsDigitizationService {
   ];
 
   submitDigitizationJob(
-    file: File,
+    source: File | string,
     geminiModel: string,
     ulbName?: string | null,
     financialYear?: string | null,
     docType?: string | null,
+    enableValidation = true,
+    enableArithmeticValidation = true,
+    ocrEngine: DigitizationOcrEngine = 'gemini',
+    enableDocumentClassification = true,
+    notes?: string | null,
+    arithmeticModel?: string | null,
   ) {
     const formData = new FormData();
-    formData.append('file', file);
+    // A string is an S3 path to a PDF already in the CityFinance bucket.
+    if (typeof source === 'string') {
+      formData.append('s3_path', source.trim());
+    } else {
+      formData.append('file', source);
+    }
+    formData.append('ocr_engine', ocrEngine);
     formData.append('gemini_model', geminiModel);
+    if (arithmeticModel) formData.append('arithmetic_model', arithmeticModel);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
     if (docType) formData.append('doc_type', docType);
+    if (notes) formData.append('notes', notes);
+    formData.append('enable_validation', String(enableValidation));
+    formData.append('enable_arithmetic_validation', String(enableArithmeticValidation));
+    formData.append('enable_document_classification', String(enableDocumentClassification));
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + 'afs-digitization/jobs',
+      formData,
+    );
+  }
+
+  revalidateDigitizationJob(jobId: string, geminiModel?: string) {
+    const formData = new FormData();
+    if (geminiModel) formData.append('gemini_model', geminiModel);
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate`,
+      formData,
+    );
+  }
+
+  revalidateDigitizationArithmetic(jobId: string, geminiModel?: string) {
+    const formData = new FormData();
+    if (geminiModel) formData.append('gemini_model', geminiModel);
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/revalidate-arithmetic`,
+      formData,
+    );
+  }
+
+  redigitizeDigitizationJob(jobId: string) {
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/redigitize`,
+      {},
+    );
+  }
+
+  updateDigitizationJobNotes(jobId: string, notes: string | null) {
+    return this.http.patch<DigitizationJobStatusResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/notes`,
+      { notes },
+    );
+  }
+
+  regenerateDigitizationExcel(jobId: string, separateSheetPerPage?: boolean) {
+    const formData = new FormData();
+    if (separateSheetPerPage !== undefined) {
+      formData.append('separate_sheet_per_page', String(separateSheetPerPage));
+    }
+    return this.http.post<DigitizationJobResultResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/regenerate-excel`,
       formData,
     );
   }
@@ -111,8 +207,54 @@ export class AfsDigitizationService {
     });
   }
 
+  /** URL that renders the job's file inline in the browser (PDF) — for links / window.open. */
+  getDigitizationFileViewUrl(jobId: string, fileType: 'pdf' | 'excel' = 'pdf'): string {
+    return `${environment.api.url3}afs-digitization/jobs/${jobId}/view/${fileType}`;
+  }
+
   downloadDigitizationPdf(jobId: string) {
     return this.http.get(environment.api.url3 + `afs-digitization/jobs/${jobId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  dumpDigitizationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    doc_type?: string;
+    ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
+    overall_assessment?: string;
+    arithmetic_assessment?: string;
+    accuracy_min?: number;
+    accuracy_max?: number;
+    confidence_min?: number;
+    confidence_max?: number;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string | number> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
+    if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
+    if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
+    if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;
+    if (params?.confidence_max !== undefined) queryParams['confidence_max'] = params.confidence_max;
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
+    if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'afs-digitization/jobs/dump', {
+      params: queryParams,
       responseType: 'blob',
     });
   }
@@ -122,6 +264,15 @@ export class AfsDigitizationService {
     filename?: string;
     ulb_name?: string;
     financial_year?: string;
+    doc_type?: string;
+    ocr_engine?: DigitizationOcrEngine;
+    batch_id?: string;
+    overall_assessment?: string;
+    arithmetic_assessment?: string;
+    accuracy_min?: number;
+    accuracy_max?: number;
+    confidence_min?: number;
+    confidence_max?: number;
     date_from?: string;
     date_to?: string;
     sort_order?: 'asc' | 'desc';
@@ -129,10 +280,19 @@ export class AfsDigitizationService {
     limit?: number;
   }) {
     const queryParams: Record<string, string | number> = {};
+    if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
+    if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
+    if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
+    if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
+    if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;
+    if (params?.confidence_max !== undefined) queryParams['confidence_max'] = params.confidence_max;
     if (params?.status) queryParams['status'] = params.status;
     if (params?.filename) queryParams['filename'] = params.filename;
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.doc_type) queryParams['doc_type'] = params.doc_type;
+    if (params?.ocr_engine) queryParams['ocr_engine'] = params.ocr_engine;
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
     if (params?.sort_order) queryParams['sort_order'] = params.sort_order;

@@ -1,0 +1,62 @@
+<div class="component-shell">
+  <div class="form-container">
+    <div class="content-wrap p-3 p-md-4">
+      <div class="content-stack">
+        <main>
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h1 class="page-title mb-0">ADC Overview</h1>
+            <span class="badge rounded-pill fy-badge">{{ yearLabel }}</span>
+          </div>
+          <p class="page-subtitle text-secondary mb-4">
+            {{ adcName || '—' }}@if (stateName) {
+              <span>, {{ stateName }}</span>
+            }
+            &middot; status of your ULBs' forms
+          </p>
+
+          @if (hasError()) {
+            <div class="alert alert-danger d-flex align-items-center justify-content-between" role="alert">
+              <span>Unable to load the overview.</span>
+              <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+            </div>
+          }
+
+          @if (isLoading()) {
+            <div class="d-flex justify-content-center py-5">
+              <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+            </div>
+          } @else {
+            <div class="form-cards">
+              @for (card of cards(); track card.form) {
+                <section class="card border-0 shadow-sm form-card" [attr.aria-label]="card.label">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                      <h2 class="h6 fw-bold mb-0">{{ card.label }}</h2>
+                      <span class="text-secondary small">{{ card.total }} ULBs</span>
+                    </div>
+                    @if (card.failed) {
+                      <p class="text-secondary small mb-0">Could not load this form's counts.</p>
+                    } @else {
+                      <div class="bucket-grid">
+                        @for (bucket of card.buckets; track bucket.key) {
+                          <a
+                            class="bucket"
+                            routerLink="../ulb-submissions"
+                            [queryParams]="queryParamsFor(card, bucket)"
+                          >
+                            <span class="bucket__count">{{ bucket.count }}</span>
+                            <span class="bucket__label">{{ bucket.label }}</span>
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+            </div>
+          }
+        </main>
+      </div>
+    </div>
+  </div>
+</div>

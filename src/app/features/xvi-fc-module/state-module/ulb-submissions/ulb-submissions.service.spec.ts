@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from '../../../../../environments/environment';
 import { UlbSubmissionsService } from './ulb-submissions.service';
-import { UlbSubmissionsQuery } from './ulb-submissions.models';
+import { ReviewFormId, UlbSubmissionsQuery } from './ulb-submissions.models';
 
 const BASE_URL = environment.api.url2;
 
@@ -74,9 +74,53 @@ describe('UlbSubmissionsService', () => {
           lastUpdatedAt: null,
           enteredReviewAt: null,
           recordId: 'slb-1',
+          adcName: null,
+          canReview: undefined,
         },
       ],
       counts: { NOT_STARTED: 5, IN_PROGRESS: 1 },
+    });
+  });
+
+  it('list() passes the owning ADC name and the per-row canReview flag through for every form', () => {
+    const cases: Array<{ form: ReviewFormId; urlPart: string; idKey: string }> = [
+      { form: 'AUDITED_STATEMENTS', urlPart: 'xvi-fc/annual-account/state/ulb-submissions', idKey: 'annualAccountId' },
+      { form: 'PFMS_BANK_ACCOUNT', urlPart: 'xvi-fc/bank-account/state/ulb-submissions', idKey: 'bankAccountId' },
+      { form: 'DUR', urlPart: 'xvi-fc/dur/state/ulb-submissions', idKey: 'durId' },
+      { form: 'SERVICE_LEVEL_BENCHMARKS', urlPart: 'xvi-fc/ulb/slb/state/ulb-submissions', idKey: 'slbFormId' },
+    ];
+
+    cases.forEach(({ form, urlPart, idKey }) => {
+      let result: { rows: ReadonlyArray<{ adcName?: string | null; canReview?: boolean }> } | undefined;
+      service.list({ ...baseQuery, form }).subscribe((value) => (result = value));
+
+      httpMock.expectOne((r) => r.url === `${BASE_URL}${urlPart}`).flush({
+        success: true,
+        data: {
+          total: 1,
+          page: 1,
+          pageSize: 20,
+          rows: [
+            {
+              ulbId: 'ulb-1',
+              ulbCode: 'ULB1',
+              censusCode: '900001',
+              ulbName: 'ADC ULB',
+              formStatus: form === 'AUDITED_STATEMENTS' ? 'UNDER_REVIEW_BY_STATE' : 3,
+              formStatusId: 3,
+              lastUpdatedAt: null,
+              enteredReviewAt: null,
+              [idKey]: 'rec-1',
+              adcName: 'ADC One',
+              canReview: false,
+            },
+          ],
+          counts: {},
+        },
+      });
+
+      expect(result?.rows[0].adcName).withContext(form).toBe('ADC One');
+      expect(result?.rows[0].canReview).withContext(form).toBeFalse();
     });
   });
 

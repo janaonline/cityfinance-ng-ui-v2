@@ -29,6 +29,7 @@ import {
 import { buildXvifcFeatureLink, Roles } from '../../xvi-fc-side-menu.config';
 import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 
+/** 'mohua' is the flow for every national role (no state or ULB of its own): MoHUA, PMU and DoE. */
 type ProfileRole = 'state' | 'ulb' | 'mohua';
 
 const ROLE_MAP: Record<string, ProfileRole> = {
@@ -37,6 +38,8 @@ const ROLE_MAP: Record<string, ProfileRole> = {
   ULB: 'ulb',
   XVIFC: 'ulb',
   MoHUA: 'mohua',
+  MOHUA_PMU: 'mohua',
+  XVIFC_DOE: 'mohua',
 };
 
 const ROUTE_ROLE_MAP: Record<string, Roles> = {
@@ -45,6 +48,8 @@ const ROUTE_ROLE_MAP: Record<string, Roles> = {
   ULB: 'ULB',
   XVIFC: 'ULB',
   MoHUA: 'MOHUA',
+  MOHUA_PMU: 'MOHUA_PMU',
+  XVIFC_DOE: 'DOE',
 };
 
 @Component({

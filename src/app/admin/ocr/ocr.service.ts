@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { OcrApiResponse } from './upload-file-ocr/ocr-response';
-import { IULB } from '../../core/models/ulb';
+import { IUlbSummary } from '../../core/models/ulb-summary';
 import {
   OcrValidationJobSubmitResponse,
   OcrValidationBatchSubmitResponse,
@@ -280,10 +280,16 @@ export class OcrService {
   readonly source = 'ocr';
 
   readonly models: ModelOption[] = [
+    // 3.8 / 3.6 Flash: $0.75 / $3.75 now, doubling to $1.50 / $7.50 from 2027-01-01.
+    {
+      value: 'gemini-3.8-flash',
+      label: 'Gemini 3.8 Flash',
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
+    },
     {
       value: 'gemini-3.6-flash',
       label: 'Gemini 3.6 Flash',
-      pricing: { inputPerM: 1.5, outputPerM: 7.5, thinkingPerM: 7.5 },
+      pricing: { inputPerM: 0.75, outputPerM: 3.75, thinkingPerM: 3.75 },
     },
     {
       value: 'gemini-3.5-flash',
@@ -406,7 +412,7 @@ export class OcrService {
     ocrMethod: string,
     model: string,
     enableOrientationCheck: boolean,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
   ) {
     const formData = new FormData();
     formData.append('file', file);
@@ -448,7 +454,7 @@ export class OcrService {
       params: queryParams,
     });
   }
-  getulb(ulb: IULB | string | null | undefined): string {
+  getulb(ulb: IUlbSummary | string | null | undefined): string {
     if (ulb && typeof ulb === 'object') {
       const ulbKeys: string[] = [ulb?.name];
 
@@ -464,7 +470,7 @@ export class OcrService {
     file: File,
     extractionModel: string,
     validationModel: string,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     docType?: string | null,
     tableExists?: boolean | null,
@@ -504,7 +510,7 @@ export class OcrService {
     files: File[],
     extractionModel: string,
     validationModel: string,
-    ulb?: IULB | string | null,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     docType?: string | null,
     enableOrientationCheck?: boolean,
@@ -680,20 +686,15 @@ export class OcrService {
     validationModel: string,
     enableFinancialValidation = false,
   ) {
-    return this.http.post<EvalRunInfo>(
-      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/run`,
-      {
-        extraction_model: extractionModel,
-        validation_model: validationModel,
-        enable_financial_validation: enableFinancialValidation,
-      },
-    );
+    return this.http.post<EvalRunInfo>(environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/run`, {
+      extraction_model: extractionModel,
+      validation_model: validationModel,
+      enable_financial_validation: enableFinancialValidation,
+    });
   }
 
   listBenchmarkRuns(benchmarkId: string) {
-    return this.http.get<EvalRunInfo[]>(
-      environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/runs`,
-    );
+    return this.http.get<EvalRunInfo[]>(environment.api.url3 + `ocr-validation/evals/benchmark/${benchmarkId}/runs`);
   }
 
   getEvalRunDetail(evalRunId: string) {
@@ -712,10 +713,7 @@ export class OcrService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('model', model);
-    return this.http.post<AuditorReportExtractResponse>(
-      environment.api.url3 + 'auditor-report/extract',
-      formData,
-    );
+    return this.http.post<AuditorReportExtractResponse>(environment.api.url3 + 'auditor-report/extract', formData);
   }
 
   listAuditorReportExtractions(params?: {
@@ -737,36 +735,37 @@ export class OcrService {
     if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
     if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
     if (params?.opinion_type) queryParams['opinion_type'] = params.opinion_type;
-    if (params?.is_auditor_report !== undefined)
-      queryParams['is_auditor_report'] = String(params.is_auditor_report);
+    if (params?.is_auditor_report !== undefined) queryParams['is_auditor_report'] = String(params.is_auditor_report);
     if (params?.date_from) queryParams['date_from'] = params.date_from;
     if (params?.date_to) queryParams['date_to'] = params.date_to;
     if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
     if (params?.skip !== undefined) queryParams['skip'] = params.skip;
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
-    return this.http.get<AuditorReportListResponse>(
-      environment.api.url3 + 'auditor-report/extractions',
-      { params: queryParams },
-    );
+    return this.http.get<AuditorReportListResponse>(environment.api.url3 + 'auditor-report/extractions', {
+      params: queryParams,
+    });
   }
 
   getAuditorReportExtraction(docId: string) {
-    return this.http.get<AuditorReportRecord>(
-      environment.api.url3 + `auditor-report/extractions/${docId}`,
-    );
+    return this.http.get<AuditorReportRecord>(environment.api.url3 + `auditor-report/extractions/${docId}`);
   }
 
   // ─── DUR (Utilisation Report) Validation API ─────────────────────────────────
 
+  /** `source` is either an uploaded PDF or an S3 path in the CityFinance bucket (sent as `s3_path`). */
   submitDurValidationJob(
-    file: File,
-    ulb?: IULB | string | null,
+    source: File | string,
+    ulb?: IUlbSummary | string | null,
     financialYear?: string | null,
     model?: string | null,
     grantType?: DurGrantType | null,
   ) {
     const formData = new FormData();
-    formData.append('file', file);
+    if (typeof source === 'string') {
+      formData.append('s3_path', source.trim());
+    } else {
+      formData.append('file', source);
+    }
     const ulbName = this.getulb(ulb);
     if (ulbName) formData.append('ulb_name', ulbName);
     if (financialYear) formData.append('financial_year', financialYear);
@@ -813,6 +812,31 @@ export class OcrService {
     if (params?.limit !== undefined) queryParams['limit'] = params.limit;
     return this.http.get<DurJobListResponse>(environment.api.url3 + 'dur-validation/jobs', {
       params: queryParams,
+    });
+  }
+
+  dumpDurValidationJobs(params?: {
+    status?: string;
+    filename?: string;
+    ulb_name?: string;
+    financial_year?: string;
+    grant_type?: DurGrantType;
+    date_from?: string;
+    date_to?: string;
+    sort_order?: 'asc' | 'desc';
+  }) {
+    const queryParams: Record<string, string> = {};
+    if (params?.status) queryParams['status'] = params.status;
+    if (params?.filename) queryParams['filename'] = params.filename;
+    if (params?.ulb_name) queryParams['ulb_name'] = params.ulb_name;
+    if (params?.financial_year) queryParams['financial_year'] = params.financial_year;
+    if (params?.grant_type) queryParams['grant_type'] = params.grant_type;
+    if (params?.date_from) queryParams['date_from'] = params.date_from;
+    if (params?.date_to) queryParams['date_to'] = params.date_to;
+    if (params?.sort_order) queryParams['sort_order'] = params.sort_order;
+    return this.http.get(environment.api.url3 + 'dur-validation/jobs/dump', {
+      params: queryParams,
+      responseType: 'blob',
     });
   }
 

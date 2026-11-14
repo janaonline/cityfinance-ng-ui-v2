@@ -45,6 +45,7 @@ export interface GtcFormData {
   actors: FormActor[];
   instructions: unknown[];
   installmentAccess?: GtcInstallmentAccess;
+  rejectionRemarks?: string | null;
 }
 
 export interface GtcApiResponse {

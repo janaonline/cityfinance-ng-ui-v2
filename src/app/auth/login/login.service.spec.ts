@@ -19,6 +19,7 @@ describe('LoginService.signInWithPassword', () => {
       'showBadge',
       'hideBadge',
       'reset',
+      'teardown',
     ]);
     const otpAuthSpy = jasmine.createSpyObj<OtpAuthService>('OtpAuthService', ['sendOtp', 'verifyOtp']);
     const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
@@ -94,6 +95,7 @@ describe('LoginService.resetRecaptcha', () => {
       'showBadge',
       'hideBadge',
       'reset',
+      'teardown',
     ]);
 
     TestBed.configureTestingModule({

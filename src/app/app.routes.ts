@@ -14,8 +14,7 @@ export const routes: Routes = [
   // },
   {
     path: 'xvifc-form',
-    loadComponent: () =>
-      import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
+    loadComponent: () => import('./features/xvi-fc-form/xvi-fc-form.component').then((m) => m.XviFcFormComponent),
     canActivate: [authGuard],
   },
   {
@@ -67,8 +66,12 @@ export const routes: Routes = [
   },
   {
     path: 'map',
-    loadComponent: () =>
-      import('./shared/components/map/map.component').then((m) => m.MapComponent),
+    loadComponent: () => import('./shared/components/map/map.component').then((m) => m.MapComponent),
+  },
+  {
+    // Public (no login) Superset dashboards, e.g. /fc/dalgo/rt_municipal_finance_dashboard.
+    path: 'dalgo/:pageType',
+    loadComponent: () => import('./features/dalgo/public/dalgo-public.component').then((m) => m.DalgoPublicComponent),
   },
   {
     path: 'afs-dashboard',
@@ -76,14 +79,21 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: 'afs-old-dashboard',
-    loadComponent: () => import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    path: 'afs-digitization-v3',
+    loadComponent: () =>
+      import('./admin/afs-digitization-v3/afs-digitization-v3.component').then((m) => m.AfsDigitizationV3Component),
     canActivate: [authGuard],
   },
-
+  {
+    path: 'afs-old-dashboard',
+    loadComponent: () =>
+      import('./admin/afs-dashboard/old-dashboard/old-dashboard.component').then((m) => m.OldDashboardComponent),
+    canActivate: [authGuard],
+  },
   {
     path: 'ocr',
     loadChildren: () => import('./admin/ocr/ocr.routes').then((mod) => mod.OCR_ROUTES),
+    canActivate: [authGuard],
   },
   {
     path: 'events-dashboard',
@@ -91,10 +101,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'forum',
+    loadChildren: () => import('./features/forum/forum.routes').then((m) => m.FORUM_ROUTES),
+    canActivate: [authGuard],
+  },
+  {
     path: 'xvifc',
     canActivate: [xvifcAuthGuard, xvifcEligibilityGuard],
-    loadChildren: () =>
-      import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
+    loadChildren: () => import('./features/xvi-fc-module/xvi-fc-module.routes').then((m) => m.XVIFC_ROUTES),
   },
   {
     // Keep this route outside /xvifc to avoid a redirect loop with xvifcEligibilityGuard.
@@ -104,9 +118,7 @@ export const routes: Routes = [
     // "Log out" button, which is a safe no-op without a session.
     path: 'xvifc-not-eligible',
     loadComponent: () =>
-      import('./features/xvi-fc-module/shared/not-eligible/not-eligible.component').then(
-        (m) => m.NotEligibleComponent,
-      ),
+      import('./features/xvi-fc-module/shared/not-eligible/not-eligible.component').then((m) => m.NotEligibleComponent),
   },
   {
     path: 'auth',

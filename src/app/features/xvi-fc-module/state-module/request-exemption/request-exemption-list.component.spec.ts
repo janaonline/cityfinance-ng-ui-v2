@@ -10,7 +10,7 @@ import { RequestExemptionListItem, RequestExemptionListResponseData, RequestExem
 import { RequestExemptionService } from './request-exemption.service';
 
 const sampleReasonOptions: RequestExemptionReasonOption[] = [
-  { id: 23, label: 'Election / duly constituted ULB exemption' },
+  { id: 23, label: 'Election / ULB constitution status' },
   { id: 30, label: 'Audited Financial Statement' },
   { id: 31, label: 'Provisional Financial Statement' },
 ];
@@ -20,7 +20,7 @@ const sampleItem: RequestExemptionListItem = {
   requestId: 'req-1',
   formId: 23,
   ulb: { _id: 'ulb-1', name: 'Agra', censusCode: 'CC-1' },
-  reasonForExemptionLabel: 'Election / duly constituted ULB exemption',
+  reasonForExemptionLabel: 'Election / ULB constitution status',
   currentFormStatus: 5,
   currentFormStatusLabel: 'Under Review by MoHUA',
   submittedAt: '2026-08-01T00:00:00.000Z',
@@ -192,7 +192,7 @@ describe('RequestExemptionListComponent', () => {
       of(
         buildListResponse({
           items: [
-            { ...sampleItem, _id: 'a', formId: 22, reasonForExemptionLabel: 'State Finance Commission extension/compliance', ulb: null },
+            { ...sampleItem, _id: 'a', formId: 22, reasonForExemptionLabel: 'Non-fulfilment of State Finance Commission requirements', ulb: null },
           ],
         }),
       ),

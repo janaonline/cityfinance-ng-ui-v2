@@ -16,6 +16,9 @@ export interface IUserLoggedInDetails {
   // not nested under it — see municipal-data-hub.eligibility.ts for why this matters.
   stateName?: string | null;
   ulb?: ObjectID;
+  /** Set only for an ADC (Autonomous District Council) user — a STATE-role user scoped to one ADC's ULBs. */
+  adc?: ObjectID | null;
+  adcName?: string | null;
   isXVIFCProfileVerified?: boolean;
   permissionOverrides?: {
     allow: Permission[];

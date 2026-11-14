@@ -193,5 +193,7 @@ describe('SLB PDF export — certification badge is drawn natively, not rasteriz
 
     expect(foundCertifiedText).withContext('"Certified" should appear as real PDF text, not rasterized').toBeTrue();
     expect(foundVectorDrawing).withContext('the certification icon should be drawn as PDF vector graphics').toBeTrue();
-  });
+    // This renders a full ~2100px page to PDF in headless Chrome — far past Jasmine's 5 s default. Timing out mid-render
+    // leaves the render running and freezes the browser, which disconnects Karma and ends the whole suite early.
+  }, 60_000);
 });

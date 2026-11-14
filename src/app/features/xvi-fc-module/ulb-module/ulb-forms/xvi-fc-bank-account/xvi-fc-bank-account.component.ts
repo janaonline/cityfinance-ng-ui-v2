@@ -41,6 +41,7 @@ const EDITABLE_FORM_STATUSES = new Set<FormStatusType>([
   FORM_STATUS.IN_PROGRESS,
   FORM_STATUS.RETURNED_BY_STATE,
   FORM_STATUS.RETURNED_BY_MOHUA,
+  FORM_STATUS.RETURNED_BY_SO,
 ]);
 /** Fields never shown once the form is locked — they're always blank in that state (never
  *  hydrated from the backend, per the account-number security policy in submit()/loadFormAndRecord()). */
@@ -192,15 +193,19 @@ export class XviFcBankAccountComponent {
 
   readonly isReturnedStatus = computed(() => {
     const status = this.existingRecord()?.currentFormStatus;
-    return status === FORM_STATUS.RETURNED_BY_STATE || status === FORM_STATUS.RETURNED_BY_MOHUA;
+    return (
+      status === FORM_STATUS.RETURNED_BY_STATE ||
+      status === FORM_STATUS.RETURNED_BY_MOHUA ||
+      status === FORM_STATUS.RETURNED_BY_SO
+    );
   });
 
-  // Shown when the form was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
-  // even though the form itself is editable again at that point.
+  // Shown when the form was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA/RETURNED_BY_SO) — explains why,
+  // even though the form itself is editable again at that point. The SO is part of MoHUA.
   readonly returnNotice = computed(() => {
     const record = this.existingRecord();
     const status = record?.currentFormStatus;
-    if (status !== FORM_STATUS.RETURNED_BY_STATE && status !== FORM_STATUS.RETURNED_BY_MOHUA) return null;
+    if (!this.isReturnedStatus()) return null;
     const actor = status === FORM_STATUS.RETURNED_BY_STATE ? 'the state' : 'MoHUA';
     const note = (status === FORM_STATUS.RETURNED_BY_STATE ? record?.stateDecision?.note : record?.mohuaDecision?.note) ?? null;
     return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;

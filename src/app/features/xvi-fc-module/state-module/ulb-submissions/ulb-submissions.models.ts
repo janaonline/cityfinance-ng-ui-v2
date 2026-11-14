@@ -218,6 +218,11 @@ export interface UlbSubmissionRow {
   readonly enteredReviewAt: string | null;
   /** The selected form's own record id (annual account doc, bank account doc, ...) — null if not started. */
   readonly recordId: string | null;
+  /** Owning ADC's name, or null/absent when the ULB belongs to the State DMA directly. */
+  readonly adcName?: string | null;
+  /** Whether the caller may approve/return this row. Absent (older API) means yes; false for a State user
+   *  looking at an ADC-owned ULB, which is read-only for them. */
+  readonly canReview?: boolean;
 }
 
 export interface UlbSubmissionsListResponse {

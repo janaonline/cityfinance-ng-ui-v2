@@ -13,6 +13,8 @@ export interface SupportingActionStatePatch {
   loading?: boolean;
   /** Only meaningful while `loading` is `true`; the button falls back to its own default ('Loading…') when unset. */
   loadingLabel?: string;
+  /** Replaces the action's own label (e.g. "Download" -> "Save & download" while there is something to save first). */
+  label?: string;
 }
 
 /**
@@ -51,6 +53,7 @@ export function withSupportingActionState<T extends FieldConfig>(
                 ...(patch.disabled !== undefined ? { disabled: patch.disabled } : {}),
                 ...(patch.loading !== undefined ? { loading: patch.loading } : {}),
                 ...(patch.loadingLabel !== undefined ? { loadingLabel: patch.loadingLabel } : {}),
+                ...(patch.label !== undefined ? { label: patch.label } : {}),
               };
             }),
           }

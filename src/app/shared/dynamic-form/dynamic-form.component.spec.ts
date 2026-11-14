@@ -108,6 +108,21 @@ describe('DynamicFormComponent — supporting content integration', () => {
     contentEls.forEach((el) => expect(el.nativeElement.textContent.trim()).toBe(''));
   });
 
+  it('forwards [mode] to both app-field-supporting-content instances', () => {
+    component.field = { formFieldType: 'text', key: 'testField', label: 'Test' };
+    component.group = group;
+    component.mode = 'view';
+    fixture.detectChanges();
+
+    const contentEls = fixture.debugElement.queryAll(
+      By.directive(DynamicFieldSupportingContentComponent),
+    );
+    expect(contentEls.length).toBe(2);
+    contentEls.forEach((el) =>
+      expect((el.componentInstance as DynamicFieldSupportingContentComponent).mode()).toBe('view'),
+    );
+  });
+
   it('renders the correct field sub-component for each formFieldType', () => {
     component.field = { formFieldType: 'textarea', key: 'testField', label: 'Notes' };
     component.group = group;

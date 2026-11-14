@@ -444,14 +444,61 @@
   height: 32px;
   line-height: 32px;
 
+  // Draws the eye to the one action that can unblock a failed document: a soft ring pulses
+  // outward and the icon nudges, both pausing on hover/focus so the button is never "moving"
+  // under the cursor. Skipped entirely for users who ask for reduced motion.
+  animation: manual-review-pulse 2.4s ease-out infinite;
+
   mat-icon {
     font-size: 1rem;
     width: 1rem;
     height: 1rem;
+    animation: manual-review-icon-nudge 2.4s ease-in-out infinite;
   }
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     background: #e8f1fb;
+    animation-play-state: paused;
+
+    mat-icon {
+      animation-play-state: paused;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+
+    mat-icon {
+      animation: none;
+    }
+  }
+}
+
+@keyframes manual-review-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.45);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px rgba(25, 118, 210, 0);
+  }
+}
+
+@keyframes manual-review-icon-nudge {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  70% {
+    transform: rotate(-12deg);
+  }
+  80% {
+    transform: rotate(10deg);
+  }
+  90% {
+    transform: rotate(-6deg);
   }
 }
 

@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { unsavedChangesGuard } from '../../../core/guards/unsaved-changes.guard';
-import { STATE_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-overview.models';
+import {
+  STATE_ADC_TEAMS_CONFIG,
+  STATE_ROLES_CONFIG,
+} from '../shared/roles-teams-overview/roles-teams-overview.models';
 
 type DeferredStateRoute = Readonly<{
   path: string;
@@ -14,15 +17,21 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     loadComponent: () => import('./overview/overview.component').then((m) => m.OverviewComponent),
   },
   {
+    path: 'data-hub',
+    loadComponent: () => import('../../dalgo/dalgo.component').then((m) => m.DalgoComponent),
+  },
+  {
     path: 'dashboard',
     loadComponent: () => import('./state-dashboard/state-dashboard.component').then((m) => m.StateDashboardComponent),
   },
   {
     path: 'ulb-submissions',
+    data: { menuGroup: 'ulb-submissions' },
     loadComponent: () => import('./ulb-submissions/ulb-submissions.component').then((m) => m.UlbSubmissionsComponent),
   },
   {
     path: 'ulb-submissions/:ulbId/review',
+    data: { menuGroup: 'ulb-submissions' },
     loadComponent: () =>
       import('./ulb-submissions/annual-account-review/annual-account-review.component').then(
         (m) => m.AnnualAccountReviewComponent,
@@ -53,18 +62,21 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
   },
   {
     path: 'request-exemption/new',
+    data: { menuGroup: 'request-exemption' },
     loadComponent: () =>
       import('./request-exemption/new/request-exemption.component').then((m) => m.RequestExemptionComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-status',
+    data: { menuGroup: 'elected-body-status' },
     loadComponent: () =>
       import('./elected-body-status/elected-body-status.component').then((m) => m.ElectedBodyStatusComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'elected-body-post-update',
+    data: { menuGroup: 'elected-body-status' },
     loadComponent: () =>
       import('./elected-body-status/pages/post-update/eulb-post-update.component').then(
         (m) => m.EulbPostUpdateComponent,
@@ -108,12 +120,24 @@ export const ACTIVE_STATE_CHILD_ROUTES: Routes = [
     data: { rolesConfig: STATE_ROLES_CONFIG },
   },
   {
+    // State admin manages each ADC's team here. No sidebar entry: it opens from the "ADC Teams" button on
+    // People and Roles, which stays highlighted in the sidebar via menuGroup.
+    path: 'adc-teams',
+    loadComponent: () =>
+      import('../shared/roles-teams-overview/roles-teams-overview.component').then(
+        (m) => m.RolesTeamsOverviewComponent,
+      ),
+    data: { rolesConfig: STATE_ADC_TEAMS_CONFIG, menuGroup: 'roles-teams-unified-view' },
+  },
+  {
     path: 'register-ulb',
+    data: { menuGroup: 'ulb-list' },
     loadComponent: () => import('./ulb-list/register-ulb/register-ulb.component').then((m) => m.RegisterUlbComponent),
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'ulb-list',
+    data: { menuGroup: 'ulb-list' },
     loadComponent: () => import('./ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
   },
   {

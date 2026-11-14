@@ -1,5 +1,8 @@
 <div class="container-fluid">
   <h3 class="fw-bold my-4">ULB Registration</h3>
+  @if (isAdcUser) {
+    <p class="text-secondary mb-3">Showing the ULBs that belong to your ADC.</p>
+  }
 
   <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
     <form class="d-flex flex-wrap align-items-end" (ngSubmit)="onSearchChange()">
@@ -116,6 +119,11 @@
             <td mat-cell *matCellDef="let element">{{ element.ulbTypeName || '—' }}</td>
           </ng-container>
 
+          <ng-container matColumnDef="adc">
+            <th mat-header-cell *matHeaderCellDef>ADC</th>
+            <td mat-cell *matCellDef="let element">{{ element.adc?.name || '—' }}</td>
+          </ng-container>
+
           <ng-container matColumnDef="approvalStatus">
             <th mat-header-cell *matHeaderCellDef>Approval</th>
             <td mat-cell *matCellDef="let element">
@@ -145,7 +153,12 @@
                     Review
                   </button>
                 }
-                @if (isState && element.approval?.status === 'REJECTED') {
+                @if (canAssignAdc(element)) {
+                  <button class="btn btn-outline-cfPrimary btn-sm" title="Assign ADC" (click)="openAssignAdcDialog(element)">
+                    Assign ADC
+                  </button>
+                }
+                @if (canEdit(element)) {
                   <button class="btn btn-outline-cfPrimary btn-sm" title="Edit" (click)="openEditDialog(element)">
                     Edit
                   </button>

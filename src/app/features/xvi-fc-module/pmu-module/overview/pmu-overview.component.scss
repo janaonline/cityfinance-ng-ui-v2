@@ -1,0 +1,35 @@
+.pmu-overview {
+  padding: 24px;
+
+  &__title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  &__subtitle {
+    margin: 4px 0 24px;
+    color: var(--mat-sys-on-surface-variant, #5f6368);
+  }
+
+  &__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 56px 16px;
+    text-align: center;
+    border: 1px dashed var(--mat-sys-outline-variant, #c4c7c5);
+    border-radius: 12px;
+    color: var(--mat-sys-on-surface-variant, #5f6368);
+
+    i {
+      font-size: 2rem;
+    }
+
+    p {
+      margin: 0;
+      max-width: 420px;
+    }
+  }
+}

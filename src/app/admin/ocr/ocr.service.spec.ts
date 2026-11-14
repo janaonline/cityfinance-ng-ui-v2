@@ -73,6 +73,16 @@ describe('OcrService — DUR validation API', () => {
       req.flush({ job_id: 'job-1', status: 'queued', message: 'queued' });
     });
 
+    it('sends an S3 path as s3_path instead of a file', () => {
+      service.submitDurValidationJob('  objects/dur.pdf ', null, null, null).subscribe();
+
+      const req = httpMock.expectOne(`${BASE_URL}dur-validation/jobs`);
+      const body = req.request.body as FormData;
+      expect(body.get('s3_path')).toBe('objects/dur.pdf');
+      expect(body.has('file')).toBeFalse();
+      req.flush({ job_id: 'job-1', status: 'queued', message: 'queued' });
+    });
+
     it('sends a free-typed ULB string as-is', () => {
       const file = new File(['%PDF-1.4'], 'dur.pdf', { type: 'application/pdf' });
 
