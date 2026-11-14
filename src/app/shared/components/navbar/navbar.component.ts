@@ -13,7 +13,6 @@ import { AuthService, AuthSessionState } from '../../../core/services/auth.servi
 import { AccessChecker } from '../../../core/util/access/accessChecker';
 import { ACTIONS } from '../../../core/util/access/actions';
 import { MODULES_NAME } from '../../../core/util/access/modules';
-import { ROUTE_PAGES } from '../../../core/constants/login-menu.constant';
 import { XVIFC_LS_KEYS } from '../../../features/xvi-fc-module/shared/years-selection/years-selection.component';
 import { StateNotificationService } from '../../../features/xvi-fc-module/state-module/state-notification.service';
 import {
@@ -78,11 +77,6 @@ export class NavbarComponent implements OnInit {
   menus: NavMenuItem[] = [];
   showMobileNav = false;
 
-  // Getter, not a field: isProd is only set in ngOnInit(), after field initializers run.
-  get routePages() {
-    return ROUTE_PAGES.filter((page) => page.isMenu && !(page.isHiddenInProd && this.isProd));
-  }
-
   constructor(
     public _router: Router,
     private authService: AuthService,
@@ -122,48 +116,15 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  loginLogout(type: string) {
-    if (type !== 'logout') {
-      localStorage.setItem('loginType', type);
-    }
-
-    // if (type === '15thFC') {
-    //   this._router.navigate(['/auth/login'], {
-    //     queryParams: { type },
-    //   });
-    //   // window.location.href = '/fc_grant';
-    //   // return;
-    // }
-    // if (type == 'xvifc') {
-    //   this._router.navigate(['/login'], {
-    //     queryParams: { type },
-    //   });
-    //   // this._router.navigateByUrl("/login/xvi-fc");
-    //   // window.location.href = '/login';
-    // }
-    // if (type === 'XVIFC') {
-    //   window.location.href = '/login/16thFC';
-    //   return;
-    // }
-
-    if (type === 'logout') {
-      const loginType = localStorage.getItem('loginType') ?? '16thFC';
-      this.authService.logout().subscribe({
-        next: () => {
-          this.removeSessionItem();
-          this.isLoggedIn = false;
-          this._router.navigate(['/auth/login', loginType]);
-        },
-      });
-      // } else if (type === 'ranking') {
-      //   window.location.href = '/rankings/login';
-      //   return;
-    } else {
-      this._router.navigate(['/auth/login', type]);
-      // this._router.navigate(['/auth/login', { type }], {
-      //   queryParams: { type },
-      // });
-    }
+  /** TS-1262: one unified sign-in page — logging out always lands there, no remembered portal. */
+  logout(): void {
+    this.authService.logout().subscribe({
+      next: () => {
+        this.removeSessionItem();
+        this.isLoggedIn = false;
+        this._router.navigate(['/auth/login']);
+      },
+    });
   }
 
   private bindAuthState() {

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, xvifcAuthGuard, xvifcEligibilityGuard } from './core/guards/auth.guard';
+import { municipalDataHubGuard } from './core/guards/municipal-data-hub.guard';
 import { MaintenanceGuard } from './core/guards/maintenance/maintenance.guard';
 import { ErrorComponent } from './features/error/error.component';
 import { MaintenanceComponent } from './features/maintenance/maintenance.component';
@@ -39,9 +40,19 @@ export const routes: Routes = [
   //   loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
   // },
   {
+    // TS-1262: the unified post-login home page (module cards) — public front-door content for
+    // logged-out visitors is a separate ticket.
     path: '',
     pathMatch: 'full',
-    loadComponent: () => import('./features/landing/landing.component').then((m) => m.LandingComponent),
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/landing/landing.component').then((m) => m.LandingComponent),
+  },
+  {
+    path: 'municipal-data-hub',
+    canActivate: [authGuard, municipalDataHubGuard],
+    loadComponent: () =>
+      import('./features/municipal-data-hub/municipal-data-hub.component').then((m) => m.MunicipalDataHubComponent),
   },
   // {
   //     path: '',

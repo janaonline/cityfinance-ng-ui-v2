@@ -158,37 +158,8 @@
           <button class="btn btn-cfPrimary fw-bold" type="button" disabled>Checking session...</button>
         }
         @if (isAuthResolved && !isLoggedIn) {
-          <button class="btn btn-cfPrimary fw-bold" [matMenuTriggerFor]="loginMenu">
-            Login <i class="bi bi-caret-down-fill"></i>
-          </button>
-          <mat-menu #loginMenu="matMenu">
-            @for (routePage of routePages; track routePage) {
-                <button
-                  mat-menu-item
-                  class="border-bottom"
-                  [class.login-menu-item--new]="routePage.isNew"
-                  [routerLink]="['auth/login', routePage.type]"
-                >
-                  <i class="bi bi-box-arrow-in-right" style="margin-right: 8px"></i>
-                  <span [class.login-menu-label--new]="routePage.isNew">{{ routePage.label }}</span>
-                  @if (routePage.isNew) {
-                    <span class="login-menu-new-badge">NEW</span>
-                  }
-                </button>
-            }
-            <!-- <button mat-menu-item class="border-bottom" (click)="loginLogout('16thFC')">
-              <i class="bi bi-box-arrow-in-right"></i> XVI FC Grant
-            </button>
-            <button mat-menu-item class="border-bottom" (click)="loginLogout('15thFC')">
-              <i class="bi bi-box-arrow-in-right"></i> XV FC Grant
-            </button>
-            <button mat-menu-item class="border-bottom" (click)="loginLogout('XVIFC')">
-              <i class="bi bi-box-arrow-in-right"></i> XVI FC Data Collection
-            </button>
-            <button mat-menu-item (click)="loginLogout('ranking')">
-              <i class="bi bi-box-arrow-in-right"></i> Rankings 2022
-            </button> -->
-          </mat-menu>
+          <!-- TS-1262: one unified sign-in page, no more per-portal menu. -->
+          <a class="btn btn-cfPrimary fw-bold" routerLink="/auth/login"> Sign In </a>
         }
         @if (isAuthResolved && isLoggedIn) {
           <button class="btn btn-sm btn-cfPrimary fw-bold" [matMenuTriggerFor]="logoutMenu">
@@ -206,7 +177,7 @@
               </div>
             </div>
 
-            <button mat-menu-item class="text-center" (click)="loginLogout('logout')">Logout</button>
+            <button mat-menu-item class="text-center" (click)="logout()">Logout</button>
           </mat-menu>
         }
       </div>

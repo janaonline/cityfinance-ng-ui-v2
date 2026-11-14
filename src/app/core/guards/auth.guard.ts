@@ -52,8 +52,12 @@ function buildLoginRedirect(router: Router, returnUrl: string, loginPath: string
 /** Default auth guard — redirects unauthenticated users to /login. */
 export const authGuard: CanActivateFn = createAuthGuard(['/login']);
 
-/** XVI-FC auth guard — redirects unauthenticated users to XVI-FC login. */
-export const xvifcAuthGuard: CanActivateFn = createAuthGuard(['/auth', 'login', '16thFC']);
+/**
+ * XVI-FC auth guard — redirects unauthenticated users to sign in.
+ * TS-1262: sign-in is now a single unified page (no per-portal branded URL); the role picker
+ * there covers every role that can land in /xvifc/**.
+ */
+export const xvifcAuthGuard: CanActivateFn = createAuthGuard(['/auth', 'login']);
 
 /**
  * Runs after `xvifcAuthGuard` confirms the session is authenticated. Covers the case a fresh

@@ -1,6 +1,6 @@
 import { ViewportScroller } from '@angular/common';
 // import {} from '@angular/common/http';
-import { Component, HostListener, inject, OnInit } from '@angular/core';
+import { Component, HostListener, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { environment } from '../environments/environment';
@@ -26,6 +26,10 @@ export class AppComponent implements OnInit {
   title = 'Cityfinance';
   baseUrl = environment.environment;
   loaderService = inject(GlobalLoaderService);
+  // TS-1262: the home page is short (a couple of card rows) — the global sticky-footer
+  // min-height:100vh pattern on .app-wrapper would otherwise leave a large forced gap above the
+  // footer there. Every other route keeps the normal sticky behavior.
+  protected readonly isHomeRoute = signal(false);
 
   constructor(
     private route: ActivatedRoute,
@@ -52,6 +56,7 @@ export class AppComponent implements OnInit {
         const url = event.urlAfterRedirects;
         const hideFooter = /^\/(auth|xvifc)(\/|$)/.test(url);
         this.loaderService.isFooterVisible.set(!hideFooter);
+        this.isHomeRoute.set(/^\/(\?.*)?$/.test(url));
       }
     });
   }

@@ -1,6 +1,6 @@
 <!-- <div class="wrapper app-wrapper" [ngClass]="true ? 'mt-4' : ''"> -->
 @if (loaderService.isLayoutVisible()) {
-<div class="wrapper app-wrapper">
+<div class="wrapper app-wrapper" [class.app-wrapper--compact]="isHomeRoute()">
   <!-- <app-home-header></app-home-header> -->
   <!-- <app-home-header></app-home-header> -->
   <app-header></app-header>

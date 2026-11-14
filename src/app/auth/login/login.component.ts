@@ -121,14 +121,24 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ─── Signals ─────────────────────────────────────────────────────────────────
 
-  readonly typeKey = signal<LoginType | null>('15thFC');
+  // TS-1262: no portal-specific default — the canonical /auth/login (no :type) is the unified
+  // entry point now, and it should read as generic, not borrow 15th FC's branding by accident of
+  // an old default. A type is only ever set from here when an old portal-specific URL sets it.
+  readonly typeKey = signal<LoginType | null>(null);
   protected readonly step = signal<LoginStep>('role');
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal('');
 
-  protected readonly supportEmail = computed(() =>
-    this.typeKey() === '15thFC' ? '15fcgrant@cityfinance.in' : '16fc.grant@cityfinance.in',
-  );
+  protected readonly supportEmail = computed(() => {
+    switch (this.typeKey()) {
+      case '15thFC':
+        return '15fcgrant@cityfinance.in';
+      case '16thFC':
+        return '16fc.grant@cityfinance.in';
+      default:
+        return 'support@cityfinance.in';
+    }
+  });
 
   protected readonly captchaEnabled = environment.captchaEnabled;
 
@@ -345,10 +355,10 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   protected readonly selectedRole = signal<RoleOption | null>(null);
   protected readonly slideDirection = signal<'forward' | 'back' | 'none'>('none');
 
-  protected readonly isMultiStep = computed(() => {
-    const type = this.typeKey();
-    return type === '16thFC' || type === '15thFC';
-  });
+  // TS-1262: the role picker is now shown on every sign-in, regardless of which portal URL
+  // the user arrived from (or whether `type` is set at all) — there's no more "portal choice"
+  // step before it. `type` still only decorates the left info panel (branding/documents).
+  protected readonly isMultiStep = computed(() => true);
 
   protected readonly showRoleStep = computed(() => this.isMultiStep() && this.step() === 'role');
 
@@ -394,31 +404,16 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     return role.id === 'ULB' ? 'Census Code is required.' : 'Email is required.';
   });
 
-  protected readonly roleOptions = computed<readonly RoleOption[]>(() => {
-    const type = this.typeKey();
-    const is15thFC = type === '15thFC';
-    const is16thFC = type === '16thFC';
-
-    const options: RoleOption[] = [
-      { id: 'ULB', label: 'ULB', icon: 'ulb', biIcon: 'bi-buildings-fill' },
-      { id: 'STATE', label: 'STATE', icon: 'state', biIcon: 'bi-bank' },
-      { id: 'MOHUA', label: 'MOHUA', icon: 'mohua', biIcon: 'bi-bullseye' },
-    ];
-
-    if (is15thFC || is16thFC) {
-      options.push({ id: 'PARTNER', label: 'Institutional', icon: 'institutional', biIcon: 'bi-building-check' });
-    }
-
-    // DoE signs in to the 15th FC flow and, as a read-only copy of the MoHUA dashboard, to the 16th FC / XVIFC one.
-    const doeEnabled = is15thFC || is16thFC || type === 'XVIFC';
-    options.push(
-      doeEnabled
-        ? { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock' }
-        : { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock', disabled: true },
-    );
-
-    return options;
-  });
+  // TS-1262: one unified role picker for every sign-in — ULB, State, MoHUA, Institutional, DoE —
+  // no longer conditioned on which portal URL the user arrived from. Supersedes every prior
+  // type-conditioned variant of this computed (including whatever development currently has).
+  protected readonly roleOptions = computed<readonly RoleOption[]>(() => [
+    { id: 'ULB', label: 'ULB', icon: 'ulb', biIcon: 'bi-buildings-fill' },
+    { id: 'STATE', label: 'STATE', icon: 'state', biIcon: 'bi-bank' },
+    { id: 'MOHUA', label: 'MOHUA', icon: 'mohua', biIcon: 'bi-bullseye' },
+    { id: 'PARTNER', label: 'Institutional', icon: 'institutional', biIcon: 'bi-building-check' },
+    { id: 'DOE', label: 'DOE', icon: 'doe', biIcon: 'bi-shield-lock' },
+  ]);
 
   // Documents visible for the current login type + selected role. Before a role is chosen
   // (role-selection step) every document for the current type is shown; once a role is picked,
@@ -516,7 +511,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           showResourceActions: false,
         };
 
-      default: // 15thFC
+      case '15thFC':
         return {
           titleLine1: '15th Finance Commission',
           titleLine2: 'Grant Management System',
@@ -535,6 +530,24 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
           ],
           showStats: false,
           showDocuments: true,
+          showResourceActions: false,
+        };
+
+      // TS-1262: the canonical /auth/login (no :type) — a neutral identity for the one sign-in
+      // that now covers every module, instead of defaulting to 15th FC's own branding.
+      default:
+        return {
+          titleLine1: 'CityFinance',
+          titleLine2: 'Sign in to your account',
+          descriptions: [
+            {
+              html: trust(
+                `One sign-in for every ${cfLink} module you have access to — 16th and 15th Finance Commission grants, state dashboards, and ULB data collection — picked up by your role below.`,
+              ),
+            },
+          ],
+          showStats: false,
+          showDocuments: false,
           showResourceActions: false,
         };
     }
@@ -571,7 +584,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     this.route.queryParams.subscribe(({ type }) => {
       if (LOGIN_TYPES.includes(type)) {
         this.typeKey.set(type);
-        this.updateValidatorsForType(type);
+        this.updateValidatorsForType();
       }
     });
 
@@ -586,7 +599,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       this.typeKey.set(type);
-      this.updateValidatorsForType(type);
+      this.updateValidatorsForType();
     });
   }
 
@@ -737,15 +750,14 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isSubmitting.set(true);
     this.errorMessage.set('');
 
-    const { identifier, password } = this.loginForm.getRawValue();
+    const { identifier, password, role } = this.loginForm.getRawValue();
 
     this.loginService
-      .signInWithPassword(identifier.trim(), password, this.typeKey())
+      .signInWithPassword(identifier.trim(), password, role, this.typeKey())
       .pipe(finalize(() => this.isSubmitting.set(false)))
       .subscribe({
-        next: (res) => {
-          const user = this.loginService.extractUser(res) ?? this.loginService.getCurrentUser();
-          void this.loginService.navigateAfterLogin(user, this.typeKey());
+        next: () => {
+          void this.loginService.navigateAfterLogin();
         },
         error: (err: { error?: { message?: string }; message?: string }) => {
           // err.error.message is an HttpErrorResponse from the backend; err.message is a plain
@@ -767,17 +779,11 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ─── Private ─────────────────────────────────────────────────────────────────
 
-  private updateValidatorsForType(type: LoginType): void {
-    const isMultiStep = type === '16thFC' || type === '15thFC';
+  private updateValidatorsForType(): void {
     const roleCtrl = this.loginForm.controls.role;
 
-    if (isMultiStep) {
-      roleCtrl.setValidators([Validators.required]);
-      this.step.set('role');
-    } else {
-      roleCtrl.clearValidators();
-      this.step.set('credentials');
-    }
+    roleCtrl.setValidators([Validators.required]);
+    this.step.set('role');
     roleCtrl.updateValueAndValidity();
     roleCtrl.reset('');
     this.resetIdentifierToDefault();

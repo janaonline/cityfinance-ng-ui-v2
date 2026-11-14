@@ -76,7 +76,7 @@ describe('LoginComponent', () => {
     expect(xvifcSpy.clearResolvedContext).toHaveBeenCalledTimes(1);
   });
 
-  it('should keep the default login type for unsupported query params', async () => {
+  it('should keep the generic (null) login type for unsupported query params', async () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({ imports: [HttpClientTestingModule, RouterTestingModule, LoginComponent], providers: [{ provide: MatDialogRef, useValue: { close: () => undefined } }, { provide: MAT_DIALOG_DATA, useValue: {} }, 
         provideNoopAnimations(),
@@ -91,28 +91,39 @@ describe('LoginComponent', () => {
     const localFixture = TestBed.createComponent(LoginComponent);
     localFixture.detectChanges();
 
-    expect(localFixture.componentInstance['typeKey']()).toBe('15thFC');
+    expect(localFixture.componentInstance['typeKey']()).toBeNull();
+    // TS-1262: the canonical, type-less sign-in page reads as generic, not as 15th FC's own
+    // branding (its old implicit default before this redesign).
+    expect(localFixture.componentInstance['panelContent']().titleLine1).toBe('CityFinance');
+    expect(localFixture.componentInstance['supportEmail']()).toBe('support@cityfinance.in');
   });
 
-  it('should enable the DOE role for the 16th FC and XVIFC sign-in', () => {
-    for (const type of ['16thFC', 'XVIFC'] as const) {
-      component['typeKey'].set(type);
-      expect(component['roleOptions']().find((role) => role.id === 'DOE')?.disabled).toBeFalsy();
-    }
-  });
-
-  it('should select enabled roles and ignore disabled roles', () => {
-    // DOE stays a disabled tile for sign-in types with no DOE access, such as Rankings.
-    component['typeKey'].set('ranking');
+  it('should select a role and advance to the credentials step', () => {
     const [ulbRole] = component['roleOptions']();
-    const doeRole = component['roleOptions']().find((role) => role.id === 'DOE')!;
 
     component['selectRole'](ulbRole);
+
     expect(component['loginForm'].controls.role.value).toBe('ULB');
     expect(component['isRoleSelected']('ULB')).toBeTrue();
+    expect(component['step']()).toBe('credentials');
+  });
 
-    component['selectRole'](doeRole);
-    expect(component['loginForm'].controls.role.value).toBe('ULB');
+  it('should ignore a role explicitly marked disabled', () => {
+    const disabledRole = { id: 'DOE' as const, label: 'DOE', icon: 'doe' as const, biIcon: 'bi-shield-lock', disabled: true };
+
+    component['selectRole'](disabledRole);
+
+    expect(component['loginForm'].controls.role.value).toBe('');
+    expect(component['step']()).toBe('role');
+  });
+
+  it('should always offer all five roles, none disabled, regardless of login type', () => {
+    for (const type of ['16thFC', '15thFC', 'XVIFC', 'ranking', 'state-dashboard'] as const) {
+      component['typeKey'].set(type);
+      const roles = component['roleOptions']();
+      expect(roles.map((r) => r.id)).toEqual(['ULB', 'STATE', 'MOHUA', 'PARTNER', 'DOE']);
+      expect(roles.every((r) => !r.disabled)).toBeTrue();
+    }
   });
 
   it('should toggle password visibility', () => {
@@ -136,7 +147,7 @@ describe('LoginComponent', () => {
     expect(component['loginForm'].touched).toBeTrue();
   });
 
-  it('should submit password login with trimmed identifier and current login type', fakeAsync(() => {
+  it('should submit password login with trimmed identifier, selected role, and current login type', fakeAsync(() => {
     authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));
     authSpy.extractUser.and.returnValue({ role: USER_TYPE.ULB } as any);
     component['loginForm'].setValue({
@@ -151,29 +162,16 @@ describe('LoginComponent', () => {
     expect(authSpy.login).toHaveBeenCalledWith({
       identifier: 'ulb@example.com',
       password: 'secret1',
+      role: 'ULB',
       type: '16thFC',
       recaptchaToken: '',
     });
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/xvifc/year'], { replaceUrl: true });
+    // Login always lands on the unified home page by default (TS-1262) — the home page's own
+    // cards, not login, decide where to go for XVI-FC/XV-FC/etc.
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/'], { replaceUrl: true });
   }));
 
-  it('should navigate XVI FC reviewers to the admin review area after password login', fakeAsync(() => {
-    component['typeKey'].set('XVIFC');
-    authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.XVIFC } }));
-    authSpy.extractUser.and.returnValue({ role: USER_TYPE.XVIFC } as any);
-    component['loginForm'].setValue({
-      role: 'MOHUA',
-      identifier: 'mohua@example.com',
-      password: 'secret1',
-    });
-
-    component['onSubmit']();
-    tick();
-
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/xvi-fc-review'], { replaceUrl: true });
-  }));
-
-  it('should honor stored post-login navigation before role-based redirects', fakeAsync(() => {
+  it('should honor stored post-login navigation before the default home redirect', fakeAsync(() => {
     component['typeKey'].set('XVIFC');
     sessionStorage.setItem('postLoginNavigationV2', '/saved/path');
     authSpy.login.and.returnValue(of({ user: { role: USER_TYPE.ULB } }));

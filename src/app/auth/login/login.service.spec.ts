@@ -40,11 +40,12 @@ describe('LoginService.signInWithPassword', () => {
     recaptchaSpy.execute.and.returnValue(of('token-1'));
     authSpy.login.and.returnValue(of({ success: true }));
 
-    service.signInWithPassword('100001', 'secret', '16thFC').subscribe(() => {
+    service.signInWithPassword('100001', 'secret', 'ULB', '16thFC').subscribe(() => {
       expect(recaptchaSpy.execute).toHaveBeenCalledTimes(1);
       expect(authSpy.login).toHaveBeenCalledWith({
         identifier: '100001',
         password: 'secret',
+        role: 'ULB',
         type: '16thFC',
         recaptchaToken: 'token-1',
       });
@@ -60,7 +61,7 @@ describe('LoginService.signInWithPassword', () => {
     });
     authSpy.login.and.returnValue(of({ success: true }));
 
-    service.signInWithPassword('100001', 'secret', '16thFC').subscribe(() => {
+    service.signInWithPassword('100001', 'secret', 'ULB', '16thFC').subscribe(() => {
       expect(recaptchaSpy.execute).toHaveBeenCalledTimes(2);
       expect(authSpy.login).toHaveBeenCalledTimes(1);
       expect(authSpy.login).toHaveBeenCalledWith(jasmine.objectContaining({ recaptchaToken: 'token-2' }));
@@ -74,7 +75,7 @@ describe('LoginService.signInWithPassword', () => {
     );
     authSpy.login.and.returnValue(of({ success: true }));
 
-    service.signInWithPassword('100001', 'secret', '16thFC').subscribe({
+    service.signInWithPassword('100001', 'secret', 'ULB', '16thFC').subscribe({
       next: () => fail('expected an error, not a resolved value'),
       error: (err: Error) => {
         expect(err.message).toBe('reCAPTCHA verification failed. Please try again.');

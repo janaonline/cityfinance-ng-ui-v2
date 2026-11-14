@@ -6,9 +6,6 @@ import { AuthService } from '../../core/services/auth.service';
 import { OtpAuthService } from '../../core/auth/auth.service';
 import { RecaptchaService } from '../../core/services/recaptcha.service';
 import { IUserLoggedInDetails } from '../../core/models/login/userLoggedInDetails';
-import { USER_TYPE } from '../../core/models/user/userType';
-import { ROUTE_PAGES } from '../../core/constants/login-menu.constant';
-import { environment } from '../../../environments/environment';
 
 export interface CheckUserResult {
   isXVIFCProfileVerified?: boolean;
@@ -55,7 +52,12 @@ export class LoginService {
 
   // ─── Auth API ─────────────────────────────────────────────────────────────────
 
-  signInWithPassword(identifier: string, password: string, type: string | null): Observable<unknown> {
+  signInWithPassword(
+    identifier: string,
+    password: string,
+    role: string,
+    type: string | null,
+  ): Observable<unknown> {
     // defer() is required here, not optional — execute('login') itself only runs once to build
     // the Observable; without defer, retry(1) would just resubscribe to that same
     // already-settled result instead of calling execute() again, so a blank/rejected token would
@@ -65,7 +67,10 @@ export class LoginService {
       // something tied to a prior call — asking again almost always succeeds. Only surface an
       // error to the user if it fails twice in a row for this one submit.
       retry(1),
-      switchMap((recaptchaToken) => this.auth.login({ identifier, password, type, recaptchaToken })),
+      // `role` lets the backend enforce "the account must hold the picked role" (TS-1262) now
+      // that there's no portal choice narrowing it implicitly; `type` is still sent for the
+      // backend's existing branding/analytics use, unrelated to this check.
+      switchMap((recaptchaToken) => this.auth.login({ identifier, password, role, type, recaptchaToken })),
     );
   }
 
@@ -109,35 +114,21 @@ export class LoginService {
 
   // ─── Post-login navigation ────────────────────────────────────────────────────
 
-  async navigateAfterLogin(currentUser: IUserLoggedInDetails | null, type: string | null): Promise<void> {
-    if (type === '16thFC') {
-      sessionStorage.removeItem('postLoginNavigationV2');
-      sessionStorage.removeItem('postLoginNavigation');
-      await this.router.navigate(['/xvifc/year'], { replaceUrl: true });
-      return;
-    }
-
+  // TS-1262: every sign-in now lands on the unified home page of module cards by default —
+  // the home page itself owns "where do I go for XVI-FC / XV-FC / etc.", not login. The one
+  // exception is a guard-triggered deep link (someone hit a guarded URL directly, got bounced
+  // to sign-in, and should land back where they were once authenticated).
+  async navigateAfterLogin(): Promise<void> {
     const saved =
       sessionStorage.getItem('postLoginNavigationV2') ?? sessionStorage.getItem('postLoginNavigation');
+    sessionStorage.removeItem('postLoginNavigationV2');
+    sessionStorage.removeItem('postLoginNavigation');
+
     if (saved) {
-      sessionStorage.removeItem('postLoginNavigationV2');
-      sessionStorage.removeItem('postLoginNavigation');
       await this.router.navigateByUrl(saved, { replaceUrl: true });
       return;
     }
 
-    for (const route of ROUTE_PAGES) {
-      if (
-        route.type === type &&
-        (!route.roles || route.roles.includes(currentUser?.role as USER_TYPE))
-      ) {
-        if (route.link) {
-          window.location.href = environment.ui.urlV1 + route.link;
-        } else if (route.route) {
-          await this.router.navigate([route.route], { replaceUrl: true });
-        }
-        return;
-      }
-    }
+    await this.router.navigate(['/'], { replaceUrl: true });
   }
 }
