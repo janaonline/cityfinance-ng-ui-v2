@@ -10,20 +10,12 @@
       <i class="fs-4 bi bi-list"></i>
     </button>
 
-    <!-- CF logo — TS-1262: for a logged-in user, routes to the unified home page (the one way
-         back to the card grid after opening a module). Logged-out visitors keep the original
-         /home destination untouched, since that's a public page this app doesn't own. -->
-    @if (isLoggedIn) {
-      <a routerLink="/" class="">
-        <span class="fw-bold fs-3 text-shadow-custom text-info">city</span>
-        <span class="fw-bold fs-3 text-shadow-custom text-cfSecondary">finance</span>
-      </a>
-    } @else {
-      <a href="/home" class="">
-        <span class="fw-bold fs-3 text-shadow-custom text-info">city</span>
-        <span class="fw-bold fs-3 text-shadow-custom text-cfSecondary">finance</span>
-      </a>
-    }
+    <!-- CF logo — kept at its original /home destination for everyone. The "back to the home
+         page" need is covered by a separate dedicated action item, not by repurposing this. -->
+    <a href="/home" class="">
+      <span class="fw-bold fs-3 text-shadow-custom text-info">city</span>
+      <span class="fw-bold fs-3 text-shadow-custom text-cfSecondary">finance</span>
+    </a>
 
     <!-- Nav items -->
     <div class="d-flex flex-grow-1 align-items-center justify-content-end gap-1">
