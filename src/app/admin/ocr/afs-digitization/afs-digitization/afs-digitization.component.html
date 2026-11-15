@@ -332,15 +332,15 @@
                       </span>
                     </div>
                     <div class="score-card">
-                      <span class="score-card__label">Overall Assessment</span>
-                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.overall_assessment)">
-                        {{ job.result.overall_assessment ?? 'UNVERIFIED' }}
-                      </span>
-                    </div>
-                    <div class="score-card">
                       <span class="score-card__label">Arithmetic Accuracy</span>
                       <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.arithmetic_assessment)">
                         {{ job.result.arithmetic_assessment ?? 'NOT RUN' }}
+                      </span>
+                    </div>
+                    <div class="score-card">
+                      <span class="score-card__label">Overall Assessment</span>
+                      <span class="assessment-badge" [ngClass]="getAssessmentClass(job.result.overall_assessment)">
+                        {{ job.result.overall_assessment ?? 'UNVERIFIED' }}
                       </span>
                     </div>
                     <div class="score-card">
