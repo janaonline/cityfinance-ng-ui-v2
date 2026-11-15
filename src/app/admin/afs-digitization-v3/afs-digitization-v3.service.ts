@@ -31,6 +31,13 @@ export interface DigitizationV3Info {
   digitizedAt?: string;
   /** How long the job took to run, in milliseconds */
   elapsedMs?: number;
+  /** Scores of the finished job; absent when that step did not run or the file predates them */
+  ocrConfidenceScore?: number;
+  accuracyScore?: number;
+  /** PASS / FAIL / NOT_APPLICABLE */
+  arithmeticAssessment?: string;
+  /** PASS / PARTIAL / FAIL / UNVERIFIED */
+  overallAssessment?: string;
 }
 
 export interface DigitizationV3Row {
@@ -43,6 +50,15 @@ export interface DigitizationV3Row {
   docType: string;
   pdfUrl: string | null;
   pdfUrlSigned: string | null;
+  /** PDF uploaded from this page (same slot as the AFS dashboard's Upload); null until one is uploaded */
+  afsPdfUrl?: string | null;
+  afsPdfUrlSigned?: string | null;
+  afsPdfPageCount?: number | null;
+  /** Size of the uploaded AFS PDF in bytes; null for uploads made before the size was stored */
+  afsPdfSizeBytes?: number | null;
+  /** Digitization of the uploaded AFS PDF; null until a PDF is uploaded */
+  afsDigitization?: DigitizationV3Info | null;
+  afsExcelUrlSigned?: string | null;
   /** Digitized Excel, signed by the API like the PDF; null until the file is digitized */
   excelUrl: string | null;
   excelUrlSigned: string | null;
@@ -131,6 +147,8 @@ export interface DigitizationV3Query {
   digitizationV3Status?: DigitizationV3Status;
   isConsolidated?: boolean;
   isMismatch?: boolean;
+  /** Enqueue only: also queue files that are already digitized */
+  redigitize?: boolean;
   /** ISO instants; the page sends the start / end of the picked local days */
   digitizedFrom?: string;
   digitizedTo?: string;
@@ -164,5 +182,10 @@ export class AfsDigitizationV3Service {
 
   enqueueByFilter(query: DigitizationV3Query) {
     return this.http.post<EnqueueSummary>(`${this.base}/enqueue-by-filter`, query);
+  }
+
+  /** Digitizes the PDFs uploaded from this page for the ULBs in `query.ulbId` */
+  enqueueAfs(query: DigitizationV3Query) {
+    return this.http.post<EnqueueSummary>(`${this.base}/enqueue-afs`, query);
   }
 }

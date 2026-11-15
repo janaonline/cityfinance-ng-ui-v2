@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
+import { Component, DestroyRef, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +21,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EMPTY, Subject, catchError, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, filter, switchMap } from 'rxjs';
+import { FileService } from '../../shared/dynamic-form/components/file/file.service';
 import {
   AFS_FILTER_KEY,
   AfsFilterComponent,
@@ -30,9 +31,13 @@ import {
   DEFAULT_YEAR,
 } from '../afs-dashboard/afs-filter/afs-filter.component';
 import { environment } from '../../../environments/environment';
-import { FilterValues } from '../afs-dashboard/afs.service';
+import { AfsService, FilterValues } from '../afs-dashboard/afs.service';
 import { AfsDigitizationV3LogDialogComponent } from './afs-digitization-v3-log-dialog.component';
 import { AfsLogModalComponent } from '../afs-dashboard/afs-log-modal/afs-log-modal.component';
+import {
+  AfsDigitizationV3ConfirmDialogComponent,
+  DigitizationV3ConfirmDialogData,
+} from './afs-digitization-v3-confirm-dialog.component';
 import {
   AfsDigitizationV3ResultDialogComponent,
   DigitizationV3ResultDialogData,
@@ -42,6 +47,7 @@ import {
   DigitizationV3Metrics,
   DigitizationV3OverallMetrics,
   DigitizationV3Query,
+  DigitizationV3Info,
   DigitizationV3Row,
   DigitizationV3Status,
 } from './afs-digitization-v3.service';
@@ -55,6 +61,9 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   auditor_report: "Auditor's Report",
   unknown: 'Unidentified',
 };
+
+/** How long the presigned S3 upload URL stays valid */
+const SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
 type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
 
@@ -97,8 +106,10 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fileService = inject(FileService);
+  private readonly afsService = inject(AfsService);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'contents', 'flags', 'actions'];
+  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'scores', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -366,18 +377,19 @@ export class AfsDigitizationV3Component implements OnInit {
     const total = this.totalCount();
     if (!total || this.queueing()) return;
 
-    const confirmed = confirm(
-      `Digitize all ${total} filtered file(s)?\n\n` + 'Files with no PDF, or already queued or digitized, are skipped.',
+    this.confirmThen(
+      {
+        title: `Digitize all ${total} filtered file(s)?`,
+        message: 'Files with no PDF, or already queued or digitized, are skipped.',
+        confirmLabel: 'Digitize',
+      },
+      () => this.enqueue(this.buildQuery({ paged: false, pageFilters: true })),
     );
-    if (!confirmed) return;
-
-    this.enqueue(this.buildQuery({ paged: false, pageFilters: true }));
   }
 
-  private enqueue(query: DigitizationV3Query): void {
+  private enqueue(query: DigitizationV3Query, which: 'ulb' | 'afs' = 'ulb'): void {
     this.queueing.set(true);
-    this.api
-      .enqueueByFilter(query)
+    (which === 'afs' ? this.api.enqueueAfs(query) : this.api.enqueueByFilter(query))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
@@ -403,20 +415,159 @@ export class AfsDigitizationV3Component implements OnInit {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // AFS PDF upload (same flow as the AFS dashboard: presigned S3 PUT, then save on afs_xl_files)
+  // ---------------------------------------------------------------------------
+
+  /** ULB ids with an upload in flight */
+  readonly uploading = signal<ReadonlySet<string>>(new Set());
+
+  isUploading(row: DigitizationV3Row): boolean {
+    return this.uploading().has(row.ulb);
+  }
+
+  private setUploading(ulb: string, on: boolean): void {
+    this.uploading.update((current) => {
+      const next = new Set(current);
+      if (on) next.add(ulb);
+      else next.delete(ulb);
+      return next;
+    });
+  }
+
+  @ViewChild('afsFileInput') private afsFileInput?: ElementRef<HTMLInputElement>;
+  /** The row whose menu opened the file picker */
+  private uploadTarget: DigitizationV3Row | null = null;
+
+  /** "Upload AFS PDF" in the row menu */
+  pickAfsPdf(row: DigitizationV3Row): void {
+    this.uploadTarget = row;
+    this.afsFileInput?.nativeElement.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const row = this.uploadTarget;
+    // Reset so picking the same file again still fires `change`
+    input.value = '';
+    this.uploadTarget = null;
+    if (!file || !row) return;
+
+    if (file.type !== 'application/pdf') {
+      this.notify('Please upload a valid PDF file.');
+      return;
+    }
+    if (this.isUploading(row)) return;
+
+    const folder = `afs/uploads/${row.ulbCode}/${this.filters.docType}`;
+    this.setUploading(row.ulb, true);
+
+    this.fileService
+      .getSignedUrls([
+        { fileName: file.name, folder, mimeType: file.type, fileSize: file.size, expiresIn: SIGNED_URL_EXPIRES_IN_SECONDS },
+      ])
+      .pipe(
+        switchMap(([signed]) => {
+          const { url, path } = signed ?? {};
+          if (!url || !path) throw new Error('No upload URL was returned');
+          return this.fileService.newUploadFileToS3(file, url).pipe(
+            filter((event) => event.type === HttpEventType.Response),
+            switchMap(() =>
+              this.afsService.uploadAfsFile({
+                pdfUrl: path,
+                ulb: row.ulb,
+                year: this.filters.yearId,
+                auditType: this.filters.auditType,
+                docType: this.filters.docType,
+                uploadedBy: 'AFS',
+              }),
+            ),
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.setUploading(row.ulb, false);
+          this.notify(`Uploaded ${file.name} for ${row.ulbName}`);
+          // The list carries the signed link and page count of the new PDF
+          this.reload();
+        },
+        error: (err: HttpErrorResponse | Error) => {
+          this.setUploading(row.ulb, false);
+          this.notify(err instanceof HttpErrorResponse ? this.errorMessage(err, 'Could not upload the PDF') : err.message);
+        },
+      });
+  }
+
+  /** The AFS upload can be digitized unless it is already queued, processing or digitized */
+  canDigitizeAfs(row: DigitizationV3Row): boolean {
+    if (!row.afsPdfUrl) return false;
+    const status = row.afsDigitization?.status;
+    return status !== 'queued' && status !== 'processing' && status !== 'digitized';
+  }
+
+  /** "Digitize" in the AFS half's menu: queues the uploaded PDF of this row only */
+  digitizeAfs(row: DigitizationV3Row): void {
+    if (!this.canDigitizeAfs(row) || this.queueing()) return;
+    this.enqueue({ ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb] }, 'afs');
+  }
+
+  /** Only a file that is already digitized can be re-digitized */
+  canRedigitize(row: DigitizationV3Row, which: 'ulb' | 'afs'): boolean {
+    return this.infoOf(row, which)?.status === 'digitized';
+  }
+
+  /** "Redigitize" in the row menus: queues this row's already-digitized file again */
+  redigitize(row: DigitizationV3Row, which: 'ulb' | 'afs'): void {
+    if (!this.canRedigitize(row, which) || this.queueing()) return;
+    this.confirmThen(
+      {
+        title: `Re-digitize ${row.ulbName}?`,
+        message:
+          'The PDF is processed again (OCR and Gemini are charged again) and the previous result is replaced.',
+        confirmLabel: 'Redigitize',
+      },
+      () =>
+        this.enqueue(
+          { ...this.buildQuery({ paged: false, pageFilters: false }), ulbId: [row.ulb], redigitize: true },
+          which,
+        ),
+    );
+  }
+
+  /** Opens the confirm modal and runs `action` only if the user confirms. */
+  private confirmThen(data: DigitizationV3ConfirmDialogData, action: () => void): void {
+    this.dialog
+      .open(AfsDigitizationV3ConfirmDialogComponent, { width: '460px', maxWidth: '95vw', data })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (confirmed === true) action();
+      });
+  }
+
+  /** The digitization info of one half of the row: the ULB's PDF, or the uploaded AFS PDF */
+  private infoOf(row: DigitizationV3Row, which: 'ulb' | 'afs'): DigitizationV3Info | null | undefined {
+    return which === 'afs' ? row.afsDigitization : row.digitization;
+  }
+
   /** The existing OCR digitization page for the job saved on the file; null until a job exists. */
-  jobUrl(row: DigitizationV3Row): string | null {
-    const afsDigitizationJobId = row.digitization?.jobId;
+  jobUrl(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): string | null {
+    const afsDigitizationJobId = this.infoOf(row, which)?.jobId;
     if (!afsDigitizationJobId) return null;
     const base = environment.ui.urlV2.replace(/\/+$/, '');
     return `${base}/ocr/afs-digitization/upload?jobId=${encodeURIComponent(afsDigitizationJobId)}`;
   }
 
   /** "View log" in the row's three-dot menu: FastAPI's log for the job saved on the file. */
-  viewLog(row: DigitizationV3Row): void {
-    const afsDigitizationJobId = row.digitization?.jobId;
-    if (!afsDigitizationJobId) return;
+  viewLog(row: DigitizationV3Row, which: 'ulb' | 'afs' = 'ulb'): void {
+    const info = this.infoOf(row, which);
+    const afsDigitizationJobId = info?.jobId;
+    if (!info || !afsDigitizationJobId) return;
     // Old-flow jobs have no FastAPI job: their id is the old request id, so use the afs-dashboard request log
-    if (row.digitization.isLegacy) {
+    if (info.isLegacy) {
       this.dialog.open(AfsLogModalComponent, { data: { requestId: afsDigitizationJobId }, panelClass: 'col-8' });
       return;
     }
@@ -436,6 +587,37 @@ export class AfsDigitizationV3Component implements OnInit {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /** 96.4 → "96.4%"; a missing score → "–" */
+  formatScore(score: number | null | undefined): string {
+    return score == null ? '–' : `${Number(score.toFixed(1))}%`;
+  }
+
+  /** Red below 75, amber below 95, green from 95 (same bands as FAIL / PARTIAL / PASS) */
+  scoreClass(score: number | null | undefined): string {
+    if (score == null) return 'text-muted';
+    return score >= 95 ? 'score-good' : score >= 75 ? 'score-mid' : 'score-bad';
+  }
+
+  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, UNVERIFIED) → grey */
+  assessClass(value: string | null | undefined): string {
+    switch (value) {
+      case 'PASS':
+        return 'assess-pass';
+      case 'PARTIAL':
+        return 'assess-partial';
+      case 'FAIL':
+        return 'assess-fail';
+      default:
+        return 'assess-na';
+    }
+  }
+
+  /** NOT_APPLICABLE → "N/A"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
+  assessLabel(value: string | null | undefined): string {
+    if (!value) return '–';
+    return value === 'NOT_APPLICABLE' ? 'N/A' : value;
   }
 
   /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */
