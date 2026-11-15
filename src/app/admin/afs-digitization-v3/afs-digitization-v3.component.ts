@@ -109,7 +109,7 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly fileService = inject(FileService);
   private readonly afsService = inject(AfsService);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'contents', 'flags', 'actions'];
+  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'scores', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -587,6 +587,37 @@ export class AfsDigitizationV3Component implements OnInit {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /** 96.4 → "96.4%"; a missing score → "–" */
+  formatScore(score: number | null | undefined): string {
+    return score == null ? '–' : `${Number(score.toFixed(1))}%`;
+  }
+
+  /** Red below 75, amber below 95, green from 95 (same bands as FAIL / PARTIAL / PASS) */
+  scoreClass(score: number | null | undefined): string {
+    if (score == null) return 'text-muted';
+    return score >= 95 ? 'score-good' : score >= 75 ? 'score-mid' : 'score-bad';
+  }
+
+  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, UNVERIFIED) → grey */
+  assessClass(value: string | null | undefined): string {
+    switch (value) {
+      case 'PASS':
+        return 'assess-pass';
+      case 'PARTIAL':
+        return 'assess-partial';
+      case 'FAIL':
+        return 'assess-fail';
+      default:
+        return 'assess-na';
+    }
+  }
+
+  /** NOT_APPLICABLE → "N/A"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
+  assessLabel(value: string | null | undefined): string {
+    if (!value) return '–';
+    return value === 'NOT_APPLICABLE' ? 'N/A' : value;
   }
 
   /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */

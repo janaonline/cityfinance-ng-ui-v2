@@ -247,20 +247,22 @@
             <th mat-header-cell *matHeaderCellDef>Scores</th>
             <td mat-cell *matCellDef="let row">
               <div class="d-flex flex-column gap-1">
+                @if (row.confidenceScore != null) {
                 <div>
                   <span class="small text-uppercase text-body-secondary me-1">Textract Confidence</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.confidenceScore)">
-                    {{ row.confidenceScore !== null ? (row.confidenceScore | number: '1.0-1') + '%' : '—' }}
+                    {{ (row.confidenceScore | number: '1.0-1') + '%' }}
                   </span>
                 </div>
+                }
                 <div>
-                  <span class="small text-uppercase text-body-secondary me-1">Crosscheck Confidence</span>
+                  <span class="small text-uppercase text-body-secondary me-1">Confidence</span>
                   <span class="small fw-medium" [ngClass]="getScoreClass(row.accuracyScore)">
                     {{ row.accuracyScore !== null ? (row.accuracyScore | number: '1.0-1') + '%' : '—' }}
                   </span>
                 </div>
                 <div>
-                  <span class="small text-uppercase text-body-secondary me-1">Arithmetic Accuracy</span>
+                  <span class="small text-uppercase text-body-secondary me-1">Accuracy</span>
                   <span class="badge rounded-pill" [ngClass]="getAssessmentClass(row.arithmeticAssessment)">
                     {{ row.arithmeticAssessment ?? '—' }}
                   </span>

@@ -31,6 +31,13 @@ export interface DigitizationV3Info {
   digitizedAt?: string;
   /** How long the job took to run, in milliseconds */
   elapsedMs?: number;
+  /** Scores of the finished job; absent when that step did not run or the file predates them */
+  ocrConfidenceScore?: number;
+  accuracyScore?: number;
+  /** PASS / FAIL / NOT_APPLICABLE */
+  arithmeticAssessment?: string;
+  /** PASS / PARTIAL / FAIL / UNVERIFIED */
+  overallAssessment?: string;
 }
 
 export interface DigitizationV3Row {
