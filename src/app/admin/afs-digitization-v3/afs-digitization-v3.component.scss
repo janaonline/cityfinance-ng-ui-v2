@@ -109,6 +109,59 @@
   background-color: #6c757d;
 }
 
+.score-list {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  text-align: left;
+  white-space: normal;
+}
+
+.score-label {
+  margin-right: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #6c757d;
+}
+
+.score-good {
+  color: #198754;
+  font-weight: 600;
+}
+
+.score-mid {
+  color: #b58105;
+  font-weight: 600;
+}
+
+.score-bad {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.assess {
+  color: #fff;
+}
+
+.assess-pass {
+  background-color: #198754;
+}
+
+.assess-partial {
+  background-color: #b58105;
+}
+
+.assess-fail {
+  background-color: #dc3545;
+}
+
+.assess-na {
+  background-color: #6c757d;
+}
+
 .chip {
   display: inline-block;
   margin: 2px 6px 2px 0;
@@ -201,6 +254,36 @@ mat-card {
     border-right: none;
   }
 }
+/* Each row is split into a ULB half (top) and an AFS half (bottom), aligned across every column */
+.split-cell {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.split-half {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Only rows with an uploaded AFS PDF are split: equal-height halves so every column lines up */
+.split-cell .split-half {
+  min-height: 56px;
+}
+
+.split-start {
+  justify-content: flex-start;
+}
+
+.split-bottom {
+  border-top: 1px dashed rgba(0, 0, 0, 0.2);
+}
+
+.split-label {
+  min-width: 2.6rem;
+}
+
 /* Badge and icon stay on one line */
 .nowrap-cell {
   white-space: nowrap;
