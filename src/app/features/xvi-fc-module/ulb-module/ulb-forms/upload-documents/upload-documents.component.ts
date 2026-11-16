@@ -30,6 +30,7 @@ import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.c
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { isValidationFail } from '../../../../../shared/components/document-action-row/resolve-document-actions';
 import type {
   ActionGate,
   DocumentRuntimeState,
@@ -446,11 +447,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
-  /** True once this document has failed enough times to offer "Request Manual Review" — a retry
-   *  on the same file, or any re-upload, both count (a re-upload that still fails deserves the
-   *  same offer as a second failed retry). */
+  /** True once this document has failed OCR validation enough times to offer "Request Manual
+   *  Review" — a retry on the same file, or any re-upload, both count. Only a real validation FAIL
+   *  qualifies (the server refuses anything else): a technical failure (the OCR job crashed, so no
+   *  validationStatus) keeps Retry / Re-upload instead. */
   isEligibleForManualReview(doc: UploadDocument): boolean {
-    return doc.retryValidationCount > 1 || (doc.version ?? 1) > 1;
+    return isValidationFail(doc.validationStatus) && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
   }
 
   /** True while this document is in its post-rejection cooldown — mirrors the backend's
@@ -478,7 +480,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (doc.isManualReviewRequested) return false;
     if (this.isUploadBlocked(doc)) return false;
     if (doc.manualReviewDecision?.status === 'RETURNED') {
-      return this.manualReviewAttemptsExhausted(doc);
+      // The server only accepts a real FAIL here too; a crash on the last upload means Re-upload.
+      return this.manualReviewAttemptsExhausted(doc) && isValidationFail(doc.validationStatus);
     }
     return this.isEligibleForManualReview(doc);
   }
@@ -610,6 +613,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (this.hasProcessingDocs()) {
       event.preventDefault();
     }
+  }
+
+  /** ADMIN decides a manual review outside this page, so re-read the section when the ULB comes
+   *  back to the tab while a review is pending. Skipped mid-upload so a local file isn't replaced. */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    const docs = this.documents();
+    if (!docs.some((d) => this.isAwaitingManualReview(d)) || docs.some((d) => d.status === 'uploading')) return;
+    void this.loadExistingData();
   }
 
   ngOnDestroy(): void {

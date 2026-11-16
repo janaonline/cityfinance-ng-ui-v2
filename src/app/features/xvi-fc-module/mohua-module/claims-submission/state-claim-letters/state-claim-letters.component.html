@@ -13,7 +13,7 @@
   } @else {
     @if (data(); as d) {
     <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
-    <p class="cs-subtitle">All claim letters submitted so far for this state, Installment {{ installment }}.</p>
+    <p class="cs-subtitle">All claim letters submitted by the State for the {{ installment === 1 ? 'first' : 'second' }} instalment.</p>
 
     <div class="cs-table-wrap">
       <table class="cs-table">

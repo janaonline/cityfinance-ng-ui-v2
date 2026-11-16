@@ -3,8 +3,8 @@ import { MOHUA_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-o
 
 /**
  * The read-only dashboard: national overview, one state, one ULB, and the read-only views of the five state
- * forms. Shared as-is by MoHUA and DoE (DoE is a view-only copy of the MoHUA dashboard), so a change here
- * changes both. Nothing in this list can approve, return or edit anything.
+ * forms. Shared as-is by MoHUA, DoE (a view-only copy of the MoHUA dashboard) and PMU (its Overview), so a
+ * change here changes all three. Nothing in this list can approve, return or edit anything.
  */
 export const MOHUA_DASHBOARD_ROUTES: Routes = [
   {

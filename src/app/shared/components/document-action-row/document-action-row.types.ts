@@ -49,14 +49,13 @@ export interface DocumentRuntimeState {
    *  hidden too, so Request Manual Review is the only path forward rather than one option among
    *  several. */
   isEligibleForManualReview?: boolean;
-  /** True once the ULB has used all 3 self-service re-upload attempts since the last manual-review
-   *  rejection. Re-upload hides at this point — Request Manual Review (rendered separately) becomes
-   *  the only path forward again, so self-service is exhausted without ever cutting off the human
-   *  escalation path entirely. */
+  /** True once the ULB has had 3 real OCR FAILs since the last manual-review rejection. The 3rd one
+   *  also starts the 24-hour cooldown; once that passes, Re-upload (a fresh 3 attempts) and Request
+   *  Manual Review (rendered separately) are both offered. */
   manualReviewAttemptsExhausted?: boolean;
-  /** True while this document is in its post-rejection cooldown (set after a *second* manual-review
-   *  rejection, not merely after 3 unassisted OCR failures) — everything is hidden until the
-   *  cooldown passes, mirroring the backend's isUploadBlocked guard. */
+  /** True while this document is in its 24-hour post-rejection cooldown (set on the 3rd real OCR FAIL
+   *  after a manual-review rejection) — everything is hidden until it passes, mirroring the
+   *  backend's isUploadBlocked guard. */
   isUploadBlocked?: boolean;
 }
 

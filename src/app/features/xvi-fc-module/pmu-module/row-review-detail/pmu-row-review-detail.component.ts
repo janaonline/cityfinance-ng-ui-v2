@@ -17,6 +17,7 @@ import { LoaderComponent } from '../../../../shared/components/loader/loader.com
 import { PreLoaderComponent } from '../../../../shared/components/pre-loader/pre-loader.component';
 import { AmountDisplayToggleComponent } from '../../../../shared/components/amount-display-toggle/amount-display-toggle.component';
 import { TruncatedTextComponent } from '../../../../shared/components/truncated-text/truncated-text.component';
+import { EulbStatusSummaryComponent } from '../../state-module/elected-body-status/components/status-summary/eulb-status-summary.component';
 import { AmountDisplayModeService } from '../../../../core/services/amount-display-mode.service';
 import {
   ConditionalFieldConfig,
@@ -99,6 +100,7 @@ const ROW_STATUS_BADGE_CLASS: Record<RowStatusBucket, string> = {
     PreLoaderComponent,
     AmountDisplayToggleComponent,
     TruncatedTextComponent,
+    EulbStatusSummaryComponent,
   ],
   templateUrl: './pmu-row-review-detail.component.html',
   styleUrl: './pmu-row-review-detail.component.scss',
