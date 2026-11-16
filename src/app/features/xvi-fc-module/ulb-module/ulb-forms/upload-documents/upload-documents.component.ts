@@ -480,7 +480,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (doc.isManualReviewRequested) return false;
     if (this.isUploadBlocked(doc)) return false;
     if (doc.manualReviewDecision?.status === 'RETURNED') {
-      return this.manualReviewAttemptsExhausted(doc);
+      // The server only accepts a real FAIL here too; a crash on the last upload means Re-upload.
+      return this.manualReviewAttemptsExhausted(doc) && isValidationFail(doc.validationStatus);
     }
     return this.isEligibleForManualReview(doc);
   }
@@ -612,6 +613,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (this.hasProcessingDocs()) {
       event.preventDefault();
     }
+  }
+
+  /** ADMIN decides a manual review outside this page, so re-read the section when the ULB comes
+   *  back to the tab while a review is pending. Skipped mid-upload so a local file isn't replaced. */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    const docs = this.documents();
+    if (!docs.some((d) => this.isAwaitingManualReview(d)) || docs.some((d) => d.status === 'uploading')) return;
+    void this.loadExistingData();
   }
 
   ngOnDestroy(): void {
