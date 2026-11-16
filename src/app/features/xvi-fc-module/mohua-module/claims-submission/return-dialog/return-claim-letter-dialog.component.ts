@@ -79,6 +79,9 @@ export interface ReturnLetterDialogResult {
 
 export type ReturnClaimLetterDialogResult = ReturnUlbDialogResult | ReturnLetterDialogResult;
 
+/** Every return says why: at least this many characters once trimmed (the API enforces the same). */
+export const RETURN_REMARK_MIN_LENGTH = 10;
+
 /**
  * The SO's return choices. In `ulb` mode it marks one ULB returned with its own forms, rows and remark (prefilled from
  * an earlier mark); in `letter` mode it returns the letter with the State-wide items, the marked ULBs going with it.
@@ -101,6 +104,7 @@ export class ReturnClaimLetterDialogComponent {
   readonly rowFormOptions = RETURN_ROW_FORM_OPTIONS;
   readonly stateFormOptions = RETURN_STATE_FORM_OPTIONS;
   readonly remarksMaxLength = REVIEW_REMARKS_MAX_LENGTH;
+  readonly remarksMinLength = RETURN_REMARK_MIN_LENGTH;
 
   private readonly previous = this.data.mode === 'ulb' && this.data.decision?.status === 'RETURNED' ? this.data.decision : null;
 
@@ -132,15 +136,12 @@ export class ReturnClaimLetterDialogComponent {
 
   private readonly returnedUlbCount = this.data.mode === 'letter' ? this.data.returnedUlbCount : 0;
 
-  /** Rejecting an exemption needs a remark (the exemption review requires one). */
+  /** Every return needs a remark of at least `RETURN_REMARK_MIN_LENGTH` characters, in all three modes. */
   private readonly remarkValue = signal(this.remark.value);
-  readonly remarkRequired = this.exemptionMode;
+  readonly hasSelection = computed(() => this.selected().size > 0 || this.returnedUlbCount > 0);
+  readonly remarkTooShort = computed(() => this.remarkValue().trim().length < RETURN_REMARK_MIN_LENGTH);
 
-  readonly canConfirm = computed(
-    () =>
-      (this.selected().size > 0 || this.returnedUlbCount > 0) &&
-      (!this.remarkRequired || this.remarkValue().trim().length > 0),
-  );
+  readonly canConfirm = computed(() => this.hasSelection() && !this.remarkTooShort());
 
   constructor() {
     this.remark.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => this.remarkValue.set(value));
