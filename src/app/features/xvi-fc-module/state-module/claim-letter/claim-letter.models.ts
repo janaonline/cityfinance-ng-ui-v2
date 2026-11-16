@@ -224,6 +224,8 @@ export interface ClaimLetterBatchSummary {
   claimLetterId: string;
   installment: ClaimLetterInstallment;
   batchNumber: ClaimLetterBatchNumber;
+  /** Above 0 for a letter built in a slot a returned letter held: shown as "2-R1", as in its Ref No. */
+  resubmissionNumber: number;
   version: number;
   currentFormStatus: number;
   currentFormStatusLabel: string;
@@ -374,7 +376,7 @@ export interface ClaimLetterLetterDetails extends ClaimLetterLetterDetailsState 
   canEdit: boolean;
   /** The State's latest saved details from another batch, minus Letter No. / date. */
   previous: {
-    source: { yearLabel: string; installment: number; batchNumber: number };
+    source: { yearLabel: string; installment: number; batchNumber: number; resubmissionNumber: number };
     values: Record<string, unknown>;
   } | null;
 }

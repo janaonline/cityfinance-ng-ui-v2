@@ -42,6 +42,7 @@ const sampleSummary: ClaimLetterBatchSummary = {
   claimLetterId,
   installment: 1,
   batchNumber: 1,
+  resubmissionNumber: 0,
   version: 1,
   currentFormStatus: 2,
   currentFormStatusLabel: 'In Progress',
