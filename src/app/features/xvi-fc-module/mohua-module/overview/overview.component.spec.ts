@@ -7,6 +7,7 @@ import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.comp
 import { MohuaOverviewService } from './mohua-overview.service';
 import { OverviewData } from './overview.models';
 import { MohuaOverviewComponent } from './overview.component';
+import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 
 const data: OverviewData = {
   year: { id: 'year-1', label: '2026-27' },
@@ -31,7 +32,7 @@ const data: OverviewData = {
 describe('MohuaOverviewComponent', () => {
   let service: { getOverview: jasmine.Spy };
 
-  const create = (params: Record<string, string>) => {
+  const create = (params: Record<string, string>, extraProviders: unknown[] = []) => {
     const paramMap = convertToParamMap(params);
     TestBed.configureTestingModule({
       imports: [MohuaOverviewComponent],
@@ -43,6 +44,7 @@ describe('MohuaOverviewComponent', () => {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap, parent: null }, paramMap: of(paramMap), parent: null },
         },
+        ...(extraProviders as never[]),
       ],
     });
     const fixture = TestBed.createComponent(MohuaOverviewComponent);
@@ -53,6 +55,14 @@ describe('MohuaOverviewComponent', () => {
   beforeEach(() => {
     localStorage.removeItem(XVIFC_LS_KEYS.selectedYearId);
     service = { getOverview: jasmine.createSpy('getOverview').and.returnValue(of(data)) };
+  });
+
+  it('names the Programme Management Unit for a PMU user, who shares this dashboard', () => {
+    const fixture = create({ yearId: 'year-1' }, [
+      { provide: AuthPermissionService, useValue: { isDoeUser: () => false, isPmuUser: () => true } },
+    ]);
+
+    expect(fixture.componentInstance.organisationName).toBe('Programme Management Unit');
   });
 
   it('loads the overview for the year in the route and shows it', () => {

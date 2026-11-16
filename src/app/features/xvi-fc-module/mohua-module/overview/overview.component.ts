@@ -38,10 +38,12 @@ export class MohuaOverviewComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly permissions = inject(AuthPermissionService);
 
-  /** DoE shares this dashboard with MoHUA, so only its subtitle names the department. */
+  /** DoE and PMU share this dashboard with MoHUA, so only its subtitle names who is viewing. */
   readonly organisationName = this.permissions.isDoeUser()
     ? 'Department of Expenditure'
-    : 'Ministry of Housing and Urban Affairs';
+    : this.permissions.isPmuUser()
+      ? 'Programme Management Unit'
+      : 'Ministry of Housing and Urban Affairs';
 
   readonly yearLabel = signal<string>(this.readStored(XVIFC_LS_KEYS.selectedYearString));
   readonly overview = signal<OverviewData | null>(null);

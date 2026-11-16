@@ -30,21 +30,25 @@
         }
 
         <label class="rcl-remarks-label" for="rcl-remark">
-          Remarks <span class="rcl-muted">(required to reject an exemption, shared with the State)</span>
+          Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
         </label>
         <textarea
           id="rcl-remark"
           class="form-control"
           rows="3"
           [attr.maxlength]="remarksMaxLength"
-          [class.is-invalid]="remark.invalid"
+          [class.is-invalid]="remark.invalid || (remark.touched && remarkTooShort())"
           [formControl]="remark"
           placeholder="Why the exemption is rejected..."
         ></textarea>
+        @if (remark.touched && remarkTooShort()) {
+          <div class="invalid-feedback d-block" role="alert">Enter at least {{ remarksMinLength }} characters.</div>
+        }
       </section>
     } @else {
     <p class="rcl-lead">
-      Tick what this ULB needs to correct. Nothing reopens yet: the picked forms reopen when you return the claim letter.
+      Select the forms requiring correction by the ULB. The selected forms shall be reopened upon return of the claim
+      letter.
     </p>
 
     <section class="rcl-section" aria-labelledby="rcl-ulb-heading">
@@ -73,17 +77,20 @@
       </div>
 
       <label class="rcl-remarks-label" for="rcl-remark">
-        Remarks <span class="rcl-muted">(optional, shared with the ULB and the State)</span>
+        Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the ULB and the State)</span>
       </label>
       <textarea
         id="rcl-remark"
         class="form-control"
         rows="3"
         [attr.maxlength]="remarksMaxLength"
-        [class.is-invalid]="remark.invalid"
+        [class.is-invalid]="remark.invalid || (remark.touched && remarkTooShort())"
         [formControl]="remark"
         placeholder="Add any detail the ULB needs to correct the forms..."
       ></textarea>
+      @if (remark.touched && remarkTooShort()) {
+        <div class="invalid-feedback d-block" role="alert">Enter at least {{ remarksMinLength }} characters.</div>
+      }
     </section>
     }
   </mat-dialog-content>
@@ -97,8 +104,8 @@
   <h2 mat-dialog-title class="rcl-title">Return this claim letter for correction?</h2>
   <mat-dialog-content>
     <p class="rcl-lead">
-      The claim letter closes and the State prepares a new one. The ULBs you marked returned go back with it; tick any
-      State-wide item that also needs correcting.
+      The claim letter will be returned to the State for correction. The State will need to prepare and resubmit the
+      claim letter, including corrections to the ULBs marked for return and any State-wide items selected for correction.
     </p>
 
     <section class="rcl-section" aria-labelledby="rcl-state-heading">
@@ -113,17 +120,20 @@
       </div>
 
       <label class="rcl-remarks-label" for="rcl-state-remark">
-        Remarks <span class="rcl-muted">(optional, shared with the State)</span>
+        Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
       </label>
       <textarea
         id="rcl-state-remark"
         class="form-control"
         rows="3"
         [attr.maxlength]="remarksMaxLength"
-        [class.is-invalid]="remark.invalid"
+        [class.is-invalid]="remark.invalid || (remark.touched && remarkTooShort())"
         [formControl]="remark"
         placeholder="Add any detail the State needs to act on this..."
       ></textarea>
+      @if (remark.touched && remarkTooShort()) {
+        <div class="invalid-feedback d-block" role="alert">Enter at least {{ remarksMinLength }} characters.</div>
+      }
     </section>
 
     @if (canConfirm()) {
@@ -131,10 +141,15 @@
         <i class="bi bi-info-circle" aria-hidden="true"></i>
         <span><strong>What happens:</strong> {{ outcome() }}</span>
       </p>
-    } @else {
+    } @else if (!hasSelection()) {
       <p class="rcl-hint">
         <i class="bi bi-info-circle" aria-hidden="true"></i> No ULB is marked returned: tick a State item to return the
         letter.
+      </p>
+    } @else {
+      <p class="rcl-hint">
+        <i class="bi bi-info-circle" aria-hidden="true"></i> Add remarks of at least {{ remarksMinLength }} characters to
+        return the letter.
       </p>
     }
   </mat-dialog-content>

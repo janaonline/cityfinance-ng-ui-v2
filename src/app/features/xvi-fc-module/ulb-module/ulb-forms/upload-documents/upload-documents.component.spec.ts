@@ -113,6 +113,30 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
     component = fixture.componentInstance;
   });
 
+  it('offers Request Manual Review only for a real validation FAIL, not a technical failure', () => {
+    const failedTwice = { ...fakeDoc(requiredDoc, 'pending'), retryValidationCount: 2 };
+
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'FAIL' })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'fail' })).toBe(true);
+    // The OCR job crashed: no validationStatus, so Retry / Re-upload stay instead.
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: null })).toBe(false);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'PASS' })).toBe(false);
+  });
+
+  it('after a rejection with all attempts used, offers Request Manual Review only if the last upload was a real FAIL', () => {
+    const exhausted = {
+      ...fakeDoc(requiredDoc, 'failed'),
+      version: 4,
+      manualReviewDecision: { status: 'RETURNED' as const, note: 'Wrong file', decidedAt: '2026-11-10T10:00:00.000Z' },
+      postRejectionAttemptsUsed: 3,
+      uploadBlockedUntil: new Date(Date.now() - 60_000), // cooldown already over
+    };
+
+    expect(component.canRequestManualReview({ ...exhausted, validationStatus: 'FAIL' })).toBe(true);
+    // The last upload's OCR job crashed: the server would refuse, so Re-upload is the way forward.
+    expect(component.canRequestManualReview({ ...exhausted, validationStatus: null })).toBe(false);
+  });
+
   it('excludes an optional, unfilled document from totalCount/passedCount', () => {
     component.config.set(config);
     component.documents.set([fakeDoc(requiredDoc, 'passed'), fakeDoc(optionalDoc, 'pending')]);

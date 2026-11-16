@@ -150,6 +150,31 @@ describe('ReturnClaimLetterDialogComponent', () => {
     });
   });
 
+  describe('remarks', () => {
+    it('keep Confirm disabled until they are at least 10 characters once trimmed, in every mode', () => {
+      const host = create({ mode: 'letter', returnedUlbCount: 1 });
+      const set = (value: string) => {
+        fixture.componentInstance.remark.setValue(value);
+        fixture.detectChanges();
+      };
+
+      set('Too short');
+      expect(confirmButton(host).disabled).toBeTrue();
+      set('   Too short      ');
+      expect(confirmButton(host).disabled).toBeTrue();
+      set('Long enough now');
+      expect(confirmButton(host).disabled).toBeFalse();
+    });
+
+    it('also apply to marking one ULB', () => {
+      const host = create({ mode: 'ulb', ulbName: 'Khowai', decision: null, exemptions: [] });
+      tick(host, 'PFMS Bank Account');
+      fixture.componentInstance.remark.setValue('IFSC');
+      fixture.detectChanges();
+      expect(confirmButton(host).disabled).toBeTrue();
+    });
+  });
+
   describe('the whole letter', () => {
     it('offers only the State-wide items', () => {
       expect(labels(create({ mode: 'letter', returnedUlbCount: 0 }))).toEqual([
@@ -165,6 +190,8 @@ describe('ReturnClaimLetterDialogComponent', () => {
       expect(host.querySelector('.rcl-outcome')).toBeNull();
 
       tick(host, 'SFC Status');
+      fixture.componentInstance.remark.setValue('Fix the SFC status');
+      fixture.detectChanges();
 
       expect(confirmButton(host).disabled).toBeFalse();
       const outcome = host.querySelector('.rcl-outcome')?.textContent ?? '';
@@ -174,11 +201,16 @@ describe('ReturnClaimLetterDialogComponent', () => {
 
     it('can return with only marked ULBs, and closes with the State items and remark; nothing on cancel', () => {
       const host = create({ mode: 'letter', returnedUlbCount: 2 });
+      // Marked ULBs are enough to return, but not without a remark.
+      expect(confirmButton(host).disabled).toBeTrue();
+      expect(host.querySelector('.rcl-hint')?.textContent).toContain('at least 10 characters');
+
+      fixture.componentInstance.remark.setValue('Attach the order');
+      fixture.detectChanges();
       expect(confirmButton(host).disabled).toBeFalse();
       expect(host.querySelector('.rcl-outcome')?.textContent).toContain('2 ULB(s) marked returned reopen');
 
       tick(host, 'Grant Transfer Certificate');
-      fixture.componentInstance.remark.setValue('Attach the order');
       confirmButton(host).click();
 
       expect(dialogRef.close).toHaveBeenCalledWith({ stateFormIds: [35], stateRemark: 'Attach the order' });
