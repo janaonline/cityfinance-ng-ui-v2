@@ -12,6 +12,10 @@ export const MOHUA_DASHBOARD_ROUTES: Routes = [
     loadComponent: () => import('./overview/overview.component').then((m) => m.MohuaOverviewComponent),
   },
   {
+    path: 'data-hub',
+    loadComponent: () => import('../../dalgo/dalgo.component').then((m) => m.DalgoComponent),
+  },
+  {
     path: 'review-state-submissions/:stateId',
     loadComponent: () => import('./state-detail/state-detail.component').then((m) => m.StateDetailComponent),
   },

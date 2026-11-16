@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { Login_Logout } from '../../core/util/logout.util';
 import { SideBarModel } from '../../shared/components/side-menu';
+import { filterDataHubItem } from '../dalgo/dalgo-menu.util';
 import { XviFcSideMenuApiService } from './xvi-fc-side-menu.service';
 import { ROLES, Roles, XVIFC_LANDING_ROUTE, XvifcYearId } from './xvi-fc-side-menu.config';
 
@@ -201,7 +202,10 @@ export class XvifcModuleService {
     this.isSideMenuLoading.set(true);
 
     try {
-      const menu = await this.buildSideMenuItems(context);
+      const menu = filterDataHubItem(
+        await this.buildSideMenuItems(context),
+        this.authService.getCurrentUserSnapshot(),
+      );
       this.sideMenuModel.set({
         ...menu,
         bottomModel: [

@@ -14,7 +14,11 @@ import { XVIFC_LANDING_ROUTE } from './xvi-fc-side-menu.config';
 describe('XvifcModuleService', () => {
   let service: XvifcModuleService;
   let mockRouter: jasmine.SpyObj<Router>;
-  let mockAuthService: { logout: jasmine.Spy; loginLogoutCheck: Subject<boolean> };
+  let mockAuthService: {
+    logout: jasmine.Spy;
+    loginLogoutCheck: Subject<boolean>;
+    getCurrentUserSnapshot: jasmine.Spy;
+  };
   let getSideMenuSpy: jasmine.Spy;
 
   beforeEach(() => {
@@ -22,6 +26,7 @@ describe('XvifcModuleService', () => {
     mockAuthService = {
       logout: jasmine.createSpy('logout'),
       loginLogoutCheck: new Subject<boolean>(),
+      getCurrentUserSnapshot: jasmine.createSpy('getCurrentUserSnapshot').and.returnValue(null),
     };
     // Default behavior matches the pre-existing tests below (resolves immediately); individual
     // tests may override with `.and.returnValue(...)` to control response timing (see the
