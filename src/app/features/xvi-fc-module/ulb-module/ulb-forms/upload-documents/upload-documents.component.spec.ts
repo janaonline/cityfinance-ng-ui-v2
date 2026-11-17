@@ -16,7 +16,7 @@ import { UploadDocumentsService } from './upload-documents.service';
 
 // Mirrors the shape the private `emptyDoc()` produces — only the fields the
 // gating computeds (totalCount/passedCount/allPassed) read are meaningful here.
-function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDocument {
+function fakeDoc(def: UploadDocumentDef, status: UploadDocument['status']): UploadDocument {
   return {
     ...def,
     status,
@@ -357,10 +357,12 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
   it('locks the section for a PENDING discretionary exemption request even before any document exists', fakeAsync(() => {
     component.ngOnInit();
     tick();
-    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-      success: true,
-      data: { annualAccountId: null, data: null, exemptionStatus: 'PENDING', exemptionMohuaRemarks: null },
-    });
+    httpMock
+      .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+      .flush({
+        success: true,
+        data: { annualAccountId: null, data: null, exemptionStatus: 'PENDING', exemptionMohuaRemarks: null },
+      });
     tick();
 
     expect(component.sectionLocked()).toBeTrue();
@@ -383,10 +385,12 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
   it('shows the discretionary-approval exemption notice for an APPROVED request even when no section document exists yet (data: null) - approve never creates one', fakeAsync(() => {
     component.ngOnInit();
     tick();
-    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-      success: true,
-      data: { annualAccountId: null, data: null, exemptionStatus: 'APPROVED', exemptionMohuaRemarks: null },
-    });
+    httpMock
+      .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+      .flush({
+        success: true,
+        data: { annualAccountId: null, data: null, exemptionStatus: 'APPROVED', exemptionMohuaRemarks: null },
+      });
     tick();
 
     expect(component.isExempted()).toBeTrue();
@@ -403,15 +407,23 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
       // config loads and leave a second, unflushed HTTP request for httpMock.verify() to trip on.
       fixture.detectChanges();
       tick();
-      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-        success: true,
-        data: {
-          annualAccountId: 'account-1',
-          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
-          exemptionStatus: 'PENDING',
-          exemptionMohuaRemarks: null,
-        },
-      });
+      httpMock
+        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+        .flush({
+          success: true,
+          data: {
+            annualAccountId: 'account-1',
+            data: {
+              form_status: 'IN_PROGRESS',
+              form_status_id: 2,
+              documents: [],
+              stateDecision: null,
+              mohuaDecision: null,
+            },
+            exemptionStatus: 'PENDING',
+            exemptionMohuaRemarks: null,
+          },
+        });
       tick();
       fixture.detectChanges();
 
@@ -428,15 +440,23 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     try {
       fixture.detectChanges();
       tick();
-      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-        success: true,
-        data: {
-          annualAccountId: 'account-1',
-          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
-          exemptionStatus: null,
-          exemptionMohuaRemarks: null,
-        },
-      });
+      httpMock
+        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+        .flush({
+          success: true,
+          data: {
+            annualAccountId: 'account-1',
+            data: {
+              form_status: 'IN_PROGRESS',
+              form_status_id: 2,
+              documents: [],
+              stateDecision: null,
+              mohuaDecision: null,
+            },
+            exemptionStatus: null,
+            exemptionMohuaRemarks: null,
+          },
+        });
       tick();
       fixture.detectChanges();
 
