@@ -1,0 +1,97 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit ADC' : 'Add ADC' }}</h2>
+<mat-dialog-content>
+  @if (removedMember(); as removed) {
+    <div class="alert alert-warning small mb-0" role="alert">
+      <p class="mb-2">
+        This email belongs to <strong>{{ removed.name }}</strong>{{ removed.designation ? ' (' + removed.designation + ')' : '' }},
+        who was removed earlier. Restore them as the Admin of this ADC?
+      </p>
+      <div class="d-flex gap-2 justify-content-end">
+        <button matButton type="button" [disabled]="isSubmitting()" (click)="backToForm()">Back</button>
+        <button matButton="filled" type="button" [disabled]="isSubmitting()" (click)="restore()">Restore</button>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" id="adc-form" class="d-flex flex-column gap-1 pt-1">
+      @if (isEdit) {
+        <mat-form-field appearance="outline" class="mb-3">
+          <mat-label>State</mat-label>
+          <input matInput [value]="editedAdc?.state?.name ?? ''" [disabled]="true" />
+          <mat-hint>An ADC's state can't be changed.</mat-hint>
+        </mat-form-field>
+      } @else {
+        <mat-form-field appearance="outline">
+          <mat-label>State</mat-label>
+          <mat-select formControlName="stateId" required>
+            @for (state of states(); track state._id) {
+              <mat-option [value]="state._id">{{ state.name }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.stateId.touched && form.controls.stateId.invalid) {
+            <mat-error>Select a state.</mat-error>
+          }
+        </mat-form-field>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>ADC name</mat-label>
+        <input matInput formControlName="name" required [maxlength]="nameMaxLength" />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <mat-error>Enter a name of up to {{ nameMaxLength }} characters.</mat-error>
+        }
+      </mat-form-field>
+
+      @if (!isEdit) {
+        <p class="fw-semibold small mb-1 mt-2">ADC Admin</p>
+        <p class="text-muted small mb-2">They get an email invitation to set up their login.</p>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="adminName" required />
+          @if (form.controls.adminName.touched && form.controls.adminName.invalid) {
+            <mat-error>Enter a name (letters, spaces, dots and hyphens).</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <mat-error>Enter a valid email address.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Mobile</mat-label>
+          <input matInput formControlName="mobile" required maxlength="10" inputmode="numeric" />
+          @if (form.controls.mobile.touched && form.controls.mobile.invalid) {
+            <mat-error>Enter a valid 10-digit mobile number.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Designation</mat-label>
+          <input matInput formControlName="designation" required />
+          @if (form.controls.designation.touched && form.controls.designation.invalid) {
+            <mat-error>Enter a designation (letters, spaces, dots and hyphens).</mat-error>
+          }
+        </mat-form-field>
+      }
+    </form>
+
+    @if (formError()) {
+      <div class="alert alert-danger py-2 px-3 small mb-0" role="alert">{{ formError() }}</div>
+    }
+  }
+</mat-dialog-content>
+@if (!removedMember()) {
+  <mat-dialog-actions align="end">
+    <button matButton type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button matButton="filled" type="submit" form="adc-form" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      }
+      {{ isEdit ? 'Save' : 'Add ADC' }}
+    </button>
+  </mat-dialog-actions>
+}

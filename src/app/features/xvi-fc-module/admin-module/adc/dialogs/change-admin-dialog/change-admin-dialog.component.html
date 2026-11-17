@@ -1,0 +1,97 @@
+<h2 mat-dialog-title>{{ adc.admin ? 'Change ADC Admin' : 'Set ADC Admin' }} - {{ adc.name }}</h2>
+<mat-dialog-content>
+  @if (removedMember(); as removed) {
+    <div class="alert alert-warning small mb-0" role="alert">
+      <p class="mb-2">
+        This email belongs to <strong>{{ removed.name }}</strong>{{ removed.designation ? ' (' + removed.designation + ')' : '' }},
+        who was removed earlier. Restore them as the Admin of this ADC?
+      </p>
+      <div class="d-flex gap-2 justify-content-end">
+        <button matButton type="button" [disabled]="isSubmitting()" (click)="backToForm()">Back</button>
+        <button matButton="filled" type="button" [disabled]="isSubmitting()" (click)="restore()">Restore</button>
+      </div>
+    </div>
+  } @else {
+    <p class="small mb-3">
+      @if (adc.admin; as admin) {
+        Current Admin: <strong>{{ admin.name }}</strong> ({{ admin.email }})
+      } @else {
+        This ADC has no Admin yet.
+      }
+    </p>
+
+    <mat-radio-group class="d-flex flex-column gap-2 mb-2" [value]="mode()" (change)="onModeChange($event.value)"
+      aria-label="How to choose the new Admin">
+      <mat-radio-button value="promote" [disabled]="membersLoading() || promotable().length === 0">
+        Promote an existing member
+      </mat-radio-button>
+      @if (mode() === 'promote') {
+        <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
+          <mat-label>Member</mat-label>
+          <mat-select [formControl]="promoteControl" aria-label="Member to make Admin">
+            @for (member of promotable(); track member._id) {
+              <mat-option [value]="member._id">{{ memberLabel(member) }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint>Only members who have completed profile verification are listed.</mat-hint>
+        </mat-form-field>
+      } @else if (!membersLoading() && promotable().length === 0) {
+        <p class="text-muted small mb-0 ms-4">No verified member to promote.</p>
+      }
+
+      <mat-radio-button value="invite">Invite a new person</mat-radio-button>
+    </mat-radio-group>
+
+    @if (mode() === 'invite') {
+      <form [formGroup]="inviteForm" (ngSubmit)="submit()" id="change-admin-form" class="d-flex flex-column gap-1">
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="adminName" required />
+          @if (inviteForm.controls.adminName.touched && inviteForm.controls.adminName.invalid) {
+            <mat-error>Enter a name (letters, spaces, dots and hyphens).</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required />
+          @if (inviteForm.controls.email.touched && inviteForm.controls.email.invalid) {
+            <mat-error>Enter a valid email address.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Mobile</mat-label>
+          <input matInput formControlName="mobile" required maxlength="10" inputmode="numeric" />
+          @if (inviteForm.controls.mobile.touched && inviteForm.controls.mobile.invalid) {
+            <mat-error>Enter a valid 10-digit mobile number.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Designation</mat-label>
+          <input matInput formControlName="designation" required />
+          @if (inviteForm.controls.designation.touched && inviteForm.controls.designation.invalid) {
+            <mat-error>Enter a designation (letters, spaces, dots and hyphens).</mat-error>
+          }
+        </mat-form-field>
+      </form>
+    }
+
+    @if (adc.admin) {
+      <p class="text-muted small mb-2">The current Admin will become a Reviewer.</p>
+    }
+
+    @if (formError()) {
+      <div class="alert alert-danger py-2 px-3 small mb-0" role="alert">{{ formError() }}</div>
+    }
+  }
+</mat-dialog-content>
+@if (!removedMember()) {
+  <mat-dialog-actions align="end">
+    <button matButton type="button" [disabled]="isSubmitting()" (click)="cancel()">Cancel</button>
+    <button matButton="filled" type="button" [disabled]="isSubmitting() || membersLoading()" (click)="submit()">
+      @if (isSubmitting()) {
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      }
+      {{ actionLabel }}
+    </button>
+  </mat-dialog-actions>
+}

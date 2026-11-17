@@ -1,0 +1,123 @@
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 my-4">
+    <h3 class="fw-bold mb-0">ADC</h3>
+    <button matButton="filled" type="button" (click)="openAdd()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add ADC
+    </button>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+    <form [formGroup]="filterForm" class="d-flex flex-wrap align-items-end gap-2">
+      <div class="mb-2">
+        <label for="adc-list-state" class="visually-hidden">State</label>
+        <select class="form-select" id="adc-list-state" formControlName="stateId">
+          <option value="">All states</option>
+          @for (state of states(); track state._id) {
+            <option [value]="state._id">{{ state.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="mb-2">
+        <label for="adc-list-search" class="visually-hidden">Search ADC name</label>
+        <input type="search" class="form-control" id="adc-list-search" placeholder="Search ADC name..."
+          formControlName="search" maxlength="100" />
+      </div>
+    </form>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="text-muted small">Total records: {{ total() }}</span>
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center" title="Reload"
+        (click)="loadRows()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="custom-mat-card mat-elevation-z1">
+    <div class="table-container mat-elevation-z8 mb-4">
+      @if (isLoading()) {
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+        <app-pre-loader></app-pre-loader>
+      } @else if (loadError()) {
+        <div class="alert alert-danger py-2 px-3 m-3" role="alert">{{ loadError() }}</div>
+        <button type="button" class="btn btn-outline-secondary ms-3 mb-3" (click)="loadRows()">
+          <i class="bi bi-arrow-clockwise me-1"></i>Retry
+        </button>
+      } @else if (rows().length <= 0) {
+        <p class="text-center p-2 mt-2">No ADCs found.</p>
+      } @else {
+        <table mat-table [dataSource]="rows()" aria-label="Autonomous District Councils">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>ADC Name</th>
+            <td mat-cell *matCellDef="let row" class="fw-semibold">{{ row.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="state">
+            <th mat-header-cell *matHeaderCellDef>State</th>
+            <td mat-cell *matCellDef="let row">{{ row.state?.name ?? '-' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="ulbCount">
+            <th mat-header-cell *matHeaderCellDef>ULBs</th>
+            <td mat-cell *matCellDef="let row">{{ row.ulbCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="memberCount">
+            <th mat-header-cell *matHeaderCellDef>Members</th>
+            <td mat-cell *matCellDef="let row">{{ row.memberCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="admin">
+            <th mat-header-cell *matHeaderCellDef>ADC Admin</th>
+            <td mat-cell *matCellDef="let row">
+              @if (row.admin; as admin) {
+                <div>{{ admin.name }}</div>
+                <div class="text-muted small">{{ admin.email }}</div>
+                @if (!admin.isXVIFCProfileVerified) {
+                  <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis"
+                    title="The Admin has not verified their profile yet">Invited</span>
+                }
+              } @else {
+                <span class="text-muted">Not set</span>
+              }
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" (click)="openEdit(row)">
+                  <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm text-nowrap" data-test="change-admin"
+                  (click)="openChangeAdmin(row)">
+                  <i class="bi bi-person-gear me-1" aria-hidden="true"></i>{{ row.admin ? 'Change Admin' : 'Set Admin' }}
+                </button>
+                <!-- The wrapper carries the tooltip: a disabled button gets no pointer events. -->
+                <span [matTooltip]="deleteTooltip(row)">
+                  <button type="button" class="btn btn-outline-danger btn-sm text-nowrap" data-test="delete"
+                    [disabled]="!canDelete(row) || deletingId() === row._id" (click)="confirmDelete(row)">
+                    @if (deletingId() === row._id) {
+                      <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    } @else {
+                      <i class="bi bi-trash me-1" aria-hidden="true"></i>
+                    }
+                    Delete
+                  </button>
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      }
+
+      <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="page() - 1"
+        [pageSizeOptions]="pageSizeOptions" (page)="onPageChange($event)"
+        aria-label="Select page of ADCs"></mat-paginator>
+    </div>
+  </mat-card>
+</div>
