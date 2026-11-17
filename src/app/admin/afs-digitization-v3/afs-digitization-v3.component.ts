@@ -135,9 +135,8 @@ export class AfsDigitizationV3Component implements OnInit {
   readonly overallScoreCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'confidence', title: 'Confidence', icon: 'bi bi-speedometer2', class: 'text-primary' },
     { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
-    { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
     { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
-    { key: 'docMismatch', title: 'Doc mismatch', icon: 'bi bi-exclamation-triangle', class: 'text-danger' },
+    { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
   ];
 
   readonly statusOptions: { value: DigitizationV3Status | ''; label: string }[] = [
@@ -373,26 +372,55 @@ export class AfsDigitizationV3Component implements OnInit {
     return (key === 'queued' ? o.queued + o.processing : o[key]).toLocaleString('en-IN');
   }
 
-  /** Small text next to a card's title: how Digitized, Failed and Total run split into new (v3) and old */
-  overallSub(key: OverallKey): string {
+  /**
+   * The numbers a card shows side by side (big value over a small label), or none for a single-value card.
+   * Digitized, Failed and Total run split into total / new (v3) / old; the score cards split their count; Doc match splits into match / mismatch.
+   */
+  overallParts(key: OverallKey): { value: string; label: string; class?: string }[] {
     const o = this.overall();
-    // The score cards count files that have that score; the text splits that count
-    const sc = o?.scores;
-    if (sc) {
-      const n = (value: number) => value.toLocaleString('en-IN');
-      if (key === 'confidence') return `≥ 80: ${n(sc.confidenceHigh)} · < 80: ${n(sc.confidenceLow)}`;
-      if (key === 'arithmetic') return `Pass ${n(sc.arithmeticPass)} · Fail ${n(sc.arithmeticFail)}`;
-      if (key === 'overallScore') return `Pass ${n(sc.overallPass)} · Partial ${n(sc.overallPartial)} · Fail ${n(sc.overallFail)}`;
+    if (!o) return [];
+    const n = (value: number) => value.toLocaleString('en-IN');
+    const runs = o.runs;
+    if (runs && (key === 'digitized' || key === 'failed' || key === 'totalRun')) {
+      const [added, old] =
+        key === 'digitized'
+          ? [runs.newDigitized, runs.oldDigitized]
+          : key === 'failed'
+            ? [runs.newFailed, runs.oldFailed]
+            : [runs.newDigitized + runs.newFailed, runs.oldDigitized + runs.oldFailed];
+      return [
+        { value: n(added + old), label: 'Total' },
+        { value: n(added), label: 'New' },
+        { value: n(old), label: 'Old' },
+      ];
     }
-    const runs = o?.runs;
-    if (!runs) return '';
-    let added: number;
-    let old: number;
-    if (key === 'digitized') [added, old] = [runs.newDigitized, runs.oldDigitized];
-    else if (key === 'failed') [added, old] = [runs.newFailed, runs.oldFailed];
-    else if (key === 'totalRun') [added, old] = [runs.newDigitized + runs.newFailed, runs.oldDigitized + runs.oldFailed];
-    else return '';
-    return `New ${added.toLocaleString('en-IN')} + Old ${old.toLocaleString('en-IN')}`;
+    const sc = o.scores;
+    if (sc && key === 'confidence') {
+      return [
+        { value: n(sc.confidenceHigh), label: '≥ 80', class: 'text-success' },
+        { value: n(sc.confidenceLow), label: '< 80', class: 'text-danger' },
+      ];
+    }
+    if (sc && key === 'docMatch') {
+      return [
+        { value: n(sc.matches), label: 'Match', class: 'text-success' },
+        { value: n(sc.mismatches), label: 'Mismatch', class: 'text-danger' },
+      ];
+    }
+    if (sc && key === 'arithmetic') {
+      return [
+        { value: n(sc.arithmeticPass), label: 'Pass', class: 'text-success' },
+        { value: n(sc.arithmeticFail), label: 'Fail', class: 'text-danger' },
+      ];
+    }
+    if (sc && key === 'overallScore') {
+      return [
+        { value: n(sc.overallPass), label: 'Pass', class: 'text-success' },
+        { value: n(sc.overallPartial), label: 'Partial', class: 'text-warning' },
+        { value: n(sc.overallFail), label: 'Fail', class: 'text-danger' },
+      ];
+    }
+    return [];
   }
 
   overallHint(key: OverallKey): string {

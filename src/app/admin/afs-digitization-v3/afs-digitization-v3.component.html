@@ -59,39 +59,45 @@
     <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
 
     <h6 class="fw-bold mb-2">Overall</h6>
-    <div class="metric-grid metric-grid--rows mb-2">
-      @for (card of overallCards; track card.key) {
+    <!-- One overall card. A card with several numbers shows them side by side, each value over its label -->
+    <ng-template #overallCardTpl let-card>
+      @if (overallParts(card.key).length) {
+      <div class="card metric-card metric-card--multi shadow-sm" [matTooltip]="overallHint(card.key)"
+        [matTooltipDisabled]="!overallHint(card.key)">
+        <span class="metric-title metric-card-title">
+          <i [class]="card.icon + ' ' + card.class"></i>
+          {{ card.title }}
+        </span>
+        <div class="metric-parts">
+          @for (part of overallParts(card.key); track part.label) {
+          <div class="metric-part">
+            <span class="metric-value" [ngClass]="part.class">{{ part.value }}</span>
+            <span class="metric-title">{{ part.label }}</span>
+          </div>
+          }
+        </div>
+      </div>
+      } @else {
       <div class="card metric-card shadow-sm" [matTooltip]="overallHint(card.key)"
         [matTooltipDisabled]="!overallHint(card.key)">
         <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
         <div class="metric-text">
           <span class="metric-value">{{ overallValue(card.key) }}</span>
-          <span class="metric-line">
-            <span class="metric-title">{{ card.title }}</span>
-            @if (overallSub(card.key); as sub) {
-            <span class="metric-sub">{{ sub }}</span>
-            }
-          </span>
+          <span class="metric-title">{{ card.title }}</span>
         </div>
       </div>
+      }
+    </ng-template>
+
+    <div class="metric-grid metric-grid--rows mb-2">
+      @for (card of overallCards; track card.key) {
+      <ng-container *ngTemplateOutlet="overallCardTpl; context: { $implicit: card }"></ng-container>
       }
     </div>
 
     <div class="metric-grid metric-grid--rows mb-3">
       @for (card of overallScoreCards; track card.key) {
-      <div class="card metric-card shadow-sm" [matTooltip]="overallHint(card.key)"
-        [matTooltipDisabled]="!overallHint(card.key)">
-        <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
-        <div class="metric-text">
-          <span class="metric-value">{{ overallValue(card.key) }}</span>
-          <span class="metric-line">
-            <span class="metric-title">{{ card.title }}</span>
-            @if (overallSub(card.key); as sub) {
-            <span class="metric-sub">{{ sub }}</span>
-            }
-          </span>
-        </div>
-      </div>
+      <ng-container *ngTemplateOutlet="overallCardTpl; context: { $implicit: card }"></ng-container>
       }
     </div>
 
