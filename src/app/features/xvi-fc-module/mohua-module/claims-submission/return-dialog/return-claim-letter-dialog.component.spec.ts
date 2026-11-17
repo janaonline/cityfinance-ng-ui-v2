@@ -1,9 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import {
-  ReturnClaimLetterDialogComponent,
-  ReturnClaimLetterDialogData,
-} from './return-claim-letter-dialog.component';
+import { ReturnClaimLetterDialogComponent, ReturnClaimLetterDialogData } from './return-claim-letter-dialog.component';
 
 describe('ReturnClaimLetterDialogComponent', () => {
   let fixture: ComponentFixture<ReturnClaimLetterDialogComponent>;
@@ -65,6 +62,8 @@ describe('ReturnClaimLetterDialogComponent', () => {
       tick(host, 'PFMS Bank Account');
       tick(host, 'Elected Bodies');
       fixture.componentInstance.remark.setValue('  Wrong IFSC  ');
+      // The remark is required (10+ characters), so Confirm only enables once the page re-renders.
+      fixture.detectChanges();
       confirmButton(host).click();
 
       expect(dialogRef.close).toHaveBeenCalledWith({
