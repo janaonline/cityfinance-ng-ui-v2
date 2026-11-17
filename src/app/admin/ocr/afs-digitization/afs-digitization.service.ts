@@ -164,6 +164,13 @@ export class AfsDigitizationService {
     );
   }
 
+  redigitizeDigitizationJob(jobId: string) {
+    return this.http.post<DigitizationJobSubmitResponse>(
+      environment.api.url3 + `afs-digitization/jobs/${jobId}/redigitize`,
+      {},
+    );
+  }
+
   updateDigitizationJobNotes(jobId: string, notes: string | null) {
     return this.http.patch<DigitizationJobStatusResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/notes`,

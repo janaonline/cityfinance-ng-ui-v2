@@ -243,13 +243,13 @@ describe('ClaimLetterDetailComponent', () => {
       const row = host.querySelectorAll('tbody tr')[0].textContent ?? '';
       expect(row).toContain('Returned: PFMS Bank Account, Elected Bodies — Wrong IFSC');
       expect(actionButton(host, 'Approve').disabled).toBeTrue();
-      expect(actionButton(host, 'Return for correction').textContent).toContain('(1)');
+      expect(actionButton(host, 'Return Claim Letter').textContent).toContain('(1)');
     });
 
-    it('opens the letter-level return with the State-wide items from Return for correction', () => {
+    it('opens the letter-level return with the State-wide items from Return Claim Letter', () => {
       const host = create();
 
-      actionButton(host, 'Return for correction').click();
+      actionButton(host, 'Return Claim Letter').click();
       fixture.detectChanges();
 
       const dialog = document.querySelector('app-mohua-return-claim-letter-dialog');

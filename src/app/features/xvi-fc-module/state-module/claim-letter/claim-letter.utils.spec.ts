@@ -3,6 +3,7 @@ import {
   buildBatchNarrative,
   buildExemptionBadges,
   computeClaimDifferencePercentage,
+  formatClaimLetterBatchLabel,
   formatUnderReviewSuffix,
   describeEligibilitySourceDescription,
   describeEligibilitySourceLabel,
@@ -67,6 +68,12 @@ describe('isClaimWithinVariance', () => {
     expect(isClaimWithinVariance(10, 9.9, 100, 100)).toBe(false);
     expect(isClaimWithinVariance(10, 10.1, 100, 100)).toBe(false);
   });
+});
+
+describe('formatClaimLetterBatchLabel', () => {
+  it('is the batch number for a letter that is not a resubmission', () =>
+    expect(formatClaimLetterBatchLabel(2, 0)).toBe('2'));
+  it('adds -R<n> for a letter built after a return', () => expect(formatClaimLetterBatchLabel(2, 1)).toBe('2-R1'));
 });
 
 describe('humanizeToken', () => {

@@ -110,6 +110,7 @@ export class AfsDigitizationComponent implements OnInit {
   readonly revalidatingJobId = signal<string | null>(null);
   readonly revalidatingArithmeticJobId = signal<string | null>(null);
   readonly regeneratingJobId = signal<string | null>(null);
+  readonly redigitizingJobId = signal<string | null>(null);
   readonly editingNotesJobId = signal<string | null>(null);
   readonly savingNotesJobId = signal<string | null>(null);
   readonly notesDraft = this.fb.nonNullable.control('', Validators.maxLength(this.maxNotesLength));
@@ -577,6 +578,28 @@ export class AfsDigitizationComponent implements OnInit {
         },
         error: (err) => {
           this.utilityService.swalPopup('Arithmetic revalidation failed', this.parseApiError(err), 'error');
+        },
+      });
+  }
+
+  redigitizeJob(job: DigitizationJobTracker): void {
+    if (this.redigitizingJobId()) return;
+    this.redigitizingJobId.set(job.jobId);
+    this.digitizationService
+      .redigitizeDigitizationJob(job.jobId)
+      .pipe(finalize(() => this.redigitizingJobId.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.updateJob(job.jobId, {
+            status: 'processing',
+            message: response.message,
+            progressStep: 'redigitization_queued',
+            result: null,
+          });
+          this.startPolling(job.jobId);
+        },
+        error: (err) => {
+          this.utilityService.swalPopup('Redigitize failed', this.parseApiError(err), 'error');
         },
       });
   }

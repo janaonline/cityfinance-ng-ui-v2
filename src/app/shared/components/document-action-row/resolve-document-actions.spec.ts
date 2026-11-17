@@ -1,4 +1,14 @@
-import { resolveDocumentActions } from './resolve-document-actions';
+import { isValidationFail, resolveDocumentActions } from './resolve-document-actions';
+
+describe('isValidationFail', () => {
+  it('is true only for a FAIL result, in any case', () => {
+    expect(isValidationFail('FAIL')).toBe(true);
+    expect(isValidationFail('fail')).toBe(true);
+    expect(isValidationFail('PASS')).toBe(false);
+    expect(isValidationFail(null)).toBe(false);
+    expect(isValidationFail(undefined)).toBe(false);
+  });
+});
 import { ActionGate, DocumentRuntimeState } from './document-action-row.types';
 
 const baseDoc = (overrides: Partial<DocumentRuntimeState> = {}): DocumentRuntimeState => ({

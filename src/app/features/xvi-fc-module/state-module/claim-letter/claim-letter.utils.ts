@@ -51,6 +51,11 @@ export function humanizeToken(token: string): string {
     .join(' ');
 }
 
+/** The batch as the State sees it: "2", or "2-R1" for a letter built in a slot a returned letter held. */
+export function formatClaimLetterBatchLabel(batchNumber: number, resubmissionNumber: number): string {
+  return resubmissionNumber > 0 ? `${batchNumber}-R${resubmissionNumber}` : String(batchNumber);
+}
+
 /** `displayLabel`, else a humanized `formType`, so a source never renders blank. */
 export function describeEligibilitySourceLabel(source: { formType: string; displayLabel?: string }): string {
   return source.displayLabel ?? humanizeToken(source.formType);

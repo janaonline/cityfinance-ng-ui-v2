@@ -1,16 +1,19 @@
 import { Routes } from '@angular/router';
+import { MOHUA_DASHBOARD_ROUTES } from '../mohua-module/mohua-module.routes';
 import { PMU_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-overview.models';
 
+/**
+ * PMU's Overview is the MoHUA national dashboard, reused as-is (as DoE does): overview, one State, one ULB and
+ * the read-only form views. PMU's own worklist (`review-state-submissions`, an exact path) and its actionable
+ * `*-review` pages sit alongside it, where PMU approves and returns.
+ */
 export const PMU_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./pmu-module.component').then((m) => m.PmuModuleComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
-      {
-        path: 'overview',
-        loadComponent: () => import('./overview/pmu-overview.component').then((m) => m.PmuOverviewComponent),
-      },
+      ...MOHUA_DASHBOARD_ROUTES,
       {
         path: 'roles-teams-unified-view',
         loadComponent: () =>
