@@ -351,7 +351,7 @@
                     @if (row.digitization.isConsolidated) {
                     <span class="badge bg-primary me-1">Consolidated</span>
                     }
-                    @if (row.digitization.isMismatch) {
+                    @if (row.digitization.scores?.isMismatch) {
                     <span class="badge bg-danger"
                       [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
                     }
@@ -362,7 +362,7 @@
                   @if (row.afsDigitization?.isConsolidated) {
                   <span class="badge bg-primary me-1">Consolidated</span>
                   }
-                  @if (row.afsDigitization?.isMismatch) {
+                  @if (row.afsDigitization?.scores?.isMismatch) {
                   <span class="badge bg-danger"
                     [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
                   }
@@ -407,31 +407,36 @@
 
       <!-- OCR confidence / Gemini accuracy / arithmetic score of one job; "–" when that step gave none -->
       <ng-template #scoresTpl let-info>
-        @if (info?.ocrConfidenceScore != null || info?.accuracyScore != null || info?.arithmeticAssessment ||
-        info?.overallAssessment) {
+        @if (info?.status === 'digitized' && info?.scores; as s) {
         <div class="score-list">
-          @if (info.ocrConfidenceScore != null) {
+          @if (s.ocrConfidenceScore != null) {
           <div matTooltip="OCR confidence: how sure Textract was about the text it read">
             <span class="score-label">Textract confidence</span>
-            <span [ngClass]="scoreClass(info.ocrConfidenceScore)">{{ formatScore(info.ocrConfidenceScore) }}</span>
+            <span [ngClass]="scoreClass(s.ocrConfidenceScore)">{{ formatScore(s.ocrConfidenceScore) }}</span>
           </div>
           }
           <div matTooltip="Share of extracted values that match the source PDF (Gemini cross-check)">
             <span class="score-label">Confidence</span>
-            <span [ngClass]="scoreClass(info.accuracyScore)">{{ formatScore(info.accuracyScore) }}</span>
+            <span [ngClass]="scoreClass(s.accuracyScore)">{{ formatScore(s.accuracyScore) }}</span>
+          </div>
+          <div matTooltip="Whether the uploaded document type is found in the file">
+            <span class="score-label">Doc match</span>
+            @if (s.isMismatch) {
+            <span class="badge assess assess-fail">No</span>
+            } @else { <span class="badge assess assess-pass">Yes</span> }
           </div>
           <div matTooltip="Whether the totals and sums in the statement add up">
             <span class="score-label">Accuracy</span>
-            @if (info.arithmeticAssessment) {
-            <span class="badge assess" [ngClass]="assessClass(info.arithmeticAssessment)">{{
-              assessLabel(info.arithmeticAssessment) }}</span>
+            @if (s.arithmeticAssessment) {
+            <span class="badge assess" [ngClass]="assessClass(s.arithmeticAssessment)">{{
+              assessLabel(s.arithmeticAssessment) }}</span>
             } @else { <span class="text-muted">–</span> }
           </div>
           <div matTooltip="Overall result, from the crosscheck confidence">
             <span class="score-label">Overall</span>
-            @if (info.overallAssessment) {
-            <span class="badge assess" [ngClass]="assessClass(info.overallAssessment)">{{
-              assessLabel(info.overallAssessment) }}</span>
+            @if (s.overallAssessment) {
+            <span class="badge assess" [ngClass]="assessClass(s.overallAssessment)">{{
+              assessLabel(s.overallAssessment) }}</span>
             } @else { <span class="text-muted">–</span> }
           </div>
         </div>

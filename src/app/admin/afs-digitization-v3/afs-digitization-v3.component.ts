@@ -65,7 +65,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 /** How long the presigned S3 upload URL stays valid */
 const SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
-type OverallKey = 'total' | 'digitized' | 'queued' | 'failed';
+type OverallKey = 'total' | 'digitized' | 'queued' | 'failed' | 'scored' | 'docMatch' | 'docMismatch'
+  | 'totalRun' | 'oldDigitized' | 'newDigitized' | 'oldFailed' | 'newFailed';
 
 interface MetricCard {
   key: keyof DigitizationV3Metrics;
@@ -127,6 +128,14 @@ export class AfsDigitizationV3Component implements OnInit {
     { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
     { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
     { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
+    { key: 'scored', title: 'Scored', icon: 'bi bi-speedometer2', class: 'text-primary' },
+    { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
+    { key: 'docMismatch', title: 'Doc mismatch', icon: 'bi bi-exclamation-triangle', class: 'text-danger' },
+    { key: 'totalRun', title: 'Total run', icon: 'bi bi-play-circle', class: 'text-info' },
+    { key: 'oldDigitized', title: 'Old digitized', icon: 'bi bi-check-circle', class: 'text-secondary' },
+    { key: 'newDigitized', title: 'New digitized', icon: 'bi bi-check-circle-fill', class: 'text-success' },
+    { key: 'oldFailed', title: 'Old failed', icon: 'bi bi-x-circle', class: 'text-secondary' },
+    { key: 'newFailed', title: 'New failed', icon: 'bi bi-x-circle-fill', class: 'text-danger' },
   ];
 
   readonly statusOptions: { value: DigitizationV3Status | ''; label: string }[] = [
@@ -338,6 +347,16 @@ export class AfsDigitizationV3Component implements OnInit {
   overallValue(key: OverallKey): number | string {
     const o = this.overall();
     if (!o) return '–';
+    // The score cards come from a snapshot the API has not computed yet: show a dash, not a misleading 0
+    if (key === 'scored' || key === 'docMatch' || key === 'docMismatch') {
+      const s = o.scores;
+      if (!s) return '–';
+      const value = key === 'scored' ? s.withOverall : key === 'docMatch' ? s.matches : s.mismatches;
+      return value.toLocaleString('en-IN');
+    }
+    if (key === 'totalRun' || key === 'oldDigitized' || key === 'newDigitized' || key === 'oldFailed' || key === 'newFailed') {
+      return o.runs ? o.runs[key].toLocaleString('en-IN') : '–';
+    }
     // Same as the per-selection cards: "Queued" includes files being processed
     return (key === 'queued' ? o.queued + o.processing : o[key]).toLocaleString('en-IN');
   }
@@ -345,6 +364,16 @@ export class AfsDigitizationV3Component implements OnInit {
   overallHint(key: OverallKey): string {
     const o = this.overall();
     if (key === 'total' && o?.totalPages != null) return `${o.totalPages.toLocaleString('en-IN')} pages`;
+    if (o?.runs && key === 'totalRun') return 'Digitized + failed, old flow and v3 together';
+    if (o?.runs && (key === 'oldDigitized' || key === 'oldFailed')) return 'Run through the old flow, before v3 went live';
+    if (o?.runs && (key === 'newDigitized' || key === 'newFailed')) return 'Run through v3';
+    const s = o?.scores;
+    if (s && (key === 'scored' || key === 'docMatch' || key === 'docMismatch')) {
+      const of = `of ${s.digitized.toLocaleString('en-IN')} digitized files`;
+      const when = s.computedAt ? ` (as of ${new Date(s.computedAt).toLocaleString('en-IN')})` : '';
+      if (key === 'scored') return `${s.withOverall.toLocaleString('en-IN')} ${of} have scores${when}`;
+      return `Whether the uploaded document type is found in the file, ${of}${when}`;
+    }
     return '';
   }
 
