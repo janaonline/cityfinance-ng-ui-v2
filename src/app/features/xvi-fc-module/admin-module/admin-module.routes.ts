@@ -29,6 +29,10 @@ export const ADMIN_ROUTES: Routes = [
           import('../state-module/ulb-list/ulb-list.component').then((m) => m.UlbListComponent),
       },
       {
+        path: 'adc',
+        loadComponent: () => import('./adc/adc-list.component').then((m) => m.AdcListComponent),
+      },
+      {
         path: 'manual-review-queue',
         loadComponent: () =>
           import('./manual-review-queue/manual-review-queue.component').then(
