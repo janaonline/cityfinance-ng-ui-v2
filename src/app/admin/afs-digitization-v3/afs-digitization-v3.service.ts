@@ -134,6 +134,14 @@ export interface DigitizationV3ScoreMetrics {
   withArithmetic: number;
   withOverall: number;
   mismatches: number;
+  /** Crosscheck confidence at or above / below 80 */
+  confidenceHigh: number;
+  confidenceLow: number;
+  arithmeticPass: number;
+  arithmeticFail: number;
+  overallPass: number;
+  overallPartial: number;
+  overallFail: number;
   /** digitized - mismatches */
   matches: number;
   computedAt: string | null;

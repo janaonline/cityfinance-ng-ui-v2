@@ -44,6 +44,11 @@
   gap: 0.75rem;
 }
 
+// // The overall rows: auto-fill (not auto-fit), so a row with fewer cards keeps the same card width as the row above it
+// .metric-grid--rows {
+//   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+// }
+
 .metric-card {
   flex-direction: row;
   align-items: center;
@@ -70,6 +75,21 @@
 
 .metric-title {
   font-size: 0.75rem;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+/* A card's title and its optional sub text, side by side on one line */
+.metric-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+/* Optional extra text next to a card's title, e.g. how Digitized splits into new and old */
+.metric-sub {
+  font-size: 0.7rem;
   color: #6c757d;
   white-space: nowrap;
 }

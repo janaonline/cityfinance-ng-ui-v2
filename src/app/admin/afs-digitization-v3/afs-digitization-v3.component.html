@@ -59,14 +59,37 @@
     <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
 
     <h6 class="fw-bold mb-2">Overall</h6>
-    <div class="metric-grid mb-3">
+    <div class="metric-grid metric-grid--rows mb-2">
       @for (card of overallCards; track card.key) {
       <div class="card metric-card shadow-sm" [matTooltip]="overallHint(card.key)"
         [matTooltipDisabled]="!overallHint(card.key)">
         <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
         <div class="metric-text">
           <span class="metric-value">{{ overallValue(card.key) }}</span>
-          <span class="metric-title">{{ card.title }}</span>
+          <span class="metric-line">
+            <span class="metric-title">{{ card.title }}</span>
+            @if (overallSub(card.key); as sub) {
+            <span class="metric-sub">{{ sub }}</span>
+            }
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <div class="metric-grid metric-grid--rows mb-3">
+      @for (card of overallScoreCards; track card.key) {
+      <div class="card metric-card shadow-sm" [matTooltip]="overallHint(card.key)"
+        [matTooltipDisabled]="!overallHint(card.key)">
+        <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
+        <div class="metric-text">
+          <span class="metric-value">{{ overallValue(card.key) }}</span>
+          <span class="metric-line">
+            <span class="metric-title">{{ card.title }}</span>
+            @if (overallSub(card.key); as sub) {
+            <span class="metric-sub">{{ sub }}</span>
+            }
+          </span>
         </div>
       </div>
       }

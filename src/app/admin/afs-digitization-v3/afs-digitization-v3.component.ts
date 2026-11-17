@@ -65,7 +65,7 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 /** How long the presigned S3 upload URL stays valid */
 const SIGNED_URL_EXPIRES_IN_SECONDS = 300;
 
-type OverallKey = 'total' | 'digitized' | 'queued' | 'failed' | 'scored' | 'docMatch' | 'docMismatch'
+type OverallKey = 'total' | 'digitized' | 'queued' | 'failed' | 'scored' | 'docMatch' | 'docMismatch' | 'confidence' | 'arithmetic' | 'overallScore'
   | 'totalRun' | 'oldDigitized' | 'newDigitized' | 'oldFailed' | 'newFailed';
 
 interface MetricCard {
@@ -125,17 +125,19 @@ export class AfsDigitizationV3Component implements OnInit {
   /** Overall cards: every year, audit type and doc type, whatever the filters say */
   readonly overallCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'total', title: 'Total files', icon: 'bi bi-collection', class: 'text-info' },
+    { key: 'totalRun', title: 'Total run', icon: 'bi bi-play-circle', class: 'text-info' },
     { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
     { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
     { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
-    { key: 'scored', title: 'Scored', icon: 'bi bi-speedometer2', class: 'text-primary' },
+  ];
+
+  /** Score cards, shown in their own row under the counts (same snapshot-based values) */
+  readonly overallScoreCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
+    { key: 'confidence', title: 'Confidence', icon: 'bi bi-speedometer2', class: 'text-primary' },
+    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
+    { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
     { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
     { key: 'docMismatch', title: 'Doc mismatch', icon: 'bi bi-exclamation-triangle', class: 'text-danger' },
-    { key: 'totalRun', title: 'Total run', icon: 'bi bi-play-circle', class: 'text-info' },
-    { key: 'oldDigitized', title: 'Old digitized', icon: 'bi bi-check-circle', class: 'text-secondary' },
-    { key: 'newDigitized', title: 'New digitized', icon: 'bi bi-check-circle-fill', class: 'text-success' },
-    { key: 'oldFailed', title: 'Old failed', icon: 'bi bi-x-circle', class: 'text-secondary' },
-    { key: 'newFailed', title: 'New failed', icon: 'bi bi-x-circle-fill', class: 'text-danger' },
   ];
 
   readonly statusOptions: { value: DigitizationV3Status | ''; label: string }[] = [
@@ -348,17 +350,49 @@ export class AfsDigitizationV3Component implements OnInit {
     const o = this.overall();
     if (!o) return '–';
     // The score cards come from a snapshot the API has not computed yet: show a dash, not a misleading 0
-    if (key === 'scored' || key === 'docMatch' || key === 'docMismatch') {
+    if (key === 'scored' || key === 'docMatch' || key === 'docMismatch' || key === 'confidence' || key === 'arithmetic' || key === 'overallScore') {
       const s = o.scores;
       if (!s) return '–';
-      const value = key === 'scored' ? s.withOverall : key === 'docMatch' ? s.matches : s.mismatches;
+      const value = {
+        scored: s.withOverall,
+        docMatch: s.matches,
+        docMismatch: s.mismatches,
+        confidence: s.withAccuracy,
+        arithmetic: s.withArithmetic,
+        overallScore: s.withOverall,
+      }[key];
       return value.toLocaleString('en-IN');
     }
     if (key === 'totalRun' || key === 'oldDigitized' || key === 'newDigitized' || key === 'oldFailed' || key === 'newFailed') {
       return o.runs ? o.runs[key].toLocaleString('en-IN') : '–';
     }
+    // Digitized = old flow + v3 once the run split is known; until then, v3 alone
+    if (key === 'digitized' && o.runs) return (o.runs.oldDigitized + o.runs.newDigitized).toLocaleString('en-IN');
+    if (key === 'failed' && o.runs) return (o.runs.oldFailed + o.runs.newFailed).toLocaleString('en-IN');
     // Same as the per-selection cards: "Queued" includes files being processed
     return (key === 'queued' ? o.queued + o.processing : o[key]).toLocaleString('en-IN');
+  }
+
+  /** Small text next to a card's title: how Digitized, Failed and Total run split into new (v3) and old */
+  overallSub(key: OverallKey): string {
+    const o = this.overall();
+    // The score cards count files that have that score; the text splits that count
+    const sc = o?.scores;
+    if (sc) {
+      const n = (value: number) => value.toLocaleString('en-IN');
+      if (key === 'confidence') return `≥ 80: ${n(sc.confidenceHigh)} · < 80: ${n(sc.confidenceLow)}`;
+      if (key === 'arithmetic') return `Pass ${n(sc.arithmeticPass)} · Fail ${n(sc.arithmeticFail)}`;
+      if (key === 'overallScore') return `Pass ${n(sc.overallPass)} · Partial ${n(sc.overallPartial)} · Fail ${n(sc.overallFail)}`;
+    }
+    const runs = o?.runs;
+    if (!runs) return '';
+    let added: number;
+    let old: number;
+    if (key === 'digitized') [added, old] = [runs.newDigitized, runs.oldDigitized];
+    else if (key === 'failed') [added, old] = [runs.newFailed, runs.oldFailed];
+    else if (key === 'totalRun') [added, old] = [runs.newDigitized + runs.newFailed, runs.oldDigitized + runs.oldFailed];
+    else return '';
+    return `New ${added.toLocaleString('en-IN')} + Old ${old.toLocaleString('en-IN')}`;
   }
 
   overallHint(key: OverallKey): string {
@@ -367,6 +401,10 @@ export class AfsDigitizationV3Component implements OnInit {
     if (o?.runs && key === 'totalRun') return 'Digitized + failed, old flow and v3 together';
     if (o?.runs && (key === 'oldDigitized' || key === 'oldFailed')) return 'Run through the old flow, before v3 went live';
     if (o?.runs && (key === 'newDigitized' || key === 'newFailed')) return 'Run through v3';
+    const sc = o?.scores;
+    if (sc && key === 'confidence') return 'Digitized files with a crosscheck confidence (Gemini accuracy) score, split at 80';
+    if (sc && key === 'arithmetic') return 'Digitized files with an arithmetic check result';
+    if (sc && key === 'overallScore') return 'Digitized files with an overall result: pass, partial or fail';
     const s = o?.scores;
     if (s && (key === 'scored' || key === 'docMatch' || key === 'docMismatch')) {
       const of = `of ${s.digitized.toLocaleString('en-IN')} digitized files`;
