@@ -63,10 +63,27 @@
     <ng-template #overallCardTpl let-card>
       @if (overallParts(card.key).length) {
       <div class="card metric-card metric-card--multi shadow-sm" [matTooltip]="overallHint(card.key)"
-        [matTooltipDisabled]="!overallHint(card.key)">
+        [matTooltipDisabled]="!overallHint(card.key) || card.key === 'overallScore'">
         <span class="metric-title metric-card-title">
           <i [class]="card.icon + ' ' + card.class"></i>
           {{ card.title }}
+          @if (card.key === 'overallScore') {
+          <span class="info-wrap" (click)="$event.stopPropagation()">
+            <i class="bi bi-info-circle info-icon" tabindex="0" aria-label="How the overall result is decided"></i>
+            <span class="info-panel" role="tooltip">
+              <strong>How the overall result is decided</strong>
+              <ul>
+                <li><b class="text-danger">Fail</b> – document mismatch</li>
+                <li><b class="text-danger">Fail</b> – OCR confidence &lt; 80</li>
+                <li><b class="text-success">Pass</b> – crosscheck ≥ 80 and arithmetic not failed</li>
+                <li><b class="text-danger">Fail</b> – crosscheck &lt; 80 and arithmetic failed</li>
+                <li><b class="text-warning">Partial</b> – any other case (crosscheck &lt; 80 with arithmetic passed, or
+                  crosscheck ≥ 80 with arithmetic failed)</li>
+                <li class="text-muted">No crosscheck score: not rated</li>
+              </ul>
+            </span>
+          </span>
+          }
         </span>
         <div class="metric-parts">
           @for (part of overallParts(card.key); track part.label) {
@@ -441,7 +458,7 @@
               assessLabel(s.arithmeticAssessment) }}</span>
             } @else { <span class="text-muted">–</span> }
           </div>
-          <div matTooltip="Overall result, from the crosscheck confidence">
+          <div matTooltip="Overall result: fails on a document mismatch or low OCR confidence, otherwise from the crosscheck and arithmetic results">
             <span class="score-label">Overall</span>
             @if (s.overallAssessment) {
             <span class="badge assess" [ngClass]="assessClass(s.overallAssessment)">{{
