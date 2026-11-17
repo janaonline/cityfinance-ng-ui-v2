@@ -174,15 +174,11 @@
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="state">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
-              <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
-            </ng-container>
-
             <ng-container matColumnDef="city">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>City</th>
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 260px; min-width: 260px">City</th>
               <td mat-cell *matCellDef="let row">
                 <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
+                <br /><small class="text-muted">{{ row.stateName }}</small>
               </td>
             </ng-container>
 
@@ -273,6 +269,9 @@
                 <div class="split-half">
                   @if (row.digitization.digitizedAt) {
                   {{ row.digitization.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
+                  @if (row.digitization.elapsedMs != null) {
+                  <br /><small class="text-muted">{{ formatElapsed(row.digitization.elapsedMs) }}</small>
+                  }
                   } @else {
                   <span class="text-muted">–</span>
                   }
@@ -281,28 +280,9 @@
                 <div class="split-half split-bottom">
                   @if (row.afsDigitization?.digitizedAt) {
                   {{ row.afsDigitization?.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
-                  } @else {
-                  <span class="text-muted">–</span>
-                  }
-                </div>
-                }
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="elapsed">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Elapsed time</th>
-              <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
-                <div class="split-half">
-                  @if (row.digitization.elapsedMs != null) {
-                  {{ formatElapsed(row.digitization.elapsedMs) }}
-                  } @else {
-                  <span class="text-muted">–</span>
-                  }
-                </div>
-                @if (row.afsPdfUrl) {
-                <div class="split-half split-bottom">
                   @if (row.afsDigitization?.elapsedMs != null) {
-                  {{ formatElapsed(row.afsDigitization?.elapsedMs) }}
+                  <br /><small class="text-muted">{{ formatElapsed(row.afsDigitization?.elapsedMs) }}</small>
+                  }
                   } @else {
                   <span class="text-muted">–</span>
                   }
@@ -326,13 +306,13 @@
             </ng-container>
 
             <ng-container matColumnDef="contents">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px; max-width: 180px">What the file contains</th>
               <td mat-cell *matCellDef="let row" [class.split-cell]="!!row.afsPdfUrl">
                 <div class="split-half split-start">
                   @if (row.digitization.isLegacy) {
                   <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
                   } @else if (row.digitization.status === 'digitized') {
-                  <span>
+                  <span class="contents-clip" [matTooltip]="segmentsSummary(row.digitization.segments)">
                     @for (seg of row.digitization.segments; track $index) {
                     <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
                       {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
@@ -350,7 +330,7 @@
                   @if (row.afsDigitization?.isLegacy) {
                   <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
                   } @else if (row.afsDigitization?.status === 'digitized') {
-                  <span>
+                  <span class="contents-clip" [matTooltip]="segmentsSummary(row.afsDigitization?.segments)">
                     @for (seg of row.afsDigitization?.segments; track $index) {
                     <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
                       {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
@@ -444,15 +424,15 @@
             <span [ngClass]="scoreClass(s.ocrConfidenceScore)">{{ formatScore(s.ocrConfidenceScore) }}</span>
           </div>
           }
-          <div matTooltip="Share of extracted values that match the source PDF (Gemini cross-check)">
-            <span class="score-label">Confidence</span>
-            <span [ngClass]="scoreClass(s.accuracyScore)">{{ formatScore(s.accuracyScore) }}</span>
-          </div>
           <div matTooltip="Whether the uploaded document type is found in the file">
             <span class="score-label">Doc match</span>
             @if (s.isMismatch) {
             <span class="badge assess assess-fail">No</span>
             } @else { <span class="badge assess assess-pass">Yes</span> }
+          </div>
+          <div matTooltip="Share of extracted values that match the source PDF (Gemini cross-check)">
+            <span class="score-label">Confidence</span>
+            <span [ngClass]="scoreClass(s.accuracyScore)">{{ formatScore(s.accuracyScore) }}</span>
           </div>
           <div matTooltip="Whether the totals and sums in the statement add up">
             <span class="score-label">Accuracy</span>

@@ -211,6 +211,14 @@
   white-space: nowrap;
 }
 
+.contents-clip {
+  display: block;
+  max-width: 180px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .active-filters {
   display: flex;
   flex-wrap: wrap;

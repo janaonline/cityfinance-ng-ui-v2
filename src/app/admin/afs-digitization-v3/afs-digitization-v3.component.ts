@@ -110,7 +110,7 @@ export class AfsDigitizationV3Component implements OnInit {
   private readonly fileService = inject(FileService);
   private readonly afsService = inject(AfsService);
 
-  readonly displayedColumns = ['select', 'state', 'city', 'pdf', 'status', 'digitizedAt', 'elapsed', 'scores', 'contents', 'flags', 'actions'];
+  readonly displayedColumns = ['select', 'city', 'pdf', 'status', 'digitizedAt', 'scores', 'contents', 'flags', 'actions'];
 
   readonly cards: MetricCard[] = [
     { key: 'total', title: 'ULBs', icon: 'bi bi-buildings', class: 'text-info' },
@@ -728,6 +728,10 @@ export class AfsDigitizationV3Component implements OnInit {
 
   pageRange(start: number, end: number): string {
     return start === end ? `p${start}` : `p${start}–${end}`;
+  }
+
+  segmentsSummary(segments?: { docType: string; startPage: number; endPage: number }[]): string {
+    return (segments ?? []).map((s) => `${this.docLabel(s.docType)} · ${this.pageRange(s.startPage, s.endPage)}`).join('\n');
   }
 
   metricValue(key: keyof DigitizationV3Metrics): number | string {
