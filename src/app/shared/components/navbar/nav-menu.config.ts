@@ -92,6 +92,20 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
     visibility: { showOnMobileOnly: true },
   },
   {
+    // TS-1262: the one place to switch between modules (XVI-FC Grants, XV-FC Grants, XVI-FC Data
+    // Collection, State Dashboard, Municipal Data Hub, ...) — V2's unified home page itself. Lives
+    // in every app's header, not behind the CF logo (which stays on the public /home page).
+    // Replaces the old per-module "My Forms" dropdown entries below, which duplicated this.
+    id: 'my-modules',
+    order: 2,
+    label: 'My Modules',
+    icon: 'bi bi-grid-fill',
+    hostApp: 'v2',
+    path: '/',
+    apps: ['ui', 'ssr', 'v2'],
+    visibility: { requiresAuth: true },
+  },
+  {
     id: 'brand-cfr-image',
     order: 5,
     imageUrl: './assets/M FIGMA/city-finance-ranking.png',
@@ -194,33 +208,35 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
       hideOnRoutePrefixes: ['/admin/xvi-fc-review'],
     },
   },
-  {
-    id: 'fc-15th-grants',
-    order: 40,
-    label: '15<sup>th</sup> FC Grants',
-    hostApp: 'ui',
-    path: '/fc-home-page',
-    apps: ['ui', 'ssr', 'v2'],
-    groupId: 'ulb-forms',
-    groupDefaultLabel: 'My Forms',
-    visibility: {
-      requiresAuth: true,
-      // XVIFC/MOHUA_PMU/XVIFC_DOE have no visible 'ulb-forms' members; hide the entire "My Forms" group, not just this entry.
-      excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC', 'MOHUA_PMU', 'XVIFC_DOE'],
-    },
-  },
-  {
-    id: 'fc-16th-grant',
-    order: 35, // lowest among 'ulb-forms' siblings, sorts first — see CLAUDE.md, "Grouping — the My Forms dropdown"
-    label: '16<sup>th</sup> FC Grants',
-    hostApp: 'v2',
-    path: '/xvifc/year',
-    apps: ['ui', 'ssr', 'v2'],
-    groupId: 'ulb-forms',
-    groupDefaultLabel: 'My Forms',
-    activePathPrefix: '/xvifc', // '/xvifc/year' is just the entry point into the whole module
-    visibility: { requiresAuth: true, roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN'] },
-  },
+  // TS-1262: superseded by 'my-modules' above — kept commented (not deleted) until verified in
+  // production, then remove for good.
+  // {
+  //   id: 'fc-15th-grants',
+  //   order: 40,
+  //   label: '15<sup>th</sup> FC Grants',
+  //   hostApp: 'ui',
+  //   path: '/fc-home-page',
+  //   apps: ['ui', 'ssr', 'v2'],
+  //   groupId: 'ulb-forms',
+  //   groupDefaultLabel: 'My Forms',
+  //   visibility: {
+  //     requiresAuth: true,
+  //     // XVIFC/MOHUA_PMU/XVIFC_DOE have no visible 'ulb-forms' members; hide the entire "My Forms" group, not just this entry.
+  //     excludeRoles: ['PMU', 'STATE_DASHBOARD', 'XVIFC_STATE', 'XVIFC', 'MOHUA_PMU', 'XVIFC_DOE'],
+  //   },
+  // },
+  // {
+  //   id: 'fc-16th-grant',
+  //   order: 35, // lowest among 'ulb-forms' siblings, sorts first — see CLAUDE.md, "Grouping — the My Forms dropdown"
+  //   label: '16<sup>th</sup> FC Grants',
+  //   hostApp: 'v2',
+  //   path: '/xvifc/year',
+  //   apps: ['ui', 'ssr', 'v2'],
+  //   groupId: 'ulb-forms',
+  //   groupDefaultLabel: 'My Forms',
+  //   activePathPrefix: '/xvifc', // '/xvifc/year' is just the entry point into the whole module
+  //   visibility: { requiresAuth: true, roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN'] },
+  // },
   {
     id: 'rankings-22-dashboard',
     order: 45, // sorts 3rd among 'ulb-forms' siblings, between fc-16th-grant (35) and xvi-fc-data-collection (50)
@@ -238,17 +254,19 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
       excludeRoles: ['ULB', 'STATE_DASHBOARD', 'XVIFC', 'XVIFC_STATE', 'MOHUA_PMU', 'XVIFC_DOE'],
     },
   },
-  {
-    id: 'xvi-fc-data-collection',
-    order: 50,
-    label: 'XVI FC Data Collection',
-    hostApp: 'v2',
-    path: '/xvifc-form',
-    apps: ['ui', 'ssr', 'v2'],
-    groupId: 'ulb-forms',
-    groupDefaultLabel: 'My Forms',
-    visibility: { requiresAuth: true, roles: ['ULB'] },
-  },
+  // TS-1262: superseded by 'my-modules' above — kept commented (not deleted) until verified in
+  // production, then remove for good.
+  // {
+  //   id: 'xvi-fc-data-collection',
+  //   order: 50,
+  //   label: 'XVI FC Data Collection',
+  //   hostApp: 'v2',
+  //   path: '/xvifc-form',
+  //   apps: ['ui', 'ssr', 'v2'],
+  //   groupId: 'ulb-forms',
+  //   groupDefaultLabel: 'My Forms',
+  //   visibility: { requiresAuth: true, roles: ['ULB'] },
+  // },
   {
     id: 'state-dashboard',
     order: 60,
