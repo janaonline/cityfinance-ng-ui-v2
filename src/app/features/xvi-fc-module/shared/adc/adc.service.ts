@@ -10,6 +10,9 @@ export interface IAdc {
   state: string;
 }
 
+export type AdcAdminStatus = 'ACTIVE' | 'INVITED' | 'NOT_SET';
+export type AdcSortDir = 1 | -1;
+
 /** One row of the Portal Admin's ADC page (`GET master/adc/manage`). `memberCount` includes the Admin. */
 export interface IAdcRow {
   _id: string;
@@ -18,31 +21,75 @@ export interface IAdcRow {
   ulbCount: number;
   memberCount: number;
   admin: { _id: string; name: string; email: string; isXVIFCProfileVerified: boolean } | null;
+  adminStatus?: AdcAdminStatus;
+}
+
+/** The ADC detail page's header (`GET master/adc/:id`). */
+export interface IAdcDetail extends IAdcRow {
+  createdAt: string | null;
 }
 
 /** An active ADC member (`GET master/adc/:id/members`). SUBMITTER is the current Admin. */
 export interface IAdcMember {
   _id: string;
   name: string;
+  designation: string;
   email: string;
+  mobile: string;
   subRole: 'SUBMITTER' | 'EDITOR' | 'VIEWER';
   isXVIFCProfileVerified: boolean;
+  lastActive: string | null;
 }
 
-export interface IAdcManageQuery {
+export type AdcUlbApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXISTING';
+
+/** A ULB owned by the ADC (`GET master/adc/:id/ulbs`). */
+export interface IAdcUlb {
+  _id: string;
+  name: string;
+  code: string;
+  ulbTypeName: string;
+  district: string;
+  isActive: boolean;
+  approvalStatus: AdcUlbApprovalStatus;
+}
+
+interface IAdcPageQuery {
   page: number;
   limit: number;
-  stateId?: string;
   search?: string;
+  sortDir?: AdcSortDir;
 }
 
-export interface IAdcPage {
-  data: IAdcRow[];
+export interface IAdcManageQuery extends IAdcPageQuery {
+  stateId?: string;
+  adminStatus?: AdcAdminStatus;
+  sortBy?: 'name' | 'state' | 'ulbCount' | 'memberCount';
+}
+
+export interface IAdcMembersQuery extends IAdcPageQuery {
+  level?: 'ADMIN' | 'EDITOR' | 'VIEWER';
+  status?: 'ACTIVE' | 'INVITED';
+  excludeAdmin?: boolean;
+  sortBy?: 'name' | 'lastActive';
+}
+
+export interface IAdcUlbsQuery extends IAdcPageQuery {
+  ulbType?: string;
+  approvalStatus?: AdcUlbApprovalStatus;
+  isActive?: boolean;
+  sortBy?: 'name' | 'code';
+}
+
+export interface IPage<T> {
+  data: T[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
+
+export type IAdcPage = IPage<IAdcRow>;
 
 export interface IAdcAdminInput {
   name: string;
@@ -82,15 +129,19 @@ export class AdcService {
 
   /** Portal Admin's paginated ADC list (the API caps `limit` at 20). */
   manage(query: IAdcManageQuery): Observable<IAdcPage> {
-    let params = new HttpParams().set('page', query.page).set('limit', query.limit);
-    if (query.stateId) params = params.set('stateId', query.stateId);
-    if (query.search) params = params.set('search', query.search);
-    const empty: IAdcPage = { data: [], total: 0, page: query.page, limit: query.limit, totalPages: 0 };
-    return this.http.get<unknown>(`${this.baseUrl}/manage`, { params }).pipe(map((res) => unwrapPage(res) ?? empty));
+    return this.getPage<IAdcRow>(`${this.baseUrl}/manage`, query);
   }
 
-  members(id: string): Observable<IAdcMember[]> {
-    return this.http.get<unknown>(`${this.baseUrl}/${id}/members`).pipe(map((res) => unwrapList<IAdcMember>(res)));
+  detail(id: string): Observable<IAdcDetail> {
+    return this.http.get<unknown>(`${this.baseUrl}/${id}`).pipe(map((res) => unwrapObject<IAdcDetail>(res)));
+  }
+
+  members(id: string, query: IAdcMembersQuery): Observable<IPage<IAdcMember>> {
+    return this.getPage<IAdcMember>(`${this.baseUrl}/${id}/members`, query);
+  }
+
+  ulbs(id: string, query: IAdcUlbsQuery): Observable<IPage<IAdcUlb>> {
+    return this.getPage<IAdcUlb>(`${this.baseUrl}/${id}/ulbs`, query);
   }
 
   create(body: ICreateAdcBody): Observable<unknown> {
@@ -108,6 +159,15 @@ export class AdcService {
   remove(id: string): Observable<unknown> {
     return this.http.delete(`${this.baseUrl}/${id}`);
   }
+
+  private getPage<T>(url: string, query: IAdcPageQuery & object): Observable<IPage<T>> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    const empty: IPage<T> = { data: [], total: 0, page: query.page, limit: query.limit, totalPages: 0 };
+    return this.http.get<unknown>(url, { params }).pipe(map((res) => unwrapPage<T>(res) ?? empty));
+  }
 }
 
 // The dev backend may return a bare array instead of the { success, data } envelope.
@@ -118,9 +178,14 @@ function unwrapList<T>(response: unknown): T[] {
 }
 
 // A page is `{ data: rows[], total, ... }`, normally inside the `{ success, data }` envelope.
-function unwrapPage(response: unknown): IAdcPage | null {
+function unwrapPage<T>(response: unknown): IPage<T> | null {
   const body = response as Record<string, unknown> | null;
-  if (body && Array.isArray(body['data']) && 'total' in body) return body as unknown as IAdcPage;
+  if (body && Array.isArray(body['data']) && 'total' in body) return body as unknown as IPage<T>;
   const inner = body?.['data'];
-  return inner && typeof inner === 'object' && !Array.isArray(inner) ? (inner as IAdcPage) : null;
+  return inner && typeof inner === 'object' && !Array.isArray(inner) ? (inner as IPage<T>) : null;
+}
+
+function unwrapObject<T>(response: unknown): T {
+  const body = response as Record<string, unknown> | null;
+  return (body && 'success' in body && body['data'] ? body['data'] : body) as T;
 }

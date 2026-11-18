@@ -3,3 +3,7 @@
 :host {
   @include layout.shared-mat-table;
 }
+
+.adc-search {
+  min-width: min(280px, 100%);
+}

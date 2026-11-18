@@ -1,0 +1,91 @@
+<div class="container-fluid py-3">
+  <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
+  <button type="button" class="btn btn-link px-0 my-2" data-test="back" (click)="backToList()">
+    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to ADCs
+  </button>
+
+  @switch (status()) {
+    @case ('loading') {
+      <app-pre-loader></app-pre-loader>
+      <app-pre-loader></app-pre-loader>
+    }
+    @case ('not-found') {
+      <app-page-error-state title="ADC not found" [showRetry]="false"
+        message="This ADC does not exist or has been deleted."></app-page-error-state>
+      <div class="text-center">
+        <a class="btn btn-outline-secondary" [routerLink]="['..']" data-test="not-found-back">Go to the ADC list</a>
+      </div>
+    }
+    @case ('error') {
+      <app-page-error-state message="Unable to load this ADC. Please try again." (retry)="loadDetail()">
+      </app-page-error-state>
+    }
+    @default {
+      @if (detail(); as adc) {
+        <section class="adc-header card mb-3" aria-labelledby="adc-detail-title">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+              <h3 class="fw-bold mb-2" id="adc-detail-title">{{ adc.name }}</h3>
+              <app-adc-actions-menu [adc]="adc" variant="button" (changed)="onChanged()" (deleted)="onDeleted()" />
+            </div>
+            <dl class="adc-facts small mb-3">
+              <div>
+                <dt>State</dt>
+                <dd>{{ adc.state.name || '-' }}</dd>
+              </div>
+              <div>
+                <dt>Admin</dt>
+                <dd data-test="admin">
+                  @if (adc.admin; as admin) {
+                    {{ admin.name }} <span class="text-muted">({{ admin.email }})</span>
+                    @if (admin.isXVIFCProfileVerified) {
+                      <span class="badge rounded-pill bg-success-subtle text-success-emphasis ms-1">Active</span>
+                    } @else {
+                      <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis ms-1">Invited</span>
+                    }
+                  } @else {
+                    <span class="text-muted">Not set</span>
+                  }
+                </dd>
+              </div>
+              @if (adc.createdAt) {
+                <div>
+                  <dt>Created</dt>
+                  <dd>{{ adc.createdAt | date: 'd MMM y' }}</dd>
+                </div>
+              }
+            </dl>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-test="ulbs-chip"
+                (click)="selectTab('ulbs')">
+                {{ adc.ulbCount }} ULB{{ adc.ulbCount === 1 ? '' : 's' }}
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-test="members-chip"
+                (click)="selectTab('members')">
+                {{ adc.memberCount }} Member{{ adc.memberCount === 1 ? '' : 's' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <mat-tab-group [selectedIndex]="tabIndex()" (selectedIndexChange)="onTabChange($event)" preserveContent
+          mat-stretch-tabs="false" aria-label="ADC details">
+          <mat-tab label="Members ({{ adc.memberCount }})">
+            <ng-template matTabContent>
+              <div class="pt-3">
+                <app-adc-members-table [adcId]="adcId" [refreshKey]="membersVersion()" />
+              </div>
+            </ng-template>
+          </mat-tab>
+          <mat-tab label="ULBs ({{ adc.ulbCount }})">
+            <ng-template matTabContent>
+              <div class="pt-3">
+                <app-adc-ulbs-table [adcId]="adcId" />
+              </div>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      }
+    }
+  }
+</div>

@@ -1,0 +1,13 @@
+// A blocked Delete stays focusable (see the template), so it is greyed here rather than by [disabled].
+::ng-deep .adc-delete-item--blocked.mat-mdc-menu-item {
+  cursor: default;
+  height: auto;
+  min-height: 48px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+
+  .mat-icon,
+  .adc-delete-item__label {
+    opacity: 0.55;
+  }
+}

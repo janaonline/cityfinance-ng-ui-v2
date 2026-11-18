@@ -33,6 +33,12 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./adc/adc-list.component').then((m) => m.AdcListComponent),
       },
       {
+        path: 'adc/:id',
+        // Keeps the "ADC" sidebar item highlighted on the detail page.
+        data: { menuGroup: 'adc' },
+        loadComponent: () => import('./adc/adc-detail/adc-detail.component').then((m) => m.AdcDetailComponent),
+      },
+      {
         path: 'manual-review-queue',
         loadComponent: () =>
           import('./manual-review-queue/manual-review-queue.component').then(

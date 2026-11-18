@@ -1,0 +1,10 @@
+@use '../../../styles/shared-layout' as layout;
+
+:host {
+  display: block;
+  @include layout.shared-mat-table;
+}
+
+.table-search {
+  min-width: min(260px, 100%);
+}
