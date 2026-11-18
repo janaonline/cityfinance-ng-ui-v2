@@ -228,6 +228,7 @@ export class AfsDigitizationService {
     batch_id?: string;
     overall_assessment?: string;
     arithmetic_assessment?: string;
+    doc_match?: string;
     accuracy_min?: number;
     accuracy_max?: number;
     confidence_min?: number;
@@ -240,6 +241,7 @@ export class AfsDigitizationService {
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
     if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.doc_match) queryParams['doc_match'] = params.doc_match;
     if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
     if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
     if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;
@@ -269,6 +271,7 @@ export class AfsDigitizationService {
     batch_id?: string;
     overall_assessment?: string;
     arithmetic_assessment?: string;
+    doc_match?: string;
     accuracy_min?: number;
     accuracy_max?: number;
     confidence_min?: number;
@@ -283,6 +286,7 @@ export class AfsDigitizationService {
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
     if (params?.arithmetic_assessment) queryParams['arithmetic_assessment'] = params.arithmetic_assessment;
+    if (params?.doc_match) queryParams['doc_match'] = params.doc_match;
     if (params?.accuracy_min !== undefined) queryParams['accuracy_min'] = params.accuracy_min;
     if (params?.accuracy_max !== undefined) queryParams['accuracy_max'] = params.accuracy_max;
     if (params?.confidence_min !== undefined) queryParams['confidence_min'] = params.confidence_min;

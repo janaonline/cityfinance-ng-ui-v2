@@ -33,6 +33,7 @@ export interface DigitizationJobStatusResponse {
   accuracy_score: number | null;
   overall_assessment?: string | null;
   arithmetic_assessment: string | null;
+  doc_match?: 'match' | 'mismatch' | null;
   enable_document_classification: boolean;
   detected_document_type: AfsDocumentType | null;
   multiple_documents_detected: boolean | null;

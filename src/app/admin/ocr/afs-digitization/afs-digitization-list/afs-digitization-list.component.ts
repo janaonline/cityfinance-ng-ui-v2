@@ -28,6 +28,7 @@ interface DigitizationListRow {
   accuracyScore: number | null;
   overallAssessment: string | null;
   arithmeticAssessment: string | null;
+  docMatch: 'match' | 'mismatch' | null;
   pageCount: number | null;
   ocrPriceInr: number | null;
   hasExcel: boolean;
@@ -90,6 +91,11 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'FAIL', label: 'Fail' },
     { value: 'NOT_APPLICABLE', label: 'Not applicable' },
   ];
+  readonly docMatchOptions = [
+    { value: '', label: 'All' },
+    { value: 'match', label: 'Match' },
+    { value: 'mismatch', label: 'Mismatch' },
+  ];
   readonly scoreThresholdOptions = [
     { value: '', label: 'All' },
     { value: 'gte', label: `≥ ${this.scoreThreshold}%` },
@@ -108,6 +114,7 @@ export class AfsDigitizationListComponent implements OnInit {
     docType: [''],
     overall: [''],
     arithmetic: [''],
+    docMatch: [''],
     accuracy: [''],
     confidence: [''],
     dateFrom: this.fb.control<Date | null>(null),
@@ -149,6 +156,7 @@ export class AfsDigitizationListComponent implements OnInit {
       docType: '',
       overall: '',
       arithmetic: '',
+      docMatch: '',
       accuracy: '',
       confidence: '',
       dateFrom: null,
@@ -398,6 +406,7 @@ export class AfsDigitizationListComponent implements OnInit {
       doc_type: f.docType || undefined,
       overall_assessment: f.overall || undefined,
       arithmetic_assessment: f.arithmetic || undefined,
+      doc_match: f.docMatch || undefined,
       ...scoreBounds(f.accuracy, 'accuracy'),
       ...scoreBounds(f.confidence, 'confidence'),
       sort_order: this.sortOrder(),
@@ -448,6 +457,7 @@ export class AfsDigitizationListComponent implements OnInit {
       accuracyScore: job.accuracy_score,
       overallAssessment: job.overall_assessment ?? null,
       arithmeticAssessment: job.arithmetic_assessment ?? null,
+      docMatch: job.doc_match ?? null,
       pageCount: job.page_count,
       ocrPriceInr: job.ocr_price_inr,
       hasExcel: !!job.excel_s3_key,
