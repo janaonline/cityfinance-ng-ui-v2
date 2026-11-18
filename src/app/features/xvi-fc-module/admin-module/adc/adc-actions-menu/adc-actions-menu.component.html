@@ -1,0 +1,36 @@
+@if (variant() === 'icon') {
+  <button matIconButton type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'More actions for ' + adc().name"
+    [disabled]="isDeleting()" data-test="adc-menu">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+} @else {
+  <button matButton="outlined" type="button" [matMenuTriggerFor]="menu" [attr.aria-label]="'Actions for ' + adc().name"
+    [disabled]="isDeleting()" data-test="adc-menu">
+    Actions
+    <mat-icon iconPositionEnd>arrow_drop_down</mat-icon>
+  </button>
+}
+
+<mat-menu #menu="matMenu" xPosition="before">
+  <button mat-menu-item type="button" (click)="rename()" data-test="rename">
+    <mat-icon>edit</mat-icon>
+    <span>Rename</span>
+  </button>
+  <button mat-menu-item type="button" (click)="changeAdmin()" data-test="change-admin">
+    <mat-icon>manage_accounts</mat-icon>
+    <span>{{ adc().admin ? 'Change Admin' : 'Set Admin' }}</span>
+  </button>
+  <hr class="my-1" role="separator" />
+  <!-- Not [disabled]: the menu's keyboard navigation skips disabled items, so the reason would be unreachable.
+       A blocked click does nothing (confirmDelete), and the reason is announced through aria-describedby. -->
+  <button mat-menu-item type="button" class="adc-delete-item" [class.adc-delete-item--blocked]="!!deleteBlockedReason()"
+    [attr.aria-describedby]="deleteBlockedReason() ? reasonId : null" (click)="confirmDelete()" data-test="delete">
+    <mat-icon [class.text-danger]="!deleteBlockedReason()">delete</mat-icon>
+    <span class="d-inline-flex flex-column lh-sm">
+      <span class="adc-delete-item__label" [class.text-danger]="!deleteBlockedReason()">Delete</span>
+      @if (deleteBlockedReason(); as reason) {
+        <span class="small text-muted" [id]="reasonId" data-test="delete-reason">{{ reason }}</span>
+      }
+    </span>
+  </button>
+</mat-menu>

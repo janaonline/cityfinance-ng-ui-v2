@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,7 +18,6 @@ import { LowerCasePipe } from '@angular/common';
 import { environment } from '../../../../../environments/environment';
 import { AuthService } from '../../../../core/services/auth.service';
 import { ProfileVerificationService } from '../profile-verification/profile-verification.service';
-import { AdcService, IAdc } from '../adc/adc.service';
 import { PageErrorStateComponent } from '../page-error-state/page-error-state.component';
 import {
   IDENTIFIER_SECURITY_VALIDATORS,
@@ -92,7 +91,6 @@ const NAME_PATTERN = /^[a-zA-Z .\-']+$/;
     MatSelectModule,
     MatTooltipModule,
     LowerCasePipe,
-    RouterLink,
     PageErrorStateComponent,
   ],
   templateUrl: './roles-teams-overview.component.html',
@@ -113,24 +111,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly profileService = inject(ProfileVerificationService);
   private readonly authService = inject(AuthService);
-  private readonly adcService = inject(AdcService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly baseUrl = environment.api.url2;
 
   private readonly config: RolesTeamsConfig = this.route.snapshot.data['rolesConfig'];
 
-  /** STATE-admin "ADC Teams" page: pick an ADC first, then every call carries `?adcId=`. */
-  readonly adcSelector = this.config.adcSelector ?? false;
-  readonly adcs = signal<IAdc[]>([]);
-  readonly selectedAdcId = signal('');
   /** The Transfer card is hidden for every team except those that opt in via config. */
   readonly transferEnabled = this.config.transferEnabled ?? false;
-  /** False when the caller isn't a member of the team (State admin managing an ADC): they hand the Admin role
-   *  over without losing their own, so there is nothing to demote on the caller's side. */
-  readonly transferDemotesSelf = this.config.transferDemotesSelf ?? true;
-  /** State People and Roles only: true once `GET master/adc` returns an ADC, which shows the "ADC Teams" button. */
-  readonly hasAdcTeams = signal(false);
 
   readonly permissionMatrix = signal<PermissionRow[]>([]);
   readonly pageSubtitle = this.config.pageSubtitle;
@@ -296,7 +283,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
   );
 
   /** The ADC's current Admin — the member who is demoted when the caller isn't the one transferring (State admin). */
-  readonly currentAdmin = computed(() => this.members().find((m) => m.subRole === 'SUBMITTER') ?? null);
 
   readonly selectedTransferTarget = computed(
     () => this.eligibleTransferTargets().find((m) => m._id === this.transferTargetId()) ?? null,
@@ -313,20 +299,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
       disabled: false,
       onClick: () => this.togglePermissionMatrix(),
     },
-    ...(this.hasAdcTeams()
-      ? [
-          {
-            label: 'ADC Teams',
-            iconClass: 'bi bi-diagram-3 me-1',
-            variant: 'stroked' as const,
-            tooltip: "View and manage your state's ADC teams",
-            isActive: false,
-            showChevron: false,
-            disabled: false,
-            onClick: () => this.router.navigate(['../adc-teams'], { relativeTo: this.route }),
-          },
-        ]
-      : []),
     {
       label: 'Add Member',
       iconClass: 'bi bi-plus-lg me-1',
@@ -373,56 +345,13 @@ export class RolesTeamsOverviewComponent implements OnInit {
     this.currentUserId = u._id ?? u.id ?? '';
     this.currentSubRole.set((u['subRole'] as SubRole | undefined) ?? this.config.defaultSubRole);
     this.currentUserName.set(String(u['name'] ?? ''));
-    if (this.adcSelector) {
-      // Nothing to show until an ADC is picked — members and the matrix load from onAdcChange().
-      this.isLoading.set(false);
-      this.loadAdcs();
-      return;
-    }
     this.loadMembers();
     this.loadPermissionMatrix();
     this.loadOtherTeams();
-    if (this.config.adcTeamsLink) this.loadAdcTeamsLink();
   }
 
-  /** A failed lookup only hides the button — it never puts the page into its error state. */
-  private loadAdcTeamsLink(): void {
-    this.adcService
-      .list()
-      .pipe(
-        catchError(() => of([])),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((adcs) => this.hasAdcTeams.set(adcs.length > 0));
-  }
-
-  private loadAdcs(): void {
-    this.adcService
-      .list()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (adcs) => this.adcs.set(adcs),
-        error: () => this.hasError.set(true),
-      });
-  }
-
-  onAdcChange(adcId: string): void {
-    if (adcId === this.selectedAdcId()) return;
-    this.selectedAdcId.set(adcId);
-    this.members.set([]);
-    this.cancelAddMember();
-    this.cancelTransfer();
-    this.showPermissionMatrix.set(false);
-    this.confirmDeleteId.set(null);
-    this.editingRoleId.set(null);
-    this.loadMembers();
-    this.loadPermissionMatrix();
-  }
-
-  /** Full API URL for a config path; on the ADC Teams page every call is scoped to the selected ADC. */
   private apiUrl(path: string): string {
-    const base = `${this.baseUrl}${path}`;
-    return this.adcSelector ? `${base}?adcId=${encodeURIComponent(this.selectedAdcId())}` : base;
+    return `${this.baseUrl}${path}`;
   }
 
   private loadOtherTeams(): void {
@@ -467,7 +396,6 @@ export class RolesTeamsOverviewComponent implements OnInit {
   }
 
   loadMembers(): void {
-    if (this.adcSelector && !this.selectedAdcId()) return;
     this.isLoading.set(true);
     this.hasError.set(false);
 
@@ -698,12 +626,10 @@ export class RolesTeamsOverviewComponent implements OnInit {
           this.isTransferring.set(false);
           this.showTransferPanel.set(false);
           this.loadMembers();
-          if (this.transferDemotesSelf) {
-            this.currentSubRole.set('EDITOR');
-            this.authService.refreshAccessToken().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
-          }
+          this.currentSubRole.set('EDITOR');
+          this.authService.refreshAccessToken().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
           this.snackBar.open(
-            this.transferDemotesSelf ? 'Ownership transferred. Your role is now Reviewer.' : 'ADC admin transferred.',
+            'Ownership transferred. Your role is now Reviewer.',
             'Dismiss',
             {
               duration: 5000,
