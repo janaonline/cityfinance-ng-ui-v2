@@ -87,30 +87,18 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Overall Assessment</mat-label>
-          <mat-select formControlName="overall">
-            @for (opt of assessmentOptions; track opt.value) {
-            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
+          <mat-label>Job ID</mat-label>
+          <input matInput formControlName="jobId" placeholder="Job ID" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Arithmetic Accuracy</mat-label>
-          <mat-select formControlName="arithmetic">
-            @for (opt of arithmeticOptions; track opt.value) {
-            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Document Match</mat-label>
-          <mat-select formControlName="docMatch">
-            @for (opt of docMatchOptions; track opt.value) {
-            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-            }
-          </mat-select>
+          <mat-label>Date Range</mat-label>
+          <mat-date-range-input [rangePicker]="rangePicker">
+            <input matStartDate formControlName="dateFrom" placeholder="From" />
+            <input matEndDate formControlName="dateTo" placeholder="To" />
+          </mat-date-range-input>
+          <mat-datepicker-toggle matSuffix [for]="rangePicker"></mat-datepicker-toggle>
+          <mat-date-range-picker #rangePicker></mat-date-range-picker>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -132,17 +120,30 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Date From</mat-label>
-          <input matInput [matDatepicker]="fromPicker" formControlName="dateFrom" />
-          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-          <mat-datepicker #fromPicker></mat-datepicker>
+          <mat-label>Document Match</mat-label>
+          <mat-select formControlName="docMatch">
+            @for (opt of docMatchOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Date To</mat-label>
-          <input matInput [matDatepicker]="toPicker" formControlName="dateTo" />
-          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-          <mat-datepicker #toPicker></mat-datepicker>
+          <mat-label>Arithmetic Accuracy</mat-label>
+          <mat-select formControlName="arithmetic">
+            @for (opt of arithmeticOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Overall Assessment</mat-label>
+          <mat-select formControlName="overall">
+            @for (opt of assessmentOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
         </mat-form-field>
 
         <div class="d-flex align-items-center gap-2 pt-1">
@@ -189,7 +190,8 @@
           <span class="cost-card__label">Arithmetic</span>
           <span class="cost-card__value">{{ summary.arithmetic.passed | number }} pass</span>
           <span class="cost-card__sub">
-            {{ summary.arithmetic.failed | number }} fail · {{ summary.arithmetic.not_applicable | number }} n/a
+            {{ summary.arithmetic.failed | number }} fail · {{ summary.arithmetic.skipped ?? 0 | number }} skipped
+            @if (summary.arithmetic.not_applicable) { · {{ summary.arithmetic.not_applicable | number }} n/a }
           </span>
         </div>
         <div class="cost-card">

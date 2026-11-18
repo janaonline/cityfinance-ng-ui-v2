@@ -255,6 +255,8 @@ export interface DigitizationAssessmentCounts {
   partial: number;
   failed: number;
   not_applicable: number;
+  /** Arithmetic skipped on a doc mismatch. Absent from older API responses. */
+  skipped?: number;
 }
 
 export interface DigitizationListSummary {
