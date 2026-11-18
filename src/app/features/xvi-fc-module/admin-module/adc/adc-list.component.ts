@@ -17,7 +17,7 @@ import { AdcAdminStatus, AdcService, IAdcManageQuery, IAdcRow } from '../../shar
 import { ADC_DEFAULT_PAGE_SIZE, ADC_PAGE_SIZE_OPTIONS } from '../../shared/adc/adc-paging.constants';
 import { AdcActionsMenuComponent } from './adc-actions-menu/adc-actions-menu.component';
 import { AdcFormDialogComponent, AdcFormDialogData } from './dialogs/adc-form-dialog/adc-form-dialog.component';
-import { readPageParams } from './adc-url-params';
+import { AdcListNavigationState, readPageParams } from './adc-url-params';
 
 type ListSortBy = NonNullable<IAdcManageQuery['sortBy']>;
 
@@ -70,6 +70,8 @@ export class AdcListComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly states = signal<IState[]>([]);
+  /** Carried on the links to an ADC's page, for its breadcrumb back to this exact view. */
+  readonly linkState = signal<AdcListNavigationState>({ adcListQuery: {} });
 
   readonly filterForm = this.fb.nonNullable.group({
     stateId: [''],
@@ -214,10 +216,7 @@ export class AdcListComponent implements OnInit {
   private writeUrl(): void {
     const { stateId, search, adminStatus } = this.filterForm.getRawValue();
     // null drops a param, so the URL only carries what differs from the defaults.
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      replaceUrl: true,
-      queryParams: {
+    const queryParams = {
         state: stateId || null,
         search: search.trim() || null,
         adminStatus: adminStatus || null,
@@ -225,7 +224,10 @@ export class AdcListComponent implements OnInit {
         sortDir: this.sortDir() === -1 ? -1 : null,
         page: this.page() > 1 ? this.page() : null,
         limit: this.pageSize() === ADC_DEFAULT_PAGE_SIZE ? null : this.pageSize(),
-      },
+    };
+    this.linkState.set({
+      adcListQuery: Object.fromEntries(Object.entries(queryParams).filter(([, value]) => value !== null)),
     });
+    void this.router.navigate([], { relativeTo: this.route, replaceUrl: true, queryParams });
   }
 }

@@ -1,8 +1,5 @@
 <div class="container-fluid py-3">
-  <app-xvifc-breadcrumb [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
-  <button type="button" class="btn btn-link px-0 my-2" data-test="back" (click)="backToList()">
-    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to ADCs
-  </button>
+  <app-xvifc-breadcrumb class="d-block mb-3" [links]="breadcrumbLinks()"></app-xvifc-breadcrumb>
 
   @switch (status()) {
     @case ('loading') {
