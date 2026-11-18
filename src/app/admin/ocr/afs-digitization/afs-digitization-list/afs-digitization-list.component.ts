@@ -12,7 +12,7 @@ import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
-import { DigitizationJobStatusResponse } from '../afs-digitization-models';
+import { DigitizationCostBreakdown, DigitizationJobStatusResponse } from '../afs-digitization-models';
 
 interface DigitizationListRow {
   jobId: string;
@@ -31,6 +31,9 @@ interface DigitizationListRow {
   docMatch: 'match' | 'mismatch' | null;
   pageCount: number | null;
   ocrPriceInr: number | null;
+  geminiCostInr: number | null;
+  costBreakdown: DigitizationCostBreakdown | null;
+  totalCostInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
@@ -135,6 +138,15 @@ export class AfsDigitizationListComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
   totalItems = 0;
+  totalCostInr = 0;
+  totalCostBreakdown: DigitizationCostBreakdown | null = null;
+
+  readonly costSteps: { key: keyof DigitizationCostBreakdown; label: string }[] = [
+    { key: 'ocr', label: 'OCR' },
+    { key: 'cross_check', label: 'Cross-check' },
+    { key: 'arithmetic', label: 'Arithmetic' },
+    { key: 'classification', label: 'Doc class' },
+  ];
 
   ngOnInit(): void {
     this.loadJobs();
@@ -429,10 +441,14 @@ export class AfsDigitizationListComponent implements OnInit {
         next: (response) => {
           this.dataSource.data = (response.jobs ?? []).map((j) => this.mapRow(j));
           this.totalItems = response.total ?? this.dataSource.data.length;
+          this.totalCostInr = response.total_cost_inr ?? 0;
+          this.totalCostBreakdown = response.total_cost_breakdown_inr ?? null;
         },
         error: (err) => {
           this.dataSource.data = [];
           this.totalItems = 0;
+          this.totalCostInr = 0;
+          this.totalCostBreakdown = null;
           this.utilityService.swalPopup(
             'Failed to load jobs',
             err?.error?.detail || err?.error?.message || 'Please try again.',
@@ -460,6 +476,9 @@ export class AfsDigitizationListComponent implements OnInit {
       docMatch: job.doc_match ?? null,
       pageCount: job.page_count,
       ocrPriceInr: job.ocr_price_inr,
+      geminiCostInr: job.gemini_cost_inr ?? null,
+      costBreakdown: job.cost_breakdown_inr ?? null,
+      totalCostInr: job.total_cost_inr ?? null,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',

@@ -40,6 +40,9 @@ export interface DigitizationJobStatusResponse {
   page_count: number | null;
   ocr_cost_usd: number | null;
   ocr_price_inr: number | null;
+  gemini_cost_inr?: number | null;
+  cost_breakdown_inr?: DigitizationCostBreakdown | null;
+  total_cost_inr?: number | null;
   excel_s3_key: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -239,8 +242,20 @@ export interface DigitizationJobResultResponse {
   message: string;
 }
 
+export interface DigitizationCostBreakdown {
+  ocr: number | null;
+  cross_check: number | null;
+  arithmetic: number | null;
+  classification: number | null;
+  total: number | null;
+}
+
 export interface DigitizationJobsListResponse {
   jobs: DigitizationJobStatusResponse[];
+  total_cost_breakdown_inr?: DigitizationCostBreakdown;
+  total_ocr_cost_inr?: number;
+  total_gemini_cost_inr?: number;
+  total_cost_inr?: number;
   total: number;
   skip: number;
   limit: number;
