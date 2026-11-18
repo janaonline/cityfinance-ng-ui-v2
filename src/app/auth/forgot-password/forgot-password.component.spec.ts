@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -405,7 +406,9 @@ describe('ForgotPasswordComponent', () => {
     }));
 
     it('should set resetError and stay on RESET_PASSWORD step on failure', fakeAsync(() => {
-      authSpy.resetPassword.and.returnValue(throwError(() => ({ error: { message: 'Invalid OTP' } })));
+      authSpy.resetPassword.and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 422, error: { message: 'Invalid or expired OTP' } })),
+      );
       component.resetForm.patchValue({ otp: '9999', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
 
       component.onResetPassword();
@@ -414,6 +417,33 @@ describe('ForgotPasswordComponent', () => {
       expect(component.resetError()).toBe('Invalid or expired OTP.');
       expect(component.currentStep()).toBe('RESET_PASSWORD');
     }));
+
+    it('shows the password message, not "Invalid OTP", when the API refuses the password (400)', fakeAsync(() => {
+      const rule =
+        'Password must be 8–128 characters with an uppercase letter, a lowercase letter, a number and a special character';
+      authSpy.resetPassword.and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { message: [rule] } })),
+      );
+      component.resetForm.patchValue({ otp: '1234', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
+
+      component.onResetPassword();
+      tick();
+
+      expect(component.resetError()).toBe(rule);
+      expect(component.resetError()).not.toContain('OTP');
+    }));
+
+    it('blocks a password the API would refuse, naming what it lacks', () => {
+      const control = component.resetForm.controls.newPassword;
+
+      control.setValue('WELCOME@');
+      expect(control.hasError('passwordComplexity')).toBeTrue();
+      expect(component.passwordComplexityText()).toBe('Password must also include a lowercase letter and a number.');
+
+      control.setValue('Password#1'); // a symbol outside @$!%*?& is fine now
+      expect(control.valid).toBeTrue();
+      expect(component.passwordComplexityText()).toBeNull();
+    });
 
     it('should reset isSubmitting after success', fakeAsync(() => {
       authSpy.resetPassword.and.returnValue(of({ success: true as const, message: 'OK' }));

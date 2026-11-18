@@ -9,9 +9,9 @@ export function noHtmlOrScript(control: AbstractControl): ValidationErrors | nul
   const value = control.value as string;
   if (!value) return null;
   if (
-    /<[a-z][\s\S]*?>/i.test(value) ||  // <tag ...>
-    /javascript\s*:/i.test(value) ||     // javascript: URL
-    /on\w+\s*=/i.test(value)             // onerror=, onclick=, etc.
+    /<[a-z][\s\S]*?>/i.test(value) || // <tag ...>
+    /javascript\s*:/i.test(value) || // javascript: URL
+    /on\w+\s*=/i.test(value) // onerror=, onclick=, etc.
   ) {
     return { unsafeInput: true };
   }
@@ -27,8 +27,8 @@ export function noMongoOperators(control: AbstractControl): ValidationErrors | n
   const value = control.value as string;
   if (!value) return null;
   if (
-    /\$[a-z]/i.test(value) ||  // $ne, $gt, $where, etc.
-    /^\s*\{/.test(value)        // {"$ne": ...} style injection
+    /\$[a-z]/i.test(value) || // $ne, $gt, $where, etc.
+    /^\s*\{/.test(value) // {"$ne": ...} style injection
   ) {
     return { unsafeInput: true };
   }
@@ -61,18 +61,51 @@ export function noNullBytes(control: AbstractControl): ValidationErrors | null {
   return value.includes('\0') ? { unsafeInput: true } : null;
 }
 
+/** What a new password still lacks: the error value of `passwordComplexity`. */
+export interface PasswordComplexityMissing {
+  upper: boolean;
+  lower: boolean;
+  digit: boolean;
+  special: boolean;
+}
+
 /**
- * Requires at least one uppercase letter and one special character.
- * Only wire this into flows that SET a new password (registration, reset) —
- * never into a login-password control, where an existing account's password
- * may predate this rule and would then be unable to log in at all.
+ * Requires an uppercase letter, a lowercase letter, a number and a special character (any symbol that is not a
+ * letter, digit or space). This is the API's own rule (cf-nest-api-v2 `src/module/auth/password-policy.ts`), so a
+ * password this form accepts is never refused there; change both together. Length (8–128) is checked by the
+ * control's min/max length validators. The error lists what is missing, for `passwordComplexityMessage`.
+ *
+ * Only wire this into flows that SET a new password (registration, reset) — never into a login-password control,
+ * where an existing account's password may predate this rule and would then be unable to log in at all.
  */
 export function passwordComplexity(control: AbstractControl): ValidationErrors | null {
   const value = control.value as string;
   if (!value) return null;
-  const hasUpper = /[A-Z]/.test(value);
-  const hasSpecial = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\/;']/.test(value);
-  return hasUpper && hasSpecial ? null : { passwordComplexity: true };
+  const missing: PasswordComplexityMissing = {
+    upper: !/[A-Z]/.test(value),
+    lower: !/[a-z]/.test(value),
+    digit: !/\d/.test(value),
+    special: !/[^A-Za-z0-9\s]/.test(value),
+  };
+  return Object.values(missing).some(Boolean) ? { passwordComplexity: missing } : null;
+}
+
+const PASSWORD_PART_LABEL: Record<keyof PasswordComplexityMissing, string> = {
+  upper: 'an uppercase letter',
+  lower: 'a lowercase letter',
+  digit: 'a number',
+  special: 'a special character',
+};
+
+/** "Password must also include a lowercase letter and a number." for a `passwordComplexity` error, else null. */
+export function passwordComplexityMessage(errors: ValidationErrors | null): string | null {
+  const missing = errors?.['passwordComplexity'] as PasswordComplexityMissing | undefined;
+  if (!missing) return null;
+  const parts = (Object.keys(PASSWORD_PART_LABEL) as (keyof PasswordComplexityMissing)[])
+    .filter((key) => missing[key])
+    .map((key) => PASSWORD_PART_LABEL[key]);
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0];
+  return `Password must also include ${list}.`;
 }
 
 /**
@@ -115,6 +148,4 @@ export const IDENTIFIER_SECURITY_VALIDATORS: ValidatorFn[] = [
  * passwords like "SELECT_my_p@ss!".
  * Pair with Validators.maxLength(128) to prevent bcrypt DoS.
  */
-export const PASSWORD_SECURITY_VALIDATORS: ValidatorFn[] = [
-  noNullBytes,
-];
+export const PASSWORD_SECURITY_VALIDATORS: ValidatorFn[] = [noNullBytes];
