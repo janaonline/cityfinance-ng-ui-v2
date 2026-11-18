@@ -1,283 +1,60 @@
 @use '../claims-shared';
+// Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
+@use '../claims-ui';
 
-// The document card and the tiles share one width so their edges line up.
-.cl-doc,
-.cl-tiles {
-  max-width: 720px;
+// A tone per headline card: the card's outline, icon and value take it (teal is the page default).
+.cl-tone--orange {
+  --t: var(--clr-primary, #d9730d);
 }
 
-.cl-doc {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e3e8ea;
-  border-radius: 10px;
-  background: #fff;
-
-  &__info {
-    min-width: 0;
-  }
-
-  &__eyebrow {
-    margin: 0 0 0.15rem;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: #5b6b73;
-  }
-
-  &__name {
-    margin: 0;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #0f1f26;
-    overflow-wrap: anywhere;
-  }
-
-  &__meta {
-    margin: 0.15rem 0 0;
-    font-size: 0.72rem;
-    color: #5b6b73;
-  }
-
-  .cs-btn {
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
+.cl-tone--good {
+  --t: #1d7a46;
 }
 
-.cl-forms {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 0.75rem;
-  font-size: 0.78rem;
-
-  &__label {
-    font-weight: 600;
-  }
-
-  a {
-    color: #0f5b4a;
-    font-weight: 600;
-  }
+.cl-tone--info {
+  --t: #2f5fa8;
 }
 
-.cl-return {
-  max-width: 720px;
-  margin-bottom: 0.75rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #f3c7c7;
-  border-left: 4px solid #c0392b;
-  border-radius: 10px;
-  background: #fdf4f4;
-  font-size: 0.78rem;
-
-  &__title {
-    margin: 0 0 0.5rem;
-    font-weight: 700;
-    color: #8a1f1f;
-  }
-
-  &__list {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 0.3rem 1rem;
-    margin: 0;
-
-    dt {
-      font-weight: 600;
-      color: #5b6b73;
-    }
-
-    dd {
-      margin: 0;
-      color: #0f1f26;
-      overflow-wrap: anywhere;
-    }
-  }
-
-  &__remark {
-    white-space: pre-line;
-  }
+.cl-stat__value {
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 575.98px) {
-  .cl-return__list {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-
-    dd {
-      margin-bottom: 0.35rem;
-    }
-  }
+.cl-return__remark {
+  white-space: pre-line;
 }
 
-.cl-returned-forms {
-  margin: 0.25rem 0 0;
-  font-size: 0.7rem;
-  color: #5b6b73;
+.cl-ulb-link:hover span:last-child {
+  text-decoration: underline;
 }
 
-.cl-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+// Return is the cautious action, outlined in red; Approve is the filled green one.
+.cl-actions__return {
+  --mat-button-outlined-label-text-color: var(--cl-red);
+  --mat-button-outlined-outline-color: color-mix(in srgb, var(--cl-red) 45%, transparent);
 }
 
-.cl-tile {
-  padding: 0.65rem 0.9rem;
-  border: 1px solid #e3e8ea;
-  border-radius: 10px;
-  background: #fff;
-
-  &__value {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #0f1f26;
-  }
-
-  &__label {
-    margin: 0.1rem 0 0;
-    font-size: 0.72rem;
-    color: #5b6b73;
-  }
-}
-
-@media (max-width: 575.98px) {
-  .cl-tiles {
-    grid-template-columns: 1fr;
-  }
-}
-
-.cl-search {
-  margin-bottom: 0.75rem;
-
-  &__input {
-    width: 100%;
-    max-width: 340px;
-    padding: 0.4rem 0.75rem;
-    border: 1px solid #c9d2d6;
-    border-radius: 8px;
-    font-size: 0.8rem;
-  }
-}
-
-.cl-pager {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.8rem;
-  margin-top: 0.8rem;
-  font-size: 0.78rem;
-  color: #5b6b73;
-}
-
-.cl-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-
-  .cl-search {
-    margin-bottom: 0;
-    flex: 1 1 260px;
-  }
-}
-
-.cl-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.cl-decide {
-  width: 4rem;
-  white-space: nowrap;
-}
-
-// The per-ULB return icon, in the spirit of the State's per-document action row.
-.cl-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid #c9d2d6;
-  border-radius: 50%;
-  background: #fff;
-  font-size: 1rem;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #0f5b4a;
-    outline-offset: 2px;
-  }
-
-  &--return {
-    color: #b42318;
-
-    &.cl-icon-btn--active {
-      border-color: #b42318;
-      background: #fdecea;
-    }
-  }
-}
-
-.cl-row--returned {
-  background: #fdf4f4;
+.cl-actions__approve {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
 }
 
 .cl-link-btn {
-  margin-left: 0.35rem;
+  --mat-button-text-container-height: 22px;
+  --mat-button-text-horizontal-padding: 6px;
+  --mat-button-text-label-text-color: var(--t);
+}
+
+// The per-ULB return button: red, and filled once the ULB is marked.
+.cl-icon-btn--return {
+  --mat-icon-button-state-layer-size: 32px;
+  --mat-icon-button-icon-color: var(--cl-red);
+
   padding: 0;
-  border: 0;
-  background: none;
-  color: #0f5b4a;
-  font-size: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
+  font-size: 0.9rem;
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  &.cl-icon-btn--active {
+    --mat-icon-button-icon-color: #fff;
+
+    background: var(--cl-red);
   }
-}
-
-.cl-hint__counts {
-  margin-left: 0.35rem;
-  font-weight: 600;
-  color: #0f1f26;
-}
-
-.cl-ulb-link {
-  color: inherit;
-  text-decoration: none;
-
-  &:hover,
-  &:focus-visible {
-    color: #0f5b4a;
-    text-decoration: underline;
-  }
-}
-
-.cl-hint {
-  margin: 0 0 0.6rem;
-  font-size: 0.75rem;
-  color: #5b6b73;
 }

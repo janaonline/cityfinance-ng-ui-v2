@@ -13,6 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute } from '@angular/router';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import { ClaimLettersStates } from '../claims-submission/claims-submission.models';
+import { ClaimsSubmissionService } from '../claims-submission/claims-submission.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { findRouteParam } from '../route-params.util';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -34,6 +36,7 @@ const LOAD_ERROR = 'Could not load the overview. Please try again.';
 })
 export class MohuaOverviewComponent {
   private readonly service = inject(MohuaOverviewService);
+  private readonly claimsService = inject(ClaimsSubmissionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly permissions = inject(AuthPermissionService);
@@ -51,6 +54,8 @@ export class MohuaOverviewComponent {
   readonly error = signal<string | null>(null);
   readonly rows = computed(() => this.overview()?.rows ?? []);
   readonly stateFilter = signal<StateFilter | null>(null);
+  /** Claim letters per State and nationally; null until loaded, or if they fail, when the claim spots say "Coming soon". */
+  readonly claims = signal<ClaimLettersStates | null>(null);
 
   private readonly statesSection = viewChild('states', { read: ElementRef<HTMLElement> });
 
@@ -68,6 +73,10 @@ export class MohuaOverviewComponent {
 
     this.loading.set(true);
     this.error.set(null);
+    this.claimsService
+      .getStates(yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });
     this.service
       .getOverview(yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))

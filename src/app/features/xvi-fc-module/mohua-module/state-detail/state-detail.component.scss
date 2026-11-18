@@ -1,3 +1,6 @@
+// Status badges (cs-badge) shared with the claims screens.
+@use '../claims-submission/claims-shared';
+
 // Colours come from the XVI FC theme tokens (--color-primary teal, --clr-primary orange); status colours are fixed.
 // Surfaces are transparent so the page background shows through — only outlines and tints carry colour.
 :host {
@@ -336,6 +339,66 @@
   color: var(--color-primary, #12535c);
   background: color-mix(in srgb, var(--color-primary, #12535c) 14%, transparent);
   border-radius: 50%;
+}
+
+// One row per claim letter: icon, number and figures, status, View.
+.sd-claims__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  .sd-cond__pdf {
+    margin-top: 0;
+  }
+}
+
+.sd-claims {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sd-claim {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  font-size: 0.72rem;
+  border: 1px solid var(--sd-line);
+  border-radius: 9px;
+
+  &__icon {
+    width: 30px;
+    height: 30px;
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  // The View button's bottom-pinning (for the condition cards) would push it off-centre in this row.
+  .sd-cond__pdf {
+    margin-top: 0;
+  }
+
+  .cs-badge {
+    line-height: 1.4;
+  }
+
+  &__text {
+    display: flex;
+    flex: 1 1 200px;
+    flex-direction: column;
+    min-width: 0;
+  }
+}
+
+.sd-claims__more {
+  margin: 8px 0 0;
+  font-size: 0.66rem;
 }
 
 // ── ULB Form Completion (rings) ──────────────────────────────────────────────
