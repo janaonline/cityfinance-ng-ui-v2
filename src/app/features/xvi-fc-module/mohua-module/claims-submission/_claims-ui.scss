@@ -1,0 +1,173 @@
+// The MoHUA claims screens are built from Angular Material (cards, buttons, search, toggles, tooltips) and Bootstrap
+// (`.table`, `.badge`, layout utilities). This partial only tunes those components through their design tokens, in the
+// same way the MoHUA dashboard does (state-detail), and adds the few pieces neither library has. Keep it that way:
+// reach for a Material/Bootstrap class before adding a rule here.
+@use '../overview/reveal.partial' as r;
+
+@include r.reveal;
+
+:host {
+  --t: var(--color-primary, #12535c);
+  --cl-red: #c0322b;
+
+  display: block;
+}
+
+// ── Material: outlined card as a panel (as the dashboard's .sd-panel) ─────────────────────────────────────────
+.cs-panel {
+  --mat-card-outlined-container-color: transparent;
+  --mat-card-outlined-outline-color: color-mix(in srgb, var(--t) 22%, transparent);
+  --mat-card-outlined-container-shape: 12px;
+
+  padding: 10px 12px 12px;
+}
+
+// ── Material: compact outlined search field (as the dashboard's .sd-search) ──────────────────────────────────
+.cs-search {
+  --mat-form-field-container-height: 32px;
+  --mat-form-field-container-vertical-padding: 4px;
+  --mat-form-field-container-text-size: 0.75rem;
+  --mat-form-field-outlined-container-shape: 16px;
+  --mat-form-field-outlined-outline-color: color-mix(in srgb, var(--t) 45%, transparent);
+  --mat-form-field-outlined-hover-outline-color: var(--t);
+  --mat-form-field-outlined-focus-outline-color: var(--t);
+
+  flex: 1 1 220px;
+  max-width: 340px;
+  font-size: 0.75rem;
+
+  .bi {
+    padding-right: 8px;
+    color: var(--t);
+  }
+}
+
+// ── Material: compact button toggles, the chosen one filled teal ─────────────────────────────────────────────
+.cs-toggle {
+  --mat-button-toggle-height: 30px;
+  --mat-button-toggle-label-text-size: 0.7rem;
+  --mat-button-toggle-shape: 999px;
+  --mat-button-toggle-selected-state-background-color: var(--t);
+  --mat-button-toggle-selected-state-text-color: #fff;
+  --mat-button-toggle-divider-color: color-mix(in srgb, var(--t) 20%, transparent);
+}
+
+// ── Material: small outlined pill button (as the dashboard's .sd-cond__pdf) ──────────────────────────────────
+.cs-view-btn {
+  --mat-button-outlined-container-height: 28px;
+  --mat-button-outlined-label-text-size: 0.7rem;
+  --mat-button-outlined-label-text-color: var(--t);
+  --mat-button-outlined-outline-color: color-mix(in srgb, var(--t) 55%, transparent);
+  --mat-button-outlined-horizontal-padding: 12px;
+  --mat-button-outlined-container-shape: 999px;
+
+  // Never wrap or shrink beside long text (e.g. a file name in a review bar).
+  flex: none;
+  white-space: nowrap;
+
+  .bi + .bi {
+    margin-left: 4px;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover .bi + .bi {
+    transform: translateX(3px);
+  }
+}
+
+// ── Bootstrap: a flat table inside a panel ───────────────────────────────────────────────────────────────────
+.cs-flat {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: color-mix(in srgb, var(--t) 4%, transparent);
+  --bs-table-border-color: color-mix(in srgb, var(--t) 12%, transparent);
+
+  font-size: 0.78rem;
+
+  > thead th {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #5b7083;
+    background: color-mix(in srgb, var(--t) 5%, transparent);
+  }
+}
+
+.cs-flat-wrap {
+  border: 1px solid color-mix(in srgb, var(--t) 18%, transparent);
+  border-radius: 10px;
+  // Scrolls sideways on a narrow screen only; the page scrolls vertically, never the table itself.
+  overflow: auto hidden;
+}
+
+// ── Pieces neither library has ───────────────────────────────────────────────────────────────────────────────
+// A round tinted icon badge (panel heads, rows).
+.cs-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  font-size: 0.95rem;
+  color: var(--t);
+  background: color-mix(in srgb, var(--t) 14%, transparent);
+  border-radius: 50%;
+
+  &--sm {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+  }
+
+  &--solid {
+    color: #fff;
+    background: var(--t);
+  }
+}
+
+// Teal text, for figures and small pills on Bootstrap badges.
+.cs-accent {
+  color: var(--t);
+}
+
+.cs-tint {
+  color: var(--t);
+  background: color-mix(in srgb, var(--t) 10%, transparent);
+}
+
+// A coloured left edge on a row (teal, or red for a returned item).
+.cs-edge {
+  box-shadow: inset 3px 0 0 var(--t);
+
+  &--red {
+    box-shadow: inset 3px 0 0 var(--cl-red);
+  }
+}
+
+// Rows slide in one after another (`--i` is the row's index).
+.cs-row-in {
+  animation: cs-row-in 0.35s ease both;
+  animation-delay: calc(min(var(--i, 0), 20) * 30ms);
+}
+
+@keyframes cs-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-row-in {
+    animation: none;
+  }
+
+  .cs-view-btn .bi + .bi {
+    transition: none;
+  }
+}

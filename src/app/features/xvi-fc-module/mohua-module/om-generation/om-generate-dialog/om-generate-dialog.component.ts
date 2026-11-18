@@ -20,19 +20,19 @@ export type OmGenerateDialogResult = 'generate' | 'preview';
       </h2>
       <mat-dialog-content>
         <p class="omg-lead">
-          You are about to generate an Office Memorandum for <strong>{{ data.counts.included }} cities</strong>.
+          You are about to generate an Office Memorandum for <strong>{{ data.counts.included }} {{ data.counts.included === 1 ? 'ULB' : 'ULBs' }}</strong>.
         </p>
         <dl class="omg-counts">
           <div>
-            <dt>Cities with no MoHUA action recorded <span class="omg-muted">(treated as not objected to)</span></dt>
+            <dt>ULBs with no MoHUA action recorded <span class="omg-muted">(treated as not objected to)</span></dt>
             <dd>{{ data.counts.noActionRecorded }}</dd>
           </div>
           <div class="omg-bad">
-            <dt>Cities rejected / excluded from this OM</dt>
+            <dt>ULBs rejected / excluded from this OM</dt>
             <dd>{{ data.counts.excluded }}</dd>
           </div>
           <div class="omg-strong">
-            <dt>Cities included in this OM</dt>
+            <dt>ULBs included in this OM</dt>
             <dd>{{ data.counts.included }}</dd>
           </div>
         </dl>

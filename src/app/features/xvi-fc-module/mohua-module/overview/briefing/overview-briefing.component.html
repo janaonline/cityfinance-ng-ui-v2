@@ -18,10 +18,15 @@
     <div class="ob-claims">
       <span class="ob-eyebrow">Claims with MoHUA</span>
       <div class="ob-tiles">
-        @for (tile of claimTiles; track tile.label; let i = $index) {
+        @for (tile of claimTiles(); track tile.label; let i = $index) {
           <div class="ob-tile" [style.--k]="i">
             <span class="ob-tile__label"><i class="bi {{ tile.icon }}" aria-hidden="true"></i>{{ tile.label }}</span>
-            <span class="ob-soon">Coming soon</span>
+            @if (tile.value) {
+              <span class="ob-soon" [appCountUp]="tile.value"></span>
+              <span class="ob-tile__sub">{{ tile.sub }}</span>
+            } @else {
+              <span class="ob-soon">Coming soon</span>
+            }
           </div>
         }
       </div>

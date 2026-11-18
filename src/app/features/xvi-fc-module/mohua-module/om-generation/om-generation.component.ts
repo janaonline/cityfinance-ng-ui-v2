@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { formatRupeesInCrore } from '../claims-submission/claims-submission.models';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -13,7 +15,7 @@ const LOAD_ERROR = 'Could not load the verified claim letters. Please try again.
 /** Step 2: verified claim letters grouped by State; Generate OM opens one letter's OM on its own page. */
 @Component({
   selector: 'app-om-generation',
-  imports: [RouterLink, MohuaPageLoaderComponent, OmStepsComponent],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MohuaPageLoaderComponent, OmStepsComponent],
   templateUrl: './om-generation.component.html',
   styleUrl: './om-generation.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
