@@ -13,8 +13,8 @@ export interface ClaimLettersStateRow {
   installmentAllocation: number | null;
   amountClaimed: number | null;
   ulbsIncluded: number | null;
-  /** The state's expected ULBs for the year: the "of N" in the ULBs included column. */
-  totalUlbs: number;
+  /** The state's expected ULBs for the year: the "of N" in the ULBs included column. Missing from an older API. */
+  totalUlbs?: number;
   claimLetterCount: number;
   /** The highest claim letter number the state has submitted (1, 2, 3...), null when none. */
   latestClaimNumber: number | null;

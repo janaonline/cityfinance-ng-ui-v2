@@ -13,7 +13,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { saveAs } from 'file-saver';
-import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs';
+import { EMPTY, Subject, Subscription, catchError, debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 import {
   CLAIM_LETTER_APPROVED_STATUSES,
@@ -120,6 +120,7 @@ export class StateDetailComponent {
   readonly statusLabel = claimStatusLabel;
   /** The State's claim letters, newest first; null until loaded, or if they fail, when the claim spots say "Coming soon". */
   readonly claims = signal<StateClaimLetters | null>(null);
+  private claimsRequest?: Subscription;
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
@@ -307,7 +308,9 @@ export class StateDetailComponent {
 
     this.loading.set(true);
     this.error.set(null);
-    this.claimsService
+    // A retry cancels the earlier claims request, so a late answer can never overwrite the newer one.
+    this.claimsRequest?.unsubscribe();
+    this.claimsRequest = this.claimsService
       .getStateClaimLetters(ids.stateId, ids.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });

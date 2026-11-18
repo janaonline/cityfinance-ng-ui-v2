@@ -50,6 +50,10 @@
   --mat-button-toggle-selected-state-background-color: var(--t);
   --mat-button-toggle-selected-state-text-color: #fff;
   --mat-button-toggle-divider-color: color-mix(in srgb, var(--t) 20%, transparent);
+
+  // Material clips the group; on a narrow screen it scrolls sideways instead, so no option is lost.
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 // ── Material: small outlined pill button (as the dashboard's .sd-cond__pdf) ──────────────────────────────────

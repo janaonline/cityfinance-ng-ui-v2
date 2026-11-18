@@ -26,6 +26,7 @@ import {
 } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
+import { StateNotificationService } from '../../state-notification.service';
 import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../../shared/breadcrumb/breadcrumb.component';
 import {
   FORM_STATUS,
@@ -168,6 +169,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly claimLetterService = inject(ClaimLetterService);
+  private readonly stateNotifications = inject(StateNotificationService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly amountDisplay = inject(AmountDisplayModeService);
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
@@ -682,6 +684,8 @@ export class ClaimLetterDetailComponent implements OnInit {
           this.isSubmitting.set(false);
           this.utilityService.triggerSnackbar('Claim letter submitted to MoHUA.', 'snackbar-success');
           this.loadDetail();
+          // A new letter clears a returned-letter alert: update the bell now, not on the next navigation.
+          void this.stateNotifications.refreshNow(this.stateId);
         },
         error: (err: unknown) => {
           this.isSubmitting.set(false);

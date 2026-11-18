@@ -1,4 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { StateNotificationService } from '../../state-notification.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -1157,9 +1158,13 @@ describe('ClaimLetterDetailComponent', () => {
       await setupSigned();
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
       spyOn(claimLetterService, 'submit').and.returnValue(of(buildClaim({ currentFormStatus: 5 })));
+      const bell = spyOn(TestBed.inject(StateNotificationService), 'refreshNow').and.resolveTo();
       dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
 
       component.submitToMohua();
+
+      // The new letter clears a returned-letter alert, so the bell reloads straight away.
+      expect(bell).toHaveBeenCalledOnceWith(component.stateId);
 
       expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
         ConfirmDialogComponent,

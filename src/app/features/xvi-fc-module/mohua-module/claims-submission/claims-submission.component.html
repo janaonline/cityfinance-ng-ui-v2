@@ -162,12 +162,16 @@
                     }
                   </td>
                   <td class="text-end">
-                    <span
-                      class="cl-ulbs-of text-body-secondary"
-                      [matTooltip]="(row.ulbsIncluded ?? 0) + ' of ' + row.totalUlbs + ' ULBs in the State'"
-                    >
-                      <strong class="text-body">{{ row.ulbsIncluded ?? 0 }}</strong> / {{ row.totalUlbs }}
-                    </span>
+                    @if (row.totalUlbs != null) {
+                      <span
+                        class="cl-ulbs-of text-body-secondary"
+                        [matTooltip]="(row.ulbsIncluded ?? 0) + ' of ' + row.totalUlbs + ' ULBs in the State'"
+                      >
+                        <strong class="text-body">{{ row.ulbsIncluded ?? 0 }}</strong> / {{ row.totalUlbs }}
+                      </span>
+                    } @else {
+                      <strong class="cl-ulbs-of">{{ row.ulbsIncluded ?? 0 }}</strong>
+                    }
                   </td>
                   <td class="text-end">
                     @if (row.firstClaimStatus === 'RECEIVED') {

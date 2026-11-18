@@ -79,9 +79,7 @@
             <div class="d-flex flex-wrap align-items-baseline column-gap-2 flex-grow-1 text-truncate">
               <h2 class="cl-review__title small fw-bold mb-0">Claim Letter</h2>
               <p class="cl-review__meta small text-body-secondary mb-0 text-truncate">
-                <span class="cl-review__signed" [matTooltip]="'Signed by ' + l.state.name + ' State DMA'"
-                  >Signed {{ formatDate(l.receivedOn) }}</span
-                >
+                <span class="cl-review__signed">Received {{ formatDate(l.receivedOn) }}</span>
                 ·
                 @if (l.signedClaimFile; as file) {
                   <span [matTooltip]="file.name"
@@ -119,7 +117,7 @@
             <div class="d-flex flex-wrap align-items-baseline column-gap-2 flex-grow-1 text-truncate">
               <h2 class="cl-review__title small fw-bold mb-0">State Forms</h2>
               <p class="cl-review__meta small text-body-secondary mb-0">
-                <span class="cl-review__forms" [matTooltip]="stateFormNames">{{ stateFormCount }} conditions</span>
+                <span class="cl-review__forms" tabindex="0" [matTooltip]="stateFormNames" [attr.aria-label]="stateFormCount + ' conditions: ' + stateFormNames">{{ stateFormCount }} conditions</span>
                 · <i class="bi bi-lock" aria-hidden="true"></i> Read-only
               </p>
             </div>

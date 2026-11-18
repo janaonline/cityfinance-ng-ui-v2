@@ -121,12 +121,12 @@ describe('ClaimLetterDetailComponent', () => {
     // The letter bar shows when it was signed and the file; the signer is on hover, and it no longer repeats
     // the ULB count or the amount.
     const letterMeta = host.querySelector('.cl-review__row--letter .cl-review__meta') as HTMLElement;
-    expect(letterMeta.textContent).toContain('Signed');
+    expect(letterMeta.textContent).toContain('Received');
+    expect(letterMeta.textContent).not.toContain('Signed');
     expect(letterMeta.textContent).toContain('AP-CL-003.pdf');
     expect(letterMeta.textContent).not.toContain('₹');
     const tooltip = (selector: string) =>
       fixture.debugElement.query(By.css(selector)).injector.get(MatTooltip).message;
-    expect(tooltip('.cl-review__signed')).toBe('Signed by Andhra Pradesh State DMA');
     // The forms bar counts the five State forms (named on hover) and says they are read-only.
     const formsMeta = host.querySelector('.cl-review__row--forms .cl-review__meta') as HTMLElement;
     expect(formsMeta.textContent).toContain('5 conditions');

@@ -112,6 +112,16 @@ describe('StateNotificationService', () => {
     httpMock.expectNone((r) => r.url.endsWith('/notifications'));
   });
 
+  it('refreshNow reloads inside the 30-second window (after the State submits a letter)', async () => {
+    const first = service.refreshIfStale('state-1');
+    httpMock.expectOne((r) => r.url.endsWith('/notifications')).flush(payload);
+    await first;
+
+    const again = service.refreshNow('state-1');
+    httpMock.expectOne((r) => r.url.endsWith('/notifications')).flush({ ...payload, claimLettersReturned: 0 });
+    await again;
+  });
+
   it('shows nothing when a load fails and retries on the next call instead of waiting out the throttle', async () => {
     const ok = service.refreshIfStale('state-1');
     httpMock.expectOne((r) => r.url.endsWith('/notifications')).flush(payload);

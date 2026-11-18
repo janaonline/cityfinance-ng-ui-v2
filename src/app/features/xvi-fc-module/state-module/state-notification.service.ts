@@ -163,6 +163,13 @@ export class StateNotificationService {
     }
   }
 
+  /** Reloads now, skipping the 30-second window: after the State acts (e.g. submits a claim letter) the bell must
+   *  show the server's new counts straight away. A failure leaves the next navigation free to retry. */
+  refreshNow(stateId: string): Promise<void> {
+    this.loadedAt = 0;
+    return this.refreshIfStale(stateId);
+  }
+
   /** Drops everything on logout/role change so the next user never sees a stale bell. */
   clear(): void {
     this.requestSeq++;
