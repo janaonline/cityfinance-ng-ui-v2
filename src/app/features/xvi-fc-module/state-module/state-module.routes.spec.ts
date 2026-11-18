@@ -27,14 +27,9 @@ describe('state-module.routes — register-ulb', () => {
 });
 
 describe('state-module.routes — adc-teams', () => {
-  it('registers an "adc-teams" route for the State admin, wired to the ADC selector config', () => {
+  it('redirects the old ADC Teams link to People and Roles', () => {
     const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'adc-teams');
-    expect(route).toBeTruthy();
-    expect(route?.data?.['rolesConfig']?.adcSelector).toBeTrue();
-  });
-
-  it('keeps "People and Roles" highlighted in the sidebar, since ADC Teams has no entry of its own', () => {
-    const route = ACTIVE_STATE_CHILD_ROUTES.find((r) => r.path === 'adc-teams');
-    expect(route?.data?.['menuGroup']).toBe('roles-teams-unified-view');
+    expect(route?.redirectTo).toBe('roles-teams-unified-view');
+    expect(route?.loadComponent).toBeUndefined();
   });
 });

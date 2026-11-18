@@ -40,13 +40,6 @@ export interface RolesTeamsConfig {
   readOnlyTeams?: { title: string; membersListPath: string }[];
   /** Shows the Transfer Admin card. Off by default — it stays hidden for the State/MoHUA/PMU/DoE pages. */
   transferEnabled?: boolean;
-  /** ADC Teams page (State admin): shows an ADC dropdown first and sends the pick as `?adcId=` on every call. */
-  adcSelector?: boolean;
-  /** Default true: the caller is a team member who is demoted by the transfer. False when the caller manages the
-   *  team from outside it (State admin transferring an ADC's Admin role), so their own role never changes. */
-  transferDemotesSelf?: boolean;
-  /** State People and Roles: shows an "ADC Teams" button beside Add Member when the state has an active ADC. */
-  adcTeamsLink?: boolean;
 }
 
 export interface ReadOnlyTeam {
@@ -69,7 +62,6 @@ export const STATE_ROLES_CONFIG: RolesTeamsConfig = {
   emailPlaceholder: 'official@state.gov.in',
   pageSubtitle: 'Manage who has access and what they can do.',
   tableAriaLabel: 'State team members',
-  adcTeamsLink: true,
 };
 
 export const MOHUA_ROLES_CONFIG: RolesTeamsConfig = {
@@ -120,7 +112,7 @@ export const DOE_ROLES_CONFIG: RolesTeamsConfig = {
   tableAriaLabel: 'DoE team members',
 };
 
-/** An ADC admin managing their own ADC's team (People and Roles). The first member invited to an ADC becomes its Admin. */
+/** An ADC admin managing their own ADC's team (People and Roles). The Admin is set by the Portal Admin; invites are Reviewer/Viewer. */
 export const ADC_ROLES_CONFIG: RolesTeamsConfig = {
   membersListPath: 'users/adc-members',
   permissionMatrixPath: 'users/adc-permission-matrix',
@@ -132,17 +124,4 @@ export const ADC_ROLES_CONFIG: RolesTeamsConfig = {
   pageSubtitle: "Manage who has access to your ADC's XVI FC workspace.",
   tableAriaLabel: 'ADC team members',
   transferEnabled: true,
-};
-
-/** State admin's "ADC Teams" page: the same team management, for whichever ADC is picked from the dropdown. */
-export const STATE_ADC_TEAMS_CONFIG: RolesTeamsConfig = {
-  ...ADC_ROLES_CONFIG,
-  defaultSubRole: 'VIEWER',
-  infoBannerText:
-    'The first member you add to an ADC becomes its <strong>Admin</strong>; later members join as Reviewer or Viewer. ' +
-    'Each ADC has exactly one Admin.',
-  pageSubtitle: "Manage who has access to each Autonomous District Council's XVI FC workspace.",
-  tableAriaLabel: 'ADC team members',
-  adcSelector: true,
-  transferDemotesSelf: false,
 };
