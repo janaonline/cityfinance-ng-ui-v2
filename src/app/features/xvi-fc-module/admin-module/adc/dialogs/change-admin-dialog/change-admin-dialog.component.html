@@ -22,20 +22,33 @@
 
     <mat-radio-group class="d-flex flex-column gap-2 mb-2" [value]="mode()" (change)="onModeChange($event.value)"
       aria-label="How to choose the new Admin">
-      <mat-radio-button value="promote" [disabled]="membersLoading() || promotable().length === 0">
+      <mat-radio-button value="promote" [disabled]="membersLoading() || !hasPromotable()">
         Promote an existing member
       </mat-radio-button>
       @if (mode() === 'promote') {
         <mat-form-field appearance="outline" class="w-100" subscriptSizing="dynamic">
           <mat-label>Member</mat-label>
-          <mat-select [formControl]="promoteControl" aria-label="Member to make Admin">
-            @for (member of promotable(); track member._id) {
-              <mat-option [value]="member._id">{{ memberLabel(member) }}</mat-option>
+          <input matInput type="search" [formControl]="memberSearch" [matAutocomplete]="memberAuto"
+            placeholder="Type to search members" aria-label="Search the member to make Admin" maxlength="100"
+            data-test="member-search" />
+          <mat-autocomplete #memberAuto="matAutocomplete" [displayWith]="displayMember"
+            (optionSelected)="onMemberSelected($event)">
+            @if (searching()) {
+              <mat-option disabled>Searching...</mat-option>
+            } @else {
+              @for (member of results(); track member._id) {
+                <mat-option [value]="member">
+                  <div>{{ memberLabel(member) }}</div>
+                  <div class="small text-muted">{{ member.email }}</div>
+                </mat-option>
+              } @empty {
+                <mat-option disabled data-test="no-members">No verified member matches.</mat-option>
+              }
             }
-          </mat-select>
-          <mat-hint>Only members who have completed profile verification are listed.</mat-hint>
+          </mat-autocomplete>
+          <mat-hint>Search by name, email or mobile. Only members who have verified their profile are listed.</mat-hint>
         </mat-form-field>
-      } @else if (!membersLoading() && promotable().length === 0) {
+      } @else if (!membersLoading() && !hasPromotable()) {
         <p class="text-muted small mb-0 ms-4">No verified member to promote.</p>
       }
 

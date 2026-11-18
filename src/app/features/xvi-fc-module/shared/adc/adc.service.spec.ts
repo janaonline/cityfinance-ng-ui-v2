@@ -39,11 +39,40 @@ describe('AdcService', () => {
     expect(result).toEqual(page);
   });
 
-  it('members() reads an ADC\'s active members', () => {
-    service.members('a1').subscribe();
-    const req = httpMock.expectOne(`${base}/a1/members`);
+  it('manage() sends the Admin status and sort', () => {
+    service.manage({ page: 1, limit: 10, adminStatus: 'INVITED', sortBy: 'ulbCount', sortDir: -1 }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${base}/manage`);
+    expect(req.request.params.get('adminStatus')).toBe('INVITED');
+    expect(req.request.params.get('sortBy')).toBe('ulbCount');
+    expect(req.request.params.get('sortDir')).toBe('-1');
+    req.flush({ data: { data: [], total: 0, page: 1, limit: 10, totalPages: 0 } });
+  });
+
+  it('detail() unwraps the ADC header', () => {
+    let name: string | undefined;
+    service.detail('a1').subscribe((d) => (name = d.name));
+    const req = httpMock.expectOne(`${base}/a1`);
     expect(req.request.method).toBe('GET');
-    req.flush({ data: [] });
+    req.flush({ success: true, data: { _id: 'a1', name: 'Bodoland' } });
+    expect(name).toBe('Bodoland');
+  });
+
+  it("members() pages an ADC's members with its filters, including false flags", () => {
+    service.members('a1', { page: 1, limit: 20, status: 'ACTIVE', excludeAdmin: true, search: 'das' }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${base}/a1/members`);
+    expect(req.request.params.get('status')).toBe('ACTIVE');
+    expect(req.request.params.get('excludeAdmin')).toBe('true');
+    expect(req.request.params.get('search')).toBe('das');
+    expect(req.request.params.has('level')).toBeFalse();
+    req.flush({ data: { data: [], total: 0, page: 1, limit: 20, totalPages: 0 } });
+
+    service.ulbs('a1', { page: 2, limit: 10, isActive: false, approvalStatus: 'PENDING', sortBy: 'code' }).subscribe();
+    const ulbs = httpMock.expectOne((r) => r.url === `${base}/a1/ulbs`);
+    expect(ulbs.request.params.get('isActive')).toBe('false');
+    expect(ulbs.request.params.get('approvalStatus')).toBe('PENDING');
+    expect(ulbs.request.params.get('sortBy')).toBe('code');
+    expect(ulbs.request.params.get('page')).toBe('2');
+    ulbs.flush({ data: { data: [], total: 0, page: 2, limit: 10, totalPages: 0 } });
   });
 
   it('create, rename, setAdmin and remove hit the matching routes', () => {

@@ -1,190 +1,240 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialog } from '@angular/material/dialog';
+import { Router, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { MATERIAL_THEME_CLASS } from '../../../../core/theming/material-theme.providers';
 import { StateService } from '../../../../core/services/state/state.service';
 import { UtilityService } from '../../../../core/services/utility.service';
-import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
-import { AdcService, IAdcPage, IAdcRow } from '../../shared/adc/adc.service';
+import { AdcService, IAdcManageQuery, IAdcPage, IAdcRow } from '../../shared/adc/adc.service';
 import { AdcListComponent } from './adc-list.component';
 import { AdcFormDialogComponent } from './dialogs/adc-form-dialog/adc-form-dialog.component';
-import { ChangeAdminDialogComponent } from './dialogs/change-admin-dialog/change-admin-dialog.component';
+
+const S1 = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 
 const row = (overrides: Partial<IAdcRow> = {}): IAdcRow => ({
   _id: 'a1',
   name: 'Bodoland Territorial Council',
-  state: { _id: 's1', name: 'Assam' },
+  state: { _id: S1, name: 'Assam' },
   ulbCount: 0,
   memberCount: 1,
   admin: { _id: 'u1', name: 'A. Das', email: 'a@x.gov.in', isXVIFCProfileVerified: true },
   ...overrides,
 });
 
-const pageOf = (rows: IAdcRow[]): IAdcPage => ({ data: rows, total: rows.length, page: 1, limit: 20, totalPages: 1 });
+const pageOf = (rows: IAdcRow[], total = rows.length): IAdcPage => ({
+  data: rows,
+  total,
+  page: 1,
+  limit: 20,
+  totalPages: 1,
+});
+
+const defaults: IAdcManageQuery = {
+  page: 1,
+  limit: 20,
+  stateId: undefined,
+  search: undefined,
+  adminStatus: undefined,
+  sortBy: 'name',
+  sortDir: 1,
+};
 
 describe('AdcListComponent', () => {
-  let fixture: ComponentFixture<AdcListComponent>;
+  let harness: RouterTestingHarness;
   let component: AdcListComponent;
   let adcService: jasmine.SpyObj<AdcService>;
-  let confirmDialog: jasmine.SpyObj<ConfirmDialogService>;
-  let utility: jasmine.SpyObj<UtilityService>;
+  let navigate: jasmine.Spy;
 
-  function setup(rows: IAdcRow[] = [row()]): void {
+  /** Opens /adc with the given query through the real router (the rows' RouterLinks need a real route). */
+  async function setup(rows: IAdcRow[] = [row()], query: Record<string, string> = {}): Promise<void> {
     adcService = jasmine.createSpyObj<AdcService>('AdcService', ['manage', 'remove']);
     adcService.manage.and.returnValue(of(pageOf(rows)));
-    confirmDialog = jasmine.createSpyObj<ConfirmDialogService>('ConfirmDialogService', ['confirm']);
-    utility = jasmine.createSpyObj<UtilityService>('UtilityService', ['triggerSnackbar']);
 
     TestBed.configureTestingModule({
       imports: [AdcListComponent, NoopAnimationsModule],
       providers: [
+        provideRouter([{ path: 'adc', component: AdcListComponent }]),
         { provide: AdcService, useValue: adcService },
-        { provide: StateService, useValue: { getStates: () => of({ data: [{ _id: 's1', name: 'Assam' }] }) } },
-        { provide: ConfirmDialogService, useValue: confirmDialog },
-        { provide: UtilityService, useValue: utility },
+        { provide: StateService, useValue: { getStates: () => of({ data: [{ _id: S1, name: 'Assam' }] }) } },
+        { provide: UtilityService, useValue: jasmine.createSpyObj('UtilityService', ['triggerSnackbar']) },
         { provide: MATERIAL_THEME_CLASS, useValue: 'xvifc-theme' },
       ],
     });
+    // writeUrl() uses navigate(); the harness opens the page with navigateByUrl().
+    navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
 
-    fixture = TestBed.createComponent(AdcListComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    harness = await RouterTestingHarness.create();
+    const search = new URLSearchParams(query).toString();
+    component = await harness.navigateByUrl(`/adc${search ? '?' + search : ''}`, AdcListComponent);
   }
 
-  const text = (): string => (fixture.nativeElement as HTMLElement).textContent ?? '';
-  const dialogOf = (): MatDialog => (component as unknown as { dialog: MatDialog }).dialog;
+  const el = (): HTMLElement => harness.routeNativeElement as HTMLElement;
+  const detectChanges = (): void => harness.detectChanges();
+  const lastQueryParams = (): Record<string, unknown> =>
+    (navigate.calls.mostRecent().args[1] as { queryParams: Record<string, unknown> }).queryParams;
 
-  it('loads page 1 of 20 on open and shows the rows, states and paginator options', () => {
-    setup();
+  it('loads page 1 of 20, sorted by name, and shows the rows and the size options', async () => {
+    await setup();
 
-    expect(adcService.manage).toHaveBeenCalledWith({ page: 1, limit: 20, stateId: undefined, search: undefined });
-    expect(component.states().map((s) => s.name)).toEqual(['Assam']);
+    expect(adcService.manage).toHaveBeenCalledWith(defaults);
     expect(component.pageSizeOptions).toEqual([10, 20]);
-    expect(text()).toContain('Bodoland Territorial Council');
-    expect(text()).toContain('A. Das');
+    expect(el().textContent).toContain('Bodoland Territorial Council');
+    expect(el().textContent).toContain('A. Das');
   });
 
-  it('marks an unverified Admin as Invited, and offers Set Admin when there is no Admin', () => {
-    setup([
-      row({ _id: 'a1', admin: { _id: 'u1', name: 'S. Teron', email: 's@x.gov.in', isXVIFCProfileVerified: false } }),
+  it('gives each row a View link and one actions menu, not three buttons', async () => {
+    await setup([row(), row({ _id: 'a2', name: 'Dima Hasao' })]);
+
+    expect(el().querySelectorAll('[data-test="view"]').length).toBe(2);
+    expect(el().querySelectorAll('app-adc-actions-menu').length).toBe(2);
+    expect(el().querySelector('[data-test="view"]')?.getAttribute('href')).toContain('/a1');
+  });
+
+  it('links a non-zero ULB or member count to the matching tab, and leaves a 0 as text', async () => {
+    await setup([row({ ulbCount: 4, memberCount: 3 }), row({ _id: 'a2', ulbCount: 0, memberCount: 0, admin: null })]);
+
+    const ulbLinks = el().querySelectorAll<HTMLAnchorElement>('[data-test="ulb-count-link"]');
+    const memberLinks = el().querySelectorAll<HTMLAnchorElement>('[data-test="member-count-link"]');
+    expect(ulbLinks.length).toBe(1);
+    expect(memberLinks.length).toBe(1);
+    expect(ulbLinks[0].getAttribute('href')).toContain('tab=ulbs');
+    expect(memberLinks[0].getAttribute('href')).toContain('tab=members');
+  });
+
+  it('marks an unverified Admin as Invited and a missing one as Not set', async () => {
+    await setup([
+      row({ admin: { _id: 'u1', name: 'S. Teron', email: 's@x.gov.in', isXVIFCProfileVerified: false } }),
       row({ _id: 'a2', name: 'Dima Hasao', memberCount: 0, admin: null }),
     ]);
-
-    expect(text()).toContain('Invited');
-    expect(text()).toContain('Not set');
-    const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[data-test="change-admin"]')).map(
-      (b) => b.textContent?.trim(),
-    );
-    expect(labels).toEqual(['Change Admin', 'Set Admin']);
+    expect(el().textContent).toContain('Invited');
+    expect(el().textContent).toContain('Not set');
   });
 
-  it('reloads from page 1 when the state filter or the debounced search changes', fakeAsync(() => {
-    setup();
+  it('reloads from page 1 on a filter change and on the debounced search', fakeAsync(() => {
+    void setup();
+    tick();
     component.page.set(3);
 
-    component.filterForm.controls.stateId.setValue('s1');
-    expect(adcService.manage).toHaveBeenCalledWith({ page: 1, limit: 20, stateId: 's1', search: undefined });
+    component.filterForm.controls.stateId.setValue(S1);
+    expect(adcService.manage).toHaveBeenCalledWith({ ...defaults, stateId: S1 });
 
-    component.filterForm.controls.search.setValue('  bodo  ');
+    component.filterForm.controls.adminStatus.setValue('INVITED');
+    expect(adcService.manage).toHaveBeenCalledWith({ ...defaults, stateId: S1, adminStatus: 'INVITED' });
+
+    component.filterForm.controls.search.setValue('  das@  ');
     tick(400);
-    expect(adcService.manage).toHaveBeenCalledWith({ page: 1, limit: 20, stateId: 's1', search: 'bodo' });
+    expect(adcService.manage).toHaveBeenCalledWith({
+      ...defaults,
+      stateId: S1,
+      adminStatus: 'INVITED',
+      search: 'das@',
+    });
   }));
 
-  it('asks for the next page with the chosen page size', () => {
-    setup();
+  it('sorts on the server, back on page 1', async () => {
+    await setup();
+    component.page.set(2);
+
+    component.onSortChange({ active: 'ulbCount', direction: 'desc' });
+
+    expect(adcService.manage).toHaveBeenCalledWith({ ...defaults, sortBy: 'ulbCount', sortDir: -1 });
+    expect(lastQueryParams()).toEqual(jasmine.objectContaining({ sortBy: 'ulbCount', sortDir: -1, page: null }));
+  });
+
+  it('keeps filters, sort and page in the URL, leaving defaults out', async () => {
+    await setup();
+    expect(lastQueryParams()).toEqual({
+      state: null,
+      search: null,
+      adminStatus: null,
+      sortBy: null,
+      sortDir: null,
+      page: null,
+      limit: null,
+    });
+    expect(navigate.calls.mostRecent().args[1]).toEqual(jasmine.objectContaining({ replaceUrl: true }));
+
     component.onPageChange({ pageIndex: 1, pageSize: 10, length: 30 });
-    expect(adcService.manage).toHaveBeenCalledWith({ page: 2, limit: 10, stateId: undefined, search: undefined });
+    expect(lastQueryParams()).toEqual(jasmine.objectContaining({ page: 2, limit: 10 }));
   });
 
-  it('shows the error with a Retry when the list fails', () => {
-    setup();
-    adcService.manage.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
-    component.loadRows();
-    fixture.detectChanges();
-    expect(component.loadError()).toBe('Unable to load ADCs. Please try again.');
-    expect(text()).toContain('Retry');
+  it('opens with the filters, sort and page from the URL', async () => {
+    await setup([row()], { state: S1, search: 'bodo', adminStatus: 'NOT_SET', sortBy: 'memberCount', sortDir: '-1', page: '2', limit: '10' });
+
+    expect(adcService.manage).toHaveBeenCalledWith({
+      page: 2,
+      limit: 10,
+      stateId: S1,
+      search: 'bodo',
+      adminStatus: 'NOT_SET',
+      sortBy: 'memberCount',
+      sortDir: -1,
+    });
+    expect(component.filterForm.getRawValue()).toEqual({ stateId: S1, search: 'bodo', adminStatus: 'NOT_SET' });
   });
 
-  it('allows Delete only while the ADC has no ULB and no member other than its Admin', () => {
-    setup([row({ _id: 'a1' }), row({ _id: 'a2', ulbCount: 3 }), row({ _id: 'a3', memberCount: 2 })]);
+  it('ignores bad URL values and clamps a page size over 20', async () => {
+    await setup([row()], { state: 'x', adminStatus: 'NOPE', sortBy: 'admin', page: '-3', limit: '50' });
+    expect(adcService.manage).toHaveBeenCalledWith(defaults);
 
-    expect(component.canDelete(row({ memberCount: 0, admin: null }))).toBeTrue();
-    expect(component.canDelete(row({ memberCount: 1, admin: null }))).toBeFalse();
-    expect(component.deleteTooltip(row({ ulbCount: 12, memberCount: 4 }))).toBe(
-      'Move or remove its 12 ULBs and 3 other members first.',
-    );
-
-    const disabled = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[data-test="delete"]'),
-    ).map((b) => b.disabled);
-    expect(disabled).toEqual([false, true, true]);
+    TestBed.resetTestingModule();
+    await setup([row()], { limit: 'abc' });
+    expect(adcService.manage).toHaveBeenCalledWith(defaults);
   });
 
-  it('confirms the delete naming the Admin, in the XVI-FC theme, then deletes and reloads', () => {
-    setup();
-    confirmDialog.confirm.and.returnValue(of(true));
-    adcService.remove.and.returnValue(of({}));
+  it('shows Clear while a filter is set, and Clear resets everything with one reload', async () => {
+    await setup([row()], { search: 'bodo', adminStatus: 'ACTIVE' });
+    expect(el().querySelector('[data-test="clear-filters"]')).not.toBeNull();
     adcService.manage.calls.reset();
 
-    component.confirmDelete(row());
+    component.clearFilters();
+    detectChanges();
 
-    const [data, config] = confirmDialog.confirm.calls.mostRecent().args;
-    expect(data?.message).toBe(
-      'Delete Bodoland Territorial Council (Assam)? Its Admin, A. Das (a@x.gov.in), will lose access. This cannot be undone.',
-    );
-    expect(data?.confirmButtonColor).toBe('warn');
-    expect(config?.panelClass).toBe('xvifc-theme');
-    expect(adcService.remove).toHaveBeenCalledWith('a1');
-    expect(adcService.manage).toHaveBeenCalled();
+    expect(adcService.manage).toHaveBeenCalledOnceWith(defaults);
+    expect(el().querySelector('[data-test="clear-filters"]')).toBeNull();
   });
 
-  it('does nothing when the delete is cancelled', () => {
-    setup();
-    confirmDialog.confirm.and.returnValue(of(false));
-    component.confirmDelete(row());
-    expect(adcService.remove).not.toHaveBeenCalled();
+  it('tells "no ADCs yet" apart from "no match for these filters"', async () => {
+    await setup([]);
+    expect(el().querySelector('[data-test="empty"]')).not.toBeNull();
+
+    TestBed.resetTestingModule();
+    await setup([], { search: 'zzz' });
+    expect(el().querySelector('[data-test="empty-filtered"]')?.textContent).toContain('No ADCs match these filters');
   });
 
-  it("shows the server's message as a toast when the delete is refused (409)", () => {
-    setup();
-    confirmDialog.confirm.and.returnValue(of(true));
-    adcService.remove.and.returnValue(
-      throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 409,
-            error: { code: 'ADC_IN_USE', message: 'Move its 2 ULBs first.' },
-          }),
-      ),
-    );
-
-    component.confirmDelete(row());
-
-    expect(utility.triggerSnackbar).toHaveBeenCalledWith('Move its 2 ULBs first.', 'snackbar-danger');
-    expect(component.deletingId()).toBeNull();
+  it('steps back to the last page when the page asked for is past the end', async () => {
+    await setup();
+    adcService.manage.and.returnValues(of(pageOf([], 21)), of(pageOf([row()], 21)));
+    component.page.set(5);
+    component.loadRows();
+    expect(adcService.manage.calls.mostRecent().args[0].page).toBe(2);
   });
 
-  it('opens the Add, Edit and Change Admin dialogs in the XVI-FC theme and reloads after a save', () => {
-    setup();
-    const open = spyOn(dialogOf(), 'open').and.returnValue({ afterClosed: () => of(true) } as never);
+  it('shows the error with a Retry when the list fails', async () => {
+    await setup();
+    adcService.manage.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    component.loadRows();
+    detectChanges();
+    expect(component.loadError()).toBe('Unable to load ADCs. Please try again.');
+    expect(el().textContent).toContain('Retry');
+  });
+
+  it('opens Add ADC in the XVI-FC theme and reloads after a save', async () => {
+    await setup();
+    const dialog = (component as unknown as { dialog: MatDialog }).dialog;
+    const open = spyOn(dialog, 'open').and.returnValue({ afterClosed: () => of(true) } as never);
     adcService.manage.calls.reset();
 
     component.openAdd();
-    component.openEdit(row());
-    component.openChangeAdmin(row());
 
-    const calls = open.calls.all();
-    expect(calls.map((c) => c.args[0])).toEqual([
-      AdcFormDialogComponent,
-      AdcFormDialogComponent,
-      ChangeAdminDialogComponent,
-    ] as never[]);
-    calls.forEach((c) =>
-      expect(c.args[1]).toEqual(jasmine.objectContaining({ panelClass: 'xvifc-theme', disableClose: true, width: '600px' })),
+    expect(open.calls.mostRecent().args[0]).toBe(AdcFormDialogComponent as never);
+    expect(open.calls.mostRecent().args[1]).toEqual(
+      jasmine.objectContaining({ data: { mode: 'create' }, panelClass: 'xvifc-theme', disableClose: true }),
     );
-    expect(calls[0].args[1]?.data).toEqual({ mode: 'create' });
-    expect(adcService.manage).toHaveBeenCalledTimes(3);
+    expect(adcService.manage).toHaveBeenCalledTimes(1);
   });
 });
