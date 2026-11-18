@@ -126,16 +126,16 @@ export class AfsDigitizationV3Component implements OnInit {
   readonly overallCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'total', title: 'Total files', icon: 'bi bi-collection', class: 'text-info' },
     { key: 'totalRun', title: 'Total run', icon: 'bi bi-play-circle', class: 'text-info' },
-    { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
-    { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
-    { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
+    { key: 'digitized', title: 'Job Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
+    { key: 'queued', title: 'Job Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
+    { key: 'failed', title: 'Job Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
   ];
 
   /** Score cards, shown in their own row under the counts (same snapshot-based values) */
   readonly overallScoreCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'confidence', title: 'Confidence', icon: 'bi bi-speedometer2', class: 'text-primary' },
-    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
     { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
+    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
     { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
   ];
 
