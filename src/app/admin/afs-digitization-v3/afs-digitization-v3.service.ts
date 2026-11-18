@@ -139,6 +139,8 @@ export interface DigitizationV3ScoreMetrics {
   confidenceLow: number;
   arithmeticPass: number;
   arithmeticFail: number;
+  /** Arithmetic skipped on a doc mismatch. Absent in snapshots computed before it existed. */
+  arithmeticSkipped?: number;
   overallPass: number;
   overallPartial: number;
   overallFail: number;
