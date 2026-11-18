@@ -1,7 +1,10 @@
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import { StateClaimLetters } from '../claims-submission/claims-submission.models';
+import { ClaimsSubmissionService } from '../claims-submission/claims-submission.service';
 import { MohuaStateDetailService } from './mohua-state-detail.service';
 import { MohuaStateUlbsService } from './mohua-state-ulbs.service';
 import { StateDetailComponent } from './state-detail.component';
@@ -62,8 +65,32 @@ const ulbs: StateUlbsPage = {
   pagination: { page: 1, limit: 15, total: 1, totalPages: 1 },
 };
 
+const letter = (id: string, status: number, amount: number, ulbCount: number) => ({
+  id,
+  number: `CL/TR/2026-27/1-${id}`,
+  batchNumber: 1,
+  receivedOn: '2026-11-17T00:00:00.000Z',
+  ulbCount,
+  amount,
+  status,
+  statusLabel: '',
+});
+
+const stateClaims: StateClaimLetters = {
+  state: { id: 'state-1', name: 'Tripura' },
+  installment: 1,
+  summary: { claimedUlbs: 5, pendingUlbs: 16, approvedUlbs: 2, underReviewUlbs: 3, returnedUlbs: 2, amountClaimed: 0, balance: 0 },
+  claimLetters: [
+    letter('3', 15, 93_000_000, 3),
+    letter('2', 16, 62_000_000, 2),
+    letter('1', 5, 62_000_000, 2),
+  ],
+};
+
 describe('StateDetailComponent', () => {
   let detailService: { getDetail: jasmine.Spy };
+  let claimsService: { getStateClaimLetters: jasmine.Spy };
+  let isMohuaUser: boolean;
   let ulbsService: { getUlbs: jasmine.Spy };
 
   const create = () => {
@@ -75,6 +102,8 @@ describe('StateDetailComponent', () => {
         provideNoopAnimations(),
         { provide: MohuaStateDetailService, useValue: detailService },
         { provide: MohuaStateUlbsService, useValue: ulbsService },
+        { provide: ClaimsSubmissionService, useValue: claimsService },
+        { provide: AuthPermissionService, useValue: { isMohuaUser: () => isMohuaUser } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap, parent: null }, paramMap: of(paramMap), parent: null },
@@ -89,6 +118,8 @@ describe('StateDetailComponent', () => {
   beforeEach(() => {
     detailService = { getDetail: jasmine.createSpy('getDetail').and.returnValue(of(detail)) };
     ulbsService = { getUlbs: jasmine.createSpy('getUlbs').and.returnValue(of(ulbs)) };
+    claimsService = { getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)) };
+    isMohuaUser = true;
   });
 
   it('loads the state and its first page of ULBs for the ids in the route', () => {
@@ -119,7 +150,35 @@ describe('StateDetailComponent', () => {
     expect(cells).toContain('₹3.4 cr'); // unspent balance
   });
 
-  it('shows the real allocation, "--" for eligible, and "Coming soon" for every claim figure', () => {
+  it('adds up the claim letters by stage; Recommended to DoE stays "Coming soon"', () => {
+    const fixture = create();
+    const stats = fixture.componentInstance.stats();
+
+    expect(claimsService.getStateClaimLetters).toHaveBeenCalledOnceWith('state-1', 'year-1');
+    expect(stats.map((stat) => [stat.label, stat.value, stat.note])).toEqual([
+      ['Annual Allocation', '₹130 cr', ''],
+      ['Eligible Amount', '--', ''],
+      ['Under Review by MoHUA', '₹9.3 cr', '1 letter · 3 ULBs'],
+      ['Returned by MoHUA', '₹6.2 cr', '1 letter · 2 ULBs'],
+      ['Approved by MoHUA', '₹6.2 cr', '1 letter · 2 ULBs'],
+      ['Recommended to DoE', 'Coming soon', ''],
+    ]);
+  });
+
+  it('lists the claim letters with View links for MoHUA, and without them for DoE and PMU', () => {
+    let host = create().nativeElement as HTMLElement;
+    expect(host.querySelectorAll('.sd-claim').length).toBe(3);
+    expect(host.querySelector('.sd-claim a')?.getAttribute('aria-label')).toBe('View claim letter CL/TR/2026-27/1-3');
+
+    TestBed.resetTestingModule();
+    isMohuaUser = false;
+    host = create().nativeElement as HTMLElement;
+    expect(host.querySelectorAll('.sd-claim').length).toBe(3);
+    expect(host.querySelector('.sd-claim a')).toBeNull();
+  });
+
+  it('shows the real allocation, "--" for eligible, and "Coming soon" for every claim figure when claims fail to load', () => {
+    claimsService.getStateClaimLetters.and.returnValue(throwError(() => new Error('boom')));
     const stats = create().componentInstance.stats();
 
     expect(stats.map((stat) => [stat.label, stat.value])).toEqual([
@@ -139,7 +198,7 @@ describe('StateDetailComponent', () => {
     expect(conditions[0].viewLink).toEqual(['review-state-submissions', 'state-1', 'sfc-status']);
     expect(conditions[1].viewLink).toBeNull();
     expect(conditions[2].viewLink).toEqual(['review-state-submissions', 'state-1', 'devolution-formula', '1']);
-    expect(fixture.nativeElement.querySelectorAll('.sd-cond__pdf').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.sd-cond .sd-cond__pdf').length).toBe(2);
   });
 
   it('shows the status of a form that is not submitted instead of a tick', () => {

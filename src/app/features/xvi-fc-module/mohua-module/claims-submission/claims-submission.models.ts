@@ -13,14 +13,37 @@ export interface ClaimLettersStateRow {
   installmentAllocation: number | null;
   amountClaimed: number | null;
   ulbsIncluded: number | null;
+  /** The state's expected ULBs for the year: the "of N" in the ULBs included column. Missing from an older API. */
+  totalUlbs?: number;
   claimLetterCount: number;
   /** The highest claim letter number the state has submitted (1, 2, 3...), null when none. */
   latestClaimNumber: number | null;
 }
 
+/** Claim letters at one stage: how many, from how many States, and their amount (whole Rupees). */
+export interface ClaimStage {
+  claims: number;
+  states: number;
+  amount: number;
+}
+
+/** The national figures above the States table (see the API's MohuaClaimLettersOverview). Released isn't tracked yet. */
+export interface ClaimLettersOverview {
+  totalAllocation: number;
+  stateCount: number;
+  /** Every letter received (returned ones too); the amount leaves returned letters out. */
+  submitted: ClaimStage;
+  /** Under SO review. */
+  underReview: ClaimStage;
+  /** Verified by the SO or acknowledged by MoHUA. */
+  approved: ClaimStage;
+  returned: ClaimStage;
+}
+
 export interface ClaimLettersStates {
   year: { id: string; label: string };
   installment: number;
+  overview: ClaimLettersOverview;
   states: ClaimLettersStateRow[];
 }
 
@@ -72,7 +95,16 @@ export interface ClaimLetterDetail {
   status: number;
   statusLabel: string;
   signedClaimFile: ClaimLetterFile | null;
-  summary: { claimAmountReceived: number; totalCities: number; exemptionsApplied: number };
+  /** Money is whole Rupees. `exemption*` is this letter's ULBs that came in through an exemption request;
+   *  `submitted*` is every letter the State submitted for the installment, under review or acknowledged. */
+  summary: {
+    claimAmountReceived: number;
+    totalCities: number;
+    exemptionsApplied: number;
+    exemptionAmount: number;
+    submittedClaimAmount: number;
+    submittedUlbs: number;
+  };
   /** Set only on a returned letter: what the return actually reopened. */
   returnDetails: ClaimLetterReturnDetails | null;
   /** How many ULBs the SO has marked for return (all pages); Approve is blocked while it is above 0. */
@@ -150,7 +182,8 @@ export function formatRupeesInCrore(rupees: number | null | undefined): string {
 /** 1 -> "1st", 2 -> "2nd", 11 -> "11th", 23 -> "23rd". */
 export function formatOrdinal(n: number): string {
   const lastTwo = n % 100;
-  const suffix = lastTwo >= 11 && lastTwo <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th';
+  const suffix =
+    lastTwo >= 11 && lastTwo <= 13 ? 'th' : (({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th');
   return `${n}${suffix}`;
 }
 
@@ -175,7 +208,8 @@ export function claimStatusLabel(status: number, label: string): string {
 
 /** Badge colour for a claim letter's status: returned red, approved or verified green, otherwise amber (under review). */
 export function claimStatusBadgeClass(status: number): string {
-  if (CLAIM_LETTER_APPROVED_STATUSES.includes(status) || status === CLAIM_LETTER_VERIFIED_STATUS) return 'cs-badge--good';
+  if (CLAIM_LETTER_APPROVED_STATUSES.includes(status) || status === CLAIM_LETTER_VERIFIED_STATUS)
+    return 'cs-badge--good';
   if (CLAIM_LETTER_RETURNED_STATUSES.includes(status)) return 'cs-badge--bad';
   return 'cs-badge--review';
 }

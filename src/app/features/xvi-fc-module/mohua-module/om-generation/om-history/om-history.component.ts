@@ -1,7 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import FileSaver from 'file-saver';
 import { UtilityService } from '../../../../../core/services/utility.service';
@@ -22,7 +25,7 @@ const LOAD_ERROR = 'Could not load the OM history. Please try again.';
 /** Every issued OM of the year with its status, the signed copy (View PDF) and the generated OM PDF with its annexures. */
 @Component({
   selector: 'app-om-history',
-  imports: [MohuaPageLoaderComponent, OmStepsComponent],
+  imports: [MatButtonModule, MatCardModule, MatTooltipModule, MohuaPageLoaderComponent, OmStepsComponent],
   templateUrl: './om-history.component.html',
   styleUrl: './om-history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

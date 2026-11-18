@@ -2,7 +2,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import FileSaver from 'file-saver';
 import { Observable } from 'rxjs';
@@ -15,6 +18,7 @@ import {
 } from '../../../state-module/claim-letter/components/letter-field/claim-letter-letter-field.component';
 import { formatRupeesInCrore } from '../../claims-submission/claims-submission.models';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
+import { CountUpDirective, RevealDirective } from '../../state-detail/state-detail.directives';
 import { OmDocumentComponent, OmEditor } from '../om-document/om-document.component';
 import {
   OmGenerateDialogComponent,
@@ -43,7 +47,17 @@ const GENERATE_ERROR = 'Could not generate the Office Memorandum. Please try aga
 /** One verified claim letter's OM: its ULBs (collapsible), the OM to fill in, Generate, the signed upload. */
 @Component({
   selector: 'app-om-letter',
-  imports: [RouterLink, MohuaPageLoaderComponent, OmStepsComponent, OmDocumentComponent],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatTooltipModule,
+    MohuaPageLoaderComponent,
+    OmStepsComponent,
+    OmDocumentComponent,
+    RevealDirective,
+    CountUpDirective,
+  ],
   templateUrl: './om-letter.component.html',
   styleUrl: './om-letter.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,6 +100,13 @@ export class OmLetterComponent implements OnInit {
     () => !this.issued() && this.filledCount() === this.requiredKeys().length && this.saveState() !== 'saving',
   );
   readonly totalClaimed = computed(() => (this.view()?.ulbs ?? []).reduce((sum, u) => sum + u.claimedAmount, 0));
+  /** This letter's ULBs as a share of the State's ULBs: "20%", "<1%" for a sliver, null without a total. */
+  readonly ulbShare = computed(() => {
+    const content = this.view()?.content;
+    if (!content?.stateUlbTotal) return null;
+    const pct = (content.ulbCount / content.stateUlbTotal) * 100;
+    return pct > 0 && pct < 1 ? '<1%' : `${Math.round(pct)}%`;
+  });
 
   ngOnInit(): void {
     this.load();

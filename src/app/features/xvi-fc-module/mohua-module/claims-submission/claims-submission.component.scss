@@ -1,1 +1,45 @@
 @use './claims-shared';
+// Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
+@use './claims-ui';
+
+// The total-allocation headline: the one filled block on the page, with a faint watermark icon.
+.cl-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--t) 0%, color-mix(in srgb, var(--t) 78%, #000) 100%);
+
+  &__mark {
+    position: absolute;
+    right: -8px;
+    bottom: -14px;
+    font-size: 72px;
+    line-height: 1;
+    opacity: 0.12;
+  }
+}
+
+// An arrow from each step to the next, only while the four steps sit in one row (lg and up).
+@media (min-width: 992px) {
+  .cl-pipeline > li:not(:last-child) {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -3px;
+      width: 8px;
+      height: 8px;
+      border-top: 2px solid color-mix(in srgb, var(--t) 55%, transparent);
+      border-right: 2px solid color-mix(in srgb, var(--t) 55%, transparent);
+      transform: translateY(-50%) rotate(45deg);
+    }
+  }
+}
+
+// Released isn't tracked yet: a dashed outline.
+.cl-pipeline__step--soon {
+  --mat-card-outlined-outline-color: transparent;
+
+  border: 1px dashed color-mix(in srgb, var(--t) 35%, transparent);
+}
