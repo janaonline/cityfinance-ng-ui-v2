@@ -25,6 +25,7 @@ import {
   noNumericCode,
   passwordComplexity,
   passwordComplexityMessage,
+  passwordMaxBytes,
 } from '../validators/auth-security.validators';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
@@ -105,7 +106,7 @@ export class ForgotPasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.maxLength(128),
+          passwordMaxBytes,
           passwordComplexity,
           ...PASSWORD_SECURITY_VALIDATORS,
         ],
@@ -115,7 +116,7 @@ export class ForgotPasswordComponent implements OnInit {
         [
           Validators.required,
           Validators.minLength(8),
-          Validators.maxLength(128),
+          passwordMaxBytes,
           passwordComplexity,
           ...PASSWORD_SECURITY_VALIDATORS,
         ],

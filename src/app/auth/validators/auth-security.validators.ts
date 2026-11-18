@@ -70,10 +70,11 @@ export interface PasswordComplexityMissing {
 }
 
 /**
- * Requires an uppercase letter, a lowercase letter, a number and a special character (any symbol that is not a
- * letter, digit or space). This is the API's own rule (cf-nest-api-v2 `src/module/auth/password-policy.ts`), so a
- * password this form accepts is never refused there; change both together. Length (8–128) is checked by the
- * control's min/max length validators. The error lists what is missing, for `passwordComplexityMessage`.
+ * Requires an uppercase letter, a lowercase letter, a number and a special character: any character that is not a
+ * letter, digit or whitespace in any script (so `é` is a letter, not a symbol). This is the API's own rule
+ * (cf-nest-api-v2 `src/module/auth/password-policy.ts`), so a password this form accepts is never refused there;
+ * change both together. Length is checked by `Validators.minLength(8)` and `passwordMaxBytes`. The error lists what
+ * is missing, for `passwordComplexityMessage`.
  *
  * Only wire this into flows that SET a new password (registration, reset) — never into a login-password control,
  * where an existing account's password may predate this rule and would then be unable to log in at all.
@@ -85,9 +86,23 @@ export function passwordComplexity(control: AbstractControl): ValidationErrors |
     upper: !/[A-Z]/.test(value),
     lower: !/[a-z]/.test(value),
     digit: !/\d/.test(value),
-    special: !/[^A-Za-z0-9\s]/.test(value),
+    special: !/[^\p{L}\p{N}\s]/u.test(value),
   };
   return Object.values(missing).some(Boolean) ? { passwordComplexity: missing } : null;
+}
+
+/** The API's password cap: bcrypt hashes only the first 72 bytes, so the API refuses longer passwords. */
+export const PASSWORD_MAX_BYTES = 72;
+
+/**
+ * Caps a new password at 72 UTF-8 bytes, the API's limit (a plain-ASCII password: 72 characters). Reports it as
+ * Angular's own `maxlength` error, so the field's "too long" message shows without a template change.
+ */
+export function passwordMaxBytes(control: AbstractControl): ValidationErrors | null {
+  const value = control.value as string;
+  if (!value) return null;
+  const bytes = new TextEncoder().encode(value).length;
+  return bytes > PASSWORD_MAX_BYTES ? { maxlength: { requiredLength: PASSWORD_MAX_BYTES, actualLength: bytes } } : null;
 }
 
 const PASSWORD_PART_LABEL: Record<keyof PasswordComplexityMissing, string> = {
@@ -146,6 +161,6 @@ export const IDENTIFIER_SECURITY_VALIDATORS: ValidatorFn[] = [
  * Security validators for password fields.
  * Deliberately excludes SQL/NoSQL checks — those would reject legitimate
  * passwords like "SELECT_my_p@ss!".
- * Pair with Validators.maxLength(128) to prevent bcrypt DoS.
+ * Pair with a length cap (`passwordMaxBytes` on new passwords) to prevent bcrypt DoS.
  */
 export const PASSWORD_SECURITY_VALIDATORS: ValidatorFn[] = [noNullBytes];

@@ -405,22 +405,33 @@ describe('ForgotPasswordComponent', () => {
       expect(component.currentStep()).toBe('SUCCESS');
     }));
 
-    it('should set resetError and stay on RESET_PASSWORD step on failure', fakeAsync(() => {
+    // The status, not the response text, decides the message: both cases send the same unrelated text.
+    const failWith = (status: number) => {
       authSpy.resetPassword.and.returnValue(
-        throwError(() => new HttpErrorResponse({ status: 422, error: { message: 'Invalid or expired OTP' } })),
+        throwError(() => new HttpErrorResponse({ status, error: { message: 'Something unrelated happened' } })),
       );
       component.resetForm.patchValue({ otp: '9999', newPassword: MOCK_PASSWORD, confirmPassword: MOCK_PASSWORD });
-
       component.onResetPassword();
       tick();
+    };
+
+    it('says the OTP is invalid on a 422 and stays on the RESET_PASSWORD step', fakeAsync(() => {
+      failWith(422);
 
       expect(component.resetError()).toBe('Invalid or expired OTP.');
       expect(component.currentStep()).toBe('RESET_PASSWORD');
     }));
 
+    it('gives the generic reset message on a 500, never blaming the OTP', fakeAsync(() => {
+      failWith(500);
+
+      expect(component.resetError()).toBe('Could not reset your password. Please try again.');
+      expect(component.currentStep()).toBe('RESET_PASSWORD');
+    }));
+
     it('shows the password message, not "Invalid OTP", when the API refuses the password (400)', fakeAsync(() => {
       const rule =
-        'Password must be 8–128 characters with an uppercase letter, a lowercase letter, a number and a special character';
+        'Password must be 8–72 characters with an uppercase letter, a lowercase letter, a number and a special character';
       authSpy.resetPassword.and.returnValue(
         throwError(() => new HttpErrorResponse({ status: 400, error: { message: [rule] } })),
       );
@@ -443,6 +454,24 @@ describe('ForgotPasswordComponent', () => {
       control.setValue('Password#1'); // a symbol outside @$!%*?& is fine now
       expect(control.valid).toBeTrue();
       expect(component.passwordComplexityText()).toBeNull();
+    });
+
+    it('does not count a letter in another script as the special character, as the API does not', () => {
+      const control = component.resetForm.controls.newPassword;
+
+      control.setValue('Abcdef1é');
+      expect(component.passwordComplexityText()).toBe('Password must also include a special character.');
+    });
+
+    it('caps the password at the 72 bytes the API allows, counting UTF-8 bytes', () => {
+      const control = component.resetForm.controls.newPassword;
+
+      control.setValue(`Aa1!${'x'.repeat(68)}`); // 72 bytes
+      expect(control.hasError('maxlength')).toBeFalse();
+      control.setValue(`Aa1!${'x'.repeat(69)}`); // 73 bytes
+      expect(control.hasError('maxlength')).toBeTrue();
+      control.setValue(`Aa1!${'é'.repeat(36)}`); // 40 characters, 76 bytes
+      expect(control.hasError('maxlength')).toBeTrue();
     });
 
     it('should reset isSubmitting after success', fakeAsync(() => {
