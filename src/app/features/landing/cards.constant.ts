@@ -21,7 +21,10 @@ export const landingCards: HomeCard[] = [
     icon: 'account_balance',
     accent: 'blue',
     status: 'live',
-    roles: ['ULB', 'STATE', 'MoHUA'],
+    // XVIFC/XVIFC_STATE are the old XVI-FC Data Collection portal's roles, not reviewers — even
+    // though xvi-fc-module.routes.ts's canMatch guards happen to bucket them with ULB/STATE for
+    // ulb-module/state-module routing, product-wise they only get the Data Collection card below.
+    roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN', 'MOHUA_PMU', 'XVIFC_DOE'],
     route: ['/xvifc/year'],
   },
   {
@@ -31,7 +34,7 @@ export const landingCards: HomeCard[] = [
     icon: 'archive',
     accent: 'green',
     status: 'readonly',
-    roles: ['ULB', 'STATE', 'MoHUA'],
+    roles: ['ULB', 'STATE', 'MoHUA', 'ADMIN'],
     // Separate deployed app (not this one) — same origin and token store, so no second sign-in on
     // staging/production. See login.service.ts navigateAfterLogin for the full explanation.
     link: '/v1/fc-home-page',
@@ -42,7 +45,7 @@ export const landingCards: HomeCard[] = [
     icon: 'edit_document',
     accent: 'indigo',
     status: 'live',
-    roles: ['ULB'],
+    roles: ['ULB', 'XVIFC', 'XVIFC_STATE'],
     route: ['/xvifc-form'],
   },
   {
