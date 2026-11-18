@@ -71,9 +71,10 @@ describe('StateClaimLettersComponent', () => {
     expect(host.querySelector('h1')?.textContent).toContain('Andhra Pradesh — Claim Letters');
     const card = host.querySelector('.cl-letter-card') as HTMLElement;
     expect(card.querySelector('.cl-letter-card__no')?.textContent).toContain('AP-CL-003');
-    const facts = card.querySelector('.cl-letter-card__facts')?.textContent?.replace(/\s+/g, ' ') ?? '';
-    expect(facts).toContain('ULBs Included 10');
-    expect(facts).toContain('Amount Claimed ₹188 cr');
+    const facts = Array.from(card.querySelectorAll('.cl-letter-card__facts > div')).map(
+      (fact) => `${fact.querySelector('dt')?.textContent?.trim()} ${fact.querySelector('dd')?.textContent?.trim()}`,
+    );
+    expect(facts).toEqual(['ULBs Included 10', 'Amount Claimed ₹188 cr']);
     expect(card.querySelector('.cl-letter-card__ribbon')?.textContent).toContain('Under Review by MoHUA');
     expect(card.querySelector('a')?.textContent).toContain('View');
   });
@@ -146,7 +147,7 @@ describe('StateClaimLettersComponent', () => {
     expect(host.querySelector('.cl-letters__count')?.textContent).toContain('3 letters');
     const cards = Array.from(host.querySelectorAll<HTMLElement>('.cl-letter-card'));
     // No per-status colour classes on the cards: every card looks the same...
-    expect(cards.every((c) => ![...c.classList].some((k) => k.startsWith('cl-letter-card--')))).toBeTrue();
+    expect(cards.every((c) => !Array.from(c.classList).some((k) => k.startsWith('cl-letter-card--')))).toBeTrue();
     // ...only the status chip is coloured: orange under review, green verified, red returned.
     expect(cards.map((c) => c.querySelector('.cl-letter-card__ribbon')?.classList.contains('cs-badge'))).toEqual([
       true,

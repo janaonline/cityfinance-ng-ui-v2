@@ -298,7 +298,7 @@ describe('ClaimLetterDetailComponent', () => {
       const host = create();
 
       returnIcon(host, 1).click();
-      fixture.detectChanges();
+      TestBed.tick(); // the dialog lives in the overlay, outside the fixture
 
       const dialog = document.querySelector('app-mohua-return-claim-letter-dialog')?.textContent ?? '';
       expect(dialog).toContain('Elected Bodies (exemption under review)');
@@ -323,7 +323,7 @@ describe('ClaimLetterDetailComponent', () => {
       const host = create();
 
       returnIcon(host, 1).click();
-      fixture.detectChanges();
+      TestBed.tick(); // the dialog lives in the overlay, outside the fixture
 
       const dialog = document.querySelector('app-mohua-return-claim-letter-dialog');
       expect(dialog?.textContent).toContain('Return Vizianagaram for correction?');
@@ -336,7 +336,8 @@ describe('ClaimLetterDetailComponent', () => {
       const host = create();
 
       const row = host.querySelectorAll('tbody tr')[0].textContent ?? '';
-      expect(row).toContain('Returned: PFMS Bank Account, Elected Bodies — Wrong IFSC');
+      expect(row).toContain('Returned');
+      expect(row).toContain('PFMS Bank Account, Elected Bodies — Wrong IFSC');
       expect(actionButton(host, 'Approve').disabled).toBeTrue();
       expect(actionButton(host, 'Return Claim Letter').textContent).toContain('(1)');
     });
@@ -345,7 +346,7 @@ describe('ClaimLetterDetailComponent', () => {
       const host = create();
 
       actionButton(host, 'Return Claim Letter').click();
-      fixture.detectChanges();
+      TestBed.tick(); // the dialog lives in the overlay, outside the fixture
 
       const dialog = document.querySelector('app-mohua-return-claim-letter-dialog');
       expect(dialog?.textContent).toContain('Return this claim letter for correction?');

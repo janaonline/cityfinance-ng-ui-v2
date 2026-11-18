@@ -198,7 +198,7 @@ describe('StateDetailComponent', () => {
     expect(conditions[0].viewLink).toEqual(['review-state-submissions', 'state-1', 'sfc-status']);
     expect(conditions[1].viewLink).toBeNull();
     expect(conditions[2].viewLink).toEqual(['review-state-submissions', 'state-1', 'devolution-formula', '1']);
-    expect(fixture.nativeElement.querySelectorAll('.sd-cond__pdf').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.sd-cond .sd-cond__pdf').length).toBe(2);
   });
 
   it('shows the status of a form that is not submitted instead of a tick', () => {
