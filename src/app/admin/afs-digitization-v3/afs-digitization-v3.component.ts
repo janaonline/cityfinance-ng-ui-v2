@@ -411,6 +411,7 @@ export class AfsDigitizationV3Component implements OnInit {
       return [
         { value: n(sc.arithmeticPass), label: 'Pass', class: 'text-success' },
         { value: n(sc.arithmeticFail), label: 'Fail', class: 'text-danger' },
+        { value: n(sc.arithmeticSkipped ?? 0), label: 'Skipped', class: 'text-secondary' },
       ];
     }
     if (sc && key === 'overallScore') {
@@ -431,7 +432,15 @@ export class AfsDigitizationV3Component implements OnInit {
     if (o?.runs && (key === 'newDigitized' || key === 'newFailed')) return 'Run through v3';
     const sc = o?.scores;
     if (sc && key === 'confidence') return 'Digitized files with a crosscheck confidence (Gemini accuracy) score, split at 80';
-    if (sc && key === 'arithmetic') return 'Digitized files with an arithmetic check result';
+    if (sc && key === 'arithmetic') {
+      const ran = sc.arithmeticPass + sc.arithmeticFail;
+      const skipped = sc.arithmeticSkipped ?? 0;
+      const n = (value: number) => value.toLocaleString('en-IN');
+      return (
+        `Arithmetic ran on ${n(ran)} of ${n(sc.matches)} files whose document matched (pass + fail). ` +
+        `${n(skipped)} skipped because the uploaded document type isn't in the file.`
+      );
+    }
     if (sc && key === 'overallScore') return 'Digitized files with an overall result: pass, partial or fail';
     const s = o?.scores;
     if (s && (key === 'scored' || key === 'docMatch' || key === 'docMismatch')) {
