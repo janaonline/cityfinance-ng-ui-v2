@@ -113,29 +113,31 @@ describe('AdcDetailComponent', () => {
     expect(component.status()).toBe('ready');
   });
 
-  it('goes back in history when it came from the list, so the list keeps its filters', async () => {
+  it('has no separate Back link: the "ADC" breadcrumb is the way back', async () => {
     await open('/adc/a1');
-    const location = TestBed.inject(Location);
-    spyOn(location, 'getState').and.returnValue({ fromAdcList: true });
-    const back = spyOn(location, 'back');
-
-    // cameFromList is read when the component is created: leave and re-open it with the list's state.
-    await harness.navigateByUrl('/adc');
-    component = await harness.navigateByUrl('/adc/a1', AdcDetailComponent);
-    component.backToList();
-
-    expect(back).toHaveBeenCalled();
+    expect(el().querySelector('[data-test="back"]')).toBeNull();
+    expect(el().textContent).not.toContain('Back to ADCs');
   });
 
-  it('opens the list fresh when it was reached directly', async () => {
+  it("points the ADC breadcrumb at the list with the list's filters, sort and page when it came from there", async () => {
     await open('/adc/a1');
-    const back = spyOn(TestBed.inject(Location), 'back');
+    spyOn(TestBed.inject(Location), 'getState').and.returnValue({
+      adcListQuery: { search: 'bodo', sortBy: 'ulbCount', page: 2 },
+    });
 
-    component.backToList();
-    await harness.fixture.whenStable();
+    // The state is read when the component is created: leave and re-open it with the list's state.
+    await harness.navigateByUrl('/adc');
+    await harness.navigateByUrl('/adc/a1', AdcDetailComponent);
+    harness.detectChanges();
 
-    expect(back).not.toHaveBeenCalled();
-    expect(TestBed.inject(Router).url).toBe('/adc');
+    const crumb = el().querySelector<HTMLAnchorElement>('app-xvifc-breadcrumb a')!;
+    expect(crumb.textContent?.trim()).toBe('ADC');
+    expect(crumb.getAttribute('href')).toBe('/adc?search=bodo&sortBy=ulbCount&page=2');
+  });
+
+  it('points the ADC breadcrumb at the plain list when the page was opened directly', async () => {
+    await open('/adc/a1');
+    expect(el().querySelector('app-xvifc-breadcrumb a')?.getAttribute('href')).toBe('/adc');
   });
 
   it('reloads the header after a change and returns to the list after a delete', async () => {
