@@ -93,6 +93,7 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'PASS', label: 'Pass' },
     { value: 'FAIL', label: 'Fail' },
     { value: 'NOT_APPLICABLE', label: 'Not applicable' },
+    { value: 'SKIPPED', label: 'Skipped (doc mismatch)' },
   ];
   readonly docMatchOptions = [
     { value: '', label: 'All' },
