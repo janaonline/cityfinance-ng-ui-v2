@@ -6,6 +6,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { ClaimLetterDetail, ClaimLetterUlbs } from '../claims-submission.models';
@@ -72,6 +73,9 @@ describe('ClaimLetterDetailComponent', () => {
   let fixture: ComponentFixture<ClaimLetterDetailComponent>;
   let service: jasmine.SpyObj<ClaimsSubmissionService>;
 
+  /** MoHUA acts on this page; PMU only monitors it. */
+  let isMohuaUser: boolean;
+
   const create = (): HTMLElement => {
     fixture = TestBed.createComponent(ClaimLetterDetailComponent);
     fixture.detectChanges();
@@ -87,12 +91,14 @@ describe('ClaimLetterDetailComponent', () => {
     ]);
     service.getClaimLetter.and.returnValue(of(detail));
     service.getClaimLetterUlbs.and.returnValue(of(ulbs));
+    isMohuaUser = true;
     await TestBed.configureTestingModule({
       imports: [ClaimLetterDetailComponent],
       providers: [
         provideRouter([]),
         provideNoopAnimations(),
         { provide: ClaimsSubmissionService, useValue: service },
+        { provide: AuthPermissionService, useValue: { isMohuaUser: () => isMohuaUser } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -107,6 +113,21 @@ describe('ClaimLetterDetailComponent', () => {
         },
       ],
     }).compileComponents();
+  });
+
+  it('is read-only for PMU: no review actions on a letter under SO review, and no Generate OM once verified', () => {
+    isMohuaUser = false;
+    let host = create();
+
+    expect(fixture.componentInstance.canReview()).toBeFalse();
+    expect(host.querySelector('.cl-actions')).toBeNull();
+    expect(host.querySelector('.cl-icon-btn')).toBeNull();
+    expect(host.querySelectorAll('tbody tr').length).toBe(2);
+
+    fixture.destroy();
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Verified' }));
+    host = create();
+    expect(host.querySelector('.cl-om-btn')).toBeNull();
   });
 
   it('shows the title with the letter status and the two review bars', () => {

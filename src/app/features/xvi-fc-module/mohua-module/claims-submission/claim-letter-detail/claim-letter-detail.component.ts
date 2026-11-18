@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
@@ -103,6 +104,8 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly utilityService = inject(UtilityService);
+  /** PMU opens this page to monitor MoHUA's work: read-only, so only MoHUA gets the actions. */
+  private readonly isMohua = inject(AuthPermissionService).isMohuaUser();
   private readonly search$ = new Subject<string>();
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
@@ -175,11 +178,11 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly search = signal('');
   readonly page = signal(1);
 
-  /** Only a letter that is still under MoHUA review can be acted on; returned and acknowledged ones are read-only. */
-  readonly canReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+  /** Only MoHUA acts, and only on a letter still under SO review; returned and acknowledged ones are read-only. */
+  readonly canReview = computed(() => this.isMohua && this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
 
   /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
-  readonly canGenerateOm = computed(() => this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
+  readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
 
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);
