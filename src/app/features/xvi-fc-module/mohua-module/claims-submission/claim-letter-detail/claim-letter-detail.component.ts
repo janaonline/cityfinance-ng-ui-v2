@@ -19,6 +19,7 @@ import {
   ClaimLetterReturnedForm,
   ClaimLetterSoDecision,
   ClaimLetterUlbRow,
+  CLAIM_LETTER_VERIFIED_STATUS,
   ClaimLetterUlbs,
   claimStatusBadgeClass,
   claimStatusLabel,
@@ -176,6 +177,9 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   /** Only a letter that is still under MoHUA review can be acted on; returned and acknowledged ones are read-only. */
   readonly canReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+
+  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
+  readonly canGenerateOm = computed(() => this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
 
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);

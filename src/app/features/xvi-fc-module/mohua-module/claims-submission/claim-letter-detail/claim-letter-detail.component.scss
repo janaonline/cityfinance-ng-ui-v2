@@ -58,3 +58,10 @@
     background: var(--cl-red);
   }
 }
+
+.cl-om-btn {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
+
+  flex: none;
+}
