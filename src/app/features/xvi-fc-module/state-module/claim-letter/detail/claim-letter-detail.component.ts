@@ -57,7 +57,12 @@ import {
 import { parseFieldPrefixedMessages } from '../../../common/utils/xvi-fc-error-lookup.utils';
 import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterService } from '../claim-letter.service';
-import { buildBatchNarrative, ineligibleUlbsMessage, readApiError } from '../claim-letter.utils';
+import {
+  buildBatchNarrative,
+  formatClaimLetterBatchLabel,
+  ineligibleUlbsMessage,
+  readApiError,
+} from '../claim-letter.utils';
 import {
   ClaimLetterDocumentPreviewDialogComponent,
   ClaimLetterDocumentPreviewDialogData,
@@ -364,8 +369,13 @@ export class ClaimLetterDetailComponent implements OnInit {
       routerLink: ['/xvifc', this.yearId, 'claim-letter'],
     };
     if (this.isCreateMode) return [listLink, { label: 'New Claim Letter' }];
+    return [listLink, { label: this.claim() ? 'Batch #' + this.batchLabel() : 'Claim Letter' }];
+  });
+
+  /** "2", or "2-R1" for a letter built after a return: the title and breadcrumb. */
+  readonly batchLabel = computed(() => {
     const claim = this.claim();
-    return [listLink, { label: claim ? 'Batch #' + claim.batchNumber : 'Claim Letter' }];
+    return claim ? formatClaimLetterBatchLabel(claim.batchNumber, claim.resubmissionNumber) : '';
   });
 
   /** Create mode: 3 State-wide tiles. Edit mode: 4, with this batch's claim and the remainder live

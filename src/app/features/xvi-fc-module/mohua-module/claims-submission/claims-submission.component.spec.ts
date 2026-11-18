@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ClaimsSubmissionComponent } from './claims-submission.component';
@@ -8,6 +9,14 @@ import { ClaimsSubmissionService } from './claims-submission.service';
 const states: ClaimLettersStates = {
   year: { id: 'y1', label: '2026-27' },
   installment: 1,
+  overview: {
+    totalAllocation: 9_900_000_000,
+    stateCount: 2,
+    submitted: { claims: 3, states: 1, amount: 4_320_000_000 },
+    underReview: { claims: 1, states: 1, amount: 1_880_000_000 },
+    approved: { claims: 2, states: 1, amount: 2_440_000_000 },
+    returned: { claims: 0, states: 0, amount: 0 },
+  },
   states: [
     {
       stateId: 's1',
@@ -17,6 +26,7 @@ const states: ClaimLettersStates = {
       installmentAllocation: 7_810_000_000,
       amountClaimed: 4_320_000_000,
       ulbsIncluded: 72,
+      totalUlbs: 123,
       claimLetterCount: 3,
       latestClaimNumber: 3,
     },
@@ -28,6 +38,7 @@ const states: ClaimLettersStates = {
       installmentAllocation: 2_090_000_000,
       amountClaimed: null,
       ulbsIncluded: null,
+      totalUlbs: 98,
       claimLetterCount: 0,
       latestClaimNumber: null,
     },
@@ -49,7 +60,7 @@ describe('ClaimsSubmissionComponent', () => {
     service.getStates.and.returnValue(of(states));
     await TestBed.configureTestingModule({
       imports: [ClaimsSubmissionComponent],
-      providers: [provideRouter([]), { provide: ClaimsSubmissionService, useValue: service }],
+      providers: [provideRouter([]), provideNoopAnimations(), { provide: ClaimsSubmissionService, useValue: service }],
     }).compileComponents();
   });
 
@@ -58,13 +69,48 @@ describe('ClaimsSubmissionComponent', () => {
 
     expect(rows.length).toBe(2);
     expect(rows[0].textContent).toContain('Andhra Pradesh');
-    expect(rows[0].textContent).toContain('Received');
     expect(rows[0].textContent).toContain('3rd');
     expect(rows[0].textContent).toContain('₹781 cr');
     expect(rows[0].textContent).toContain('₹432 cr');
     expect(rows[0].textContent).toContain('72');
-    expect(rows[1].textContent).toContain('Pending');
     expect(rows[1].textContent).toContain('—');
+  });
+
+  it('has no first-claim status column; the status only decides the action', () => {
+    const host = create();
+    const headers = Array.from(host.querySelectorAll('thead th')).map((th) => th.textContent?.trim());
+
+    expect(headers).toEqual([
+      'State',
+      'Claim no.',
+      'Allocation for Installment 1',
+      'Amount claimed',
+      'ULBs included',
+      'Action',
+    ]);
+    expect(host.querySelector('tbody .cs-badge')).toBeNull();
+    expect(host.querySelector('tbody')?.textContent).not.toContain('Received');
+    expect(host.querySelector('tbody')?.textContent).not.toContain('Pending');
+  });
+
+  it("shows the amount claimed as a share of the allocation, and ULBs included out of the State's ULBs", () => {
+    const rows = Array.from(create().querySelectorAll<HTMLElement>('tbody tr'));
+
+    // ₹432 cr of ₹781 cr = 55%; a State with no claim has no percentage.
+    expect(rows[0].querySelector('.cl-pct')?.textContent?.trim()).toBe('55% of allocation');
+    expect(rows[1].querySelector('.cl-pct')).toBeNull();
+    const ulbs = (row: HTMLElement) => row.querySelector('.cl-ulbs-of')?.textContent?.replace(/\s+/g, ' ').trim();
+    expect(ulbs(rows[0])).toBe('72 / 123');
+    expect(ulbs(rows[1])).toBe('0 / 98');
+  });
+
+  it('shows "<1%" for a claim under one percent, and no percentage without an allocation', () => {
+    create();
+    const row = states.states[0];
+
+    expect(fixture.componentInstance.claimedPercent({ ...row, amountClaimed: 62_000_000 })).toBe('<1%'); // 0.79%
+    expect(fixture.componentInstance.claimedPercent({ ...row, installmentAllocation: null })).toBeNull();
+    expect(fixture.componentInstance.claimedPercent({ ...row, installmentAllocation: 0 })).toBeNull();
   });
 
   it('offers View claims only for a state whose claim letter has arrived; Pending states get a disabled Track', () => {
@@ -76,6 +122,96 @@ describe('ClaimsSubmissionComponent', () => {
     expect(track.textContent).toContain('Track');
     expect(track.disabled).toBeTrue();
     expect(rows[1].querySelector('a')).toBeNull();
+  });
+
+  describe('national overview', () => {
+    it('shows the total allocation, then the claims pipeline above the States table', () => {
+      const host = create();
+
+      const overview = host.querySelector('.cl-overview') as HTMLElement;
+      const table = host.querySelector('.cl-states') as HTMLElement;
+      expect(overview.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(overview.querySelector('.cl-overview__hero-sub')?.textContent).toContain('across 2 states');
+
+      const labels = Array.from(overview.querySelectorAll('.cl-pipeline__label')).map((l) => l.textContent?.trim());
+      expect(labels).toEqual(['Submitted', 'Under review', 'Approved', 'Released']);
+
+      // Values count up on screen, so they are read from the model; subs and amounts are plain text.
+      const p = fixture.componentInstance.pipeline();
+      expect(p?.allocation).toBe('₹990 cr');
+      expect(p?.steps.map((s) => s.value)).toEqual(['3 claims', '1 claim', '2 claims', null]);
+      const subs = Array.from(overview.querySelectorAll('.cl-pipeline__sub')).map((s) => s.textContent?.trim());
+      expect(subs).toEqual(['from 1 of 2 states', 'of 3 claims', 'of 3 claims', 'by DoE']);
+      const amounts = Array.from(overview.querySelectorAll('.cl-pipeline__amount')).map((a) => a.textContent?.trim());
+      expect(amounts).toEqual(['₹432 cr', '₹188 cr', '₹244 cr']);
+    });
+
+    it('shows Released as "Coming soon" until the DoE release step exists, and notes returned claims', () => {
+      service.getStates.and.returnValue(
+        of({ ...states, overview: { ...states.overview, returned: { claims: 1, states: 1, amount: 0 } } }),
+      );
+
+      const host = create();
+
+      const steps = Array.from(host.querySelectorAll<HTMLElement>('.cl-pipeline__step'));
+      expect(steps[3].classList).toContain('cl-pipeline__step--soon');
+      expect(steps[3].querySelector('.cl-pipeline__value')?.textContent).toContain('Coming soon');
+      expect(steps[0].querySelector('.cl-pipeline__note')?.textContent).toContain('1 returned for correction');
+    });
+  });
+
+  describe('search and filter', () => {
+    const names = (host: HTMLElement) =>
+      Array.from(host.querySelectorAll('tbody tr .cl-state-row__name')).map((n) =>
+        n.textContent?.replace(/\s+/g, ' ').trim(),
+      );
+    const filterButton = (host: HTMLElement, label: string) =>
+      Array.from(host.querySelectorAll<HTMLButtonElement>('mat-button-toggle button')).find((b) =>
+        b.textContent?.includes(label),
+      ) as HTMLButtonElement;
+
+    it('counts the states that sent a claim, on the heading pill and the filter buttons', () => {
+      const host = create();
+
+      expect(host.querySelector('.cl-states__count')?.textContent?.replace(/\s+/g, ' ')).toContain(
+        '1 of 2 states have claimed',
+      );
+      expect(filterButton(host, 'All').textContent).toContain('2');
+      expect(filterButton(host, 'Claim received').textContent).toContain('1');
+      expect(filterButton(host, 'Awaiting claim').textContent).toContain('1');
+    });
+
+    it('filters by claim received / awaiting, marking the chosen button pressed', () => {
+      const host = create();
+
+      filterButton(host, 'Awaiting claim').click();
+      fixture.detectChanges();
+      expect(names(host)).toEqual(['AS Assam']);
+      expect(filterButton(host, 'Awaiting claim').getAttribute('aria-checked')).toBe('true');
+
+      filterButton(host, 'Claim received').click();
+      fixture.detectChanges();
+      expect(names(host)).toEqual(['AP Andhra Pradesh']);
+    });
+
+    it('searches by State name, and offers to clear when nothing matches', () => {
+      const host = create();
+      const search = host.querySelector('input[type="search"]') as HTMLInputElement;
+
+      search.value = 'ass';
+      search.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(names(host)).toEqual(['AS Assam']);
+
+      search.value = 'kerala';
+      search.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(host.querySelector('tbody')?.textContent).toContain('No states match your search.');
+
+      (host.querySelector('tbody .cl-link-btn') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(names(host).length).toBe(2);
+    });
   });
 
   it('shows an error with a retry when the load fails', () => {

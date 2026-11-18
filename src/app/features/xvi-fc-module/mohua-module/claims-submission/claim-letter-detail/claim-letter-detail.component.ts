@@ -1,18 +1,25 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
+import { CountUpDirective, RevealDirective } from '../../state-detail/state-detail.directives';
 import {
   CLAIMS_INSTALLMENT,
   ClaimLetterDetail,
   ClaimLetterReturnedForm,
   ClaimLetterSoDecision,
   ClaimLetterUlbRow,
+  CLAIM_LETTER_VERIFIED_STATUS,
   ClaimLetterUlbs,
   claimStatusBadgeClass,
   claimStatusLabel,
@@ -34,7 +41,10 @@ import {
 } from '../return-dialog/return-claim-letter-dialog.component';
 
 const FORM_LABELS = new Map(
-  [...RETURN_ULB_FORM_OPTIONS, ...RETURN_ROW_FORM_OPTIONS, ...RETURN_STATE_FORM_OPTIONS].map((o) => [o.formId, o.label]),
+  [...RETURN_ULB_FORM_OPTIONS, ...RETURN_ROW_FORM_OPTIONS, ...RETURN_STATE_FORM_OPTIONS].map((o) => [
+    o.formId,
+    o.label,
+  ]),
 );
 
 function ulbCountText(count: number): string {
@@ -50,12 +60,39 @@ const ULBS_LOAD_ERROR = 'Could not load the ULBs. Please try again.';
 const ULBS_PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
+/**
+ * One headline card: an amount (whole Rupees) and a ULB count. `amount: null` is a figure not tracked yet
+ * ("Coming soon"); an amount and a ULB count of 0 show "None" with `emptyNote`. Notes are kept to one line.
+ */
+interface ClaimLetterStat {
+  label: string;
+  icon: string;
+  tone: 'good' | 'orange' | 'teal' | 'info';
+  amount: number | null;
+  ulbs: number | null;
+  note: string;
+  emptyNote: string;
+}
+
+/** The State's five condition forms: counted on the State Forms bar, named on hover. */
+const STATE_FORMS = ['SFC Status', 'Elected Body', 'ULB-wise Allocation', 'FC Unspent', 'GTC'];
+
 /** One claim letter, read-only: the State-signed document, headline figures and the ULBs it covers. */
 @Component({
   selector: 'app-mohua-claim-letter-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MohuaPageLoaderComponent],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatTooltipModule,
+    MohuaPageLoaderComponent,
+    RevealDirective,
+    CountUpDirective,
+  ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',
 })
@@ -75,11 +112,57 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly formatDate = formatReceivedOn;
   readonly badgeClass = claimStatusBadgeClass;
   readonly statusLabel = claimStatusLabel;
+  readonly stateFormNames = STATE_FORMS.join(', ');
+  readonly stateFormCount = STATE_FORMS.length;
 
   readonly stateId = this.route.snapshot.paramMap.get('stateId') ?? '';
   readonly claimLetterId = this.route.snapshot.paramMap.get('claimLetterId') ?? '';
 
   readonly letter = signal<ClaimLetterDetail | null>(null);
+
+  /** The four headline cards. Grant Released comes last: it is "Coming soon" until the DoE release step exists. */
+  readonly stats = computed<ClaimLetterStat[]>(() => {
+    const summary = this.letter()?.summary;
+    if (!summary) return [];
+    return [
+      {
+        label: 'Amount Claimed',
+        icon: 'bi-file-earmark-text',
+        tone: 'orange',
+        amount: summary.claimAmountReceived,
+        ulbs: summary.totalCities,
+        note: 'this letter',
+        emptyNote: 'Nothing claimed',
+      },
+      {
+        label: 'Claims Submitted',
+        icon: 'bi-send-check',
+        tone: 'teal',
+        amount: summary.submittedClaimAmount,
+        ulbs: summary.submittedUlbs,
+        note: 'all letters',
+        emptyNote: 'No letters submitted',
+      },
+      {
+        label: 'Exemption Requested',
+        icon: 'bi-shield-exclamation',
+        tone: 'info',
+        amount: summary.exemptionAmount,
+        ulbs: summary.exemptionsApplied,
+        note: 'with exemption',
+        emptyNote: 'No exemption requests',
+      },
+      {
+        label: 'Grant Released',
+        icon: 'bi-cash-coin',
+        tone: 'good',
+        amount: null,
+        ulbs: null,
+        note: 'Released by DoE',
+        emptyNote: 'Nothing released',
+      },
+    ];
+  });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
@@ -94,6 +177,9 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   /** Only a letter that is still under MoHUA review can be acted on; returned and acknowledged ones are read-only. */
   readonly canReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+
+  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
+  readonly canGenerateOm = computed(() => this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
 
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);
@@ -172,10 +258,7 @@ export class ClaimLetterDetailComponent implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.approving.set(false);
           const message = err.error?.message;
-          this.utilityService.triggerSnackbar(
-            typeof message === 'string' ? message : APPROVE_ERROR,
-            'snackbar-danger',
-          );
+          this.utilityService.triggerSnackbar(typeof message === 'string' ? message : APPROVE_ERROR, 'snackbar-danger');
           // A conflict means the letter changed or was already decided: show it as it is now.
           if (err.status === 409) this.load();
         },
@@ -233,9 +316,11 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** ↩ on a ULB: opens the return dialog for it (prefilled when already marked); confirming marks it returned. */
   openUlbReturn(row: ClaimLetterUlbRow): void {
     if (this.busy()) return;
-    this.openDialog({ mode: 'ulb', ulbName: row.name, decision: row.soDecision, exemptions: row.exemptions }).subscribe((result) => {
-      if (result) this.saveDecision(row, { status: 'RETURNED', ...(result as ReturnUlbDialogResult) });
-    });
+    this.openDialog({ mode: 'ulb', ulbName: row.name, decision: row.soDecision, exemptions: row.exemptions }).subscribe(
+      (result) => {
+        if (result) this.saveDecision(row, { status: 'RETURNED', ...(result as ReturnUlbDialogResult) });
+      },
+    );
   }
 
   /** Clears a ULB's returned mark, back to pending. */
@@ -293,10 +378,11 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   private openDialog(data: ReturnClaimLetterDialogData) {
     return this.dialog
-      .open<ReturnClaimLetterDialogComponent, ReturnClaimLetterDialogData, ReturnClaimLetterDialogResult | undefined>(
+      .open<
         ReturnClaimLetterDialogComponent,
-        { data, width: '640px', maxWidth: '95vw' },
-      )
+        ReturnClaimLetterDialogData,
+        ReturnClaimLetterDialogResult | undefined
+      >(ReturnClaimLetterDialogComponent, { data, width: '640px', maxWidth: '95vw' })
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef));
   }

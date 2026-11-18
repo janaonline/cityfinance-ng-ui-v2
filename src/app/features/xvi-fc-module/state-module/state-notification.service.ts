@@ -9,6 +9,9 @@ import type { UlbNotification, UlbNotificationSeverity } from '../ulb-module/ulb
 interface StateNotificationsPayload {
   forms: { key: string; statusCode: number }[];
   ulbSubmissionsAwaitingReview: number;
+  /** Claim letters MoHUA returned with no new letter submitted in the same slot yet. Optional so an
+   *  older API without the field reads as none. */
+  claimLettersReturned?: number;
 }
 
 /** Backend wraps in `{ success, data }`; a dev server may hand back the bare payload — accept both. */
@@ -26,7 +29,9 @@ const STATE_FORMS: Readonly<Record<string, { title: string; route: string }>> = 
 
 /** State-form status -> how a notification reads. PMU's 13/14 read like MoHUA's 5/6 — the State-facing UI
  *  never names PMU (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
-const NOTIFICATION_BY_STATUS: Readonly<Record<number, { severity: UlbNotificationSeverity; message: string; icon: string }>> = {
+const NOTIFICATION_BY_STATUS: Readonly<
+  Record<number, { severity: UlbNotificationSeverity; message: string; icon: string }>
+> = {
   [FORM_STATUS.RETURNED_BY_PMU]: {
     severity: 'returned',
     message: 'Returned for correction — action needed.',
@@ -37,8 +42,16 @@ const NOTIFICATION_BY_STATUS: Readonly<Record<number, { severity: UlbNotificatio
     message: 'Returned for correction — action needed.',
     icon: 'bi-exclamation-triangle-fill',
   },
-  [FORM_STATUS.UNDER_REVIEW_BY_PMU]: { severity: 'review', message: 'Under review by MoHUA.', icon: 'bi-hourglass-split' },
-  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: { severity: 'review', message: 'Under review by MoHUA.', icon: 'bi-hourglass-split' },
+  [FORM_STATUS.UNDER_REVIEW_BY_PMU]: {
+    severity: 'review',
+    message: 'Under review by MoHUA.',
+    icon: 'bi-hourglass-split',
+  },
+  [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: {
+    severity: 'review',
+    message: 'Under review by MoHUA.',
+    icon: 'bi-hourglass-split',
+  },
   [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: {
     severity: 'approved',
     message: 'Acknowledged by MoHUA.',
@@ -53,8 +66,9 @@ const STALE_AFTER_MS = 30_000;
 
 /**
  * State counterpart of `UlbNotificationService`: derives the navbar bell and the sidebar dots from
- * where the State's five condition forms stand, plus how many ULB forms wait on the State. Stateless
- * (no read/unread) — an item clears itself once the form is fixed and resubmitted.
+ * where the State's five condition forms stand, how many ULB forms wait on the State, and how many
+ * claim letters MoHUA returned. Stateless (no read/unread) — an item clears itself once the form is
+ * fixed and resubmitted, or a new claim letter is submitted.
  */
 @Injectable({ providedIn: 'root' })
 export class StateNotificationService {
@@ -73,7 +87,9 @@ export class StateNotificationService {
       const meta = STATE_FORMS[form.key];
       const config = NOTIFICATION_BY_STATUS[form.statusCode];
       if (!meta || !config) return [];
-      return [{ severity: config.severity, icon: config.icon, title: meta.title, message: config.message, route: meta.route }];
+      return [
+        { severity: config.severity, icon: config.icon, title: meta.title, message: config.message, route: meta.route },
+      ];
     });
 
     const awaiting = payload.ulbSubmissionsAwaitingReview;
@@ -90,7 +106,27 @@ export class StateNotificationService {
           ]
         : [];
 
-    return [...formItems, ...ulbItem].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+    // Clears once the State submits a new letter for that slot (the backend's count), not when it starts one.
+    const returnedLetters = payload.claimLettersReturned ?? 0;
+    const claimLetterItem: UlbNotification[] =
+      returnedLetters > 0
+        ? [
+            {
+              severity: 'returned',
+              icon: 'bi-exclamation-triangle-fill',
+              title: 'Claim Letter',
+              message:
+                returnedLetters === 1
+                  ? 'A claim letter was returned for correction — action needed.'
+                  : `${returnedLetters} claim letters were returned for correction — action needed.`,
+              route: 'claim-letter',
+            },
+          ]
+        : [];
+
+    return [...formItems, ...claimLetterItem, ...ulbItem].sort(
+      (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
+    );
   });
 
   /** route (sidebar item's tail segment) -> severity, so any side-menu item can look up its own dot. */

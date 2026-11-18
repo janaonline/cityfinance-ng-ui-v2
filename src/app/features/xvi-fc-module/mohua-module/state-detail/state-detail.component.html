@@ -76,15 +76,68 @@
 
     <!-- ── Claim Letters ───────────────────────────────────────────────── -->
     <mat-card appearance="outlined" class="sd-panel" appReveal aria-labelledby="sd-h-claims">
-      <div class="sd-panel__head">
-        <h2 id="sd-h-claims">Claim Letters</h2>
-        <p>Claim letters submitted by the state.</p>
+      <div class="sd-panel__head sd-claims__head">
+        <div>
+          <h2 id="sd-h-claims">Claim Letters</h2>
+          <p>Claim letters submitted by the state, newest first.</p>
+        </div>
+        @if (canOpenClaims && claims()?.claimLetters?.length) {
+          <a mat-stroked-button class="sd-cond__pdf" [routerLink]="['claims-submission', d.state.id]" [relativeTo]="mohuaRoute">
+            See all claims <i class="bi bi-arrow-right" aria-hidden="true"></i>
+          </a>
+        }
       </div>
-      <div class="sd-claims__empty">
-        <span class="sd-claims__empty-icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
-        <p>Coming soon</p>
-        <p class="sd-muted">Claim letters will appear here once they are available.</p>
-      </div>
+      @if (claims(); as c) {
+        @if (c.claimLetters.length) {
+          <ul class="sd-claims" [attr.aria-label]="'Claim letters for ' + d.state.name">
+            @for (letter of c.claimLetters.slice(0, claimLettersShown); track letter.id) {
+              <li class="sd-claim">
+                <span class="sd-claims__empty-icon sd-claim__icon" aria-hidden="true"
+                  ><i class="bi bi-file-earmark-text"></i
+                ></span>
+                <span class="sd-claim__text">
+                  <b>{{ letter.number }}</b>
+                  <span class="sd-muted">
+                    {{ formatDate(letter.receivedOn) }} · {{ letter.ulbCount }} {{ letter.ulbCount === 1 ? 'ULB' : 'ULBs' }}
+                    · {{ formatRupees(letter.amount) }}
+                  </span>
+                </span>
+                <span class="cs-badge" [class]="badgeClass(letter.status)">{{
+                  statusLabel(letter.status, letter.statusLabel)
+                }}</span>
+                @if (canOpenClaims) {
+                  <a
+                    mat-stroked-button
+                    class="sd-cond__pdf"
+                    [routerLink]="['claims-submission', d.state.id, 'letter', letter.id]"
+                    [relativeTo]="mohuaRoute"
+                    [attr.aria-label]="'View claim letter ' + letter.number"
+                  >
+                    <i class="bi bi-eye" aria-hidden="true"></i> View
+                  </a>
+                }
+              </li>
+            }
+          </ul>
+          @if (c.claimLetters.length > claimLettersShown) {
+            <p class="sd-muted sd-claims__more">
+              Showing the latest {{ claimLettersShown }} of {{ c.claimLetters.length }} claim letters.
+            </p>
+          }
+        } @else {
+          <div class="sd-claims__empty">
+            <span class="sd-claims__empty-icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+            <p>No claim letter yet</p>
+            <p class="sd-muted">This state has not submitted a claim letter.</p>
+          </div>
+        }
+      } @else {
+        <div class="sd-claims__empty">
+          <span class="sd-claims__empty-icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+          <p>Coming soon</p>
+          <p class="sd-muted">Claim letters will appear here once they are available.</p>
+        </div>
+      }
     </mat-card>
 
     <!-- ── ULB Form Completion ─────────────────────────────────────────── -->

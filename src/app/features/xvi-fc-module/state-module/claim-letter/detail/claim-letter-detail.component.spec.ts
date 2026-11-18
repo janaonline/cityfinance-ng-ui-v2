@@ -60,6 +60,7 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     claimLetterId: 'claim-1',
     installment: 1,
     batchNumber: 1,
+    resubmissionNumber: 0,
     version: 1,
     currentFormStatus: 2, // FORM_STATUS.IN_PROGRESS
     currentFormStatusLabel: 'In Progress',
@@ -393,6 +394,12 @@ describe('ClaimLetterDetailComponent', () => {
         { label: 'Claim Letter', routerLink: ['/xvifc', 'year-test-id', 'claim-letter'] },
         { label: 'Batch #2' },
       ]);
+    });
+
+    it('names a letter built after a return Batch #n-R<n>', async () => {
+      await setupEdit(buildClaim({ batchNumber: 2, resubmissionNumber: 1 }));
+      expect(component.batchLabel()).toBe('2-R1');
+      expect(component.breadcrumbLinks()[1]).toEqual({ label: 'Batch #2-R1' });
     });
 
     it('shows all four financial-summary tiles straight from the loaded claim, netting out other concurrent batches', async () => {

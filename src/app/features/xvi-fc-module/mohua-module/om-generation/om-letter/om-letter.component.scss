@@ -1,104 +1,56 @@
 @use '../../claims-submission/claims-shared';
+// Material + Bootstrap tuning shared with the claims screens; only this page's own pieces are below.
+@use '../../claims-submission/claims-ui';
 
-.oml-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  max-width: 820px;
-  margin-bottom: 1rem;
+// A tone per headline card (teal is the page default), as on the claim-letter review page.
+.oml-tone--orange {
+  --t: var(--clr-primary, #d9730d);
 }
 
-.oml-tile {
-  padding: 0.65rem 0.9rem;
-  border: 1px solid #e3e8ea;
-  border-radius: 10px;
-  background: #fff;
-
-  &__value {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #0f1f26;
-  }
-
-  &__label {
-    margin: 0.1rem 0 0;
-    font-size: 0.72rem;
-    color: #5b6b73;
-  }
+.oml-tone--good {
+  --t: #1d7a46;
 }
 
-.oml-ulbs {
-  margin-bottom: 1.25rem;
+.oml-value {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
 
-  &__toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    margin-bottom: 0.5rem;
-    padding: 0.65rem 1rem;
-    border: 1px solid #e3e8ea;
-    border-radius: 10px;
-    background: #fff;
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #0f1f26;
-    text-align: left;
-    cursor: pointer;
+.oml-heading {
+  font-size: 0.85rem;
+}
 
-    &:focus-visible {
-      outline: 2px solid #0f5b4a;
-      outline-offset: 2px;
+.oml-toggle {
+  color: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--t) 45%, transparent);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  &__chevron {
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(180deg);
     }
   }
-
-  &__total {
-    margin-left: auto;
-    font-size: 0.78rem;
-    font-weight: 400;
-    color: #5b6b73;
-  }
 }
 
+.oml-primary {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
+}
+
+// The OM sits on a grey "desk", scrolling inside the card.
 .om-editor {
-  border: 1px solid #e3e8ea;
-  border-radius: 12px;
-  background: #fff;
   overflow: hidden;
 
   &__bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e3e8ea;
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-
-  &__sub {
-    margin: 0;
-    font-size: 0.72rem;
-    color: #5b6b73;
-  }
-
-  &__count {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  &__actions {
-    display: flex;
-    gap: 0.5rem;
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--t) 18%, transparent);
   }
 
   &__body {
@@ -109,8 +61,8 @@
   }
 }
 
-@media (max-width: 575.98px) {
-  .oml-tiles {
-    grid-template-columns: 1fr;
+@media (prefers-reduced-motion: reduce) {
+  .oml-toggle__chevron {
+    transition: none;
   }
 }

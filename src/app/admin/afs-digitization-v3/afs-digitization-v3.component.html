@@ -59,8 +59,42 @@
     <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
 
     <h6 class="fw-bold mb-2">Overall</h6>
-    <div class="metric-grid mb-3">
-      @for (card of overallCards; track card.key) {
+    <!-- One overall card. A card with several numbers shows them side by side, each value over its label -->
+    <ng-template #overallCardTpl let-card>
+      @if (overallParts(card.key).length) {
+      <div class="card metric-card metric-card--multi shadow-sm" [matTooltip]="overallHint(card.key)"
+        [matTooltipDisabled]="!overallHint(card.key) || card.key === 'overallScore'">
+        <span class="metric-title metric-card-title">
+          <i [class]="card.icon + ' ' + card.class"></i>
+          {{ card.title }}
+          @if (card.key === 'overallScore') {
+          <span class="info-wrap" (click)="$event.stopPropagation()">
+            <i class="bi bi-info-circle info-icon" tabindex="0" aria-label="How the overall result is decided"></i>
+            <span class="info-panel" role="tooltip">
+              <strong>How the overall result is decided</strong>
+              <ul>
+                <li><b class="text-danger">Fail</b> – document mismatch</li>
+                <li><b class="text-danger">Fail</b> – OCR confidence &lt; 80</li>
+                <li><b class="text-success">Pass</b> – crosscheck ≥ 80 and arithmetic not failed</li>
+                <li><b class="text-danger">Fail</b> – crosscheck &lt; 80 and arithmetic failed</li>
+                <li><b class="text-warning">Partial</b> – any other case (crosscheck &lt; 80 with arithmetic passed, or
+                  crosscheck ≥ 80 with arithmetic failed)</li>
+                <li class="text-muted">No crosscheck score: not rated</li>
+              </ul>
+            </span>
+          </span>
+          }
+        </span>
+        <div class="metric-parts">
+          @for (part of overallParts(card.key); track part.label) {
+          <div class="metric-part">
+            <span class="metric-value" [ngClass]="part.class">{{ part.value }}</span>
+            <span class="metric-title">{{ part.label }}</span>
+          </div>
+          }
+        </div>
+      </div>
+      } @else {
       <div class="card metric-card shadow-sm" [matTooltip]="overallHint(card.key)"
         [matTooltipDisabled]="!overallHint(card.key)">
         <i class="metric-icon" [class]="card.icon + ' ' + card.class"></i>
@@ -69,6 +103,18 @@
           <span class="metric-title">{{ card.title }}</span>
         </div>
       </div>
+      }
+    </ng-template>
+
+    <div class="metric-grid metric-grid--rows mb-2">
+      @for (card of overallCards; track card.key) {
+      <ng-container *ngTemplateOutlet="overallCardTpl; context: { $implicit: card }"></ng-container>
+      }
+    </div>
+
+    <div class="metric-grid metric-grid--rows mb-3">
+      @for (card of overallScoreCards; track card.key) {
+      <ng-container *ngTemplateOutlet="overallCardTpl; context: { $implicit: card }"></ng-container>
       }
     </div>
 
@@ -131,7 +177,8 @@
           <div class="table-loader-overlay"><mat-spinner diameter="40"></mat-spinner></div>
           }
 
-          <table mat-table matSort (matSortChange)="onSort($event)" [dataSource]="rows()" class="mat-elevation-z1 w-100 mat-elevation-z0 bordered-mat-table">
+          <table mat-table matSort (matSortChange)="onSort($event)" [dataSource]="rows()"
+            class="mat-elevation-z1 w-100 mat-elevation-z0 bordered-mat-table">
             <ng-container matColumnDef="select">
               <th mat-header-cell *matHeaderCellDef style="width: 40px">
                 <mat-checkbox aria-label="Select all queueable files on this page" [checked]="allPageSelected()"
@@ -144,15 +191,11 @@
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="state">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>State</th>
-              <td mat-cell *matCellDef="let row">{{ row.stateName }}</td>
-            </ng-container>
-
             <ng-container matColumnDef="city">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>City</th>
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 260px; min-width: 260px">City</th>
               <td mat-cell *matCellDef="let row">
                 <strong>{{ row.ulbCode }}</strong> <br />{{ row.ulbName }}
+                <br /><small class="text-muted">{{ row.stateName }}</small>
               </td>
             </ng-container>
 
@@ -206,7 +249,7 @@
             </ng-container>
 
             <ng-container matColumnDef="status">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Status</th>
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Job status</th>
               <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
                 <div class="split-half">
                   <span class="badge" [ngClass]="'status-' + row.digitization.status"
@@ -226,7 +269,8 @@
                     {{ row.afsDigitization?.status || 'not-digitized' }}
                   </span>
                   @if (row.afsExcelUrlSigned) {
-                  <a [href]="row.afsExcelUrlSigned" target="_blank" rel="noopener" matTooltip="Download digitized Excel">
+                  <a [href]="row.afsExcelUrlSigned" target="_blank" rel="noopener"
+                    matTooltip="Download digitized Excel">
                     <i class="bi bi-file-earmark-excel fs-5 text-success align-middle"></i>
                   </a>
                   }
@@ -236,11 +280,15 @@
             </ng-container>
 
             <ng-container matColumnDef="digitizedAt">
-              <th class="fw-bold text-center" mat-header-cell mat-sort-header="digitizedAt" start="desc" *matHeaderCellDef>Digitized at</th>
+              <th class="fw-bold text-center" mat-header-cell mat-sort-header="digitizedAt" start="desc"
+                *matHeaderCellDef>Digitized at</th>
               <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
                 <div class="split-half">
                   @if (row.digitization.digitizedAt) {
                   {{ row.digitization.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
+                  @if (row.digitization.elapsedMs != null) {
+                  <br /><small class="text-muted">{{ formatElapsed(row.digitization.elapsedMs) }}</small>
+                  }
                   } @else {
                   <span class="text-muted">–</span>
                   }
@@ -249,6 +297,9 @@
                 <div class="split-half split-bottom">
                   @if (row.afsDigitization?.digitizedAt) {
                   {{ row.afsDigitization?.digitizedAt | date: 'dd MMM yyyy, hh:mm a' }}
+                  @if (row.afsDigitization?.elapsedMs != null) {
+                  <br /><small class="text-muted">{{ formatElapsed(row.afsDigitization?.elapsedMs) }}</small>
+                  }
                   } @else {
                   <span class="text-muted">–</span>
                   }
@@ -257,43 +308,35 @@
               </td>
             </ng-container>
 
-            <ng-container matColumnDef="elapsed">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Elapsed time</th>
+            <ng-container matColumnDef="scores">
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>Scores</th>
               <td mat-cell *matCellDef="let row" class="text-center nowrap-cell" [class.split-cell]="!!row.afsPdfUrl">
                 <div class="split-half">
-                  @if (row.digitization.elapsedMs != null) {
-                  {{ formatElapsed(row.digitization.elapsedMs) }}
-                  } @else {
-                  <span class="text-muted">–</span>
-                  }
+                  <ng-container *ngTemplateOutlet="scoresTpl; context: { $implicit: row.digitization }"></ng-container>
                 </div>
                 @if (row.afsPdfUrl) {
                 <div class="split-half split-bottom">
-                  @if (row.afsDigitization?.elapsedMs != null) {
-                  {{ formatElapsed(row.afsDigitization?.elapsedMs) }}
-                  } @else {
-                  <span class="text-muted">–</span>
-                  }
+                  <ng-container *ngTemplateOutlet="scoresTpl; context: { $implicit: row.afsDigitization }"></ng-container>
                 </div>
                 }
               </td>
             </ng-container>
 
             <ng-container matColumnDef="contents">
-              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef>What the file contains</th>
+              <th class="fw-bold text-center" mat-header-cell *matHeaderCellDef style="width: 180px; max-width: 180px">What the file contains</th>
               <td mat-cell *matCellDef="let row" [class.split-cell]="!!row.afsPdfUrl">
                 <div class="split-half split-start">
                   @if (row.digitization.isLegacy) {
                   <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
                   } @else if (row.digitization.status === 'digitized') {
-                  <span>
-                  @for (seg of row.digitization.segments; track $index) {
-                  <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
-                    {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
-                  </span>
-                  } @empty {
-                  <span class="text-muted">Nothing identified</span>
-                  }
+                  <span class="contents-clip" [matTooltip]="segmentsSummary(row.digitization.segments)">
+                    @for (seg of row.digitization.segments; track $index) {
+                    <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
+                      {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
+                    </span>
+                    } @empty {
+                    <span class="text-muted">Nothing identified</span>
+                    }
                   </span>
                   } @else {
                   <span class="text-muted">–</span>
@@ -304,14 +347,14 @@
                   @if (row.afsDigitization?.isLegacy) {
                   <span class="text-muted" matTooltip="Digitized by the old flow; contents not analysed">Old flow</span>
                   } @else if (row.afsDigitization?.status === 'digitized') {
-                  <span>
-                  @for (seg of row.afsDigitization?.segments; track $index) {
-                  <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
-                    {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
-                  </span>
-                  } @empty {
-                  <span class="text-muted">Nothing identified</span>
-                  }
+                  <span class="contents-clip" [matTooltip]="segmentsSummary(row.afsDigitization?.segments)">
+                    @for (seg of row.afsDigitization?.segments; track $index) {
+                    <span class="chip" [class.chip-duplicate]="seg.isDuplicate" [matTooltip]="seg.title || ''">
+                      {{ docLabel(seg.docType) }} · {{ pageRange(seg.startPage, seg.endPage) }}
+                    </span>
+                    } @empty {
+                    <span class="text-muted">Nothing identified</span>
+                    }
                   </span>
                   } @else {
                   <span class="text-muted">–</span>
@@ -334,7 +377,7 @@
                     @if (row.digitization.isConsolidated) {
                     <span class="badge bg-primary me-1">Consolidated</span>
                     }
-                    @if (row.digitization.isMismatch) {
+                    @if (row.digitization.scores?.isMismatch) {
                     <span class="badge bg-danger"
                       [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
                     }
@@ -345,7 +388,7 @@
                   @if (row.afsDigitization?.isConsolidated) {
                   <span class="badge bg-primary me-1">Consolidated</span>
                   }
-                  @if (row.afsDigitization?.isMismatch) {
+                  @if (row.afsDigitization?.scores?.isMismatch) {
                   <span class="badge bg-danger"
                     [matTooltip]="'Uploaded as ' + docLabel(row.docType) + ' but it is not in the file'">Mismatch</span>
                   }
@@ -387,6 +430,46 @@
         <mat-paginator [length]="totalCount()" [pageIndex]="pageIndex" [pageSize]="pageSize"
           [pageSizeOptions]="[10, 25, 50, 100]" (page)="onPage($event)" showFirstLastButtons></mat-paginator>
       </mat-card>
+
+      <!-- OCR confidence / Gemini accuracy / arithmetic score of one job; "–" when that step gave none -->
+      <ng-template #scoresTpl let-info>
+        @if (info?.status === 'digitized' && info?.scores; as s) {
+        <div class="score-list">
+          @if (s.ocrConfidenceScore != null) {
+          <div matTooltip="OCR confidence: how sure Textract was about the text it read">
+            <span class="score-label">Textract confidence</span>
+            <span [ngClass]="scoreClass(s.ocrConfidenceScore)">{{ formatScore(s.ocrConfidenceScore) }}</span>
+          </div>
+          }
+          <div matTooltip="Whether the uploaded document type is found in the file">
+            <span class="score-label">Doc match</span>
+            @if (s.isMismatch) {
+            <span class="badge assess assess-fail">No</span>
+            } @else { <span class="badge assess assess-pass">Yes</span> }
+          </div>
+          <div matTooltip="Share of extracted values that match the source PDF (Gemini cross-check)">
+            <span class="score-label">Confidence</span>
+            <span [ngClass]="scoreClass(s.accuracyScore)">{{ formatScore(s.accuracyScore) }}</span>
+          </div>
+          <div matTooltip="Whether the totals and sums in the statement add up">
+            <span class="score-label">Accuracy</span>
+            @if (s.arithmeticAssessment) {
+            <span class="badge assess" [ngClass]="assessClass(s.arithmeticAssessment)">{{
+              assessLabel(s.arithmeticAssessment) }}</span>
+            } @else { <span class="text-muted">–</span> }
+          </div>
+          <div matTooltip="Overall result: fails on a document mismatch or low OCR confidence, otherwise from the crosscheck and arithmetic results">
+            <span class="score-label">Overall</span>
+            @if (s.overallAssessment) {
+            <span class="badge assess" [ngClass]="assessClass(s.overallAssessment)">{{
+              assessLabel(s.overallAssessment) }}</span>
+            } @else { <span class="text-muted">–</span> }
+          </div>
+        </div>
+        } @else {
+        <span class="text-muted">–</span>
+        }
+      </ng-template>
 
       <!-- One input for every row: the menu item picks the row, then opens it -->
       <input #afsFileInput type="file" accept="application/pdf" class="d-none" (change)="onFileSelected($event)" />
@@ -445,12 +528,15 @@
             <span>{{ row.afsPdfUrl ? 'Re-upload AFS PDF' : 'Upload AFS PDF' }}</span>
           </button>
           <!-- Log and job only once the uploaded PDF has been digitized -->
-          <button mat-menu-item type="button" [disabled]="row.afsDigitization?.status !== 'digitized' || !row.afsDigitization?.jobId"
+          <button mat-menu-item type="button"
+            [disabled]="row.afsDigitization?.status !== 'digitized' || !row.afsDigitization?.jobId"
             (click)="viewLog(row, 'afs')">
             <mat-icon>article</mat-icon>
-            <span>{{ row.afsDigitization?.status === 'digitized' && row.afsDigitization?.jobId ? 'View log' : 'No job yet' }}</span>
+            <span>{{ row.afsDigitization?.status === 'digitized' && row.afsDigitization?.jobId ? 'View log' : 'No job
+              yet' }}</span>
           </button>
-          @if (row.afsDigitization?.status === 'digitized' && !row.afsDigitization?.isLegacy && jobUrl(row, 'afs'); as url) {
+          @if (row.afsDigitization?.status === 'digitized' && !row.afsDigitization?.isLegacy && jobUrl(row, 'afs'); as
+          url) {
           <a mat-menu-item [href]="url" target="_blank" rel="noopener">
             <mat-icon>open_in_new</mat-icon>
             <span>View job</span>

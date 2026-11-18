@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
@@ -20,7 +23,14 @@ const detail: ClaimLetterDetail = {
   status: 15,
   statusLabel: 'Under Review by SO',
   signedClaimFile: { name: 'AP-CL-003.pdf', url: 'https://signed/file', sizeKb: 67 },
-  summary: { claimAmountReceived: 1_880_000_000, totalCities: 10, exemptionsApplied: 2 },
+  summary: {
+    claimAmountReceived: 1_880_000_000,
+    totalCities: 10,
+    exemptionsApplied: 2,
+    exemptionAmount: 310_000_000,
+    submittedClaimAmount: 4_200_000_000,
+    submittedUlbs: 24,
+  },
   returnDetails: null,
   returnedUlbCount: 0,
   pendingExemptionCount: 0,
@@ -81,6 +91,7 @@ describe('ClaimLetterDetailComponent', () => {
       imports: [ClaimLetterDetailComponent],
       providers: [
         provideRouter([]),
+        provideNoopAnimations(),
         { provide: ClaimsSubmissionService, useValue: service },
         {
           provide: ActivatedRoute,
@@ -98,28 +109,97 @@ describe('ClaimLetterDetailComponent', () => {
     }).compileComponents();
   });
 
-  it('shows the title, the State-signed document with a View PDF link, and the headline tiles', () => {
+  it('shows the title with the letter status and the two review bars', () => {
     const host = create();
 
     expect(service.getClaimLetter).toHaveBeenCalledWith('c3');
-    expect(host.querySelector('h1')?.textContent).toContain('AP-CL-003 — Andhra Pradesh');
-    expect(host.querySelector('.cl-doc')?.textContent).toContain('AP-CL-003.pdf');
-    const pdf = host.querySelector('.cl-doc a') as HTMLAnchorElement;
-    expect(pdf.textContent).toContain('View PDF');
-    expect(pdf.getAttribute('href')).toBe('https://signed/file');
-    const tiles = host.querySelector('.cl-tiles')?.textContent ?? '';
-    expect(tiles).toContain('₹188 cr');
-    expect(tiles).toContain('Total cities');
-    expect(tiles).toContain('Exemptions applied');
+    const title = host.querySelector('h1');
+    expect(title?.textContent).toContain('AP-CL-003 — Andhra Pradesh');
+    expect(title?.querySelector('.cs-badge')).not.toBeNull();
+    const titles = Array.from(host.querySelectorAll('.cl-review__title')).map((t) => t.textContent?.trim());
+    expect(titles).toEqual(['Claim Letter', 'State Forms']);
+    // The letter bar shows when it was signed and the file; the signer is on hover, and it no longer repeats
+    // the ULB count or the amount.
+    const letterMeta = host.querySelector('.cl-review__row--letter .cl-review__meta') as HTMLElement;
+    expect(letterMeta.textContent).toContain('Signed');
+    expect(letterMeta.textContent).toContain('AP-CL-003.pdf');
+    expect(letterMeta.textContent).not.toContain('₹');
+    const tooltip = (selector: string) =>
+      fixture.debugElement.query(By.css(selector)).injector.get(MatTooltip).message;
+    expect(tooltip('.cl-review__signed')).toBe('Signed by Andhra Pradesh State DMA');
+    // The forms bar counts the five State forms (named on hover) and says they are read-only.
+    const formsMeta = host.querySelector('.cl-review__row--forms .cl-review__meta') as HTMLElement;
+    expect(formsMeta.textContent).toContain('5 conditions');
+    expect(formsMeta.textContent).toContain('Read-only');
+    expect(tooltip('.cl-review__forms')).toBe(
+      'SFC Status, Elected Body, ULB-wise Allocation, FC Unspent, GTC',
+    );
   });
 
-  it('has no View PDF link when the State attached no signed letter', () => {
+  it('shows the four headline cards above the review bars, Grant Released last', () => {
+    const host = create();
+
+    const labels = Array.from(host.querySelectorAll('.cl-stats .cl-stat__label')).map((l) => l.textContent?.trim());
+    expect(labels).toEqual(['Amount Claimed', 'Claims Submitted', 'Exemption Requested', 'Grant Released']);
+    const stats = host.querySelector('.cl-stats') as HTMLElement;
+    const review = host.querySelector('.cl-review') as HTMLElement;
+    expect(stats.compareDocumentPosition(review) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // Figures come from the letter (they count up on screen, so they are read from the model, not the DOM).
+    expect(fixture.componentInstance.stats().map((s) => [s.amount, s.ulbs])).toEqual([
+      [1_880_000_000, 10],
+      [4_200_000_000, 24],
+      [310_000_000, 2],
+      [null, null],
+    ]);
+  });
+
+  it('shows Grant Released as "Coming soon" until the release step exists', () => {
+    const host = create();
+
+    const released = Array.from(host.querySelectorAll<HTMLElement>('.cl-stats .cl-stat')).at(-1) as HTMLElement;
+    // Same order as the dashboard's stat cards: the value, then the label.
+    expect(released.querySelector('.cl-stat__value')?.textContent).toContain('Coming soon');
+    expect(released.querySelector('.cl-stat__value + .cl-stat__label')?.textContent).toContain('Grant Released');
+  });
+
+  it('shows "None" in grey, not ₹0, on a card with nothing in it', () => {
+    service.getClaimLetter.and.returnValue(
+      of({ ...detail, summary: { ...detail.summary, exemptionAmount: 0, exemptionsApplied: 0 } }),
+    );
+
+    const host = create();
+
+    const exemption = Array.from(host.querySelectorAll<HTMLElement>('.cl-stats .cl-stat'))[2];
+    expect(exemption.classList).toContain('cl-stat--empty');
+    expect(exemption.querySelector('.cl-stat__value')?.textContent).toContain('None');
+    expect(exemption.querySelector('.cl-stat__note')?.textContent).toContain('No exemption requests');
+  });
+
+  it('offers the signed Claim Letter in a new tab and the read-only State Forms', () => {
+    const host = create();
+
+    const letter = host.querySelector('.cl-review__row--letter .cl-review__letter') as HTMLAnchorElement;
+    expect(letter.textContent).toContain('View letter');
+    expect(letter.getAttribute('href')).toBe('https://signed/file');
+    expect(letter.getAttribute('target')).toBe('_blank');
+    expect(letter.querySelector('i.bi-eye')).not.toBeNull();
+
+    const forms = host.querySelector('.cl-review__row--forms .cl-review__forms-link') as HTMLAnchorElement;
+    expect(forms.textContent).toContain('View forms');
+    expect(forms.getAttribute('href')).toContain('review-state-submissions/s1');
+    expect(forms.getAttribute('aria-label')).toBe('View State forms (read-only)');
+    expect(forms.querySelector('i.bi-eye')).not.toBeNull();
+  });
+
+  it('has no Claim Letter button when the State attached no signed letter, but State Forms stays', () => {
     service.getClaimLetter.and.returnValue(of({ ...detail, signedClaimFile: null }));
 
     const host = create();
 
-    expect(host.querySelector('.cl-doc')?.textContent).toContain('No signed claim letter attached');
-    expect(host.querySelector('.cl-doc a')).toBeNull();
+    expect(host.querySelector('.cl-review__row--letter')?.textContent).toContain('No signed claim letter attached');
+    expect(host.querySelector('.cl-review__letter')).toBeNull();
+    expect(host.querySelector('.cl-review__forms-link')).not.toBeNull();
   });
 
   it('lists the ULBs with their share in crore and an eligibility badge, numbered from 1', () => {
@@ -130,7 +210,7 @@ describe('ClaimLetterDetailComponent', () => {
     expect(rows[0].textContent).toContain('₹112.3 cr');
     expect(rows[0].textContent).toContain('Eligible');
     expect(rows[0].querySelector('.cs-badge--bad')).toBeNull();
-    expect(rows[1].textContent).toContain('Eligible via exemption');
+    expect(rows[1].textContent).toContain('Exemption sought');
     expect(rows[0].querySelectorAll('td')[0].textContent?.trim()).toBe('1');
   });
 
@@ -179,6 +259,19 @@ describe('ClaimLetterDetailComponent', () => {
       expect(host.querySelector('.cl-hint__counts')?.textContent).toContain('0 of 10 ULBs marked for return');
     });
 
+    it('says what happens to an unmarked ULB, and flags a marked one and the count in red', () => {
+      service.getClaimLetter.and.returnValue(of({ ...detail, returnedUlbCount: 1 }));
+      service.getClaimLetterUlbs.and.returnValue(returnedRow());
+      const host = create();
+
+      expect(host.querySelector('#cl-ulbs-heading')?.textContent).toContain('ULBs in this claim letter');
+      const [marked, unmarked] = Array.from(host.querySelectorAll<HTMLElement>('tbody tr'));
+      expect(marked.classList).toContain('cl-row--returned');
+      expect(marked.querySelector('.cl-icon-btn--active')).not.toBeNull();
+      expect(unmarked.querySelector('.cl-pending')?.textContent).toContain('Approves with the letter');
+      expect(host.querySelector('.cl-hint__counts')?.classList).toContain('cl-hint__counts--some');
+    });
+
     it('clears a return mark, updating the row and the count without reloading', () => {
       service.getClaimLetter.and.returnValue(of({ ...detail, returnedUlbCount: 1 }));
       service.getClaimLetterUlbs.and.returnValue(returnedRow());
@@ -220,11 +313,13 @@ describe('ClaimLetterDetailComponent', () => {
       actionButton(host, 'Approve').click();
 
       expect(confirm).toHaveBeenCalledWith(
-        jasmine.objectContaining({ message: jasmine.stringContaining('2 exemption request(s) still under MoHUA review') }),
+        jasmine.objectContaining({
+          message: jasmine.stringContaining('2 exemption request(s) still under MoHUA review'),
+        }),
       );
     });
 
-    it("opens the return dialog for that one ULB from its return icon", () => {
+    it('opens the return dialog for that one ULB from its return icon', () => {
       const host = create();
 
       returnIcon(host, 1).click();
@@ -243,13 +338,13 @@ describe('ClaimLetterDetailComponent', () => {
       const row = host.querySelectorAll('tbody tr')[0].textContent ?? '';
       expect(row).toContain('Returned: PFMS Bank Account, Elected Bodies — Wrong IFSC');
       expect(actionButton(host, 'Approve').disabled).toBeTrue();
-      expect(actionButton(host, 'Return for correction').textContent).toContain('(1)');
+      expect(actionButton(host, 'Return Claim Letter').textContent).toContain('(1)');
     });
 
-    it('opens the letter-level return with the State-wide items from Return for correction', () => {
+    it('opens the letter-level return with the State-wide items from Return Claim Letter', () => {
       const host = create();
 
-      actionButton(host, 'Return for correction').click();
+      actionButton(host, 'Return Claim Letter').click();
       fixture.detectChanges();
 
       const dialog = document.querySelector('app-mohua-return-claim-letter-dialog');
@@ -284,7 +379,10 @@ describe('ClaimLetterDetailComponent', () => {
       fixture.detectChanges();
 
       expect(confirmDialog.confirm).toHaveBeenCalledWith(
-        jasmine.objectContaining({ title: 'Approve this claim letter?', message: jasmine.stringContaining('AP-CL-003') }),
+        jasmine.objectContaining({
+          title: 'Approve this claim letter?',
+          message: jasmine.stringContaining('AP-CL-003'),
+        }),
       );
       expect(service.approveClaimLetter).toHaveBeenCalledOnceWith('c3', 3);
       expect(snackbar).toHaveBeenCalledWith('Claim letter approved.', 'snackbar-success');
@@ -342,7 +440,9 @@ describe('ClaimLetterDetailComponent', () => {
   }));
 
   it('pages through the ULBs', () => {
-    service.getClaimLetterUlbs.and.returnValue(of({ ...ulbs, pagination: { page: 1, limit: 20, total: 45, totalPages: 3 } }));
+    service.getClaimLetterUlbs.and.returnValue(
+      of({ ...ulbs, pagination: { page: 1, limit: 20, total: 45, totalPages: 3 } }),
+    );
     const host = create();
     service.getClaimLetterUlbs.calls.reset();
 

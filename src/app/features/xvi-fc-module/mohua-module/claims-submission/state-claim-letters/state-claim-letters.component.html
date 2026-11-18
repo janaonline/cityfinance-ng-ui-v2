@@ -8,71 +8,227 @@
   } @else if (error()) {
     <div class="cs-state cs-error" role="alert">
       <p>{{ error() }}</p>
-      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
     </div>
   } @else {
     @if (data(); as d) {
-    <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
-    <p class="cs-subtitle">All claim letters submitted so far for this state, Installment {{ installment }}.</p>
-
-    <div class="cs-table-wrap">
-      <table class="cs-table">
-        <caption class="visually-hidden">
-          Claim letters for {{ d.state.name }}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Claim letter #</th>
-            <th scope="col">Received on</th>
-            <th scope="col" class="num">ULBs</th>
-            <th scope="col" class="num">Amount</th>
-            <th scope="col">Status</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (letter of d.claimLetters; track letter.id) {
-            <tr>
-              <td class="strong">{{ letter.number }}</td>
-              <td>{{ formatDate(letter.receivedOn) }}</td>
-              <td class="num">{{ letter.ulbCount }}</td>
-              <td class="num">{{ formatCrore(letter.amount) }}</td>
-              <td>
-                <span class="cs-badge" [class]="badgeClass(letter.status)">{{ statusLabel(letter.status, letter.statusLabel) }}</span>
-              </td>
-              <td>
-                <a
-                  class="cs-btn"
-                  [routerLink]="['claims-submission', stateId, 'letter', letter.id]"
-                  [relativeTo]="mohuaRoute"
-                >
-                  View
-                </a>
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td colspan="6" class="cs-state">No claim letters have been submitted for this state yet.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    @if (d.claimLetters.length > 0) {
-      <p class="cl-band" aria-label="Claim summary">
-        <span class="cl-band__item">
-          <strong>{{ d.summary.claimedUlbs }} ULBs claimed</strong> / {{ d.summary.pendingUlbs }} pending
-        </span>
-        <span class="cl-band__item cl-band__item--good">{{ d.summary.approvedUlbs }} approved</span>
-        <span class="cl-band__item cl-band__item--review">{{ d.summary.underReviewUlbs }} under review</span>
-        <span class="cl-band__item cl-band__item--bad">{{ d.summary.returnedUlbs }} returned</span>
-        <span class="cl-band__item">
-          <strong>{{ formatCrore(d.summary.amountClaimed) }} claimed</strong> /
-          {{ formatCrore(d.summary.balance) }} balance
-        </span>
+      <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
+      <p class="cs-subtitle">
+        All claim letters submitted by the State for the {{ installment === 1 ? 'first' : 'second' }} instalment.
       </p>
-    }
+
+      <!-- The State's claim progress as two rings, in the MoHUA dashboard's ring style. -->
+      @if (d.claimLetters.length > 0) {
+        @if (progress(); as p) {
+          <section class="cl-progress row g-3 mb-3" aria-label="Claim progress">
+            <!-- ULBs: approved and under review, out of the ULBs the State can claim. -->
+            <div class="col-12 col-md-6" appReveal [revealDelay]="0">
+              <mat-card appearance="outlined" class="cs-panel cl-ring-card h-100">
+                <div class="d-flex align-items-center gap-3">
+                  <div
+                    class="cl-ring"
+                    role="img"
+                    [attr.aria-label]="
+                      p.ulbs.claimed +
+                      ' of ' +
+                      p.ulbs.total +
+                      ' ULBs claimed: ' +
+                      p.ulbs.approved +
+                      ' approved, ' +
+                      p.ulbs.underReview +
+                      ' under review, ' +
+                      p.ulbs.pending +
+                      ' pending'
+                    "
+                  >
+                    <svg viewBox="0 0 42 42" aria-hidden="true">
+                      <circle class="cl-ring__bg" cx="21" cy="21" r="15.915" />
+                      @if (p.ulbs.approvedPct > 0) {
+                        <circle
+                          class="cl-ring__seg cl-ring__seg--good"
+                          cx="21"
+                          cy="21"
+                          r="15.915"
+                          [style.--p]="p.ulbs.approvedPct"
+                        />
+                      }
+                      @if (p.ulbs.underReviewPct > 0) {
+                        <circle
+                          class="cl-ring__seg cl-ring__seg--review"
+                          cx="21"
+                          cy="21"
+                          r="15.915"
+                          [style.--p]="p.ulbs.underReviewPct"
+                          [style.--s]="p.ulbs.approvedPct"
+                        />
+                      }
+                    </svg>
+                    <span
+                      class="cl-ring__center d-flex flex-column align-items-center justify-content-center"
+                      aria-hidden="true"
+                    >
+                      <strong class="cs-accent" [appCountUp]="p.ulbs.claimedPct + '%'"></strong>
+                      <small class="text-body-secondary">claimed</small>
+                    </span>
+                  </div>
+                  <div class="d-flex flex-column gap-1">
+                    <h2 class="cl-ring-card__name small fw-bold mb-0">
+                      <i class="bi bi-buildings cs-accent" aria-hidden="true"></i> ULBs
+                    </h2>
+                    <span class="cl-figure fw-bold cs-accent">
+                      <span [appCountUp]="'' + p.ulbs.claimed"></span> of {{ p.ulbs.total }} claimed
+                    </span>
+                    <ul class="cl-legend list-inline small mb-0">
+                      <li class="list-inline-item">
+                        <span class="cl-dot cl-dot--good" aria-hidden="true"></span>
+                        <strong>{{ p.ulbs.approved }}</strong> Approved
+                      </li>
+                      <li class="list-inline-item">
+                        <span class="cl-dot cl-dot--review" aria-hidden="true"></span>
+                        <strong>{{ p.ulbs.underReview }}</strong> Under review
+                      </li>
+                      <li class="list-inline-item">
+                        <span class="cl-dot" aria-hidden="true"></span> <strong>{{ p.ulbs.pending }}</strong> Pending
+                      </li>
+                    </ul>
+                    @if (p.ulbs.returned > 0) {
+                      <span class="cl-ring-card__note small text-body-secondary">
+                        <i class="bi bi-arrow-return-left text-danger" aria-hidden="true"></i>
+                        {{ p.ulbs.returned }} {{ p.ulbs.returned === 1 ? 'ULB was' : 'ULBs were' }} returned earlier
+                      </span>
+                    }
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+
+            <!-- Amount: claimed so far, out of the installment allocation. -->
+            <div class="col-12 col-md-6" appReveal [revealDelay]="120">
+              <mat-card appearance="outlined" class="cs-panel cl-ring-card h-100">
+                <div class="d-flex align-items-center gap-3">
+                  <div
+                    class="cl-ring"
+                    role="img"
+                    [attr.aria-label]="
+                      formatCrore(p.amount.claimed) +
+                      ' claimed of ' +
+                      formatCrore(p.amount.total) +
+                      ', ' +
+                      formatCrore(p.amount.balance) +
+                      ' balance'
+                    "
+                  >
+                    <svg viewBox="0 0 42 42" aria-hidden="true">
+                      <circle class="cl-ring__bg" cx="21" cy="21" r="15.915" />
+                      @if (p.amount.claimedPct > 0) {
+                        <circle class="cl-ring__seg" cx="21" cy="21" r="15.915" [style.--p]="p.amount.claimedPct" />
+                      }
+                    </svg>
+                    <span
+                      class="cl-ring__center d-flex flex-column align-items-center justify-content-center"
+                      aria-hidden="true"
+                    >
+                      <strong class="cs-accent" [appCountUp]="p.amount.claimedPct + '%'"></strong>
+                      <small class="text-body-secondary">claimed</small>
+                    </span>
+                  </div>
+                  <div class="d-flex flex-column gap-1">
+                    <h2 class="cl-ring-card__name small fw-bold mb-0">
+                      <i class="bi bi-currency-rupee cs-accent" aria-hidden="true"></i> Amount
+                    </h2>
+                    <span class="cl-figure fw-bold cs-accent">
+                      <span [appCountUp]="formatCrore(p.amount.claimed)"></span> of {{ formatCrore(p.amount.total) }}
+                    </span>
+                    <ul class="cl-legend list-inline small mb-0">
+                      <li class="list-inline-item">
+                        <span class="cl-dot cl-dot--teal" aria-hidden="true"></span>
+                        <strong>{{ formatCrore(p.amount.claimed) }}</strong> Claimed
+                      </li>
+                      <li class="list-inline-item">
+                        <span class="cl-dot" aria-hidden="true"></span>
+                        <strong>{{ formatCrore(p.amount.balance) }}</strong> Balance
+                      </li>
+                    </ul>
+                    <span class="cl-ring-card__note small text-body-secondary"
+                      >Under review or acknowledged, of this instalment</span
+                    >
+                  </div>
+                </div>
+              </mat-card>
+            </div>
+          </section>
+        }
+      }
+
+      <!-- The letters: one card per letter, newest first (the API's order). -->
+      <mat-card appearance="outlined" class="cs-panel cl-letters" aria-labelledby="cl-letters-heading">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="cs-icon" aria-hidden="true"><i class="bi bi-envelope-paper"></i></span>
+          <div class="flex-grow-1">
+            <h2 id="cl-letters-heading" class="cl-heading fw-bold mb-0">Claim letters</h2>
+            <p class="small text-body-secondary mb-0">
+              Open a letter to review its ULBs, State forms and the signed letter.
+            </p>
+          </div>
+          <span class="cl-letters__count badge rounded-pill cs-tint">
+            <i class="bi bi-files" aria-hidden="true"></i>
+            {{ d.claimLetters.length }} {{ d.claimLetters.length === 1 ? 'letter' : 'letters' }}
+          </span>
+        </div>
+
+        @if (d.claimLetters.length) {
+          <ul
+            class="cl-letter-grid row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-2 list-unstyled mb-0"
+            [attr.aria-label]="'Claim letters for ' + d.state.name"
+          >
+            @for (letter of d.claimLetters; track letter.id; let i = $index) {
+              <li class="col cs-row-in" [style.--i]="i">
+                <mat-card
+                  appearance="outlined"
+                  class="cs-panel cl-letter-card h-100 d-flex flex-column align-items-center gap-1 text-center"
+                >
+                  <span class="cl-letter-card__badge cs-icon" aria-hidden="true">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span class="cl-letter-card__stamp"><i class="bi {{ stampIcon(letter.status) }}"></i></span>
+                  </span>
+                  <h3 class="cl-letter-card__no small fw-bold mb-0 mt-1 text-break">{{ letter.number }}</h3>
+                  <span class="cs-badge cl-letter-card__ribbon" [class]="badgeClass(letter.status)">
+                    <i class="bi {{ statusIcon(letter.status) }}" aria-hidden="true"></i>
+                    {{ statusLabel(letter.status, letter.statusLabel) }}
+                  </span>
+                  <p class="small text-body-secondary mb-0">
+                    <i class="bi bi-calendar-event" aria-hidden="true"></i> Received {{ formatDate(letter.receivedOn) }}
+                  </p>
+                  <dl class="cl-letter-card__facts row g-0 w-100 my-1">
+                    <div class="col">
+                      <dt>ULBs Included</dt>
+                      <dd class="fw-bold cs-accent mb-0">{{ letter.ulbCount }}</dd>
+                    </div>
+                    <div class="col">
+                      <dt>Amount Claimed</dt>
+                      <dd class="fw-bold cs-accent mb-0">{{ formatCrore(letter.amount) }}</dd>
+                    </div>
+                  </dl>
+                  <a
+                    mat-stroked-button
+                    class="cs-view-btn mt-auto"
+                    [routerLink]="['claims-submission', stateId, 'letter', letter.id]"
+                    [relativeTo]="mohuaRoute"
+                    [attr.aria-label]="'View claim letter ' + letter.number"
+                  >
+                    <i class="bi bi-eye" aria-hidden="true"></i> View
+                  </a>
+                </mat-card>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="cl-letters__empty text-center text-body-secondary py-4 mb-0">
+            <i class="bi bi-envelope-open" aria-hidden="true"></i> No claim letters have been submitted for this state
+            yet.
+          </p>
+        }
+      </mat-card>
     }
   }
 </div>

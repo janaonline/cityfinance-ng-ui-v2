@@ -4,7 +4,7 @@
       <i class="bi bi-check-circle osu-icon" aria-hidden="true"></i>
       <h2 mat-dialog-title class="osu-title">OM Generated Successfully</h2>
       <p class="osu-lead">
-        <strong>{{ data.refNo }}</strong> has been created for {{ data.ulbCount }} cities. The PDF includes the claim letter's annexures.
+        <strong>{{ data.refNo }}</strong> has been created for {{ data.ulbCount }} {{ data.ulbCount === 1 ? 'ULB' : 'ULBs' }}. The PDF includes the claim letter's annexures.
       </p>
       <p class="osu-download" role="status"><i class="bi bi-download" aria-hidden="true"></i> Your download has started.</p>
     </div>
