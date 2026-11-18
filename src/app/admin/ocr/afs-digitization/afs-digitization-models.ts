@@ -250,8 +250,29 @@ export interface DigitizationCostBreakdown {
   total: number | null;
 }
 
+export interface DigitizationAssessmentCounts {
+  passed: number;
+  partial: number;
+  failed: number;
+  not_applicable: number;
+}
+
+export interface DigitizationListSummary {
+  total: number;
+  digitized: number;
+  failed: number;
+  avg_confidence: number | null;
+  confidence_gte_80: number;
+  confidence_lt_80: number;
+  doc_match: number;
+  doc_mismatch: number;
+  arithmetic: DigitizationAssessmentCounts;
+  overall: DigitizationAssessmentCounts;
+}
+
 export interface DigitizationJobsListResponse {
   jobs: DigitizationJobStatusResponse[];
+  summary?: DigitizationListSummary;
   total_cost_breakdown_inr?: DigitizationCostBreakdown;
   total_ocr_cost_inr?: number;
   total_gemini_cost_inr?: number;

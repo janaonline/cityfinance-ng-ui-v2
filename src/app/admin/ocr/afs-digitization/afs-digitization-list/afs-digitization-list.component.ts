@@ -12,7 +12,7 @@ import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
-import { DigitizationCostBreakdown, DigitizationJobStatusResponse } from '../afs-digitization-models';
+import { DigitizationCostBreakdown, DigitizationJobStatusResponse, DigitizationListSummary } from '../afs-digitization-models';
 
 interface DigitizationListRow {
   jobId: string;
@@ -140,6 +140,7 @@ export class AfsDigitizationListComponent implements OnInit {
   totalItems = 0;
   totalCostInr = 0;
   totalCostBreakdown: DigitizationCostBreakdown | null = null;
+  summary: DigitizationListSummary | null = null;
 
   readonly costSteps: { key: keyof DigitizationCostBreakdown; label: string }[] = [
     { key: 'ocr', label: 'OCR' },
@@ -443,12 +444,14 @@ export class AfsDigitizationListComponent implements OnInit {
           this.totalItems = response.total ?? this.dataSource.data.length;
           this.totalCostInr = response.total_cost_inr ?? 0;
           this.totalCostBreakdown = response.total_cost_breakdown_inr ?? null;
+          this.summary = response.summary ?? null;
         },
         error: (err) => {
           this.dataSource.data = [];
           this.totalItems = 0;
           this.totalCostInr = 0;
           this.totalCostBreakdown = null;
+          this.summary = null;
           this.utilityService.swalPopup(
             'Failed to load jobs',
             err?.error?.detail || err?.error?.message || 'Please try again.',
