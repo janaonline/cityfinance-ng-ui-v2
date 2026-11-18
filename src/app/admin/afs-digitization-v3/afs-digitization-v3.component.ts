@@ -695,7 +695,7 @@ export class AfsDigitizationV3Component implements OnInit {
     return score >= 95 ? 'score-good' : score >= 75 ? 'score-mid' : 'score-bad';
   }
 
-  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, UNVERIFIED) → grey */
+  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, SKIPPED, UNVERIFIED) → grey */
   assessClass(value: string | null | undefined): string {
     switch (value) {
       case 'PASS':
@@ -709,10 +709,11 @@ export class AfsDigitizationV3Component implements OnInit {
     }
   }
 
-  /** NOT_APPLICABLE → "N/A"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
+  /** NOT_APPLICABLE → "N/A", SKIPPED → "Skipped"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
   assessLabel(value: string | null | undefined): string {
     if (!value) return '–';
-    return value === 'NOT_APPLICABLE' ? 'N/A' : value;
+    if (value === 'NOT_APPLICABLE') return 'N/A';
+    return value === 'SKIPPED' ? 'Skipped' : value;
   }
 
   /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */
