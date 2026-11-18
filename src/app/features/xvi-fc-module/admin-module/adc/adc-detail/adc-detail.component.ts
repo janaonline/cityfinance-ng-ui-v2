@@ -9,16 +9,13 @@ import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../../shared/b
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { AdcService, IAdcDetail } from '../../../shared/adc/adc.service';
 import { AdcActionsMenuComponent } from '../adc-actions-menu/adc-actions-menu.component';
+import { AdcListNavigationState } from '../adc-url-params';
 import { AdcMembersTableComponent } from './adc-members-table/adc-members-table.component';
 import { AdcUlbsTableComponent } from './adc-ulbs-table/adc-ulbs-table.component';
 
 export type AdcDetailTab = 'members' | 'ulbs';
 const TABS: readonly AdcDetailTab[] = ['members', 'ulbs'];
 
-/** Navigation state the ADC list sets on its links, so "Back to ADCs" can return to the exact list view. */
-export interface AdcListNavigationState {
-  fromAdcList?: boolean;
-}
 
 /** Portal Admin's read-only view of one ADC: header, Members and ULBs tabs. Changes go through the actions menu. */
 @Component({
@@ -46,8 +43,8 @@ export class AdcDetailComponent implements OnInit {
   private readonly adcService = inject(AdcService);
 
   readonly adcId = this.route.snapshot.paramMap.get('id') ?? '';
-  /** Read once: switching tabs replaces the history entry and drops the navigation state. */
-  private readonly cameFromList = !!(this.location.getState() as AdcListNavigationState | null)?.fromAdcList;
+  /** The list's filters, sort and page when it linked here. Read once: switching tabs replaces the history entry and drops the state. */
+  private readonly listQuery = (this.location.getState() as AdcListNavigationState | null)?.adcListQuery;
 
   readonly detail = signal<IAdcDetail | null>(null);
   readonly status = signal<'loading' | 'ready' | 'error' | 'not-found'>('loading');
@@ -56,7 +53,7 @@ export class AdcDetailComponent implements OnInit {
   readonly membersVersion = signal(0);
 
   readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => [
-    { label: 'ADC', routerLink: ['..'] },
+    { label: 'ADC', routerLink: ['..'], queryParams: this.listQuery },
     { label: this.detail()?.name ?? 'ADC' },
   ]);
 
@@ -103,11 +100,5 @@ export class AdcDetailComponent implements OnInit {
 
   onDeleted(): void {
     void this.router.navigate(['..'], { relativeTo: this.route, replaceUrl: true });
-  }
-
-  /** Returns to the list exactly as it was (its filters, sort and page are in its URL), or opens it fresh. */
-  backToList(): void {
-    if (this.cameFromList) this.location.back();
-    else void this.router.navigate(['..'], { relativeTo: this.route });
   }
 }

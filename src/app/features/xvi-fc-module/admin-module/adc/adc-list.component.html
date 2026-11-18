@@ -84,7 +84,7 @@
               <th mat-header-cell *matHeaderCellDef mat-sort-header="ulbCount">ULBs</th>
               <td mat-cell *matCellDef="let row">
                 @if (row.ulbCount > 0) {
-                  <a [routerLink]="[row._id]" [queryParams]="{ tab: 'ulbs' }" [state]="{ fromAdcList: true }"
+                  <a [routerLink]="[row._id]" [queryParams]="{ tab: 'ulbs' }" [state]="linkState()"
                     [attr.aria-label]="row.ulbCount + ' ULBs of ' + row.name" data-test="ulb-count-link">{{ row.ulbCount }}</a>
                 } @else {
                   0
@@ -96,7 +96,7 @@
               <th mat-header-cell *matHeaderCellDef mat-sort-header="memberCount">Members</th>
               <td mat-cell *matCellDef="let row">
                 @if (row.memberCount > 0) {
-                  <a [routerLink]="[row._id]" [queryParams]="{ tab: 'members' }" [state]="{ fromAdcList: true }"
+                  <a [routerLink]="[row._id]" [queryParams]="{ tab: 'members' }" [state]="linkState()"
                     [attr.aria-label]="row.memberCount + ' members of ' + row.name"
                     data-test="member-count-link">{{ row.memberCount }}</a>
                 } @else {
@@ -126,7 +126,7 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef class="text-end">Actions</th>
               <td mat-cell *matCellDef="let row" class="text-end text-nowrap">
-                <a class="btn btn-outline-secondary btn-sm" [routerLink]="[row._id]" [state]="{ fromAdcList: true }"
+                <a class="btn btn-outline-secondary btn-sm" [routerLink]="[row._id]" [state]="linkState()"
                   [attr.aria-label]="'View ' + row.name" data-test="view">View</a>
                 <app-adc-actions-menu [adc]="row" (changed)="loadRows()" (deleted)="loadRows()" />
               </td>
