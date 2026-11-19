@@ -16,7 +16,7 @@ import { UploadDocumentsService } from './upload-documents.service';
 
 // Mirrors the shape the private `emptyDoc()` produces — only the fields the
 // gating computeds (totalCount/passedCount/allPassed) read are meaningful here.
-function fakeDoc(def: UploadDocumentDef, status: 'pending' | 'passed'): UploadDocument {
+function fakeDoc(def: UploadDocumentDef, status: UploadDocument['status']): UploadDocument {
   return {
     ...def,
     status,
@@ -111,6 +111,30 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
 
     fixture = TestBed.createComponent(UploadDocumentsComponent);
     component = fixture.componentInstance;
+  });
+
+  it('offers Request Manual Review only for a real validation FAIL, not a technical failure', () => {
+    const failedTwice = { ...fakeDoc(requiredDoc, 'pending'), retryValidationCount: 2 };
+
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'FAIL' })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'fail' })).toBe(true);
+    // The OCR job crashed: no validationStatus, so Retry / Re-upload stay instead.
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: null })).toBe(false);
+    expect(component.isEligibleForManualReview({ ...failedTwice, validationStatus: 'PASS' })).toBe(false);
+  });
+
+  it('after a rejection with all attempts used, offers Request Manual Review only if the last upload was a real FAIL', () => {
+    const exhausted = {
+      ...fakeDoc(requiredDoc, 'failed'),
+      version: 4,
+      manualReviewDecision: { status: 'RETURNED' as const, note: 'Wrong file', decidedAt: '2026-11-10T10:00:00.000Z' },
+      postRejectionAttemptsUsed: 3,
+      uploadBlockedUntil: new Date(Date.now() - 60_000), // cooldown already over
+    };
+
+    expect(component.canRequestManualReview({ ...exhausted, validationStatus: 'FAIL' })).toBe(true);
+    // The last upload's OCR job crashed: the server would refuse, so Re-upload is the way forward.
+    expect(component.canRequestManualReview({ ...exhausted, validationStatus: null })).toBe(false);
   });
 
   it('excludes an optional, unfilled document from totalCount/passedCount', () => {
@@ -333,10 +357,12 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
   it('locks the section for a PENDING discretionary exemption request even before any document exists', fakeAsync(() => {
     component.ngOnInit();
     tick();
-    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-      success: true,
-      data: { annualAccountId: null, data: null, exemptionStatus: 'PENDING', exemptionMohuaRemarks: null },
-    });
+    httpMock
+      .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+      .flush({
+        success: true,
+        data: { annualAccountId: null, data: null, exemptionStatus: 'PENDING', exemptionMohuaRemarks: null },
+      });
     tick();
 
     expect(component.sectionLocked()).toBeTrue();
@@ -359,10 +385,12 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
   it('shows the discretionary-approval exemption notice for an APPROVED request even when no section document exists yet (data: null) - approve never creates one', fakeAsync(() => {
     component.ngOnInit();
     tick();
-    httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-      success: true,
-      data: { annualAccountId: null, data: null, exemptionStatus: 'APPROVED', exemptionMohuaRemarks: null },
-    });
+    httpMock
+      .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+      .flush({
+        success: true,
+        data: { annualAccountId: null, data: null, exemptionStatus: 'APPROVED', exemptionMohuaRemarks: null },
+      });
     tick();
 
     expect(component.isExempted()).toBeTrue();
@@ -379,15 +407,23 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
       // config loads and leave a second, unflushed HTTP request for httpMock.verify() to trip on.
       fixture.detectChanges();
       tick();
-      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-        success: true,
-        data: {
-          annualAccountId: 'account-1',
-          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
-          exemptionStatus: 'PENDING',
-          exemptionMohuaRemarks: null,
-        },
-      });
+      httpMock
+        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+        .flush({
+          success: true,
+          data: {
+            annualAccountId: 'account-1',
+            data: {
+              form_status: 'IN_PROGRESS',
+              form_status_id: 2,
+              documents: [],
+              stateDecision: null,
+              mohuaDecision: null,
+            },
+            exemptionStatus: 'PENDING',
+            exemptionMohuaRemarks: null,
+          },
+        });
       tick();
       fixture.detectChanges();
 
@@ -404,15 +440,23 @@ describe('UploadDocumentsComponent — masks provisional STATE decisions during 
     try {
       fixture.detectChanges();
       tick();
-      httpMock.expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1')).flush({
-        success: true,
-        data: {
-          annualAccountId: 'account-1',
-          data: { form_status: 'IN_PROGRESS', form_status_id: 2, documents: [], stateDecision: null, mohuaDecision: null },
-          exemptionStatus: null,
-          exemptionMohuaRemarks: null,
-        },
-      });
+      httpMock
+        .expectOne((r) => r.url.includes('/by-ulb/ulb-1/year-1'))
+        .flush({
+          success: true,
+          data: {
+            annualAccountId: 'account-1',
+            data: {
+              form_status: 'IN_PROGRESS',
+              form_status_id: 2,
+              documents: [],
+              stateDecision: null,
+              mohuaDecision: null,
+            },
+            exemptionStatus: null,
+            exemptionMohuaRemarks: null,
+          },
+        });
       tick();
       fixture.detectChanges();
 

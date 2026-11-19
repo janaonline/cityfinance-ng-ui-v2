@@ -15,7 +15,7 @@
         @if (isCreateMode) {
           New Claim Letter
         } @else {
-          Claim Letter{{ claim() ? ' - Batch #' + claim()!.batchNumber : '' }}
+          Claim Letter{{ claim() ? ' - Batch #' + batchLabel() : '' }}
         }
       </h1>
 
@@ -44,6 +44,10 @@
     } @else {
       @if (!isCreateMode && claim()) {
         <app-form-progress formType="state" [formStatus]="currentFormStatusValue()"></app-form-progress>
+        <app-returned-reason-banner
+          [currentFormStatus]="claim()!.currentFormStatus"
+          [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
+        />
       }
 
       @if (summaryTiles().length) {

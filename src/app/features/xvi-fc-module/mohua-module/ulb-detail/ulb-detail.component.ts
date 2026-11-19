@@ -96,6 +96,9 @@ export class UlbDetailComponent {
   /** The ULB's database id — what every per-ULB form GET takes. */
   readonly ulbId = computed(() => this.params().get('ulbId') ?? '');
 
+  /** Set when the ULB was opened from a claim letter: the breadcrumb and back link then lead back to that letter. */
+  readonly claimLetterId = this.route.snapshot.queryParamMap?.get('claimLetter') ?? '';
+
   /** Loaded from the State detail API; the breadcrumb falls back to a generic label until it arrives. */
   readonly stateName = signal('');
   readonly forms = signal<UlbFormsData | null>(null);

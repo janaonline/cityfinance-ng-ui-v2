@@ -16,6 +16,12 @@ const ACTION_META: Record<'upload' | 'reupload' | 'retry' | 'delete' | 'approve'
   undo: { label: 'Undo', icon: 'bi-arrow-counterclockwise' },
 };
 
+/** A real OCR validation failure — the only kind the server accepts a manual-review request for. Case-insensitive,
+ *  like the server; null (a technical failure: the OCR job crashed) is not one. */
+export function isValidationFail(validationStatus: string | null | undefined): boolean {
+  return validationStatus?.toUpperCase() === 'FAIL';
+}
+
 export function actionMeta(action: keyof typeof ACTION_META): { label: string; icon: string } {
   return ACTION_META[action];
 }

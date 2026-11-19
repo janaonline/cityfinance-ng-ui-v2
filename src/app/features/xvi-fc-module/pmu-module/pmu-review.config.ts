@@ -92,8 +92,10 @@ export const PMU_FORM_STATUS_OPTIONS: ReadonlyArray<{ value: number; label: stri
   { value: FORM_STATUS.NOT_STARTED, label: 'Not Started' },
   { value: FORM_STATUS.IN_PROGRESS, label: 'In Progress' },
   { value: FORM_STATUS.UNDER_REVIEW_BY_PMU, label: 'Under Review by PMU' },
+  { value: FORM_STATUS.UNDER_REVIEW_BY_SO, label: 'Under Review by SO' },
   { value: FORM_STATUS.UNDER_REVIEW_BY_MOHUA, label: 'Under Review by MoHUA' },
   { value: FORM_STATUS.RETURNED_BY_PMU, label: 'Returned by PMU' },
+  { value: FORM_STATUS.RETURNED_BY_SO, label: 'Returned for correction' },
   { value: FORM_STATUS.RETURNED_BY_MOHUA, label: 'Returned by MoHUA' },
   { value: FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA, label: 'Acknowledged by MoHUA' },
 ];
@@ -113,6 +115,9 @@ export function pmuStatusBadgeClass(currentFormStatus: number): string {
     return 'bg-secondary-subtle text-secondary-emphasis';
   }
   if (currentFormStatus === FORM_STATUS.UNDER_REVIEW_BY_PMU) return 'bg-warning-subtle text-warning-emphasis';
-  if (currentFormStatus === FORM_STATUS.RETURNED_BY_PMU) return 'bg-danger-subtle text-danger-emphasis';
+  if (currentFormStatus === FORM_STATUS.RETURNED_BY_PMU || currentFormStatus === FORM_STATUS.RETURNED_BY_SO) {
+    return 'bg-danger-subtle text-danger-emphasis';
+  }
+  if (currentFormStatus === FORM_STATUS.UNDER_REVIEW_BY_SO) return 'bg-warning-subtle text-warning-emphasis';
   return 'bg-success-subtle text-success-emphasis';
 }

@@ -73,7 +73,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
   public stateName = signal('');
   public actors = signal<FormActor[]>([]);
 
-  readonly pmuRemarks = signal<string | null>(null);
+  readonly rejectionRemarks = signal<string | null>(null);
 
   form = this.fb.group({});
   readonly fields = signal<ConditionalFieldConfig[]>([]);
@@ -184,7 +184,7 @@ export class SfcStatusComponent implements OnInit, CanComponentDeactivate {
           this.actors.set(data.actors);
           this.exemptionStatus.set(data.exemptionStatus);
           this.exemptionMohuaRemarks.set(data.exemptionMohuaRemarks);
-          this.pmuRemarks.set(data.pmuRemarks ?? null);
+          this.rejectionRemarks.set(data.rejectionRemarks ?? null);
           this.createFormControls();
           this.isLoading.set(false);
         },

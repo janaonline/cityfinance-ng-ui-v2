@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, concatMap, forkJoin, from, map, of, reduce, switchMap } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   ApiResponse,
@@ -20,10 +20,8 @@ interface RawHistoryResult {
   rows: RawManualReviewHistoryRow[];
 }
 
-// Same reasoning as ManualReviewQueueService: the widest page either backend will hand back, and a
-// defensive cap on how many pages we'll fetch per backend while merging everything client-side.
-const PAGE_SIZE = 100;
-const MAX_PAGES = 50;
+/** The widest page either backend will hand back (`@Max(100)` on the history query DTO). */
+const MAX_BACKEND_PAGE_SIZE = 100;
 
 // Recomputed here (not fetched) when merging two backends' stats under "All types" — mirrors the
 // exact thresholds DurManualReviewService/AnnualAccountManualReviewService each apply server-side.
@@ -40,13 +38,19 @@ export class ManualReviewHistoryService {
     return formType === 'DUR' ? this.durBaseUrl : this.annualAccountBaseUrl;
   }
 
+  /**
+   * One page of the two backends' rows merged newest first. Both backends sort by requestedAt desc,
+   * so page p of the merged list can only contain each backend's first p x pageSize rows: that is
+   * all we fetch, never the whole history.
+   */
   getHistory(query: ManualReviewHistoryQuery): Observable<ManualReviewHistoryResult> {
-    const empty = of({ rows: [] as ManualReviewHistoryRow[], failed: false, truncated: false });
+    const needed = query.page * query.pageSize;
+    const empty = of({ rows: [] as ManualReviewHistoryRow[], total: 0, failed: false });
     return forkJoin([
       query.formType && query.formType !== 'ANNUAL_ACCOUNT'
         ? empty
-        : this.fetchAllRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query),
-      query.formType && query.formType !== 'DUR' ? empty : this.fetchAllRows(this.durBaseUrl, 'DUR', query),
+        : this.fetchTopRows(this.annualAccountBaseUrl, 'ANNUAL_ACCOUNT', query, needed),
+      query.formType && query.formType !== 'DUR' ? empty : this.fetchTopRows(this.durBaseUrl, 'DUR', query, needed),
     ]).pipe(
       map(([annualAccount, dur]) => {
         const merged = [...annualAccount.rows, ...dur.rows].sort(
@@ -54,11 +58,11 @@ export class ManualReviewHistoryService {
         );
         const start = (query.page - 1) * query.pageSize;
         const failedSources: ManualReviewFormType[] = [
-          ...(annualAccount.failed || annualAccount.truncated ? (['ANNUAL_ACCOUNT'] as const) : []),
-          ...(dur.failed || dur.truncated ? (['DUR'] as const) : []),
+          ...(annualAccount.failed ? (['ANNUAL_ACCOUNT'] as const) : []),
+          ...(dur.failed ? (['DUR'] as const) : []),
         ];
         return {
-          total: merged.length,
+          total: annualAccount.total + dur.total,
           page: query.page,
           pageSize: query.pageSize,
           rows: merged.slice(start, start + query.pageSize),
@@ -68,8 +72,8 @@ export class ManualReviewHistoryService {
     );
   }
 
-  private buildListParams(query: ManualReviewHistoryQuery, page: number): HttpParams {
-    let params = new HttpParams().set('page', String(page)).set('pageSize', String(PAGE_SIZE));
+  private buildListParams(query: ManualReviewHistoryQuery, page: number, pageSize: number): HttpParams {
+    let params = new HttpParams().set('page', String(page)).set('pageSize', String(pageSize));
     if (query.search) params = params.set('search', query.search);
     if (query.status) params = params.set('status', query.status);
     if (query.stateId) params = params.set('stateId', query.stateId);
@@ -81,43 +85,43 @@ export class ManualReviewHistoryService {
     return params;
   }
 
-  /** Pages through every matching row for one backend — same pattern as
-   *  ManualReviewQueueService.fetchAllRows (see there for the full rationale). */
-  private fetchAllRows(
+  /** One backend's newest `needed` rows (and its total), in pages of at most 100 fetched one after
+   *  another — usually a single request, since `needed` is page x pageSize. */
+  private fetchTopRows(
     baseUrl: string,
     formType: ManualReviewFormType,
     query: ManualReviewHistoryQuery,
-  ): Observable<{ rows: ManualReviewHistoryRow[]; failed: boolean; truncated: boolean }> {
+    needed: number,
+  ): Observable<{ rows: ManualReviewHistoryRow[]; total: number; failed: boolean }> {
+    const pageSize = Math.min(needed, MAX_BACKEND_PAGE_SIZE);
     const fetchPage = (page: number) =>
-      this.http.get<ApiResponse<RawHistoryResult>>(`${baseUrl}manual-review-history`, {
-        params: this.buildListParams(query, page),
-      });
+      this.http
+        .get<ApiResponse<RawHistoryResult>>(`${baseUrl}manual-review-history`, {
+          params: this.buildListParams(query, page, pageSize),
+        })
+        .pipe(map((response) => response.data));
 
-    return fetchPage(1)
-      .pipe(
-        switchMap((first) => {
-          const realTotalPages = Math.ceil(first.data.total / PAGE_SIZE);
-          const totalPages = Math.min(realTotalPages, MAX_PAGES);
-          const truncated = realTotalPages > MAX_PAGES;
-          if (totalPages <= 1) return of({ rawRows: first.data.rows, truncated });
-
-          const remainingPages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-          return forkJoin(remainingPages.map((page) => fetchPage(page).pipe(map((r) => r.data.rows)))).pipe(
-            map((rest) => ({ rawRows: [first.data.rows, ...rest].flat(), truncated })),
-          );
-        }),
-        map(({ rawRows, truncated }) => ({
-          rows: rawRows.map((row) => this.tagRow(row, formType)),
-          failed: false,
-          truncated,
-        })),
-      )
-      .pipe(
-        catchError((err) => {
-          console.error(`[manual-review-history] failed to load ${formType} rows`, err);
-          return of({ rows: [], failed: true, truncated: false });
-        }),
-      );
+    return fetchPage(1).pipe(
+      switchMap((first) => {
+        const pages = Math.min(Math.ceil(needed / pageSize), Math.ceil(first.total / pageSize));
+        if (pages <= 1) return of({ rawRows: first.rows, total: first.total });
+        const rest = Array.from({ length: pages - 1 }, (_, i) => i + 2);
+        return from(rest).pipe(
+          concatMap((page) => fetchPage(page)),
+          reduce((rows, next) => rows.concat(next.rows), first.rows),
+          map((rawRows) => ({ rawRows, total: first.total })),
+        );
+      }),
+      map(({ rawRows, total }) => ({
+        rows: rawRows.slice(0, needed).map((row) => this.tagRow(row, formType)),
+        total,
+        failed: false,
+      })),
+      catchError((err) => {
+        console.error(`[manual-review-history] failed to load ${formType} rows`, err);
+        return of({ rows: [], total: 0, failed: true });
+      }),
+    );
   }
 
   private tagRow(row: RawManualReviewHistoryRow, formType: ManualReviewFormType): ManualReviewHistoryRow {

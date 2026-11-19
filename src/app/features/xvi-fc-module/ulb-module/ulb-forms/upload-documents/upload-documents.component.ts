@@ -30,6 +30,7 @@ import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.c
 import { PageErrorStateComponent } from '../../../shared/page-error-state/page-error-state.component';
 import { ExemptionNoticeComponent } from '../../../shared/exemption-notice/exemption-notice.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { isValidationFail } from '../../../../../shared/components/document-action-row/resolve-document-actions';
 import type {
   ActionGate,
   DocumentRuntimeState,
@@ -195,7 +196,8 @@ type AnnualAccountFormStatus =
   | 'AWAITING_CLAIM_LETTER'
   | 'EXEMPTION_PENDING'
   | 'EXEMPTION_REJECTED'
-  | 'EXEMPTED_ACKNOWLEDGED';
+  | 'EXEMPTED_ACKNOWLEDGED'
+  | 'RETURNED_BY_SO';
 
 /** When state requests a form for exemption, below are the possible statuses*/
 type DiscretionaryExemptionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | null;
@@ -206,6 +208,7 @@ const ULB_EDITABLE_STATUSES: ReadonlySet<AnnualAccountFormStatus> = new Set([
   'IN_PROGRESS',
   'RETURNED_BY_STATE',
   'RETURNED_BY_MOHUA',
+  'RETURNED_BY_SO',
 ]);
 
 const LOCKED_BANNER_MESSAGE: Readonly<Partial<Record<AnnualAccountFormStatus, string>>> = {
@@ -406,11 +409,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   // Note attached to the state/MoHUA decision that most recently returned this section, if any.
   private readonly sectionReturnNote = signal<string | null>(null);
 
-  // Shown when the section was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA) — explains why,
-  // even though the section itself is editable again at that point.
+  // Shown when the section was just reopened (RETURNED_BY_STATE/RETURNED_BY_MOHUA/RETURNED_BY_SO) — explains why,
+  // even though the section itself is editable again at that point. The SO is part of MoHUA.
   readonly returnNotice = computed(() => {
     const status = this.sectionStatus();
-    if (status !== 'RETURNED_BY_STATE' && status !== 'RETURNED_BY_MOHUA') return null;
+    if (status !== 'RETURNED_BY_STATE' && status !== 'RETURNED_BY_MOHUA' && status !== 'RETURNED_BY_SO') return null;
     const actor = status === 'RETURNED_BY_STATE' ? 'the state' : 'MoHUA';
     const note = this.sectionReturnNote();
     return note ? `Returned by ${actor}: ${note}` : `This section was returned by ${actor} for correction.`;
@@ -444,11 +447,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
-  /** True once this document has failed enough times to offer "Request Manual Review" — a retry
-   *  on the same file, or any re-upload, both count (a re-upload that still fails deserves the
-   *  same offer as a second failed retry). */
+  /** True once this document has failed OCR validation enough times to offer "Request Manual
+   *  Review" — a retry on the same file, or any re-upload, both count. Only a real validation FAIL
+   *  qualifies (the server refuses anything else): a technical failure (the OCR job crashed, so no
+   *  validationStatus) keeps Retry / Re-upload instead. */
   isEligibleForManualReview(doc: UploadDocument): boolean {
-    return doc.retryValidationCount > 1 || (doc.version ?? 1) > 1;
+    return isValidationFail(doc.validationStatus) && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
   }
 
   /** True while this document is in its post-rejection cooldown — mirrors the backend's
@@ -476,7 +480,8 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (doc.isManualReviewRequested) return false;
     if (this.isUploadBlocked(doc)) return false;
     if (doc.manualReviewDecision?.status === 'RETURNED') {
-      return this.manualReviewAttemptsExhausted(doc);
+      // The server only accepts a real FAIL here too; a crash on the last upload means Re-upload.
+      return this.manualReviewAttemptsExhausted(doc) && isValidationFail(doc.validationStatus);
     }
     return this.isEligibleForManualReview(doc);
   }
@@ -608,6 +613,16 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     if (this.hasProcessingDocs()) {
       event.preventDefault();
     }
+  }
+
+  /** ADMIN decides a manual review outside this page, so re-read the section when the ULB comes
+   *  back to the tab while a review is pending. Skipped mid-upload so a local file isn't replaced. */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    const docs = this.documents();
+    if (!docs.some((d) => this.isAwaitingManualReview(d)) || docs.some((d) => d.status === 'uploading')) return;
+    void this.loadExistingData();
   }
 
   ngOnDestroy(): void {
@@ -1068,7 +1083,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       this.sectionReturnNote.set(
         (sectionData?.form_status === 'RETURNED_BY_STATE'
           ? sectionData.stateDecision?.note
-          : sectionData?.form_status === 'RETURNED_BY_MOHUA'
+          : sectionData?.form_status === 'RETURNED_BY_MOHUA' || sectionData?.form_status === 'RETURNED_BY_SO'
             ? sectionData.mohuaDecision?.note
             : null) ?? null,
       );

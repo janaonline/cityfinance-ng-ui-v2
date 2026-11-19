@@ -29,7 +29,7 @@ import {
   ClaimLetterListKey,
 } from '../../claim-letter.models';
 import { ClaimLetterService } from '../../claim-letter.service';
-import { readApiError, readBinaryApiError } from '../../claim-letter.utils';
+import { formatClaimLetterBatchLabel, readApiError, readBinaryApiError } from '../../claim-letter.utils';
 import { isBlankValue, letterFieldId } from '../letter-field/claim-letter-letter-field.component';
 import {
   ClaimLetterLetterEditor,
@@ -111,6 +111,7 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly dialogConfig = themedDialogConfig();
 
+  readonly formatBatchLabel = formatClaimLetterBatchLabel;
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly details = signal<ClaimLetterLetterDetails | null>(null);
@@ -256,8 +257,9 @@ export class ClaimLetterDocumentPreviewDialogComponent implements OnInit {
         control.setValue(previous.values[key]);
         control.markAsTouched();
       }
-      const { yearLabel, installment, batchNumber } = previous.source;
-      this.notice.set(`Filled from Batch ${batchNumber} (FY ${yearLabel}, Installment ${installment}).`);
+      const { yearLabel, installment, batchNumber, resubmissionNumber } = previous.source;
+      const batch = formatClaimLetterBatchLabel(batchNumber, resubmissionNumber);
+      this.notice.set(`Filled from Batch ${batch} (FY ${yearLabel}, Installment ${installment}).`);
       for (const key of keys) this.autosaver.queue(key);
       this.autosaver.flush();
     };

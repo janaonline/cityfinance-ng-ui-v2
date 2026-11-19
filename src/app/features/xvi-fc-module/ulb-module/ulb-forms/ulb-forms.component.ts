@@ -79,6 +79,8 @@ const CONDITION_STATUS_DISPLAY: Readonly<Record<number, ConditionStatusDisplay>>
   8: { iconTier: 'success', buttonLabel: 'Submitted', showPreview: true },
   // Dynamic Year Access — automatic exemption for a genuinely new ULB (today: SLB only). Reuses
   12: { iconTier: 'success', buttonLabel: 'Exempted', showPreview: false },
+  // RETURNED_BY_SO: the MoHUA Section Officer returned the claim letter this form was in — shown like a State return.
+  16: { iconTier: 'warning', buttonLabel: 'Reupload', showPreview: true },
 };
 
 const SCENARIOS: WhatIfScenario[] = [

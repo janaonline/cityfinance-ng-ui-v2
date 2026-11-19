@@ -1,0 +1,147 @@
+@use '../claims-shared';
+// Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
+@use '../claims-ui';
+
+// ── Progress rings (SVG; no library equivalent for a two-segment ring). Circumference is 100, so a segment's
+// `--p` is its percentage and `--s` is where it starts; segments draw in once their card is revealed. ─────────
+.cl-ring {
+  position: relative;
+  flex: none;
+  width: 88px;
+  height: 88px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  circle {
+    fill: none;
+    stroke-width: 4.2;
+  }
+
+  &__bg {
+    stroke: color-mix(in srgb, var(--t) 12%, transparent);
+  }
+
+  &__seg {
+    stroke: var(--t);
+    stroke-dasharray: var(--p) 100;
+    stroke-dashoffset: calc(var(--p) - var(--s, 0));
+
+    &--good {
+      stroke: #1d7a46;
+    }
+
+    &--review {
+      stroke: var(--clr-primary, #d9730d);
+    }
+  }
+
+  &__center {
+    position: absolute;
+    inset: 0;
+    line-height: 1.1;
+  }
+}
+
+.in .cl-ring__seg {
+  stroke-dashoffset: calc(var(--s, 0) * -1);
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0.1, 0.2, 1) 0.3s;
+}
+
+// A legend dot: the ring's colour for that part (the track colour for what is left).
+.cl-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 2px;
+  background: color-mix(in srgb, var(--t) 22%, transparent);
+  border-radius: 50%;
+
+  &--good {
+    background: #1d7a46;
+  }
+
+  &--review {
+    background: var(--clr-primary, #d9730d);
+  }
+
+  &--teal {
+    background: var(--t);
+  }
+}
+
+// ── Letter cards: the status stamp on the round icon (as on the dashboard's State Form Completion cards) ────
+.cl-letter-card__badge {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  font-size: 1.05rem;
+}
+
+.cl-letter-card__stamp {
+  position: absolute;
+  right: -3px;
+  bottom: -1px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.55rem;
+  color: #fff;
+  background: var(--t);
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+// Two equal columns, a small one-line label over its figure.
+.cl-letter-card__facts {
+  dt {
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: #5b7083;
+  }
+
+  dd {
+    font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in .cl-ring__seg {
+    transition: none;
+  }
+}
+
+// A compact type scale for the page: Bootstrap's `small` is relative, so it follows these sizes.
+.cl-progress,
+.cl-letters {
+  font-size: 0.8rem;
+}
+
+.cl-heading {
+  font-size: 0.85rem;
+}
+
+.cl-figure {
+  font-size: 1rem;
+}
+
+.cl-ring__center {
+  strong {
+    font-size: 0.85rem;
+  }
+
+  small {
+    font-size: 0.6rem;
+  }
+}
+
+.cl-letter-card__ribbon {
+  font-size: 0.58rem;
+}

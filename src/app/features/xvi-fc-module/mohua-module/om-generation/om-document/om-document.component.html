@@ -1,0 +1,127 @@
+<ng-template #runsTpl let-paragraph>
+  @for (run of paragraph.runs; track $index) {
+    @let box = slot(run);
+    @if (box) {
+      <app-claim-letter-letter-field
+        [field]="box.field"
+        [control]="box.control"
+        [bold]="!!run.bold"
+        (committed)="fieldCommitted.emit($event)"
+      ></app-claim-letter-letter-field>
+    } @else {
+      <span [class.fw-bold]="run.bold" [class.om-placeholder]="run.placeholder">{{ printed(run) }}</span>
+    }
+  }
+</ng-template>
+
+<ng-template #paragraphTpl let-paragraph let-extraClass="extraClass">
+  @if (paragraph.number) {
+    <div class="om-numbered">
+      <span class="om-number">{{ paragraph.number }}</span>
+      <p class="om-para om-justify">
+        <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: paragraph }"></ng-container>
+      </p>
+    </div>
+  } @else {
+    <p class="om-para" [class]="extraClass">
+      <ng-container *ngTemplateOutlet="runsTpl; context: { $implicit: paragraph }"></ng-container>
+    </p>
+  }
+</ng-template>
+
+@let c = content();
+<article class="om-letter" [class.om-editing]="editor() !== null" aria-label="Office Memorandum">
+  <section class="om-page">
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: c.number }"></ng-container>
+
+    <div class="om-letterhead">
+      @for (paragraph of c.letterhead; track $index) {
+        <ng-container
+          *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph, extraClass: 'om-center om-tight' }"
+        ></ng-container>
+      }
+    </div>
+
+    <div class="om-address">
+      @for (paragraph of c.address; track $index) {
+        <ng-container
+          *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph, extraClass: 'om-right om-tight' }"
+        ></ng-container>
+      }
+    </div>
+
+    <h2 class="om-title">{{ c.title }}</h2>
+
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: c.subject, extraClass: 'om-justify' }"></ng-container>
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: c.intro, extraClass: 'om-justify' }"></ng-container>
+
+    <div class="table-responsive">
+      <table class="om-table om-compliance">
+        <thead>
+          <tr>
+            @for (header of c.complianceHeaders; track $index) {
+              <th scope="col">{{ header }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of c.compliance; track row.key) {
+            <tr>
+              <td>{{ row.key }}</td>
+              <td>
+                @for (paragraph of row.condition; track $index) {
+                  <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+                }
+              </td>
+              <td>
+                @for (paragraph of row.status; track $index) {
+                  <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: c.analysis }"></ng-container>
+
+    <div class="table-responsive">
+      <table class="om-table om-recommendation">
+        <thead>
+          <tr>
+            @for (header of c.recommendationHeaders; track $index) {
+              <th scope="col">{{ header }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            @for (cell of c.recommendation; track $index) {
+              <td><ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: cell }"></ng-container></td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    @for (paragraph of c.closing; track $index) {
+      <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph }"></ng-container>
+    }
+    <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: c.enclosure }"></ng-container>
+
+    <div class="om-signature">
+      @for (paragraph of c.signature; track $index) {
+        <ng-container
+          *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph, extraClass: 'om-right om-tight' }"
+        ></ng-container>
+      }
+    </div>
+
+    <div class="om-addressee">
+      @for (paragraph of c.addressee; track $index) {
+        <ng-container *ngTemplateOutlet="paragraphTpl; context: { $implicit: paragraph, extraClass: 'om-tight' }"></ng-container>
+      }
+    </div>
+  </section>
+</article>

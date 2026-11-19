@@ -14,7 +14,7 @@ export interface EulbStatusSummaryCard {
  * constituted / not-constituted / exempt (6th Schedule) ULB breakdown. Shared between the main
  * elected-body-status page and the post-submission-update page — both feed it the same
  * `EulbStatusSummary` shape, just from different endpoints. Renders nothing when `summary` is
- * `null`, so consumers can bind unconditionally.
+ * `null`, so consumers can bind unconditionally. Also on PMU's Elected Body review page, cards only.
  */
 @Component({
   selector: 'app-eulb-status-summary',
@@ -25,6 +25,8 @@ export interface EulbStatusSummaryCard {
 })
 export class EulbStatusSummaryComponent {
   readonly summary = input<EulbStatusSummary | null>(null);
+  /** The State-facing "submitted… recorded" banner above the cards; off on PMU's review page. */
+  readonly showSubmittedAlert = input(true);
 
   readonly cards = computed<EulbStatusSummaryCard[]>(() => {
     const summary = this.summary();
