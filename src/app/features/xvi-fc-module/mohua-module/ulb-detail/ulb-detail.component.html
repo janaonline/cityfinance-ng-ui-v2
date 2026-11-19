@@ -6,6 +6,10 @@
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
     <a [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">{{ stateName() || 'State' }}</a>
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    @if (claimLetterId) {
+      <a [routerLink]="['claims-submission', stateId(), 'letter', claimLetterId]" [relativeTo]="mohuaRoute">Claim letter</a>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    }
     <span aria-current="page">{{ ulbName() || 'ULB' }}</span>
   </nav>
 
@@ -195,9 +199,18 @@
     <div class="ud-message" role="alert">
       <p>{{ error() }}</p>
       <button mat-stroked-button type="button" (click)="load()">Try again</button>
-      <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute"
-        >Back to {{ stateName() || 'the state' }}</a
-      >
+      @if (claimLetterId) {
+        <a
+          class="ud-link"
+          [routerLink]="['claims-submission', stateId(), 'letter', claimLetterId]"
+          [relativeTo]="mohuaRoute"
+          >Back to the claim letter</a
+        >
+      } @else {
+        <a class="ud-link" [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute"
+          >Back to {{ stateName() || 'the state' }}</a
+        >
+      }
     </div>
   }
 </div>

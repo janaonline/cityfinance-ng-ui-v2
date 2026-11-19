@@ -1,0 +1,68 @@
+@use '../../claims-submission/claims-shared';
+// Material + Bootstrap tuning shared with the claims screens; only this page's own pieces are below.
+@use '../../claims-submission/claims-ui';
+
+// A tone per headline card (teal is the page default), as on the claim-letter review page.
+.oml-tone--orange {
+  --t: var(--clr-primary, #d9730d);
+}
+
+.oml-tone--good {
+  --t: #1d7a46;
+}
+
+.oml-value {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.oml-heading {
+  font-size: 0.85rem;
+}
+
+.oml-toggle {
+  color: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--t) 45%, transparent);
+    outline-offset: 4px;
+    border-radius: 8px;
+  }
+
+  &__chevron {
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.oml-primary {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
+}
+
+// The OM sits on a grey "desk", scrolling inside the card.
+.om-editor {
+  overflow: hidden;
+
+  &__bar {
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--t) 18%, transparent);
+  }
+
+  &__body {
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 1.25rem;
+    background: #f3f4f5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oml-toggle__chevron {
+    transition: none;
+  }
+}

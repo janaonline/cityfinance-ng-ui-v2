@@ -34,8 +34,8 @@
     @if (editing && previous()) {
       @let source = previous()!.source;
       <button type="button" matButton="outlined" (click)="prefill()" data-cy="claim-letter-prefill">
-        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Prefill from Batch {{ source.batchNumber }} (FY
-        {{ source.yearLabel }})
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Prefill from Batch
+        {{ formatBatchLabel(source.batchNumber, source.resubmissionNumber) }} (FY {{ source.yearLabel }})
       </button>
     }
     <button

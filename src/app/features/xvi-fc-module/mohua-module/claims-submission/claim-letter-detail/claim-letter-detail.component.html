@@ -1,0 +1,421 @@
+<div class="cs-page">
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading claim letter" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
+    </div>
+  } @else {
+    @if (letter(); as l) {
+      <a class="cs-back" [routerLink]="['claims-submission', stateId]" [relativeTo]="mohuaRoute">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to {{ l.state.name }} Claim Letters
+      </a>
+
+      <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+        <div>
+          <h1 class="cs-title d-flex flex-wrap align-items-center gap-2">
+            {{ l.number }} — {{ l.state.name }}
+            <span class="cs-badge" [class]="badgeClass(l.status)">{{ statusLabel(l.status, l.statusLabel) }}</span>
+          </h1>
+          <p class="cs-subtitle">ULB-level eligibility review for this claim letter.</p>
+        </div>
+        <!-- A letter the SO verified gets its OM; the OM page shows it instead if it is already generated. -->
+        @if (canGenerateOm()) {
+          <a
+            mat-flat-button
+            class="cl-om-btn"
+            [routerLink]="['om-generation', 'letter', l.id]"
+            [relativeTo]="mohuaRoute"
+            matTooltip="Opens this letter's Office Memorandum (shown read-only if it is already generated)"
+          >
+            <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Generate OM
+          </a>
+        }
+      </div>
+
+      <!-- Headline figures: an amount and its ULBs per card. -->
+      <section class="cl-stats row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-2 mb-3" aria-label="Summary">
+        @for (stat of stats(); track stat.label; let i = $index) {
+          <div class="col" appReveal [revealDelay]="i * 80">
+            <mat-card
+              appearance="outlined"
+              class="cs-panel cl-stat cl-tone--{{ stat.tone }} h-100 d-flex flex-row align-items-center gap-2"
+              [class.cl-stat--empty]="stat.amount === 0 && stat.ulbs === 0"
+            >
+              <span class="cs-icon" aria-hidden="true"><i class="bi {{ stat.icon }}"></i></span>
+              <div class="d-flex flex-column text-truncate">
+                <!-- Value, then label, then a one-line note. -->
+                @if (stat.amount === null) {
+                  <span class="cl-stat__value fw-bold cs-accent">Coming soon</span>
+                  <h2 class="cl-stat__label small fw-semibold mb-0">{{ stat.label }}</h2>
+                  <span class="cl-stat__note small text-body-secondary text-truncate">{{ stat.note }}</span>
+                } @else if (stat.amount === 0 && stat.ulbs === 0) {
+                  <span class="cl-stat__value fw-bold text-body-secondary">None</span>
+                  <h2 class="cl-stat__label small fw-semibold mb-0">{{ stat.label }}</h2>
+                  <span class="cl-stat__note small text-body-secondary text-truncate">{{ stat.emptyNote }}</span>
+                } @else {
+                  <span class="cl-stat__value fw-bold cs-accent" [appCountUp]="formatCrore(stat.amount)"></span>
+                  <h2 class="cl-stat__label small fw-semibold mb-0">{{ stat.label }}</h2>
+                  <span class="cl-stat__note small text-body-secondary text-truncate">
+                    <span [appCountUp]="'' + stat.ulbs"></span> {{ stat.ulbs === 1 ? 'ULB' : 'ULBs' }} · {{ stat.note }}
+                  </span>
+                }
+              </div>
+            </mat-card>
+          </div>
+        }
+      </section>
+
+      <!-- What the SO checks before the ULB list: two slim bars side by side, each with its button on the right.
+           Space is tight, so the longer details (signer, full file name, the five form names) are on hover. -->
+      <section class="cl-review row g-2 mb-3" aria-label="Review documents">
+        <div class="col-12 col-lg-6" appReveal [revealDelay]="0">
+          <mat-card
+            appearance="outlined"
+            class="cs-panel cl-review__row cl-review__row--letter cl-tone--orange h-100 d-flex flex-row align-items-center gap-2"
+          >
+            <span class="cs-icon" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
+            <div class="d-flex flex-wrap align-items-baseline column-gap-2 flex-grow-1 text-truncate">
+              <h2 class="cl-review__title small fw-bold mb-0">Claim Letter</h2>
+              <p class="cl-review__meta small text-body-secondary mb-0 text-truncate">
+                <span class="cl-review__signed">Received {{ formatDate(l.receivedOn) }}</span>
+                ·
+                @if (l.signedClaimFile; as file) {
+                  <span [matTooltip]="file.name"
+                    ><i class="bi bi-paperclip" aria-hidden="true"></i>{{ file.name }}</span
+                  >
+                } @else {
+                  <span class="text-danger"
+                    ><i class="bi bi-exclamation-circle" aria-hidden="true"></i> No signed claim letter attached</span
+                  >
+                }
+              </p>
+            </div>
+            @if (l.signedClaimFile; as file) {
+              <a
+                mat-stroked-button
+                class="cs-view-btn cl-review__letter"
+                [href]="file.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                matTooltip="View the signed claim letter (opens in a new tab)"
+              >
+                <i class="bi bi-eye" aria-hidden="true"></i> View letter
+                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+              </a>
+            }
+          </mat-card>
+        </div>
+
+        <div class="col-12 col-lg-6" appReveal [revealDelay]="80">
+          <mat-card
+            appearance="outlined"
+            class="cs-panel cl-review__row cl-review__row--forms h-100 d-flex flex-row align-items-center gap-2"
+          >
+            <span class="cs-icon" aria-hidden="true"><i class="bi bi-ui-checks-grid"></i></span>
+            <div class="d-flex flex-wrap align-items-baseline column-gap-2 flex-grow-1 text-truncate">
+              <h2 class="cl-review__title small fw-bold mb-0">State Forms</h2>
+              <p class="cl-review__meta small text-body-secondary mb-0">
+                <span class="cl-review__forms" tabindex="0" [matTooltip]="stateFormNames" [attr.aria-label]="stateFormCount + ' conditions: ' + stateFormNames">{{ stateFormCount }} conditions</span>
+                · <i class="bi bi-lock" aria-hidden="true"></i> Read-only
+              </p>
+            </div>
+            <a
+              mat-stroked-button
+              class="cs-view-btn cl-review__forms-link"
+              [routerLink]="['review-state-submissions', l.state.id]"
+              [relativeTo]="mohuaRoute"
+              aria-label="View State forms (read-only)"
+            >
+              <i class="bi bi-eye" aria-hidden="true"></i> View forms
+              <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+          </mat-card>
+        </div>
+      </section>
+
+      @if (l.returnDetails; as r) {
+        <section class="cl-return alert alert-danger small" aria-label="Return details">
+          <p class="fw-bold mb-2">
+            <i class="bi bi-arrow-return-left" aria-hidden="true"></i>
+            Returned for correction{{ r.returnedBy ? ' by ' + r.returnedBy : '' }} on {{ formatDate(r.returnedAt) }}
+          </p>
+          <dl class="row mb-0">
+            @if (r.stateForms.length) {
+              <dt class="col-sm-3 fw-semibold">State forms returned</dt>
+              <dd class="col-sm-9 mb-1">
+                @for (form of r.stateForms; track form.formId; let last = $last) {
+                  {{ stateFormLabel(form) }}{{ last ? '' : ', ' }}
+                }
+              </dd>
+            }
+            @if (r.ulbForms.length) {
+              <dt class="col-sm-3 fw-semibold">ULB forms returned</dt>
+              <dd class="col-sm-9 mb-1">
+                @for (form of r.ulbForms; track form.formId; let last = $last) {
+                  {{ ulbFormLabel(form) }}{{ last ? '' : ', ' }}
+                }
+              </dd>
+            }
+            <dt class="col-sm-3 fw-semibold">ULBs returned</dt>
+            <dd class="col-sm-9 mb-1">{{ r.returnedUlbCount }} of {{ l.summary.totalCities }}</dd>
+            @if (r.stateRemark) {
+              <dt class="col-sm-3 fw-semibold">Remark to State</dt>
+              <dd class="cl-return__remark col-sm-9 mb-0 text-break">{{ r.stateRemark }}</dd>
+            }
+          </dl>
+        </section>
+      }
+
+      <!-- The ULBs in this letter. -->
+      <mat-card appearance="outlined" class="cs-panel cl-ulbs" aria-labelledby="cl-ulbs-heading">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <span class="cs-icon" aria-hidden="true"><i class="bi bi-buildings"></i></span>
+          <div class="flex-grow-1">
+            <h2 id="cl-ulbs-heading" class="fs-6 fw-bold mb-0">ULBs in this claim letter</h2>
+            <p class="small text-body-secondary mb-0">
+              <i class="bi bi-info-circle cs-accent" aria-hidden="true"></i> Click a ULB to view its forms.
+              @if (canReview()) {
+                Use <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> to mark a ULB for return; unmarked
+                ULBs are approved with the letter.
+              }
+            </p>
+          </div>
+          @if (canReview()) {
+            <span
+              class="cl-hint__counts badge rounded-pill"
+              [class.cl-hint__counts--some]="l.returnedUlbCount > 0"
+              [class.text-bg-danger]="l.returnedUlbCount > 0"
+              [class.cs-tint]="l.returnedUlbCount === 0"
+            >
+              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+              {{ l.returnedUlbCount }} of {{ l.summary.totalCities }} ULBs marked for return
+            </span>
+          }
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+          <mat-form-field class="cs-search" appearance="outline" subscriptSizing="dynamic">
+            <i class="bi bi-search" matPrefix aria-hidden="true"></i>
+            <input
+              matInput
+              type="search"
+              placeholder="Search ULB name or census code"
+              aria-label="Search ULBs"
+              [value]="search()"
+              (input)="onSearch($any($event.target).value)"
+            />
+          </mat-form-field>
+          @if (canReview()) {
+            <div class="cl-actions d-flex flex-wrap gap-2">
+              <button
+                mat-stroked-button
+                type="button"
+                class="cl-actions__return"
+                [disabled]="busy()"
+                [attr.aria-busy]="returning()"
+                (click)="openReturnDialog()"
+              >
+                @if (returning()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Returning…
+                } @else {
+                  <i class="bi bi-arrow-return-left" aria-hidden="true"></i>
+                  Return Claim Letter{{ returnedUlbCount() > 0 ? ' (' + returnedUlbCount() + ')' : '' }}
+                }
+              </button>
+              <!-- A disabled button gets no hover events, so the reason sits on a wrapper. -->
+              <span
+                [matTooltip]="
+                  returnedUlbCount() > 0 ? 'Some ULBs are marked returned: return the letter, or clear those marks' : ''
+                "
+              >
+                <button
+                  mat-flat-button
+                  type="button"
+                  class="cl-actions__approve"
+                  [disabled]="busy() || returnedUlbCount() > 0"
+                  [attr.aria-busy]="approving()"
+                  (click)="approve()"
+                >
+                  @if (approving()) {
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Approving…
+                  } @else {
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i> Approve
+                  }
+                </button>
+              </span>
+            </div>
+          }
+        </div>
+
+        @if (ulbsError()) {
+          <div class="cs-state cs-error" role="alert">
+            <p>{{ ulbsError() }}</p>
+            <button mat-stroked-button type="button" (click)="loadUlbs()">Try again</button>
+          </div>
+        } @else {
+          @if (ulbs(); as u) {
+            <div class="cs-flat-wrap" [attr.aria-busy]="ulbsLoading()">
+              <table class="table table-hover align-middle mb-0 cs-flat">
+                <caption class="visually-hidden">
+                  ULBs in this claim letter
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">ULB</th>
+                    <th scope="col" class="text-end">Installment {{ installment }} share</th>
+                    <th scope="col">ULB status</th>
+                    <th scope="col">Review status</th>
+                    @if (canReview()) {
+                      <th scope="col" class="text-center">Return Submission</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of u.items; track row.ulbId; let i = $index) {
+                    <tr
+                      class="cs-row-in"
+                      [class.cl-row--returned]="row.soDecision?.status === 'RETURNED'"
+                      [class.cs-edge--red]="row.soDecision?.status === 'RETURNED'"
+                      [class.table-danger]="row.soDecision?.status === 'RETURNED'"
+                      [style.--i]="i"
+                    >
+                      <td class="text-body-secondary">{{ firstRowNumber() + i }}</td>
+                      <td class="fw-semibold">
+                        <a
+                          class="cl-ulb-link d-inline-flex align-items-center gap-2 text-reset text-decoration-none"
+                          [routerLink]="['review-state-submissions', stateId, 'ulb', row.ulbId]"
+                          [relativeTo]="mohuaRoute"
+                          [queryParams]="{ claimLetter: claimLetterId }"
+                        >
+                          <span class="cs-icon cs-icon--sm" aria-hidden="true"><i class="bi bi-building"></i></span>
+                          <span>{{ row.name }}</span>
+                        </a>
+                      </td>
+                      <td class="text-end fw-semibold">{{ formatCrore(row.installmentShare) }}</td>
+                      <td>
+                        <span
+                          class="cs-badge"
+                          [class.cs-badge--good]="row.ulbStatus === 'ELIGIBLE'"
+                          [class.cs-badge--info]="row.ulbStatus === 'ELIGIBLE_VIA_EXEMPTION'"
+                        >
+                          <i
+                            class="bi"
+                            [class.bi-check-circle-fill]="row.ulbStatus === 'ELIGIBLE'"
+                            [class.bi-shield-check]="row.ulbStatus === 'ELIGIBLE_VIA_EXEMPTION'"
+                            aria-hidden="true"
+                          ></i>
+                          {{ row.ulbStatus === 'ELIGIBLE' ? 'Eligible' : 'Exemption sought' }}
+                        </span>
+                      </td>
+                      <td>
+                        @if (canReview()) {
+                          @if (row.soDecision) {
+                            <span class="cs-badge cs-badge--bad">
+                              <i class="bi bi-arrow-return-left" aria-hidden="true"></i> Returned
+                            </span>
+                            <p class="small text-body-secondary mb-0 mt-1">
+                              {{ decisionFormsText(row.soDecision!)
+                              }}{{ row.soDecision!.remark ? ' — ' + row.soDecision!.remark : '' }}
+                              <button
+                                mat-button
+                                type="button"
+                                class="cl-link-btn"
+                                [disabled]="busy()"
+                                (click)="clearDecision(row)"
+                              >
+                                Clear
+                              </button>
+                            </p>
+                          } @else {
+                            <span class="cl-pending small text-body-secondary"
+                              ><i class="bi bi-circle" aria-hidden="true"></i> Approves with the letter</span
+                            >
+                          }
+                        } @else if (row.reviewStatus !== null) {
+                          <span class="cs-badge" [class]="badgeClass(row.reviewStatus)">{{
+                            statusLabel(row.reviewStatus, row.reviewStatusLabel ?? '')
+                          }}</span>
+                          @if (row.returnedFormIds.length) {
+                            <p class="small text-body-secondary mb-0 mt-1">
+                              {{ formLabels(row.returnedFormIds)
+                              }}{{ row.soDecision?.remark ? ' — ' + row.soDecision!.remark : '' }}
+                            </p>
+                          }
+                        } @else {
+                          <span class="text-body-secondary" aria-hidden="true">—</span
+                          ><span class="visually-hidden">Not returned</span>
+                        }
+                      </td>
+                      @if (canReview()) {
+                        <td class="text-center">
+                          @if (decidingUlbId() === row.ulbId) {
+                            <span class="spinner-border spinner-border-sm text-secondary" role="status">
+                              <span class="visually-hidden">Saving</span>
+                            </span>
+                          } @else {
+                            <button
+                              mat-icon-button
+                              type="button"
+                              class="cl-icon-btn cl-icon-btn--return"
+                              [class.cl-icon-btn--active]="!!row.soDecision"
+                              [disabled]="busy()"
+                              [attr.aria-label]="(row.soDecision ? 'Edit return of ' : 'Return ') + row.name"
+                              [matTooltip]="row.soDecision ? 'Edit return' : 'Return for correction'"
+                              (click)="openUlbReturn(row)"
+                            >
+                              <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                            </button>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td [attr.colspan]="canReview() ? 6 : 5" class="text-center text-body-secondary py-4">
+                        <i class="bi bi-search" aria-hidden="true"></i> No ULBs match.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (u.pagination.totalPages > 1) {
+              <nav
+                class="cl-pager d-flex align-items-center justify-content-end gap-2 mt-2 small"
+                aria-label="ULB pages"
+              >
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="cs-view-btn"
+                  [disabled]="u.pagination.page <= 1"
+                  (click)="goToPage(u.pagination.page - 1)"
+                >
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i> Previous
+                </button>
+                <span class="text-body-secondary"
+                  >Page {{ u.pagination.page }} of {{ u.pagination.totalPages }} · {{ u.pagination.total }} ULBs</span
+                >
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="cs-view-btn"
+                  [disabled]="u.pagination.page >= u.pagination.totalPages"
+                  (click)="goToPage(u.pagination.page + 1)"
+                >
+                  Next <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
+              </nav>
+            }
+          } @else if (ulbsLoading()) {
+            <app-mohua-page-loader label="Loading ULBs" />
+          }
+        }
+      </mat-card>
+    }
+  }
+</div>

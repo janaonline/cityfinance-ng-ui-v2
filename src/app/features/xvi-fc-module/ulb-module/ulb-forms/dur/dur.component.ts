@@ -27,6 +27,7 @@ import { EMPTY, Subscription, catchError, firstValueFrom, interval, switchMap } 
 import { environment } from '../../../../../../environments/environment';
 import { XVIFC_LS_KEYS } from '../../../shared/years-selection/years-selection.component';
 import { DocumentActionRowComponent } from '../../../../../shared/components/document-action-row/document-action-row.component';
+import { isValidationFail } from '../../../../../shared/components/document-action-row/resolve-document-actions';
 import type {
   ActionGate,
   DocumentRuntimeState,
@@ -102,6 +103,8 @@ interface DurDocument {
   uploadedAt: Date | null;
   uploadId: string | null;
   ocrProgressStep: string | null;
+  /** 'PASS' / 'FAIL' from the OCR result; null while processing or after a technical failure. */
+  validationStatus: string | null;
   validationDetails: string | null;
   failedChecks: string[];
   validationError: string | null;
@@ -127,6 +130,7 @@ function emptyDoc(id: DurDocId): DurDocument {
     uploadedAt: null,
     uploadId: null,
     ocrProgressStep: null,
+    validationStatus: null,
     validationDetails: null,
     failedChecks: [],
     validationError: null,
@@ -142,7 +146,8 @@ function emptyDoc(id: DurDocId): DurDocument {
 
 // Numeric FORM_STATUS values (src/common/constants/form-status.constants.ts on the backend) in
 // which the ULB may still edit — mirrors canUlbEditForm.
-const ULB_EDITABLE_STATUS_IDS: ReadonlySet<number> = new Set([1, 2, 4, 6]);
+// 16 = RETURNED_BY_SO: the MoHUA Section Officer returned the claim letter this form was in.
+const ULB_EDITABLE_STATUS_IDS: ReadonlySet<number> = new Set([1, 2, 4, 6, 16]);
 export const LOCKED_BANNER_MESSAGE: Readonly<Record<number, string>> = {
   3: 'This form has been submitted to State DMA and is now locked for review.',
   8: 'This form has been approved by your State DMA and is awaiting MoHUA review.',
@@ -235,12 +240,12 @@ export class DurComponent implements OnInit, OnDestroy {
    *  discretionary exemption path (unlike Annual Accounts), so this is the only source. */
   readonly isExempted = computed(() => this.currentFormStatusId() === 12); // EXEMPTED_ACKNOWLEDGED
 
-  // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6) — explains
+  // Shown when the form was just reopened (RETURNED_BY_STATE=4/RETURNED_BY_MOHUA=6/RETURNED_BY_SO=16) — explains
   // why, even though the form itself is editable again at that point. Mirrors
   // xvi-fc-bank-account.component.ts's returnNotice exactly.
   readonly returnNotice = computed(() => {
     const status = this.currentFormStatusId();
-    if (status !== 4 && status !== 6) return null;
+    if (status !== 4 && status !== 6 && status !== 16) return null;
     const actor = status === 4 ? 'the state' : 'MoHUA';
     const note = (status === 4 ? this.stateDecision() : this.mohuaDecision())?.note ?? null;
     return note ? `Returned by ${actor}: ${note}` : `This form was returned by ${actor} for correction.`;
@@ -250,8 +255,14 @@ export class DurComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
+  /** Only a real validation FAIL qualifies (the server refuses anything else); a technical failure
+   *  keeps Retry / Re-upload instead. */
   isEligibleForManualReview(doc: DurDocument): boolean {
-    return doc.status === 'failed' && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
+    return (
+      doc.status === 'failed' &&
+      isValidationFail(doc.validationStatus) &&
+      (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1)
+    );
   }
 
   isUploadBlocked(doc: DurDocument): boolean {
@@ -270,7 +281,8 @@ export class DurComponent implements OnInit, OnDestroy {
     if (doc.isManualReviewRequested) return false;
     if (this.isUploadBlocked(doc)) return false;
     if (doc.manualReviewDecision?.status === 'RETURNED') {
-      return this.manualReviewAttemptsExhausted(doc);
+      // The server only accepts a real FAIL here too; a crash on the last upload means Re-upload.
+      return this.manualReviewAttemptsExhausted(doc) && isValidationFail(doc.validationStatus);
     }
     return this.isEligibleForManualReview(doc);
   }
@@ -401,6 +413,16 @@ export class DurComponent implements OnInit, OnDestroy {
     if (this.hasProcessingDocs()) event.preventDefault();
   }
 
+  /** ADMIN decides a manual review outside this page, so re-read the form when the ULB comes back
+   *  to the tab while a review is pending. Skipped mid-upload so a local file isn't replaced. */
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState !== 'visible') return;
+    const docs = this.documents();
+    if (!docs.some((d) => this.isAwaitingManualReview(d)) || docs.some((d) => d.status === 'uploading')) return;
+    void this.loadExistingData();
+  }
+
   ngOnDestroy(): void {
     this.stopPolling();
     this.documents().forEach((d) => {
@@ -511,6 +533,7 @@ export class DurComponent implements OnInit, OnDestroy {
             uploadId: upload.uploadId,
             uploadedAt: new Date(upload.uploadedAt),
             ocrProgressStep: null,
+            validationStatus: null,
             validationDetails: null,
             failedChecks: [],
           };
@@ -538,6 +561,7 @@ export class DurComponent implements OnInit, OnDestroy {
               status: 'processing',
               uploadedAt: new Date(),
               ocrProgressStep: null,
+              validationStatus: null,
               validationDetails: null,
               failedChecks: [],
               isManualReviewRequested: false,
@@ -686,6 +710,7 @@ export class DurComponent implements OnInit, OnDestroy {
             file: { originalName: string; sizeKb: number; fileUrl?: string | null };
             ocrInfo: {
               progressStep: string | null;
+              validationStatus?: string | null;
               validationDetails: string | null;
               failedChecks: string[];
               isManualReviewRequested: boolean;
@@ -724,6 +749,7 @@ export class DurComponent implements OnInit, OnDestroy {
             uploadId: cu.uploadId,
             uploadedAt: new Date(cu.uploadedAt),
             ocrProgressStep: cu.ocrInfo?.progressStep ?? null,
+            validationStatus: cu.ocrInfo?.validationStatus ?? null,
             validationDetails: cu.ocrInfo?.validationDetails ?? null,
             failedChecks: cu.ocrInfo?.failedChecks ?? [],
             isManualReviewRequested: cu.ocrInfo?.isManualReviewRequested ?? false,
@@ -787,6 +813,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 uploadId: string;
                 ocrInfo: {
                   progressStep: string | null;
+                  validationStatus?: string | null;
                   validationDetails: string | null;
                   failedChecks: string[];
                   isManualReviewRequested: boolean;
@@ -815,6 +842,7 @@ export class DurComponent implements OnInit, OnDestroy {
               const unchanged =
                 newStatus === doc.status &&
                 (remote.currentUpload.ocrInfo?.progressStep ?? null) === doc.ocrProgressStep &&
+                (remote.currentUpload.ocrInfo?.validationStatus ?? null) === doc.validationStatus &&
                 (remote.currentUpload.ocrInfo?.validationDetails ?? null) === doc.validationDetails &&
                 (remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false) === doc.isManualReviewRequested &&
                 (remote.currentUpload.retryValidationCount ?? 0) === doc.retryValidationCount &&
@@ -828,6 +856,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 ...doc,
                 status: newStatus,
                 ocrProgressStep: remote.currentUpload.ocrInfo?.progressStep ?? null,
+                validationStatus: remote.currentUpload.ocrInfo?.validationStatus ?? null,
                 validationDetails: remote.currentUpload.ocrInfo?.validationDetails ?? null,
                 failedChecks: remote.currentUpload.ocrInfo?.failedChecks ?? [],
                 isManualReviewRequested: remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false,

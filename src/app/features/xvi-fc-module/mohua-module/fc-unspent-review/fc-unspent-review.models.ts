@@ -141,5 +141,5 @@ export interface FcUnspentMohuaSubmitData {
 }
 
 export interface FcUnspentMohuaRejectFormPayload {
-  mohuaRemarks: string;
+  rejectionRemarks: string;
 }

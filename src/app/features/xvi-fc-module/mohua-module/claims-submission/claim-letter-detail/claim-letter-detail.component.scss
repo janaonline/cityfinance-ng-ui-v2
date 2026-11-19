@@ -1,0 +1,67 @@
+@use '../claims-shared';
+// Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
+@use '../claims-ui';
+
+// A tone per headline card: the card's outline, icon and value take it (teal is the page default).
+.cl-tone--orange {
+  --t: var(--clr-primary, #d9730d);
+}
+
+.cl-tone--good {
+  --t: #1d7a46;
+}
+
+.cl-tone--info {
+  --t: #2f5fa8;
+}
+
+.cl-stat__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.cl-return__remark {
+  white-space: pre-line;
+}
+
+.cl-ulb-link:hover span:last-child {
+  text-decoration: underline;
+}
+
+// Return is the cautious action, outlined in red; Approve is the filled green one.
+.cl-actions__return {
+  --mat-button-outlined-label-text-color: var(--cl-red);
+  --mat-button-outlined-outline-color: color-mix(in srgb, var(--cl-red) 45%, transparent);
+}
+
+.cl-actions__approve {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
+}
+
+.cl-link-btn {
+  --mat-button-text-container-height: 22px;
+  --mat-button-text-horizontal-padding: 6px;
+  --mat-button-text-label-text-color: var(--t);
+}
+
+// The per-ULB return button: red, and filled once the ULB is marked.
+.cl-icon-btn--return {
+  --mat-icon-button-state-layer-size: 32px;
+  --mat-icon-button-icon-color: var(--cl-red);
+
+  padding: 0;
+  font-size: 0.9rem;
+
+  &.cl-icon-btn--active {
+    --mat-icon-button-icon-color: #fff;
+
+    background: var(--cl-red);
+  }
+}
+
+.cl-om-btn {
+  --mat-button-filled-container-color: #1d7a46;
+  --mat-button-filled-label-text-color: #fff;
+
+  flex: none;
+}

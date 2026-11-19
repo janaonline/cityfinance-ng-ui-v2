@@ -1,0 +1,11 @@
+@use '../../claims-submission/claims-shared';
+// Material + Bootstrap tuning shared with the claims screens; only this page's own pieces are below.
+@use '../../claims-submission/claims-ui';
+
+.omh-heading {
+  font-size: 0.85rem;
+}
+
+.omh-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

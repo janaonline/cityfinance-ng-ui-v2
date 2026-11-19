@@ -3,8 +3,8 @@ import { MOHUA_ROLES_CONFIG } from '../shared/roles-teams-overview/roles-teams-o
 
 /**
  * The read-only dashboard: national overview, one state, one ULB, and the read-only views of the five state
- * forms. Shared as-is by MoHUA and DoE (DoE is a view-only copy of the MoHUA dashboard), so a change here
- * changes both. Nothing in this list can approve, return or edit anything.
+ * forms. Shared as-is by MoHUA, DoE (a view-only copy of the MoHUA dashboard) and PMU (its Overview), so a
+ * change here changes all three. Nothing in this list can approve, return or edit anything.
  */
 export const MOHUA_DASHBOARD_ROUTES: Routes = [
   {
@@ -67,6 +67,38 @@ export const MOHUA_DASHBOARD_ROUTES: Routes = [
   },
 ];
 
+/**
+ * Claims & Submissions (all States, one State, one claim letter) and the OM history: shared by MoHUA, who acts on
+ * them, and PMU, who only monitors. The pages hide their actions for anyone but MoHUA, and the API refuses them.
+ * Generate OM stays MoHUA's own route.
+ */
+export const MOHUA_CLAIMS_READ_ROUTES: Routes = [
+  {
+    path: 'claims-submission',
+    loadComponent: () =>
+      import('./claims-submission/claims-submission.component').then((m) => m.ClaimsSubmissionComponent),
+  },
+  {
+    path: 'claims-submission/:stateId',
+    loadComponent: () =>
+      import('./claims-submission/state-claim-letters/state-claim-letters.component').then(
+        (m) => m.StateClaimLettersComponent,
+      ),
+  },
+  {
+    path: 'claims-submission/:stateId/letter/:claimLetterId',
+    loadComponent: () =>
+      import('./claims-submission/claim-letter-detail/claim-letter-detail.component').then(
+        (m) => m.ClaimLetterDetailComponent,
+      ),
+  },
+  {
+    path: 'om-history',
+    loadComponent: () =>
+      import('./om-generation/om-history/om-history.component').then((m) => m.OmHistoryComponent),
+  },
+];
+
 export const MOHUA_ROUTES: Routes = [
   {
     path: '',
@@ -105,6 +137,19 @@ export const MOHUA_ROUTES: Routes = [
         loadComponent: () =>
           import('./fc-unspent-review/fc-unspent-review.component').then((m) => m.FcUnspentMohuaReviewComponent),
       },
+      {
+        path: 'om-generation',
+        loadComponent: () =>
+          import('./om-generation/om-generation.component').then((m) => m.OmGenerationComponent),
+      },
+      {
+        path: 'om-generation/letter/:claimLetterId',
+        // Keeps "Generate OM" highlighted in the sidebar on the letter's page.
+        data: { menuGroup: 'om-generation' },
+        loadComponent: () =>
+          import('./om-generation/om-letter/om-letter.component').then((m) => m.OmLetterComponent),
+      },
+      ...MOHUA_CLAIMS_READ_ROUTES,
       {
         path: '**',
         redirectTo: 'overview',

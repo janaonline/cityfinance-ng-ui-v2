@@ -1,5 +1,6 @@
 import { ConditionalFieldConfig } from '../dynamic-form-visibility.service';
 import { WorklistStatusSummary } from '../shared/status-summary-cards/status-summary-cards.models';
+import type { EulbStatusSummary } from '../state-module/elected-body-status/eulb-status.models';
 
 // Generic envelope/error types mirror the backend's shared XviFcApiResponse / XviFcValidationErrorMap
 // — declared fresh here rather than imported from another module's models file, matching this
@@ -115,7 +116,7 @@ export interface PmuFormReviewData {
   currentFormStatus: number;
   currentFormStatusLabel: string;
   /** Set on PMU reject, never cleared until the next transition overwrites it. */
-  pmuRemarks: string | null;
+  rejectionRemarks: string | null;
   questions?: ConditionalFieldConfig[];
   rowSummary?: PmuRowSummary;
   /** Only present for Elected Body — the Excel upload's validation status ('VALID'/'INVALID'/
@@ -123,6 +124,8 @@ export interface PmuFormReviewData {
    *  control that `signedElectedbodyFile`'s `visibleWhen` condition gates on (same mechanism
    *  `ElectedBodyStatusComponent`'s own State-side page already uses). */
   validationStatus?: string;
+  /** Only present for Elected Body — ULBs per elected-body status (the State page's summary cards). */
+  statusSummary?: EulbStatusSummary;
   permissions: PmuPermissions;
   actors: PmuActor[];
 }
@@ -134,7 +137,7 @@ export interface PmuFormSubmitData {
 }
 
 export interface PmuRejectFormPayload {
-  pmuRemarks: string;
+  rejectionRemarks: string;
 }
 
 export interface PmuRowPermissions {

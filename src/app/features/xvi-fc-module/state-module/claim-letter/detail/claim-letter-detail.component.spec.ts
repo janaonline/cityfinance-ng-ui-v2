@@ -1,4 +1,5 @@
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { StateNotificationService } from '../../state-notification.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AbstractControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -60,6 +61,7 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     claimLetterId: 'claim-1',
     installment: 1,
     batchNumber: 1,
+    resubmissionNumber: 0,
     version: 1,
     currentFormStatus: 2, // FORM_STATUS.IN_PROGRESS
     currentFormStatusLabel: 'In Progress',
@@ -393,6 +395,12 @@ describe('ClaimLetterDetailComponent', () => {
         { label: 'Claim Letter', routerLink: ['/xvifc', 'year-test-id', 'claim-letter'] },
         { label: 'Batch #2' },
       ]);
+    });
+
+    it('names a letter built after a return Batch #n-R<n>', async () => {
+      await setupEdit(buildClaim({ batchNumber: 2, resubmissionNumber: 1 }));
+      expect(component.batchLabel()).toBe('2-R1');
+      expect(component.breadcrumbLinks()[1]).toEqual({ label: 'Batch #2-R1' });
     });
 
     it('shows all four financial-summary tiles straight from the loaded claim, netting out other concurrent batches', async () => {
@@ -1150,9 +1158,13 @@ describe('ClaimLetterDetailComponent', () => {
       await setupSigned();
       (claimLetterService.getDetail as jasmine.Spy).calls.reset();
       spyOn(claimLetterService, 'submit').and.returnValue(of(buildClaim({ currentFormStatus: 5 })));
+      const bell = spyOn(TestBed.inject(StateNotificationService), 'refreshNow').and.resolveTo();
       dialogOpenSpy.and.returnValue({ afterClosed: () => of(true) });
 
       component.submitToMohua();
+
+      // The new letter clears a returned-letter alert, so the bell reloads straight away.
+      expect(bell).toHaveBeenCalledOnceWith(component.stateId);
 
       expect(dialogOpenSpy).toHaveBeenCalledOnceWith(
         ConfirmDialogComponent,

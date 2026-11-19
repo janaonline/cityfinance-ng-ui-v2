@@ -1,0 +1,26 @@
+@use '../claims-submission/claims-shared';
+// Material + Bootstrap tuning shared with the claims screens; only this page's own pieces are below.
+@use '../claims-submission/claims-ui';
+
+.om-heading {
+  font-size: 0.85rem;
+}
+
+// The State heading row of each group, across the whole table.
+.om-state-row th {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  background: color-mix(in srgb, var(--t) 5%, transparent);
+}
+
+// Letters sit one step in under their State.
+.om-letter-cell {
+  padding-left: 2.6rem;
+}
+
+.om-history-link {
+  --mat-button-text-label-text-color: var(--t);
+  --mat-button-text-label-text-size: 0.78rem;
+}

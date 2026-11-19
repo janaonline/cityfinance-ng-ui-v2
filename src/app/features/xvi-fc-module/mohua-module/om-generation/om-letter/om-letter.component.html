@@ -1,0 +1,191 @@
+<div class="cs-page">
+  <a class="cs-back" [routerLink]="['om-generation']" [relativeTo]="mohuaRoute">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Generate OM
+  </a>
+
+  <app-om-steps [current]="issued() ? 3 : 2" />
+
+  @if (loading()) {
+    <app-mohua-page-loader label="Loading the Office Memorandum" />
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
+    </div>
+  } @else if (view()) {
+    @let v = view()!;
+    <h1 class="cs-title">
+      Generate OM — {{ v.content.claimLetterRefNo }}
+      <span class="cs-year">FY {{ v.content.designYearLabel }}</span>
+    </h1>
+    <p class="cs-subtitle">
+      {{ v.content.stateName }}. One OM for this claim letter, covering every ULB on it. The figures come from the
+      verified letter.
+    </p>
+
+    <!-- Headline figures, in the claim-letter review page's card style. -->
+    <section class="row row-cols-1 row-cols-sm-3 g-2 mb-3" aria-label="Claim letter summary">
+      <div class="col" appReveal [revealDelay]="0">
+        <mat-card appearance="outlined" class="cs-panel h-100 d-flex flex-row align-items-center gap-2">
+          <span class="cs-icon" aria-hidden="true"><i class="bi bi-buildings"></i></span>
+          <div class="d-flex flex-column text-truncate">
+            <span class="oml-value fw-bold cs-accent">
+              <span [appCountUp]="'' + v.content.ulbCount"></span> out of {{ v.content.stateUlbTotal }}
+              @if (ulbShare(); as share) {
+                ({{ share }})
+              }
+            </span>
+            <h2 class="oml-label small fw-semibold mb-0">ULBs included in this claim</h2>
+            <span class="small text-body-secondary text-truncate">of the State's total ULBs</span>
+          </div>
+        </mat-card>
+      </div>
+      <div class="col" appReveal [revealDelay]="80">
+        <mat-card appearance="outlined" class="cs-panel oml-tone--orange h-100 d-flex flex-row align-items-center gap-2">
+          <span class="cs-icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
+          <div class="d-flex flex-column text-truncate">
+            <span class="oml-value fw-bold cs-accent" [appCountUp]="formatCrore(totalClaimed())"></span>
+            <h2 class="oml-label small fw-semibold mb-0">Amount claimed</h2>
+            <span class="small text-body-secondary text-truncate">
+              @if (v.content.yearAllocation !== null) {
+                Allocation to {{ v.content.stateName }}: {{ formatCrore(v.content.yearAllocation) }}
+              } @else {
+                State allocation not available
+              }
+            </span>
+          </div>
+        </mat-card>
+      </div>
+      <div class="col" appReveal [revealDelay]="160">
+        <mat-card appearance="outlined" class="cs-panel oml-tone--good h-100 d-flex flex-row align-items-center gap-2">
+          <span class="cs-icon" aria-hidden="true"><i class="bi bi-patch-check"></i></span>
+          <div class="d-flex flex-column text-truncate">
+            <span class="oml-value fw-bold cs-accent" [appCountUp]="formatCrore(v.content.totalAmount)"></span>
+            <h2 class="oml-label small fw-semibold mb-0">Amount recommended</h2>
+            <span class="small text-body-secondary text-truncate">
+              {{ v.refNo ? 'In ' + v.refNo : 'By MoHUA in this OM' }}
+            </span>
+          </div>
+        </mat-card>
+      </div>
+    </section>
+
+    <!-- The letter's ULBs, collapsed by default so the OM stays close to the top. -->
+    <mat-card appearance="outlined" class="cs-panel mb-3">
+      <button
+        type="button"
+        class="oml-toggle d-flex align-items-center gap-2 w-100 border-0 bg-transparent p-0 text-start"
+        [attr.aria-expanded]="ulbsOpen()"
+        aria-controls="oml-ulb-list"
+        (click)="toggleUlbs()"
+      >
+        <span class="cs-icon" aria-hidden="true"><i class="bi bi-buildings"></i></span>
+        <span class="oml-heading fw-bold flex-grow-1">ULBs in this claim letter ({{ v.ulbs.length }})</span>
+        <span class="badge rounded-pill cs-tint">{{ formatCrore(totalClaimed()) }} claimed</span>
+        <i
+          class="bi bi-chevron-down oml-toggle__chevron cs-accent"
+          [class.oml-toggle__chevron--open]="ulbsOpen()"
+          aria-hidden="true"
+        ></i>
+      </button>
+      @if (ulbsOpen()) {
+        <div class="cs-flat-wrap mt-2" id="oml-ulb-list">
+          <table class="table table-hover align-middle mb-0 cs-flat">
+            <caption class="visually-hidden">
+              ULBs in claim letter
+              {{
+                v.content.claimLetterRefNo
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">ULB</th>
+                <th scope="col">Census code</th>
+                <th scope="col" class="text-end">Allocation</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ulb of v.ulbs; track ulb.ulbId; let i = $index) {
+                <tr class="cs-row-in" [style.--i]="i">
+                  <td class="text-body-secondary">{{ i + 1 }}</td>
+                  <td class="fw-semibold">
+                    <span class="d-inline-flex align-items-center gap-2">
+                      <span class="cs-icon cs-icon--sm" aria-hidden="true"><i class="bi bi-building"></i></span>
+                      {{ ulb.name }}
+                    </span>
+                  </td>
+                  <td>{{ ulb.censusCode ?? '—' }}</td>
+                  <td class="text-end">{{ formatCrore(ulb.allocatedAmount) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center text-body-secondary py-4">No ULBs on this claim letter.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card>
+
+    <mat-card appearance="outlined" class="cs-panel om-editor p-0" aria-label="Office Memorandum">
+      <header class="om-editor__bar d-flex flex-wrap align-items-center gap-2">
+        <span class="cs-icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
+        <div class="flex-grow-1">
+          <h2 class="oml-heading fw-bold mb-0">Office Memorandum</h2>
+          <p class="small text-body-secondary mb-0" aria-live="polite">
+            @if (issued()) {
+              <i class="bi bi-lock" aria-hidden="true"></i> Issued — read-only
+            } @else {
+              {{ saveText() }}
+            }
+          </p>
+        </div>
+        @if (!issued()) {
+          <span class="badge rounded-pill cs-tint">
+            Required: {{ filledCount() }} of {{ requiredKeys().length }} filled
+          </span>
+          <button
+            mat-stroked-button
+            type="button"
+            class="cs-view-btn"
+            [disabled]="filledCount() === requiredKeys().length"
+            (click)="nextEmpty()"
+          >
+            Next empty box <i class="bi bi-arrow-down" aria-hidden="true"></i>
+          </button>
+          <span [matTooltip]="canGenerate() ? '' : 'Fill in the OM No. first'">
+            <button
+              mat-flat-button
+              type="button"
+              class="oml-primary"
+              [disabled]="!canGenerate() || generating()"
+              [attr.aria-busy]="generating()"
+              (click)="confirmGenerate()"
+            >
+              @if (generating()) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Generating…
+              } @else {
+                <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> Generate OM
+              }
+            </button>
+          </span>
+        } @else {
+          <div class="d-flex flex-wrap gap-2">
+            <button mat-stroked-button type="button" class="cs-view-btn" (click)="download()">
+              <i class="bi bi-download" aria-hidden="true"></i> Download OM (PDF)
+            </button>
+            <button mat-flat-button type="button" class="oml-primary" (click)="uploadSigned()">
+              <i class="bi bi-upload" aria-hidden="true"></i>
+              {{ v.status === 'SIGNED_UPLOADED' ? 'Replace signed OM' : 'Upload signed OM' }}
+            </button>
+          </div>
+        }
+      </header>
+      <div class="om-editor__body">
+        <app-om-document [content]="v.content" [editor]="editor()" (fieldCommitted)="onFieldCommitted($event)" />
+      </div>
+    </mat-card>
+  }
+</div>
