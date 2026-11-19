@@ -33,12 +33,16 @@ export interface DigitizationJobStatusResponse {
   accuracy_score: number | null;
   overall_assessment?: string | null;
   arithmetic_assessment: string | null;
+  doc_match?: 'match' | 'mismatch' | null;
   enable_document_classification: boolean;
   detected_document_type: AfsDocumentType | null;
   multiple_documents_detected: boolean | null;
   page_count: number | null;
   ocr_cost_usd: number | null;
   ocr_price_inr: number | null;
+  gemini_cost_inr?: number | null;
+  cost_breakdown_inr?: DigitizationCostBreakdown | null;
+  total_cost_inr?: number | null;
   excel_s3_key: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -238,8 +242,43 @@ export interface DigitizationJobResultResponse {
   message: string;
 }
 
+export interface DigitizationCostBreakdown {
+  ocr: number | null;
+  cross_check: number | null;
+  arithmetic: number | null;
+  classification: number | null;
+  total: number | null;
+}
+
+export interface DigitizationAssessmentCounts {
+  passed: number;
+  partial: number;
+  failed: number;
+  not_applicable: number;
+  /** Arithmetic skipped on a doc mismatch. Absent from older API responses. */
+  skipped?: number;
+}
+
+export interface DigitizationListSummary {
+  total: number;
+  digitized: number;
+  failed: number;
+  avg_confidence: number | null;
+  confidence_gte_80: number;
+  confidence_lt_80: number;
+  doc_match: number;
+  doc_mismatch: number;
+  arithmetic: DigitizationAssessmentCounts;
+  overall: DigitizationAssessmentCounts;
+}
+
 export interface DigitizationJobsListResponse {
   jobs: DigitizationJobStatusResponse[];
+  summary?: DigitizationListSummary;
+  total_cost_breakdown_inr?: DigitizationCostBreakdown;
+  total_ocr_cost_inr?: number;
+  total_gemini_cost_inr?: number;
+  total_cost_inr?: number;
   total: number;
   skip: number;
   limit: number;
