@@ -166,6 +166,7 @@ export class AfsDigitizationV3Component implements OnInit {
   rows = signal<DigitizationV3Row[]>([]);
   metrics = signal<DigitizationV3Metrics | null>(null);
   overall = signal<DigitizationV3OverallMetrics | null>(null);
+  refreshingMetrics = signal(false);
   totalCount = signal(0);
   loading = signal(false);
   queueing = signal(false);
@@ -200,7 +201,7 @@ export class AfsDigitizationV3Component implements OnInit {
     const status = this.digitizationV3Status || f.digitizationStatus;
     if (status) {
       const label = this.statusOptions.find((o) => o.value === status)?.label ?? status;
-      chips.push({ label: 'Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
+      chips.push({ label: 'Job Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
     }
     if (this.contentFilter) {
       chips.push({ label: 'Contents', value: this.contentFilter === 'consolidated' ? 'Consolidated' : 'Single type', clear: () => this.clearPageFilter('content') });
@@ -343,6 +344,31 @@ export class AfsDigitizationV3Component implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((overall) => this.overall.set(overall));
+  }
+
+  /** When the score cards were last recounted (they are a snapshot; the counts move live). */
+  lastUpdated(): string | null {
+    const o = this.overall();
+    return o?.scores?.computedAt ?? o?.updatedAt ?? null;
+  }
+
+  /** Recounts the score snapshot on the server now, instead of waiting for the automatic refresh. */
+  refreshMetrics(): void {
+    if (this.refreshingMetrics()) return;
+    this.refreshingMetrics.set(true);
+    this.api
+      .refreshOverallMetrics()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (overall) => {
+          this.overall.set(overall);
+          this.refreshingMetrics.set(false);
+        },
+        error: () => {
+          this.refreshingMetrics.set(false);
+          this.snackBar.open('Could not refresh the metrics. Please try again.', 'Close', { duration: 4000 });
+        },
+      });
   }
 
   overallValue(key: OverallKey): number | string {

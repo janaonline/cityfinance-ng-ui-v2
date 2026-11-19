@@ -220,6 +220,13 @@ export class AfsDigitizationV3Service {
       .pipe(map((res) => res.data));
   }
 
+  /** Recounts the score / run snapshot on the server right now and returns the fresh overall metrics. */
+  refreshOverallMetrics() {
+    return this.http
+      .post<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics/refresh`, {})
+      .pipe(map((res) => res.data));
+  }
+
   getJobLog(afsDigitizationJobId: string) {
     return this.http
       .get<{ success: boolean; data: AfsDigitizationJobLog }>(`${this.base}/jobs/${afsDigitizationJobId}/log`)
