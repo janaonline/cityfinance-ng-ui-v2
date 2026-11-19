@@ -126,16 +126,16 @@ export class AfsDigitizationV3Component implements OnInit {
   readonly overallCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'total', title: 'Total files', icon: 'bi bi-collection', class: 'text-info' },
     { key: 'totalRun', title: 'Total run', icon: 'bi bi-play-circle', class: 'text-info' },
-    { key: 'digitized', title: 'Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
-    { key: 'queued', title: 'Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
-    { key: 'failed', title: 'Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
+    { key: 'digitized', title: 'Job Digitized', icon: 'bi bi-check-circle', class: 'text-success' },
+    { key: 'queued', title: 'Job Queued', icon: 'bi bi-hourglass-split', class: 'text-warning' },
+    { key: 'failed', title: 'Job Failed', icon: 'bi bi-x-circle', class: 'text-danger' },
   ];
 
   /** Score cards, shown in their own row under the counts (same snapshot-based values) */
   readonly overallScoreCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'confidence', title: 'Confidence', icon: 'bi bi-speedometer2', class: 'text-primary' },
-    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
     { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
+    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
     { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
   ];
 
@@ -166,6 +166,7 @@ export class AfsDigitizationV3Component implements OnInit {
   rows = signal<DigitizationV3Row[]>([]);
   metrics = signal<DigitizationV3Metrics | null>(null);
   overall = signal<DigitizationV3OverallMetrics | null>(null);
+  refreshingMetrics = signal(false);
   totalCount = signal(0);
   loading = signal(false);
   queueing = signal(false);
@@ -200,7 +201,7 @@ export class AfsDigitizationV3Component implements OnInit {
     const status = this.digitizationV3Status || f.digitizationStatus;
     if (status) {
       const label = this.statusOptions.find((o) => o.value === status)?.label ?? status;
-      chips.push({ label: 'Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
+      chips.push({ label: 'Job Status', value: label, clear: this.digitizationV3Status ? () => this.clearPageFilter('status') : undefined });
     }
     if (this.contentFilter) {
       chips.push({ label: 'Contents', value: this.contentFilter === 'consolidated' ? 'Consolidated' : 'Single type', clear: () => this.clearPageFilter('content') });
@@ -345,6 +346,31 @@ export class AfsDigitizationV3Component implements OnInit {
       .subscribe((overall) => this.overall.set(overall));
   }
 
+  /** When the score cards were last recounted (they are a snapshot; the counts move live). */
+  lastUpdated(): string | null {
+    const o = this.overall();
+    return o?.scores?.computedAt ?? o?.updatedAt ?? null;
+  }
+
+  /** Recounts the score snapshot on the server now, instead of waiting for the automatic refresh. */
+  refreshMetrics(): void {
+    if (this.refreshingMetrics()) return;
+    this.refreshingMetrics.set(true);
+    this.api
+      .refreshOverallMetrics()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (overall) => {
+          this.overall.set(overall);
+          this.refreshingMetrics.set(false);
+        },
+        error: () => {
+          this.refreshingMetrics.set(false);
+          this.snackBar.open('Could not refresh the metrics. Please try again.', 'Close', { duration: 4000 });
+        },
+      });
+  }
+
   overallValue(key: OverallKey): number | string {
     const o = this.overall();
     if (!o) return '–';
@@ -411,6 +437,7 @@ export class AfsDigitizationV3Component implements OnInit {
       return [
         { value: n(sc.arithmeticPass), label: 'Pass', class: 'text-success' },
         { value: n(sc.arithmeticFail), label: 'Fail', class: 'text-danger' },
+        { value: n(sc.arithmeticSkipped ?? 0), label: 'Skipped', class: 'text-secondary' },
       ];
     }
     if (sc && key === 'overallScore') {
@@ -431,7 +458,15 @@ export class AfsDigitizationV3Component implements OnInit {
     if (o?.runs && (key === 'newDigitized' || key === 'newFailed')) return 'Run through v3';
     const sc = o?.scores;
     if (sc && key === 'confidence') return 'Digitized files with a crosscheck confidence (Gemini accuracy) score, split at 80';
-    if (sc && key === 'arithmetic') return 'Digitized files with an arithmetic check result';
+    if (sc && key === 'arithmetic') {
+      const ran = sc.arithmeticPass + sc.arithmeticFail;
+      const skipped = sc.arithmeticSkipped ?? 0;
+      const n = (value: number) => value.toLocaleString('en-IN');
+      return (
+        `Arithmetic ran on ${n(ran)} of ${n(sc.matches)} files whose document matched (pass + fail). ` +
+        `${n(skipped)} skipped because the uploaded document type isn't in the file.`
+      );
+    }
     if (sc && key === 'overallScore') return 'Digitized files with an overall result: pass, partial or fail';
     const s = o?.scores;
     if (s && (key === 'scored' || key === 'docMatch' || key === 'docMismatch')) {
@@ -695,7 +730,7 @@ export class AfsDigitizationV3Component implements OnInit {
     return score >= 95 ? 'score-good' : score >= 75 ? 'score-mid' : 'score-bad';
   }
 
-  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, UNVERIFIED) → grey */
+  /** PASS → green, PARTIAL → amber, FAIL → red, anything else (NOT_APPLICABLE, SKIPPED, UNVERIFIED) → grey */
   assessClass(value: string | null | undefined): string {
     switch (value) {
       case 'PASS':
@@ -709,10 +744,11 @@ export class AfsDigitizationV3Component implements OnInit {
     }
   }
 
-  /** NOT_APPLICABLE → "N/A"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
+  /** NOT_APPLICABLE → "N/A", SKIPPED → "Skipped"; the rest show as they are (PASS, PARTIAL, FAIL, UNVERIFIED) */
   assessLabel(value: string | null | undefined): string {
     if (!value) return '–';
-    return value === 'NOT_APPLICABLE' ? 'N/A' : value;
+    if (value === 'NOT_APPLICABLE') return 'N/A';
+    return value === 'SKIPPED' ? 'Skipped' : value;
   }
 
   /** 850 → "850 ms", 12_300 → "12.3 s", 125_000 → "2m 5s", 3_900_000 → "1h 5m" */

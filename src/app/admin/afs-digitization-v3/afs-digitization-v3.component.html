@@ -12,7 +12,7 @@
       <h6 class="fw-bold mb-3">Digitization</h6>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Status</mat-label>
+        <mat-label>Job Status</mat-label>
         <mat-select [(ngModel)]="digitizationV3Status" (selectionChange)="onPageFilterChanged()">
           @for (o of statusOptions; track o.value) {
           <mat-option [value]="o.value">{{ o.label }}</mat-option>
@@ -58,7 +58,23 @@
   <div class="content">
     <h3 class="fw-bold mb-4">AFS Digitization V3</h3>
 
-    <h6 class="fw-bold mb-2">Overall</h6>
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <h6 class="fw-bold mb-0">Overall</h6>
+      @if (lastUpdated(); as updated) {
+      <small class="text-muted"
+        matTooltip="The counts move as jobs run. The score cards are recounted a few minutes after a job finishes, or when you press refresh.">
+        Last updated: {{ updated | date: 'dd MMM yyyy, hh:mm a' }}
+      </small>
+      }
+      <button mat-icon-button type="button" aria-label="Refresh metrics" matTooltip="Refresh metrics"
+        [disabled]="refreshingMetrics()" (click)="refreshMetrics()">
+        @if (refreshingMetrics()) {
+        <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+        <mat-icon>refresh</mat-icon>
+        }
+      </button>
+    </div>
     <!-- One overall card. A card with several numbers shows them side by side, each value over its label -->
     <ng-template #overallCardTpl let-card>
       @if (overallParts(card.key).length) {
@@ -74,7 +90,7 @@
               <strong>How the overall result is decided</strong>
               <ul>
                 <li><b class="text-danger">Fail</b> – document mismatch</li>
-                <li><b class="text-danger">Fail</b> – OCR confidence &lt; 80</li>
+                <li><b class="text-danger">Fail</b> – Textract confidence &lt; 80</li>
                 <li><b class="text-success">Pass</b> – crosscheck ≥ 80 and arithmetic not failed</li>
                 <li><b class="text-danger">Fail</b> – crosscheck &lt; 80 and arithmetic failed</li>
                 <li><b class="text-warning">Partial</b> – any other case (crosscheck &lt; 80 with arithmetic passed, or
@@ -436,7 +452,7 @@
         @if (info?.status === 'digitized' && info?.scores; as s) {
         <div class="score-list">
           @if (s.ocrConfidenceScore != null) {
-          <div matTooltip="OCR confidence: how sure Textract was about the text it read">
+          <div matTooltip="Textract confidence: how sure Textract was about the text it read">
             <span class="score-label">Textract confidence</span>
             <span [ngClass]="scoreClass(s.ocrConfidenceScore)">{{ formatScore(s.ocrConfidenceScore) }}</span>
           </div>
@@ -458,7 +474,7 @@
               assessLabel(s.arithmeticAssessment) }}</span>
             } @else { <span class="text-muted">–</span> }
           </div>
-          <div matTooltip="Overall result: fails on a document mismatch or low OCR confidence, otherwise from the crosscheck and arithmetic results">
+          <div matTooltip="Overall result: fails on a document mismatch or low Textract confidence, otherwise from the crosscheck and arithmetic results">
             <span class="score-label">Overall</span>
             @if (s.overallAssessment) {
             <span class="badge assess" [ngClass]="assessClass(s.overallAssessment)">{{

@@ -139,6 +139,8 @@ export interface DigitizationV3ScoreMetrics {
   confidenceLow: number;
   arithmeticPass: number;
   arithmeticFail: number;
+  /** Arithmetic skipped on a doc mismatch. Absent in snapshots computed before it existed. */
+  arithmeticSkipped?: number;
   overallPass: number;
   overallPartial: number;
   overallFail: number;
@@ -215,6 +217,13 @@ export class AfsDigitizationV3Service {
   getOverallMetrics() {
     return this.http
       .get<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Recounts the score / run snapshot on the server right now and returns the fresh overall metrics. */
+  refreshOverallMetrics() {
+    return this.http
+      .post<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics/refresh`, {})
       .pipe(map((res) => res.data));
   }
 

@@ -127,7 +127,6 @@
   <mat-form-field appearance="outline" class="full-width my-2">
     <mat-label>Year</mat-label>
     <mat-select placeholder="Select Year" formControlName="yearId">
-      <mat-option [value]="''">Select Year</mat-option>
       @for (y of filters.years; track $index) {
         <mat-option [value]="y._id">{{ y.year }}</mat-option>
       }
@@ -136,8 +135,8 @@
 
   <!-- Digitization Status -->
   <mat-form-field appearance="outline" class="full-width my-2">
-    <mat-label>Digitization Status</mat-label>
-    <mat-select placeholder="Select Digitization Status" formControlName="digitizationStatus">
+    <mat-label>Job Status</mat-label>
+    <mat-select placeholder="Select Job Status" formControlName="digitizationStatus">
       <mat-option [value]="''">All</mat-option>
       @for (d of filters.digitizationStatuses; track $index) {
         <mat-option [value]="d.key">{{ d.name }}</mat-option>
