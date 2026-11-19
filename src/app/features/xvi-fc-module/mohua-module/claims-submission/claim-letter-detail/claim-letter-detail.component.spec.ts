@@ -146,15 +146,12 @@ describe('ClaimLetterDetailComponent', () => {
     expect(letterMeta.textContent).not.toContain('Signed');
     expect(letterMeta.textContent).toContain('AP-CL-003.pdf');
     expect(letterMeta.textContent).not.toContain('₹');
-    const tooltip = (selector: string) =>
-      fixture.debugElement.query(By.css(selector)).injector.get(MatTooltip).message;
+    const tooltip = (selector: string) => fixture.debugElement.query(By.css(selector)).injector.get(MatTooltip).message;
     // The forms bar counts the five State forms (named on hover) and says they are read-only.
     const formsMeta = host.querySelector('.cl-review__row--forms .cl-review__meta') as HTMLElement;
     expect(formsMeta.textContent).toContain('5 conditions');
     expect(formsMeta.textContent).toContain('Read-only');
-    expect(tooltip('.cl-review__forms')).toBe(
-      'SFC Status, Elected Body, ULB-wise Allocation, FC Unspent, GTC',
-    );
+    expect(tooltip('.cl-review__forms')).toBe('SFC Status, Elected Body, ULB-wise Allocation, FC Unspent, GTC');
   });
 
   it('shows the four headline cards above the review bars, Grant Released last', () => {
@@ -326,18 +323,29 @@ describe('ClaimLetterDetailComponent', () => {
       expect(dialog).not.toContain('PFMS Bank Account');
     });
 
-    it('mentions the pending exemptions in the Approve confirmation', () => {
+    it('says the Approve confirmation also approves the State and ULB forms and pending exemptions, in green', () => {
       const confirm = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
       service.getClaimLetter.and.returnValue(of({ ...detail, pendingExemptionCount: 2 }));
       const host = create();
 
       actionButton(host, 'Approve').click();
 
-      expect(confirm).toHaveBeenCalledWith(
-        jasmine.objectContaining({
-          message: jasmine.stringContaining('2 exemption request(s) still under MoHUA review'),
-        }),
-      );
+      const data = confirm.calls.mostRecent().args[0]!;
+      expect(data.message).toContain('the State forms and each ULB’s forms');
+      expect(data.message).toContain('the 2 exemption request(s) still under review');
+      expect(data.confirmButtonColor).toBe('success');
+    });
+
+    it('leaves exemptions out of the Approve confirmation when none is pending', () => {
+      const confirm = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
+      service.getClaimLetter.and.returnValue(of({ ...detail, pendingExemptionCount: 0 }));
+      const host = create();
+
+      actionButton(host, 'Approve').click();
+
+      const message = confirm.calls.mostRecent().args[0]!.message ?? '';
+      expect(message).toContain('the State forms and each ULB’s forms');
+      expect(message).not.toContain('exemption');
     });
 
     it('opens the return dialog for that one ULB from its return icon', () => {

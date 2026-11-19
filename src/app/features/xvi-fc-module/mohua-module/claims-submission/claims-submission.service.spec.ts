@@ -1,7 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { claimStatusBadgeClass, formatOrdinal, formatReceivedOn, formatRupeesInCrore } from './claims-submission.models';
+import {
+  claimStatusBadgeClass,
+  formatOrdinal,
+  formatReceivedOn,
+  formatRupeesInCrore,
+} from './claims-submission.models';
 import { ClaimsSubmissionService } from './claims-submission.service';
 
 describe('ClaimsSubmissionService', () => {
@@ -64,6 +69,22 @@ describe('ClaimsSubmissionService', () => {
     expect(result).toEqual({ status: 'RETURNED' });
   });
 
+  it('treats a cleared mark (data: null) as a success, not an error', () => {
+    let result: unknown = 'not set';
+    let failed = false;
+    service.decideUlb('c1', 'u1', { status: 'PENDING' }).subscribe({
+      next: (r) => (result = r),
+      error: () => (failed = true),
+    });
+
+    const req = http.expectOne((r) => r.url.endsWith('xvi-fc/mohua/claim-letters/letter/c1/ulb/u1/decision'));
+    expect(req.request.body).toEqual({ status: 'PENDING' });
+    req.flush({ success: true, message: 'ULB decision saved.', data: null });
+
+    expect(failed).toBeFalse();
+    expect(result).toBeNull();
+  });
+
   it('returns a letter with only the State-wide items in the body, leaving out an empty remark', () => {
     service.returnClaimLetter('c1', 3, { stateFormIds: [22], stateRemark: '' }).subscribe();
 
@@ -108,7 +129,17 @@ describe('claim letter formatters', () => {
 
   it('writes ordinals, including the 11th-13th exceptions', () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101].map(formatOrdinal)).toEqual([
-      '1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '22nd', '23rd', '101st',
+      '1st',
+      '2nd',
+      '3rd',
+      '4th',
+      '11th',
+      '12th',
+      '13th',
+      '21st',
+      '22nd',
+      '23rd',
+      '101st',
     ]);
   });
 

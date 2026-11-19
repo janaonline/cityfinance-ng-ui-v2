@@ -230,14 +230,17 @@ export class ClaimLetterDetailComponent implements OnInit {
     this.confirmDialogService
       .confirm({
         title: 'Approve this claim letter?',
+        // Says exactly what approving moves on, so the SO knows it is not just the letter.
         message:
-          `Approve ${letter.number} for ${letter.summary.totalCities} ULB(s), ${this.formatCrore(letter.summary.claimAmountReceived)}? The letter then moves to MoHUA review.` +
+          `Approve ${letter.number} for ${letter.summary.totalCities} ULB(s), ${this.formatCrore(letter.summary.claimAmountReceived)}? ` +
+          'This also approves every form the letter relies on: the State forms and each ULB’s forms' +
           (letter.pendingExemptionCount
-            ? ` ${letter.pendingExemptionCount} exemption request(s) still under MoHUA review in this letter will be approved too.`
-            : ''),
+            ? `, and the ${letter.pendingExemptionCount} exemption request(s) still under review in this letter`
+            : '') +
+          '. The letter then moves to MoHUA review.',
         confirmText: 'Yes, approve',
         cancelText: 'Cancel',
-        confirmButtonColor: 'primary',
+        confirmButtonColor: 'success',
         icon: 'bi-check-circle-fill',
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
