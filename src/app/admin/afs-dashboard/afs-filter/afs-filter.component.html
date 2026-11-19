@@ -135,8 +135,8 @@
 
   <!-- Digitization Status -->
   <mat-form-field appearance="outline" class="full-width my-2">
-    <mat-label>Digitization Status</mat-label>
-    <mat-select placeholder="Select Digitization Status" formControlName="digitizationStatus">
+    <mat-label>Job Status</mat-label>
+    <mat-select placeholder="Select Job Status" formControlName="digitizationStatus">
       <mat-option [value]="''">All</mat-option>
       @for (d of filters.digitizationStatuses; track $index) {
         <mat-option [value]="d.key">{{ d.name }}</mat-option>
