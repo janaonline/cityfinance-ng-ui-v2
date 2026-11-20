@@ -57,6 +57,9 @@ export interface DocumentRuntimeState {
    *  after a manual-review rejection) — everything is hidden until it passes, mirroring the
    *  backend's isUploadBlocked guard. */
   isUploadBlocked?: boolean;
+  /** True once a PASSED document has been removed or replaced the maximum number of times — Delete is
+   *  hidden for good (a State/SO return still offers Re-upload), mirroring the backend's cap. */
+  passedReplacementsExhausted?: boolean;
 }
 
 export interface ResolvedDocumentAction {
