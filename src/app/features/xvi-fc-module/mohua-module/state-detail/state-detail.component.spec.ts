@@ -91,6 +91,7 @@ describe('StateDetailComponent', () => {
   let detailService: { getDetail: jasmine.Spy };
   let claimsService: { getStateClaimLetters: jasmine.Spy };
   let isMohuaUser: boolean;
+  let isPmuUser: boolean;
   let ulbsService: { getUlbs: jasmine.Spy };
 
   const create = () => {
@@ -103,7 +104,7 @@ describe('StateDetailComponent', () => {
         { provide: MohuaStateDetailService, useValue: detailService },
         { provide: MohuaStateUlbsService, useValue: ulbsService },
         { provide: ClaimsSubmissionService, useValue: claimsService },
-        { provide: AuthPermissionService, useValue: { isMohuaUser: () => isMohuaUser } },
+        { provide: AuthPermissionService, useValue: { isMohuaUser: () => isMohuaUser, isPmuUser: () => isPmuUser } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { paramMap, parent: null }, paramMap: of(paramMap), parent: null },
@@ -120,6 +121,7 @@ describe('StateDetailComponent', () => {
     ulbsService = { getUlbs: jasmine.createSpy('getUlbs').and.returnValue(of(ulbs)) };
     claimsService = { getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)) };
     isMohuaUser = true;
+    isPmuUser = false;
   });
 
   it('loads the state and its first page of ULBs for the ids in the route', () => {
@@ -165,13 +167,19 @@ describe('StateDetailComponent', () => {
     ]);
   });
 
-  it('lists the claim letters with View links for MoHUA, and without them for DoE and PMU', () => {
+  it('lists the claim letters with View links for MoHUA and PMU (PMU read-only), and without them for DoE', () => {
     let host = create().nativeElement as HTMLElement;
     expect(host.querySelectorAll('.sd-claim').length).toBe(3);
     expect(host.querySelector('.sd-claim a')?.getAttribute('aria-label')).toBe('View claim letter CL/TR/2026-27/1-3');
 
     TestBed.resetTestingModule();
     isMohuaUser = false;
+    isPmuUser = true;
+    host = create().nativeElement as HTMLElement;
+    expect(host.querySelector('.sd-claim a')).not.toBeNull();
+
+    TestBed.resetTestingModule();
+    isPmuUser = false; // DoE
     host = create().nativeElement as HTMLElement;
     expect(host.querySelectorAll('.sd-claim').length).toBe(3);
     expect(host.querySelector('.sd-claim a')).toBeNull();
@@ -198,7 +206,7 @@ describe('StateDetailComponent', () => {
     expect(conditions[0].viewLink).toEqual(['review-state-submissions', 'state-1', 'sfc-status']);
     expect(conditions[1].viewLink).toBeNull();
     expect(conditions[2].viewLink).toEqual(['review-state-submissions', 'state-1', 'devolution-formula', '1']);
-    expect(fixture.nativeElement.querySelectorAll('.sd-cond__pdf').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.sd-cond .sd-cond__pdf').length).toBe(2);
   });
 
   it('shows the status of a form that is not submitted instead of a tick', () => {

@@ -1,5 +1,5 @@
 @let editing = letterEditor() !== null;
-<header class="cl-toolbar">
+<header class="cl-toolbar position-relative pe-5">
   <div class="cl-toolbar-title">
     <h2 class="h6 fw-semibold mb-0">Claim letter</h2>
     @if (editing) {
@@ -51,17 +51,19 @@
         <i class="bi bi-file-earmark-word me-1" aria-hidden="true"></i>Download (.docx)
       }
     </button>
-    <button
-      type="button"
-      class="btn btn-link p-0 fs-4 lh-1 text-danger"
-      aria-label="Close"
-      [disabled]="closing()"
-      (click)="close()"
-      data-cy="claim-letter-dialog-close"
-    >
-      <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
-    </button>
   </div>
+
+  <!-- Pinned to the corner: the actions above wrap on narrow screens. -->
+  <button
+    type="button"
+    class="btn btn-link p-0 fs-4 lh-1 text-danger position-absolute top-0 end-0 mt-2 me-3"
+    aria-label="Close"
+    [disabled]="closing()"
+    (click)="close()"
+    data-cy="claim-letter-dialog-close"
+  >
+    <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
+  </button>
 </header>
 
 <mat-dialog-content class="cl-dialog-content">

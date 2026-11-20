@@ -7,6 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import FileSaver from 'file-saver';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { themedDialogConfig } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { formatReceivedOn, formatRupeesInCrore } from '../../claims-submission/claims-submission.models';
@@ -39,6 +40,8 @@ export class OmHistoryComponent implements OnInit {
   /** Must be resolved in this field-initializer injection context — see themedDialogConfig's own doc. */
   private readonly dialogConfig = themedDialogConfig();
 
+  /** PMU monitors this page read-only: only MoHUA uploads the signed OM. */
+  readonly canUpload = inject(AuthPermissionService).isMohuaUser();
   readonly formatCrore = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
   readonly statusLabel = OM_STATUS_LABEL;

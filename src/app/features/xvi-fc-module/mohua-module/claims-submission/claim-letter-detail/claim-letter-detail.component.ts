@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
@@ -49,6 +50,11 @@ const FORM_LABELS = new Map(
 
 function ulbCountText(count: number): string {
   return `${count} ULB${count === 1 ? '' : 's'}`;
+}
+
+/** A return mark that picks a State-form row: returning the letter then reopens that State form. */
+function hasRowPicks(decision: ClaimLetterSoDecision | null | undefined): boolean {
+  return decision?.status === 'RETURNED' && decision.rowFormIds.length > 0;
 }
 
 const FORM_STATUS_UNDER_REVIEW_BY_SO = 15;
@@ -103,6 +109,8 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly utilityService = inject(UtilityService);
+  /** PMU opens this page to monitor MoHUA's work: read-only, so only MoHUA gets the actions. */
+  private readonly isMohua = inject(AuthPermissionService).isMohuaUser();
   private readonly search$ = new Subject<string>();
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
@@ -175,11 +183,11 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly search = signal('');
   readonly page = signal(1);
 
-  /** Only a letter that is still under MoHUA review can be acted on; returned and acknowledged ones are read-only. */
-  readonly canReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+  /** Only MoHUA acts, and only on a letter still under SO review; returned and acknowledged ones are read-only. */
+  readonly canReview = computed(() => this.isMohua && this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
 
   /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
-  readonly canGenerateOm = computed(() => this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
+  readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
 
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);
@@ -224,17 +232,22 @@ export class ClaimLetterDetailComponent implements OnInit {
   approve(): void {
     const letter = this.letter();
     if (!letter || this.busy() || this.returnedUlbCount() > 0) return;
+    // SFC / GTC this approval settles for every letter of the State (ADR 0009); none when already settled or exempted.
+    const settling = (letter.stateForms ?? []).filter((form) => form.returnable).map((form) => form.name);
     this.confirmDialogService
       .confirm({
         title: 'Approve this claim letter?',
         message:
-          `Approve ${letter.number} for ${letter.summary.totalCities} ULB(s), ${this.formatCrore(letter.summary.claimAmountReceived)}? The letter then moves to MoHUA review.` +
-          (letter.pendingExemptionCount
-            ? ` ${letter.pendingExemptionCount} exemption request(s) still under MoHUA review in this letter will be approved too.`
+          `Approve ${letter.number} for ${letter.summary.totalCities} ULB(s), ${this.formatCrore(letter.summary.claimAmountReceived)}? ` +
+          'This also approves its State and ULB forms' +
+          (letter.pendingExemptionCount ? ` and ${letter.pendingExemptionCount} pending exemption request(s)` : '') +
+          '.' +
+          (settling.length
+            ? ` ${settling.join(' and ')} will then be final for all of this State's claim letters.`
             : ''),
         confirmText: 'Yes, approve',
         cancelText: 'Cancel',
-        confirmButtonColor: 'primary',
+        confirmButtonColor: 'success',
         icon: 'bi-check-circle-fill',
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -269,7 +282,13 @@ export class ClaimLetterDetailComponent implements OnInit {
   openReturnDialog(): void {
     const letter = this.letter();
     if (!letter || this.busy()) return;
-    this.openDialog({ mode: 'letter', returnedUlbCount: this.returnedUlbCount() }).subscribe((result) => {
+    this.openDialog({
+      mode: 'letter',
+      returnedUlbCount: this.returnedUlbCount(),
+      returnedRowUlbCount: letter.returnedRowUlbCount ?? 0,
+      stateForms: letter.stateForms ?? [],
+      otherLetters: letter.otherLettersUnderReview ?? [],
+    }).subscribe((result) => {
       if (result) this.submitReturn(letter, result as ReturnLetterDialogResult);
     });
   }
@@ -352,7 +371,8 @@ export class ClaimLetterDetailComponent implements OnInit {
       });
   }
 
-  /** Puts the saved mark on its row and keeps the letter's all-pages count in step, without reloading. */
+  /** Puts the saved mark on its row and keeps the letter's all-pages counts in step, without reloading. The row count
+   *  drives the return dialog's warning about the State's other letters, so it follows marking, editing and clearing. */
   private applyDecision(row: ClaimLetterUlbRow, soDecision: ClaimLetterSoDecision | null): void {
     const ulbs = this.ulbs();
     if (ulbs) {
@@ -363,9 +383,19 @@ export class ClaimLetterDetailComponent implements OnInit {
     }
     const letter = this.letter();
     if (letter) {
-      const change = Number(!!soDecision) - Number(!!row.soDecision);
-      this.letter.set({ ...letter, returnedUlbCount: letter.returnedUlbCount + change });
+      const marked = Number(!!soDecision) - Number(!!row.soDecision);
+      const withRows = Number(hasRowPicks(soDecision)) - Number(hasRowPicks(row.soDecision));
+      this.letter.set({
+        ...letter,
+        returnedUlbCount: letter.returnedUlbCount + marked,
+        returnedRowUlbCount: (letter.returnedRowUlbCount ?? 0) + withRows,
+      });
     }
+  }
+
+  /** Red while under review for a marked ULB; once the letter is closed, only for a ULB its return reopened. */
+  isReturnedRow(row: ClaimLetterUlbRow): boolean {
+    return this.canReview() ? row.soDecision?.status === 'RETURNED' : row.returnedFormIds.length > 0;
   }
 
   /** The returned ULB's picks, as one line: its forms, then its State-form rows, then exemptions to reject. */

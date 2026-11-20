@@ -57,6 +57,27 @@ describe('StateNotificationService', () => {
     expect(service.severityByRoute().has('fc-unspent-declaration')).toBeFalse();
   });
 
+  it("reads the SO's statuses like MoHUA's and never names the SO", async () => {
+    const pending = service.refreshIfStale('state-1');
+    httpMock
+      .expectOne((r) => r.url.endsWith('xvi-fc/state/state-1/year-1/notifications'))
+      .flush({
+        forms: [
+          { key: 'SFC_STATUS', statusCode: 16 }, // returned by the SO
+          { key: 'GTC', statusCode: 15 }, // under SO review
+        ],
+        ulbSubmissionsAwaitingReview: 0,
+      });
+    await pending;
+
+    const items = service.notifications();
+    expect(items.map((n) => `${n.route}:${n.severity}`)).toEqual(['sfc-status:returned', 'gtc:review']);
+    expect(items[0].message).toBe('Returned for correction — action needed.');
+    expect(items[1].message).toBe('Under review by MoHUA.');
+    expect(JSON.stringify(items)).not.toContain('SO');
+    expect(service.severityByRoute().get('sfc-status')).toBe('returned');
+  });
+
   describe('returned claim letters', () => {
     const load = async (claimLettersReturned: number | undefined) => {
       const pending = service.refreshIfStale('state-1');
@@ -110,6 +131,16 @@ describe('StateNotificationService', () => {
 
     await service.refreshIfStale('state-1');
     httpMock.expectNone((r) => r.url.endsWith('/notifications'));
+  });
+
+  it('refreshNow reloads inside the 30-second window (after the State submits a letter)', async () => {
+    const first = service.refreshIfStale('state-1');
+    httpMock.expectOne((r) => r.url.endsWith('/notifications')).flush(payload);
+    await first;
+
+    const again = service.refreshNow('state-1');
+    httpMock.expectOne((r) => r.url.endsWith('/notifications')).flush({ ...payload, claimLettersReturned: 0 });
+    await again;
   });
 
   it('shows nothing when a load fails and retries on the next call instead of waiting out the throttle', async () => {

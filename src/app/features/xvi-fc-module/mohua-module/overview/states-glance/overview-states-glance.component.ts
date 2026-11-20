@@ -328,13 +328,14 @@ export class OverviewStatesGlanceComponent {
       : 'View state-wise progress across grant stages and ULBs. Sort by column or select a state to view its details.';
   }
 
-  /** "2nd claim · ₹432 cr", "No claim yet", or "Coming soon" while the claim figures are not loaded. */
+  /** "2nd claim · ₹432 cr claimed in all" (the amount is the State's total, not the latest letter's), "No claim
+   *  yet", or "Coming soon" while the claim figures are not loaded. */
   claimText(row: StateRow): string {
     if (!this.claims()) return 'Coming soon';
     const claim = this.claimsByState().get(row.stateId);
     if (!claim?.claimLetterCount) return 'No claim yet';
     const number = claim.latestClaimNumber ?? claim.claimLetterCount;
-    return `${formatOrdinal(number)} claim · ${formatRupeesInCrore(claim.amountClaimed)}`;
+    return `${formatOrdinal(number)} claim · ${formatRupeesInCrore(claim.amountClaimed)} claimed in all`;
   }
 
 }

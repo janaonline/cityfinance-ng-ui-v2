@@ -8,7 +8,8 @@ export interface ConfirmDialogData {
   message?: string;
   confirmText?: string;
   cancelText?: string;
-  confirmButtonColor?: 'primary' | 'warn' | 'accent';
+  /** `success` is green, for a positive final action such as approving. */
+  confirmButtonColor?: 'primary' | 'warn' | 'accent' | 'success';
   icon?: string;
 }
 
@@ -113,6 +114,7 @@ export function themedDialogConfig(): MatDialogConfig | undefined {
         class="confirm-dialog-btn"
         [class.confirm-dialog-btn--warn]="resolved.confirmButtonColor === 'warn'"
         [class.confirm-dialog-btn--accent]="resolved.confirmButtonColor === 'accent'"
+        [class.confirm-dialog-btn--success]="resolved.confirmButtonColor === 'success'"
         (click)="close(true)"
       >
         {{ resolved.confirmText }}
@@ -158,6 +160,15 @@ export function themedDialogConfig(): MatDialogConfig | undefined {
     .confirm-dialog-icon--accent {
       color: var(--mat-sys-tertiary);
     }
+
+    .confirm-dialog-icon--success {
+      color: #1d7a46;
+    }
+
+    .confirm-dialog-btn--success {
+      --mat-button-filled-container-color: #1d7a46;
+      --mat-button-filled-label-text-color: #fff;
+    }
   `,
 })
 export class ConfirmDialogComponent {
@@ -179,6 +190,7 @@ export class ConfirmDialogComponent {
       primary: 'confirm-dialog-icon--primary',
       warn: 'confirm-dialog-icon--warn',
       accent: 'confirm-dialog-icon--accent',
+      success: 'confirm-dialog-icon--success',
     };
     return map[this.resolved.confirmButtonColor];
   }

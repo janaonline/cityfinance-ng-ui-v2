@@ -2,6 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ReturnClaimLetterDialogComponent, ReturnClaimLetterDialogData } from './return-claim-letter-dialog.component';
 
+/** The letter-mode dialog data, with nothing locked and no other letter under review unless a test says so. */
+function letterData(
+  extra: Partial<Extract<ReturnClaimLetterDialogData, { mode: 'letter' }>> = {},
+): ReturnClaimLetterDialogData {
+  return { mode: 'letter', returnedUlbCount: 0, returnedRowUlbCount: 0, stateForms: [], otherLetters: [], ...extra };
+}
+
 describe('ReturnClaimLetterDialogComponent', () => {
   let fixture: ComponentFixture<ReturnClaimLetterDialogComponent>;
   let dialogRef: jasmine.SpyObj<MatDialogRef<ReturnClaimLetterDialogComponent>>;
@@ -33,7 +40,7 @@ describe('ReturnClaimLetterDialogComponent', () => {
       imports: [ReturnClaimLetterDialogComponent],
       providers: [
         { provide: MatDialogRef, useValue: dialogRef },
-        { provide: MAT_DIALOG_DATA, useValue: { mode: 'letter', returnedUlbCount: 0 } },
+        { provide: MAT_DIALOG_DATA, useValue: letterData() },
       ],
     }).compileComponents();
   });
@@ -151,7 +158,7 @@ describe('ReturnClaimLetterDialogComponent', () => {
 
   describe('remarks', () => {
     it('keep Confirm disabled until they are at least 10 characters once trimmed, in every mode', () => {
-      const host = create({ mode: 'letter', returnedUlbCount: 1 });
+      const host = create(letterData({ returnedUlbCount: 1 }));
       const set = (value: string) => {
         fixture.componentInstance.remark.setValue(value);
         fixture.detectChanges();
@@ -176,7 +183,7 @@ describe('ReturnClaimLetterDialogComponent', () => {
 
   describe('the whole letter', () => {
     it('offers only the State-wide items', () => {
-      expect(labels(create({ mode: 'letter', returnedUlbCount: 0 }))).toEqual([
+      expect(labels(create(letterData({ returnedUlbCount: 0 })))).toEqual([
         'Claim Letter',
         'SFC Status',
         'Grant Transfer Certificate',
@@ -184,7 +191,7 @@ describe('ReturnClaimLetterDialogComponent', () => {
     });
 
     it('needs a State item when no ULB is marked returned, and says what will happen', () => {
-      const host = create({ mode: 'letter', returnedUlbCount: 0 });
+      const host = create(letterData({ returnedUlbCount: 0 }));
       expect(confirmButton(host).disabled).toBeTrue();
       expect(host.querySelector('.rcl-outcome')).toBeNull();
 
@@ -199,7 +206,7 @@ describe('ReturnClaimLetterDialogComponent', () => {
     });
 
     it('can return with only marked ULBs, and closes with the State items and remark; nothing on cancel', () => {
-      const host = create({ mode: 'letter', returnedUlbCount: 2 });
+      const host = create(letterData({ returnedUlbCount: 2 }));
       // Marked ULBs are enough to return, but not without a remark.
       expect(confirmButton(host).disabled).toBeTrue();
       expect(host.querySelector('.rcl-hint')?.textContent).toContain('at least 10 characters');
@@ -212,10 +219,155 @@ describe('ReturnClaimLetterDialogComponent', () => {
       tick(host, 'Grant Transfer Certificate');
       confirmButton(host).click();
 
-      expect(dialogRef.close).toHaveBeenCalledWith({ stateFormIds: [35], stateRemark: 'Attach the order' });
+      expect(dialogRef.close).toHaveBeenCalledWith({
+        stateFormIds: [35],
+        stateRemark: 'Attach the order',
+        affectedLetterIds: [],
+      });
 
       (host.querySelector('mat-dialog-actions button') as HTMLButtonElement).click();
       expect(dialogRef.close).toHaveBeenCalledWith(undefined);
+    });
+  });
+
+  describe("the State's other letters (parallel claims)", () => {
+    const others = [
+      { id: 'c2', number: 'CF_TR_2026-27_1-2' },
+      { id: 'c3', number: 'CF_TR_2026-27_1-3' },
+    ];
+
+    const option = (host: HTMLElement, label: string) =>
+      Array.from(host.querySelectorAll<HTMLLabelElement>('.rcl-option')).find((l) => l.textContent?.includes(label))!;
+
+    it('shows SFC accepted with an earlier letter as a tag, says why on its (i), and does not let it be ticked', () => {
+      const host = create(
+        letterData({
+          stateForms: [
+            {
+              formId: 22,
+              name: 'SFC Status',
+              returnable: false,
+              lockReason: 'ACCEPTED',
+              acceptedWithLetter: 'Claim Letter 1',
+            },
+            {
+              formId: 35,
+              name: 'Grant Transfer Certificate',
+              returnable: true,
+              lockReason: null,
+              acceptedWithLetter: null,
+            },
+          ],
+        }),
+      );
+      const sfc = option(host, 'SFC Status');
+      const gtc = option(host, 'Grant Transfer Certificate');
+
+      expect(sfc.querySelector('.rcl-tag')?.textContent?.trim()).toBe('Accepted');
+      expect(sfc.querySelector('[data-cy="return-state-form-why"]')?.getAttribute('aria-label')).toBe(
+        'Accepted when Claim Letter 1 was approved. It is settled for this installment and can no longer be returned.',
+      );
+      expect(sfc.classList).toContain('rcl-option--disabled');
+      expect(sfc.querySelector('input')!.disabled).toBeTrue();
+      expect(gtc.querySelector('.rcl-tag')).toBeNull();
+      expect(gtc.querySelector('[data-cy="return-state-form-why"]')).toBeNull();
+      fixture.componentInstance.toggle(22);
+      expect(fixture.componentInstance.isSelected(22)).toBeFalse();
+    });
+
+    it('tells an exempted form from one not in this review', () => {
+      const host = create(
+        letterData({
+          stateForms: [
+            { formId: 22, name: 'SFC Status', returnable: false, lockReason: 'EXEMPTED', acceptedWithLetter: null },
+            {
+              formId: 35,
+              name: 'Grant Transfer Certificate',
+              returnable: false,
+              lockReason: 'NOT_IN_REVIEW',
+              acceptedWithLetter: null,
+            },
+          ],
+        }),
+      );
+      const why = (label: string) =>
+        option(host, label).querySelector('[data-cy="return-state-form-why"]')?.getAttribute('aria-label');
+
+      expect(option(host, 'SFC Status').querySelector('.rcl-tag')?.textContent?.trim()).toBe('Exempted');
+      expect(why('SFC Status')).toBe(
+        "This letter relies on the State's exemption for this form, so there is no form to return.",
+      );
+      expect(option(host, 'Grant Transfer Certificate').querySelector('.rcl-tag')?.textContent?.trim()).toBe(
+        'Not in review',
+      );
+      expect(why('Grant Transfer Certificate')).toBe(
+        "This form is not under review with this letter, so it can't be returned here.",
+      );
+    });
+
+    it('still explains an accepted form when the accepting letter is unknown', () => {
+      const host = create(
+        letterData({
+          stateForms: [
+            { formId: 22, name: 'SFC Status', returnable: false, lockReason: 'ACCEPTED', acceptedWithLetter: null },
+          ],
+        }),
+      );
+
+      expect(
+        option(host, 'SFC Status').querySelector('[data-cy="return-state-form-why"]')?.getAttribute('aria-label'),
+      ).toBe('Already accepted by MoHUA for this installment, so it can no longer be returned.');
+    });
+
+    it('warns which letters a State form return also returns, and sends their ids', () => {
+      const host = create(letterData({ otherLetters: others }));
+      expect(host.querySelector('[data-cy="return-cascade-warning"]')).toBeNull();
+
+      tick(host, 'SFC Status');
+      fixture.componentInstance.remark.setValue('Fix the SFC status');
+      fixture.detectChanges();
+
+      expect(host.querySelector('[data-cy="return-cascade-warning"]')?.textContent).toContain(
+        'Claim letters CF_TR_2026-27_1-2 and CF_TR_2026-27_1-3 of this State are also under review',
+      );
+      confirmButton(host).click();
+      expect(dialogRef.close).toHaveBeenCalledWith({
+        stateFormIds: [22],
+        stateRemark: 'Fix the SFC status',
+        affectedLetterIds: ['c2', 'c3'],
+      });
+    });
+
+    it('warns for ULB rows marked for return too, since a row reopens its whole State form', () => {
+      const host = create(letterData({ returnedUlbCount: 1, returnedRowUlbCount: 1, otherLetters: [others[0]] }));
+
+      expect(host.querySelector('[data-cy="return-cascade-warning"]')?.textContent).toContain(
+        'Returning the State forms of the ULB rows marked for return reopens them for the State. Claim letter ' +
+          'CF_TR_2026-27_1-2 of this State is also under review and relies on them, so it will be returned too. The ' +
+          'State must correct them and submit again.',
+      );
+    });
+
+    it('gives no warning when only the claim letter is returned', () => {
+      const host = create(letterData({ otherLetters: others }));
+      tick(host, 'Claim Letter');
+      expect(host.querySelector('[data-cy="return-cascade-warning"]')).toBeNull();
+    });
+
+    it('sends no other letter when it gave no warning, so an unannounced return is refused, not done', () => {
+      // A ULB marked with its own forms only: the State's other letters are not touched.
+      const host = create(letterData({ returnedUlbCount: 1, returnedRowUlbCount: 0, otherLetters: others }));
+      fixture.componentInstance.remark.setValue('Fix the bank account');
+      fixture.detectChanges();
+      expect(host.querySelector('[data-cy="return-cascade-warning"]')).toBeNull();
+
+      confirmButton(host).click();
+
+      expect(dialogRef.close).toHaveBeenCalledWith({
+        stateFormIds: [],
+        stateRemark: 'Fix the bank account',
+        affectedLetterIds: [],
+      });
     });
   });
 });

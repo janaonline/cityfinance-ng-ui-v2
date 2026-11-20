@@ -27,8 +27,8 @@ const STATE_FORMS: Readonly<Record<string, { title: string; route: string }>> = 
   GTC: { title: 'Grant Transfer Certificate', route: 'gtc' },
 };
 
-/** State-form status -> how a notification reads. PMU's 13/14 read like MoHUA's 5/6 — the State-facing UI
- *  never names PMU (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
+/** State-form status -> how a notification reads. PMU's 13/14 and the SO's 15/16 read like MoHUA's 5/6 — the
+ *  State-facing UI never names PMU or the SO (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
 const NOTIFICATION_BY_STATUS: Readonly<
   Record<number, { severity: UlbNotificationSeverity; message: string; icon: string }>
 > = {
@@ -42,12 +42,22 @@ const NOTIFICATION_BY_STATUS: Readonly<
     message: 'Returned for correction — action needed.',
     icon: 'bi-exclamation-triangle-fill',
   },
+  [FORM_STATUS.RETURNED_BY_SO]: {
+    severity: 'returned',
+    message: 'Returned for correction — action needed.',
+    icon: 'bi-exclamation-triangle-fill',
+  },
   [FORM_STATUS.UNDER_REVIEW_BY_PMU]: {
     severity: 'review',
     message: 'Under review by MoHUA.',
     icon: 'bi-hourglass-split',
   },
   [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: {
+    severity: 'review',
+    message: 'Under review by MoHUA.',
+    icon: 'bi-hourglass-split',
+  },
+  [FORM_STATUS.UNDER_REVIEW_BY_SO]: {
     severity: 'review',
     message: 'Under review by MoHUA.',
     icon: 'bi-hourglass-split',
@@ -161,6 +171,13 @@ export class StateNotificationService {
       if (seq !== this.requestSeq) return;
       this.loadedAt = 0; // let the next navigation retry
     }
+  }
+
+  /** Reloads now, skipping the 30-second window: after the State acts (e.g. submits a claim letter) the bell must
+   *  show the server's new counts straight away. A failure leaves the next navigation free to retry. */
+  refreshNow(stateId: string): Promise<void> {
+    this.loadedAt = 0;
+    return this.refreshIfStale(stateId);
   }
 
   /** Drops everything on logout/role change so the next user never sees a stale bell. */

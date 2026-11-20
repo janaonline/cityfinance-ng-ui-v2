@@ -12,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 import { ClaimLettersStates } from '../claims-submission/claims-submission.models';
 import { ClaimsSubmissionService } from '../claims-submission/claims-submission.service';
@@ -56,6 +57,7 @@ export class MohuaOverviewComponent {
   readonly stateFilter = signal<StateFilter | null>(null);
   /** Claim letters per State and nationally; null until loaded, or if they fail, when the claim spots say "Coming soon". */
   readonly claims = signal<ClaimLettersStates | null>(null);
+  private claimsRequest?: Subscription;
 
   private readonly statesSection = viewChild('states', { read: ElementRef<HTMLElement> });
 
@@ -73,7 +75,9 @@ export class MohuaOverviewComponent {
 
     this.loading.set(true);
     this.error.set(null);
-    this.claimsService
+    // A retry cancels the earlier claims request, so a late answer can never overwrite the newer one.
+    this.claimsRequest?.unsubscribe();
+    this.claimsRequest = this.claimsService
       .getStates(yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });

@@ -13,7 +13,17 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { saveAs } from 'file-saver';
-import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  Subscription,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
 import {
   CLAIM_LETTER_APPROVED_STATUSES,
@@ -37,7 +47,18 @@ import { CountUpDirective, RevealDirective } from './state-detail.directives';
 import { IconMotion, StatItem, Tone } from './state-detail.types';
 
 const PAGE_SIZE = 15;
-const ULB_COLUMNS = ['name', 'census', 'allocation', 'unspent', 'electedBody', 'audited', 'unaudited', 'pfms', 'slb', 'dur'];
+const ULB_COLUMNS = [
+  'name',
+  'census',
+  'allocation',
+  'unspent',
+  'electedBody',
+  'audited',
+  'unaudited',
+  'pfms',
+  'slb',
+  'dur',
+];
 const SEARCH_DEBOUNCE_MS = 300;
 const LOAD_ERROR = 'Could not load this state. Please try again.';
 const ULBS_ERROR = 'Could not load the ULBs. Please try again.';
@@ -111,8 +132,9 @@ export class StateDetailComponent {
   private readonly snackBar = inject(MatSnackBar);
   private readonly claimsService = inject(ClaimsSubmissionService);
 
-  /** Claims & Submissions is a MoHUA screen; DoE and PMU see the claim figures here without the links. */
-  readonly canOpenClaims = inject(AuthPermissionService).isMohuaUser();
+  /** MoHUA and PMU have the Claims & Submissions pages (PMU read-only); DoE sees the claim figures without links. */
+  private readonly permissions = inject(AuthPermissionService);
+  readonly canOpenClaims = this.permissions.isMohuaUser() || this.permissions.isPmuUser();
   readonly claimLettersShown = CLAIM_LETTERS_SHOWN;
   readonly formatRupees = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
@@ -120,6 +142,7 @@ export class StateDetailComponent {
   readonly statusLabel = claimStatusLabel;
   /** The State's claim letters, newest first; null until loaded, or if they fail, when the claim spots say "Coming soon". */
   readonly claims = signal<StateClaimLetters | null>(null);
+  private claimsRequest?: Subscription;
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
@@ -307,7 +330,9 @@ export class StateDetailComponent {
 
     this.loading.set(true);
     this.error.set(null);
-    this.claimsService
+    // A retry cancels the earlier claims request, so a late answer can never overwrite the newer one.
+    this.claimsRequest?.unsubscribe();
+    this.claimsRequest = this.claimsService
       .getStateClaimLetters(ids.stateId, ids.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });
@@ -355,7 +380,8 @@ export class StateDetailComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ blob, fileName }) => saveAs(blob, fileName ?? `${this.data()?.state.name ?? 'state'}-ulb-progress.xlsx`),
+        next: ({ blob, fileName }) =>
+          saveAs(blob, fileName ?? `${this.data()?.state.name ?? 'state'}-ulb-progress.xlsx`),
         error: () => this.snackBar.open(EXPORT_ERROR, 'Dismiss', { duration: 4000 }),
       });
   }
