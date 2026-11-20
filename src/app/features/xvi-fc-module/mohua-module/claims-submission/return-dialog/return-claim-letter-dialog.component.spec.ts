@@ -305,6 +305,56 @@ describe('ReturnClaimLetterDialogComponent', () => {
       );
     });
 
+    it("lets the SO tick a form the State's own pending exemption covers, which rejects that exemption", () => {
+      const host = create(
+        letterData({
+          stateForms: [
+            {
+              formId: 22,
+              name: 'SFC Status',
+              returnable: true,
+              lockReason: null,
+              acceptedWithLetter: null,
+              rejectsExemption: true,
+              exemptionStatus: 5,
+            },
+          ],
+        }),
+      );
+      const sfc = option(host, 'SFC Status');
+
+      expect(sfc.querySelector('.rcl-tag')?.textContent?.trim()).toBe('Reject exemption');
+      expect(sfc.querySelector('input')!.disabled).toBeFalse();
+
+      fixture.componentInstance.toggle(22);
+      fixture.componentInstance.remark.setValue('SFC was never constituted');
+      fixture.detectChanges();
+
+      const outcome = host.querySelector('.rcl-outcome')?.textContent ?? '';
+      expect(outcome).toContain("The State's exemption for SFC Status is rejected; the State must file it.");
+      expect(outcome).not.toContain('SFC Status reopens');
+    });
+
+    it('says how the State exemption was decided once the SO can no longer act on it', () => {
+      const host = create(
+        letterData({
+          stateForms: [
+            {
+              formId: 22,
+              name: 'SFC Status',
+              returnable: false,
+              lockReason: 'EXEMPTED',
+              acceptedWithLetter: null,
+              exemptionStatus: 7,
+            },
+          ],
+        }),
+      );
+
+      expect(option(host, 'SFC Status').querySelector('.rcl-tag')?.textContent?.trim()).toBe('Exemption approved');
+      expect(option(host, 'SFC Status').querySelector('input')!.disabled).toBeTrue();
+    });
+
     it('still explains an accepted form when the accepting letter is unknown', () => {
       const host = create(
         letterData({

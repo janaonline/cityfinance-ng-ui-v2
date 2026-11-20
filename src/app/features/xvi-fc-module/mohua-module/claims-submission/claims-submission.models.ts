@@ -80,6 +80,10 @@ export interface ClaimLetterReturnableStateForm {
   lockReason: ClaimLetterStateFormLockReason | null;
   /** e.g. "Claim Letter 1": the letter whose approval accepted it; null unless ACCEPTED and found. */
   acceptedWithLetter: string | null;
+  /** The letter relied on the State's own exemption request for this form, still under review: ticking it rejects it. */
+  rejectsExemption?: boolean;
+  /** Live status of that State exemption request (5, 6 or 7); null or absent when the letter relied on none. */
+  exemptionStatus?: number | null;
 }
 
 /** The band under a state's claim letters. Money is whole Rupees. */
