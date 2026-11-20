@@ -980,6 +980,25 @@ describe('ClaimLetterDetailComponent', () => {
       expect(uploadSpy).not.toHaveBeenCalled();
     });
 
+    it('uploads a picked file once, though the file field emits it twice', async () => {
+      await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+      const uploadSpy = spyOn(claimLetterService, 'uploadSignedFile').and.returnValue(
+        of(buildClaim({ hasSignedFile: true })),
+      );
+      const control = component.signedFileForm.get('signedClaimFile') as AbstractControl<unknown>;
+
+      // What the shared file field does on a pick: setValue, then updateValueAndValidity.
+      control.setValue(SAMPLE_FILE_METADATA);
+      control.updateValueAndValidity();
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+
+      // A new pick has a new storage path, so it still uploads.
+      const another = { ...SAMPLE_FILE_METADATA, path: 'claim-letter/signed-file/another.pdf' };
+      control.setValue(another);
+      expect(uploadSpy).toHaveBeenCalledTimes(2);
+      expect(uploadSpy.calls.mostRecent().args).toEqual(['claim-1', another]);
+    });
+
     it('resets the control and surfaces the backend message when the upload fails', async () => {
       await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
       spyOn(claimLetterService, 'uploadSignedFile').and.returnValue(
@@ -1379,6 +1398,85 @@ describe('ClaimLetterDetailComponent', () => {
 
       const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-returned-with"]'));
       expect(banner.nativeElement.textContent).toContain('Claim Letter 1');
+    });
+
+    describe('a letter the SO returned itself', () => {
+      const returnedUlb = (n: number) => ({
+        ulbId: `ulb-r${n}`,
+        ulbName: `ULB ${n}`,
+        items: ['Annual Accounts (Audited)'],
+        remark: null,
+      });
+      const returnedClaim = (ulbCount: number, overrides: Partial<ClaimLetterBatchSummary> = {}) =>
+        buildClaim({
+          currentFormStatus: 16,
+          isAbandoned: true,
+          mohuaRemarks: 'Please correct the GTC dates.',
+          returnSummary: {
+            stateForms: [
+              { formId: 22, name: 'SFC Status', ulbCount: 0 },
+              { formId: 23, name: 'Elected Body Status', ulbCount: 2 },
+            ],
+            ulbs: Array.from({ length: ulbCount }, (_, i) => returnedUlb(i + 1)),
+          },
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+          ...overrides,
+        });
+      const byCy = (cy: string) => fixture.debugElement.query(By.css(`[data-cy="${cy}"]`));
+      const text = (cy: string) =>
+        (byCy(cy)?.nativeElement as HTMLElement | undefined)?.textContent?.replace(/\s+/g, ' ');
+
+      it('shows one box with the reason, the linked State forms and the ULBs, instead of the banner', async () => {
+        await setupEdit(returnedClaim(3));
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).not.toBeNull();
+        expect(fixture.debugElement.query(By.css('app-returned-reason-banner'))).toBeNull();
+        expect(text('claim-letter-return-reason')).toContain('Please correct the GTC dates.');
+        expect(text('claim-letter-return-state-forms')).toContain('Elected Body Status (2 ULBs)');
+        const links = byCy('claim-letter-return-state-forms')
+          .queryAll(By.css('a'))
+          .map((a) => (a.nativeElement as HTMLAnchorElement).getAttribute('href'));
+        expect(links).toEqual(['/xvifc/year-test-id/sfc-status', '/xvifc/year-test-id/elected-body-status']);
+        expect(text('claim-letter-return-ulbs')).toContain('ULBs (3): ULB 1, ULB 2, ULB 3 - highlighted');
+        expect(text('claim-letter-return-ulbs')).not.toContain('more');
+        expect(component.returnedUlbs().get('ulb-r2')?.ulbName).toBe('ULB 2');
+      });
+
+      it('names only the first 3 ULBs, then how many more', async () => {
+        await setupEdit(returnedClaim(5));
+        fixture.detectChanges();
+
+        expect(text('claim-letter-return-ulbs')).toContain('ULBs (5): ULB 1, ULB 2, ULB 3 +2 more');
+        expect(component.returnedUlbs().size).toBe(5);
+      });
+
+      it('has no Reason line when the SO wrote no general remark', async () => {
+        await setupEdit(returnedClaim(1, { mohuaRemarks: null }));
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).not.toBeNull();
+        expect(byCy('claim-letter-return-reason')).toBeNull();
+      });
+
+      it('keeps the banner and the note, with no box, for a letter returned with another letter', async () => {
+        await setupEdit(
+          buildClaim({
+            currentFormStatus: 16,
+            isAbandoned: true,
+            mohuaRemarks: 'SFC needs the ATR.',
+            returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+            returnSummary: null,
+            permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+          }),
+        );
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).toBeNull();
+        expect(fixture.debugElement.query(By.css('app-returned-reason-banner'))).not.toBeNull();
+        expect(byCy('claim-letter-returned-with')).not.toBeNull();
+        expect(component.returnedUlbs().size).toBe(0);
+      });
     });
 
     // ─── Final-batch completeness guard (FE's first line of defense; BE is the real authority) ───

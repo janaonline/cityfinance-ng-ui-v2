@@ -44,10 +44,44 @@
     } @else {
       @if (!isCreateMode && claim()) {
         <app-form-progress formType="state" [formStatus]="currentFormStatusValue()"></app-form-progress>
-        <app-returned-reason-banner
-          [currentFormStatus]="claim()!.currentFormStatus"
-          [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
-        />
+        @if (claim()!.returnSummary; as returned) {
+          <div class="alert alert-danger py-2 mb-0" role="alert" data-cy="claim-letter-return-summary">
+            <div class="small fw-semibold mb-1">
+              <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>Returned for correction
+            </div>
+            @if (claim()!.mohuaRemarks; as remark) {
+              <div class="small" data-cy="claim-letter-return-reason"><b>Reason:</b> {{ remark }}</div>
+            }
+            @if (returned.stateForms.length) {
+              <div class="small" data-cy="claim-letter-return-state-forms">
+                <b>State forms:</b>
+                @for (form of returned.stateForms; track form.formId; let last = $last) {
+                  @if (stateFormLink(form.formId); as link) {
+                    <a class="alert-link fw-normal" [routerLink]="link">{{ form.name }}</a>
+                  } @else {
+                    <span>{{ form.name }}</span>
+                  }
+                  @if (form.ulbCount) {
+                    <span> ({{ form.ulbCount }} ULB{{ form.ulbCount === 1 ? '' : 's' }})</span>
+                  }
+                  @if (!last) {
+                    <span aria-hidden="true"> &middot; </span>
+                  }
+                }
+              </div>
+            }
+            @if (returned.ulbs.length) {
+              <div class="small" data-cy="claim-letter-return-ulbs">
+                <b>ULBs ({{ returned.ulbs.length }}):</b> {{ returnedUlbNames() }} - highlighted in the table below
+              </div>
+            }
+          </div>
+        } @else {
+          <app-returned-reason-banner
+            [currentFormStatus]="claim()!.currentFormStatus"
+            [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
+          />
+        }
         @if (claim()!.returnedWithNote; as note) {
           <div
             class="alert alert-info d-flex align-items-start gap-2 py-2 mb-0"
@@ -135,6 +169,7 @@
             [stateId]="stateId"
             [yearId]="yearId"
             [claimLetterId]="claimLetterId() ?? undefined"
+            [returnedUlbs]="returnedUlbs()"
             [claimAmountEditable]="claimAmountEditable()"
             [varianceLowerPercent]="varianceLowerPercent()"
             [varianceUpperPercent]="varianceUpperPercent()"

@@ -79,8 +79,17 @@
           @let row = entry.row;
           @let vm = entry.vm;
           @let i = entry.index;
-          <tr [formGroup]="row" data-cy="claim-ulb-table-row">
-            @let rejection = rejectedRows().get(row.controls.ulbId.value ?? '');
+          @let returned = returnedUlbs().get(row.controls.ulbId.value ?? '');
+          @let rejection = rejectedRows().get(row.controls.ulbId.value ?? '');
+          <tr
+            [formGroup]="row"
+            [class.table-danger]="!!returned || !!rejection?.ulbId"
+            [matTooltip]="returned ? returnedTooltip(returned) : ''"
+            [matTooltipDisabled]="!returned"
+            matTooltipPosition="above"
+            [attr.tabindex]="returned ? 0 : null"
+            data-cy="claim-ulb-table-row"
+          >
             @let claimErrorText = amountErrorText(row.controls.claimedAmount, rejection);
             @let liveWithinVariance = vm.liveWithinVariance;
             <td class="ps-3 small text-secondary">{{ entry.position }}</td>
@@ -88,6 +97,11 @@
               <span class="text-truncate d-block" [title]="vm.ulbName ?? ''">
                 {{ vm.ulbName ?? 'Selected ULB' }}
               </span>
+              @if (returned) {
+                <span class="badge rounded px-1 small me-1 text-bg-danger" data-cy="claim-ulb-table-returned"
+                  >Returned</span
+                >
+              }
               @if (rejection?.ulbId; as ulbError) {
                 <span
                   class="badge rounded px-1 small me-1 text-bg-danger"

@@ -28,7 +28,12 @@ import {
 } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ConfirmDialogService } from '../../../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { InfoIconComponent } from '../../../../../../shared/components/info-icon/info-icon.component';
-import { CLAIM_LETTER_INSTALLMENT, ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
+import {
+  CLAIM_LETTER_INSTALLMENT,
+  ClaimLetterReturnedUlb,
+  ClaimLetterUlbOption,
+  ClaimLetterUlbRow,
+} from '../../claim-letter.models';
 import {
   ClaimLetterExemptionBadge,
   buildExemptionBadges,
@@ -180,6 +185,8 @@ export class ClaimUlbTableComponent {
   /** Rows the last save refused, by ULB id: a refused ULB shows "Not accepted", a refused amount its
    *  message. */
   readonly rejectedRows = input<ReadonlyMap<string, ClaimRowRejection>>(new Map());
+  /** ULBs the SO returned with this letter, by ULB id: the row is red and its forms and remark show on hover. */
+  readonly returnedUlbs = input<ReadonlyMap<string, ClaimLetterReturnedUlb>>(new Map());
   /** A save is in flight: the rows it sent must not change under it, so adding and removing wait.
    *  Separate from `canEdit`, which also decides whether the row controls are disabled. */
   readonly locked = input(false);
@@ -331,6 +338,11 @@ export class ClaimUlbTableComponent {
     if (own) return own;
     const refused = rejection?.claimedAmount;
     return refused && control.value === refused.sentAmount ? refused.message : null;
+  }
+
+  /** Hover text of a returned row: what went back and why. */
+  returnedTooltip(ulb: ClaimLetterReturnedUlb): string {
+    return `Returned: ${ulb.items.join(', ')}.${ulb.remark ? ` Remark: ${ulb.remark}` : ''}`;
   }
 
   /** Opens the picker to add one or more brand-new rows, in the order they were selected. */

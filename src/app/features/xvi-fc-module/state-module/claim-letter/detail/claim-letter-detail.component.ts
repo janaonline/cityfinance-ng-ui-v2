@@ -4,8 +4,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, map, startWith } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { distinctUntilChanged, filter, forkJoin, map, startWith } from 'rxjs';
 import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
 import { withSupportingActionState } from '../../../../../shared/dynamic-form/supporting-action-state';
 import { UtilityService } from '../../../../../core/services/utility.service';
@@ -52,6 +52,7 @@ import {
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
   ClaimLetterFinalPdf,
+  ClaimLetterReturnedUlb,
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
@@ -139,6 +140,18 @@ const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
 /** The backend's `ulbSelections.<index>.<field>` error keys, from an `errors` map or `buildErrorMapFromMessages`. */
 const CLAIM_ROW_ERROR_KEY_PATTERN = /^ulbSelections\.(\d+)\.(ulbId|claimedAmount)$/;
 
+/** State form id -> its State page (the sidebar route), for the returned-letter box. */
+const STATE_FORM_ROUTES: Readonly<Record<number, string>> = {
+  22: 'sfc-status',
+  35: 'gtc',
+  23: 'elected-body-status',
+  24: 'ulb-wise-allocation',
+  25: 'fc-unspent-declaration',
+};
+
+/** The returned-letter box names this many ULBs, then "+N more"; the table marks every one. */
+const RETURN_BOX_ULB_NAMES = 3;
+
 /** Replaces the list of codes when every row fails the State-level gate; no remove button then. */
 const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
   'The State-level eligibility conditions are not met, so no ULB can be claimed right now. Removing ULBs will not fix this. See the eligibility checklist on the Claim Letters page.';
@@ -158,6 +171,7 @@ const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
     AmountDisplayToggleComponent,
     ClaimLetterFinalClaimLetterComponent,
     ReturnedReasonBannerComponent,
+    RouterLink,
   ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',
@@ -339,6 +353,22 @@ export class ClaimLetterDetailComponent implements OnInit {
     return claim.stateFormNotice ?? claim.blockedReason ?? null;
   });
 
+  /** Returned ULBs by id, for the red rows. */
+  readonly returnedUlbs = computed<ReadonlyMap<string, ClaimLetterReturnedUlb>>(
+    () => new Map((this.claim()?.returnSummary?.ulbs ?? []).map((ulb) => [ulb.ulbId, ulb])),
+  );
+
+  /** "Agra, Aligarh, Mathura +4 more": the box stays short however many ULBs went back. */
+  readonly returnedUlbNames = computed(() => {
+    const ulbs = this.claim()?.returnSummary?.ulbs ?? [];
+    const names = ulbs
+      .slice(0, RETURN_BOX_ULB_NAMES)
+      .map((ulb) => ulb.ulbName)
+      .join(', ');
+    const more = ulbs.length - RETURN_BOX_ULB_NAMES;
+    return more > 0 ? `${names} +${more} more` : names;
+  });
+
   /** Banner text from the most recent failed create, save, abandon, upload or submit. */
   readonly formLevelErrors = signal<readonly string[]>([]);
 
@@ -377,6 +407,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly currentFormStatusValue = computed<FormStatusValue>(
     () => (this.claim()?.currentFormStatus ?? FORM_STATUS.NOT_STARTED) as FormStatusValue,
   );
+
+  /** A returned State form's own page, or null for a form with no State page. */
+  stateFormLink(formId: number): string[] | null {
+    const route = STATE_FORM_ROUTES[formId];
+    return route ? ['/xvifc', this.yearId, route] : null;
+  }
 
   readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
     const listLink: XvifcBreadcrumbLink = {
@@ -585,10 +621,14 @@ export class ClaimLetterDetailComponent implements OnInit {
     const control = this.dynamicService.createContorl(field, false, false);
     this.signedFileForm.addControl('signedClaimFile', control);
 
-    control.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((raw: unknown) => {
-      if (!isUploadedFileMetadata(raw)) return;
-      this.uploadSignedFile(raw);
-    });
+    control.valueChanges
+      .pipe(
+        filter(isUploadedFileMetadata),
+        // The file field emits a picked file twice (setValue, then updateValueAndValidity): upload it once.
+        distinctUntilChanged((a, b) => a.path === b.path),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((file) => this.uploadSignedFile(file));
   }
 
   /** Re-reads only the batch summary (not every ULB page) after a dialog changed something. */
