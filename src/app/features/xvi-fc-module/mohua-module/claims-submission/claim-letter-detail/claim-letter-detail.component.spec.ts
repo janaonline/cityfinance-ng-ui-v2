@@ -290,6 +290,22 @@ describe('ClaimLetterDetailComponent', () => {
       expect(host.querySelector('.cl-hint__counts')?.classList).toContain('cl-hint__counts--some');
     });
 
+    it("shows PMU the SO's saved marks read-only while the letter is under SO review", () => {
+      isMohuaUser = false;
+      service.getClaimLetter.and.returnValue(of({ ...detail, returnedUlbCount: 1 }));
+      service.getClaimLetterUlbs.and.returnValue(returnedRow());
+      const host = create();
+
+      const [marked] = Array.from(host.querySelectorAll<HTMLElement>('tbody tr'));
+      expect(marked.classList).toContain('cl-row--returned');
+      expect(marked.querySelector('.cs-badge--bad')?.textContent).toContain('Returned');
+      expect(marked.textContent).toContain('Wrong IFSC');
+      expect(host.querySelector('.cl-hint__counts')?.textContent).toContain('1 of 10 ULBs marked for return');
+      expect(host.querySelector('tbody .cl-link-btn')).toBeNull(); // no Clear
+      expect(host.querySelector('tbody .cl-icon-btn')).toBeNull(); // no Return column
+      expect(host.querySelector('.cl-actions')).toBeNull();
+    });
+
     it('clears a return mark, updating the row and the count without reloading', () => {
       service.getClaimLetter.and.returnValue(of({ ...detail, returnedUlbCount: 1 }));
       service.getClaimLetterUlbs.and.returnValue(returnedRow());

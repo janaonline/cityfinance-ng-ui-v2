@@ -184,7 +184,10 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly page = signal(1);
 
   /** Only MoHUA acts, and only on a letter still under SO review; returned and acknowledged ones are read-only. */
-  readonly canReview = computed(() => this.isMohua && this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+  /** The SO's marks show to everyone who can open the page while the letter is under SO review; PMU reads them. */
+  readonly isUnderSoReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
+  /** Marking, clearing and the letter's decision buttons: MoHUA only. */
+  readonly canReview = computed(() => this.isMohua && this.isUnderSoReview());
 
   /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
   readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
@@ -395,7 +398,7 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   /** Red while under review for a marked ULB; once the letter is closed, only for a ULB its return reopened. */
   isReturnedRow(row: ClaimLetterUlbRow): boolean {
-    return this.canReview() ? row.soDecision?.status === 'RETURNED' : row.returnedFormIds.length > 0;
+    return this.isUnderSoReview() ? row.soDecision?.status === 'RETURNED' : row.returnedFormIds.length > 0;
   }
 
   /** The returned ULB's picks, as one line: its forms, then its State-form rows, then exemptions to reject. */
