@@ -6,7 +6,10 @@ import {
   ResolvedDocumentAction,
 } from './document-action-row.types';
 
-const ACTION_META: Record<'upload' | 'reupload' | 'retry' | 'delete' | 'approve' | 'return' | 'undo', { label: string; icon: string }> = {
+const ACTION_META: Record<
+  'upload' | 'reupload' | 'retry' | 'delete' | 'approve' | 'return' | 'undo',
+  { label: string; icon: string }
+> = {
   upload: { label: 'Upload', icon: 'bi-upload' },
   reupload: { label: 'Re-upload', icon: 'bi-upload' },
   retry: { label: 'Retry Verification', icon: 'bi-arrow-repeat' },
@@ -112,6 +115,7 @@ export function resolveDocumentActions(
       if (doc.latestDecision?.status === 'RETURNED') {
         return gated('reupload') ? [build('reupload', false)] : [];
       }
+      if (doc.passedReplacementsExhausted) return [];
       return gated('delete') ? [build('delete', false)] : [];
     }
     return [];

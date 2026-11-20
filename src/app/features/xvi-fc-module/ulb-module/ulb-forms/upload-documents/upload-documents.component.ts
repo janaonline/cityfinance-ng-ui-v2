@@ -129,6 +129,9 @@ export interface UploadDocument extends UploadDocumentDef {
   // Set once postRejectionAttemptsUsed reaches maxManualReviewAttempts — both Re-upload and Request
   // Manual Review are blocked until this passes. Null the rest of the time.
   uploadBlockedUntil: Date | null;
+  // Times a PASSED upload of this document was thrown away (removed or uploaded over). At
+  // MAX_PASSED_REPLACEMENTS the passed document is locked; a State/SO return resets it to 0.
+  passedReplacementsUsed: number;
 }
 
 interface UlbDetails {
@@ -187,6 +190,8 @@ interface BackendStatusDoc {
   manualReviewRejectionCount: number;
   // Set after a second manual-review rejection — null the rest of the time.
   uploadBlockedUntil: string | null;
+  // Times a PASSED upload of this document was removed or replaced (capped server-side).
+  passedReplacementsUsed?: number;
 }
 
 type AnnualAccountFormStatus =
@@ -270,6 +275,8 @@ const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 3;
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 /** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
+/** Mirrors the backend's MAX_PASSED_REPLACEMENTS (common/utils/manual-review-cooldown.util.ts). */
+const MAX_PASSED_REPLACEMENTS = 3;
 
 /** Pure so it's directly unit-testable without going through pdf.js/checkPdfHasContent. */
 export function getMaxPageCountError(pageCount: number | null, maxPages = MAX_PDF_PAGES): string | null {
@@ -319,6 +326,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     failedUploadsInARow: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
+    passedReplacementsUsed: 0,
   };
 }
 
@@ -478,7 +486,20 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.postRejectionAttemptsUsed >= MAX_MANUAL_REVIEW_ATTEMPTS;
   }
 
+  /** Removals/replacements of this PASSED document still allowed; a returned document is never capped. */
+  passedReplacementsLeft(doc: UploadDocument): number {
+    return Math.max(MAX_PASSED_REPLACEMENTS - doc.passedReplacementsUsed, 0);
+  }
+
+  /** A passed, not-returned document that used up its replacements — mirrors the backend's cap. */
+  passedReplacementsExhausted(doc: UploadDocument): boolean {
+    return (
+      doc.status === 'passed' && doc.latestDecision?.status !== 'RETURNED' && this.passedReplacementsLeft(doc) === 0
+    );
+  }
+
   readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
+  readonly maxPassedReplacements = MAX_PASSED_REPLACEMENTS;
   readonly manualReviewCooldownHours = MANUAL_REVIEW_COOLDOWN_HOURS;
   readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
 
@@ -531,6 +552,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       isEligibleForManualReview: this.isEligibleForManualReview(doc),
       manualReviewAttemptsExhausted: this.manualReviewAttemptsExhausted(doc),
       isUploadBlocked: this.isUploadBlocked(doc),
+      passedReplacementsExhausted: this.passedReplacementsExhausted(doc),
     };
   }
 
@@ -724,6 +746,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               failedUploadsInARow: d.failedUploadsInARow,
               manualReviewRejectionCount: d.manualReviewRejectionCount,
               uploadBlockedUntil: d.uploadBlockedUntil,
+              passedReplacementsUsed: d.passedReplacementsUsed,
             }
           : d,
       ),
@@ -918,11 +941,19 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   }
 
   async removeDocument(docId: string): Promise<void> {
+    const target = this.documents().find((d) => d.id === docId);
+    // Delete is only offered on a passed, not-returned document, so every removal counts against the cap.
+    const left = target ? this.passedReplacementsLeft(target) : MAX_PASSED_REPLACEMENTS;
+    const capNote =
+      left <= 1
+        ? ' This is the last time you can remove it: after this, the passed document is locked and cannot be removed again.'
+        : ` You can remove a passed document ${left} more times; after that it is locked.`;
     const data: UlbFormsDialogData = {
       title: 'Remove this document?',
       icon: { name: 'warning_amber', color: '#e53935' },
       description:
-        'This document has already passed validation. Removing it will clear the current verification result — the system will run the checks again on your replacement file.',
+        'This document has already passed validation. Removing it will clear the current verification result — the system will run the checks again on your replacement file.' +
+        capNote,
       buttons: [
         { label: 'Cancel', result: 'cancel', variant: 'stroked' },
         { label: 'Remove and re-upload', result: 'remove', variant: 'flat', color: 'warn' },
@@ -953,7 +984,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
         );
       } catch (err) {
         console.error('[remove] failed to delete document from server', err);
-        this.utilityService.triggerSnackbar('Unable to remove the document. Please try again.', 'snackbar-danger');
+        // The server's own reason (e.g. the replacement cap) beats a generic retry hint.
+        const message =
+          err instanceof HttpErrorResponse && typeof err.error?.message === 'string'
+            ? err.error.message
+            : 'Unable to remove the document. Please try again.';
+        this.utilityService.triggerSnackbar(message, 'snackbar-danger');
         return;
       }
     }
@@ -962,7 +998,11 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
       docs.map((d) => {
         if (d.id !== docId) return d;
         if (d.localPreviewUrl) URL.revokeObjectURL(d.localPreviewUrl);
-        return emptyDoc(this.config()!.documents.find((def) => def.id === docId)!);
+        return {
+          ...emptyDoc(this.config()!.documents.find((def) => def.id === docId)!),
+          // The server counted this removal; keep the count so the next dialog shows what's left.
+          passedReplacementsUsed: d.status === 'passed' ? d.passedReplacementsUsed + 1 : d.passedReplacementsUsed,
+        };
       }),
     );
   }
@@ -1162,6 +1202,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             failedUploadsInARow: saved.failedUploadsInARow ?? 0,
             manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
             uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
+            passedReplacementsUsed: saved.passedReplacementsUsed ?? 0,
           };
         }),
       );
@@ -1249,6 +1290,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 failedUploadsInARow: remote.failedUploadsInARow ?? 0,
                 manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
                 uploadBlockedUntil: remote.uploadBlockedUntil ? new Date(remote.uploadBlockedUntil) : null,
+                passedReplacementsUsed: remote.passedReplacementsUsed ?? 0,
               };
             }),
           );
