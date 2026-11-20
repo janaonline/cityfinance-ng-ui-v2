@@ -175,7 +175,7 @@ export class ClaimUlbTableComponent {
   /** Claimed-vs-allocated band from the backend; used only while `claimAmountEditable` is on. */
   readonly varianceLowerPercent = input.required<number>();
   readonly varianceUpperPercent = input.required<number>();
-  /** The last batch slot; passed to the picker, which then notes the ULBs still in no batch. */
+  /** The last draft; passed to the picker, which then notes the ULBs still in no claim letter. */
   readonly isFinalBatch = input(false);
   /** Rows the last save refused, by ULB id: a refused ULB shows "Not accepted", a refused amount its
    *  message. */

@@ -48,6 +48,26 @@
           [currentFormStatus]="claim()!.currentFormStatus"
           [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
         />
+        @if (claim()!.returnedWithNote; as note) {
+          <div
+            class="alert alert-info d-flex align-items-start gap-2 py-2 mb-0"
+            role="note"
+            data-cy="claim-letter-returned-with"
+          >
+            <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+            <span class="small">{{ note }}</span>
+          </div>
+        }
+        @if (stateFormBanner(); as notice) {
+          <div
+            class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-0"
+            role="alert"
+            data-cy="claim-letter-state-form-notice"
+          >
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+            <span class="small">{{ notice }}</span>
+          </div>
+        }
       }
 
       @if (summaryTiles().length) {
@@ -177,8 +197,9 @@
     @if (finalBatchIncomplete()) {
       <div class="alert alert-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
         <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
-        {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed - every ULB must be included in this
-        final batch before it can be submitted.
+        {{ claim()?.remainingUlbCount }} ULB(s) are in no claim letter yet. This is the last draft and all
+        {{ eligibilityOverview()?.batchSlotsMax }} places for this installment are in use, so every ULB must be in a
+        claim letter before you can submit it.
       </div>
     }
 

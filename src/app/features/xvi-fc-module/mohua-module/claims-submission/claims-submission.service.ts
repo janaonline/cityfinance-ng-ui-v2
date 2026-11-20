@@ -64,6 +64,7 @@ export class ClaimsSubmissionService {
       .post<ApiEnvelope<ClaimLetterDetail> | ClaimLetterDetail>(`${this.baseUrl}letter/${claimLetterId}/return`, {
         expectedRevision,
         stateFormIds: selection.stateFormIds,
+        affectedLetterIds: selection.affectedLetterIds,
         ...(selection.stateRemark ? { stateRemark: selection.stateRemark } : {}),
       })
       .pipe(map((response) => unwrapResponse(response)));

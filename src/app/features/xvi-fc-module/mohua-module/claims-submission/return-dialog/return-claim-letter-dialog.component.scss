@@ -72,6 +72,24 @@
   }
 }
 
+// A State item that can't be ticked: a short tag, and an (i) whose tooltip says why.
+.rcl-tag {
+  font-size: 0.75rem;
+  color: #5b6b73;
+}
+
+.rcl-why {
+  display: inline-flex;
+  color: #5b6b73;
+  cursor: help;
+  border-radius: 50%;
+
+  &:focus-visible {
+    outline: 2px solid #0f5b4a;
+    outline-offset: 2px;
+  }
+}
+
 .rcl-remarks-label {
   display: block;
   margin-bottom: 0.3rem;
@@ -103,4 +121,15 @@
   background: #f4f5f6;
   font-size: 0.8rem;
   color: #0f1f26;
+}
+
+.rcl-cascade {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: #fff4e5;
+  font-size: 0.8rem;
+  color: #6b3d00;
 }

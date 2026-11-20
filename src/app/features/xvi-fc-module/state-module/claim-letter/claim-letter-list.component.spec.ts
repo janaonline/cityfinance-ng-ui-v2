@@ -41,6 +41,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
   supersedes: null,
   supersededBy: null,
   createdAt: '2026-07-01T00:00:00.000Z',
+  updatedAt: '2026-07-02T10:30:00.000Z',
   permissions: { canView: true, canEdit: true, canFinalSubmit: true },
 };
 
@@ -64,7 +65,6 @@ function buildEligibility(overrides: Partial<ClaimLetterEligibilitySummary> = {}
     ulbLevelCriteria: [],
     ulbReadiness: { eligible: 10, total: 10 },
     remainingUlbCount: 0,
-    activeBatchNumber: null,
     // Switch on keeps the claim-amount tests below on the editable mode; off is tested on its own.
     claimAmountEditable: true,
     ...overrides,
@@ -165,6 +165,20 @@ describe('ClaimLetterListComponent', () => {
     expect(banner.nativeElement.textContent).toContain('28');
     expect(banner.nativeElement.textContent).toContain('33');
     expect(banner.nativeElement.textContent).toContain('5');
+    expect((banner.nativeElement.textContent as string).replace(/\s+/g, ' ')).toContain(
+      'must all be in a claim letter before the last of your 3 claim letters can be submitted',
+    );
+  });
+
+  it('keeps the final-batch warning once every place is taken, even over a lowered cap', () => {
+    (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
+      of(buildEligibility({ batchSlotsUsed: 4, batchSlotsMax: 3, remainingUlbCount: 8 })),
+    );
+    component.loadAll();
+    fixture.detectChanges();
+
+    expect(component.showFinalBatchWarning()).toBeTrue();
+    expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-warning"]'))).not.toBeNull();
   });
 
   it('hides the final-batch warning when more than one slot remains, even with ULBs unclaimed', () => {
@@ -338,21 +352,19 @@ describe('ClaimLetterListComponent', () => {
 
     expect(component.canCreateNewClaim()).toBeFalse();
     expect(component.newClaimDisabledReason()).toBe(
-      "You've used all 3 claim batch slots for this installment. Resolve or wait on an existing batch before starting another.",
+      'All 3 claim letters for this installment are in use. A letter that is discarded or returned frees its place.',
     );
   });
 
-  it('disables New Claim while another batch is active (one batch at a time)', () => {
+  it('keeps New Claim enabled while other letters are drafts or under review, up to the cap', () => {
     (claimLetterService.getEligibilitySummary as jasmine.Spy).and.returnValue(
-      of(buildEligibility({ batchSlotsUsed: 1, batchSlotsMax: 3, activeBatchNumber: 1 })),
+      of(buildEligibility({ batchSlotsUsed: 2, batchSlotsMax: 3 })),
     );
 
     component.loadAll();
 
-    expect(component.canCreateNewClaim()).toBeFalse();
-    expect(component.newClaimDisabledReason()).toBe(
-      'Only one claim batch can be processed at a time. Batch 1 is still in progress or under MoHUA review.',
-    );
+    expect(component.canCreateNewClaim()).toBeTrue();
+    expect(component.newClaimDisabledReason()).toBeNull();
   });
 
   it('newClaimDisabledReason is null before eligibility has loaded', () => {
@@ -374,6 +386,16 @@ describe('ClaimLetterListComponent', () => {
     component.createNewClaim();
 
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('shows Last activity and no Version column in the history table', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const headers = Array.from(host.querySelectorAll('thead th')).map((th) => th.textContent?.trim());
+
+    expect(headers).toContain('Last activity');
+    expect(headers).not.toContain('Version');
+    // Date only, same format as Submitted.
+    expect(host.querySelector('[data-cy="claim-letter-last-activity"]')?.textContent?.trim()).toBe('Jul 2, 2026');
   });
 
   it('viewClaim navigates to claim-letter/:id', () => {

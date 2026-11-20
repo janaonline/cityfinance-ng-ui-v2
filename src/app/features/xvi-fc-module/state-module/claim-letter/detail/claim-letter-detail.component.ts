@@ -212,12 +212,18 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** OnPush child: needs `refreshValidationDisplay()` after this component changes a row control. */
   private readonly claimTable = viewChild(ClaimUlbTableComponent);
 
-  /** The last batch slot, whose submit needs every ULB in a batch; the picker then says what is left. */
+  /** The last draft (every place taken, no other draft open), whose submit needs every ULB in a letter; the picker
+   *  then says what is left. A new letter is it when it takes the last place with no draft open; a saved one is told
+   *  by the backend. */
   readonly isFinalBatch = computed(() => {
+    if (!this.isCreateMode) return this.claim()?.isLastPlace === true;
     const overview = this.eligibilityOverview();
     if (!overview) return false;
-    const batchNumber = this.isCreateMode ? overview.nextBatchNumber : this.claim()?.batchNumber;
-    return batchNumber != null && batchNumber === overview.batchSlotsMax;
+    return (
+      overview.nextBatchNumber !== null &&
+      overview.batchSlotsUsed + 1 >= overview.batchSlotsMax &&
+      overview.openDraftCount === 0
+    );
   });
 
   /** Rows the last save refused, by ULB id and field, with the server's reasons; cleared when the next
@@ -320,8 +326,18 @@ export class ClaimLetterDetailComponent implements OnInit {
     if (this.claim()?.finalClaimLetterStage !== 'DRAFT' || !finalPdf) return null;
     return finalPdf.missingRequired.length ? null : finalPdf;
   });
-  /** After Submit the submitted copy replaces the upload field. */
-  readonly showSignedFileField = computed(() => this.claim()?.finalClaimLetterStage !== 'SUBMITTED');
+  /** After Submit the submitted copy replaces the upload field; while a State-level condition fails nothing can be
+   *  signed, so the field is hidden and the reason shows instead. */
+  readonly showSignedFileField = computed(
+    () => this.claim()?.finalClaimLetterStage !== 'SUBMITTED' && !this.claim()?.blockedReason,
+  );
+  /** The one place that says why a draft is blocked by a State form: the notice after another letter's State form
+   *  return, else the block reason. The alerts above the buttons stay quiet while this shows. */
+  readonly stateFormBanner = computed<string | null>(() => {
+    const claim = this.claim();
+    if (!claim || this.isCreateMode) return null;
+    return claim.stateFormNotice ?? claim.blockedReason ?? null;
+  });
 
   /** Banner text from the most recent failed create, save, abandon, upload or submit. */
   readonly formLevelErrors = signal<readonly string[]>([]);
@@ -334,12 +350,11 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly canFinalSubmit = computed(() => this.claim()?.permissions.canFinalSubmit ?? false);
 
-  /** Why Submit is unavailable for reasons the backend reports: another active batch (which also
-   *  hides Submit, via `canFinalSubmit`) or missing mandatory letter details. */
+  /** Why Submit is unavailable: missing mandatory letter details. A failing State-level condition hides Submit (via
+   *  `canFinalSubmit`) and is explained once, by `stateFormBanner`. */
   readonly submitBlockedReason = computed<string | null>(() => {
     const claim = this.claim();
     if (!claim || this.isCreateMode) return null;
-    if (claim.blockedReason) return claim.blockedReason;
     if (claim.permissions.canFinalSubmit && claim.letterDetailsComplete === false) {
       return 'Complete the mandatory letter details (Letter details & Preview) before submitting.';
     }
@@ -351,13 +366,11 @@ export class ClaimLetterDetailComponent implements OnInit {
     return this.claim()?.stateName ?? '';
   });
 
-  /** Saves a round trip: the last batch slot cannot be submitted while any ULB is in no batch (the
-   *  backend enforces it too). */
+  /** Saves a round trip: the last draft cannot be submitted while any ULB is in no letter (the backend enforces it
+   *  too). The count comes with the flag on every detail load, so a save that adds the ULBs unblocks it. */
   readonly finalBatchIncomplete = computed(() => {
     const claim = this.claim();
-    const overview = this.eligibilityOverview();
-    if (!claim || !overview) return false;
-    return claim.batchNumber === overview.batchSlotsMax && overview.remainingUlbCount > 0;
+    return claim?.isLastPlace === true && (claim.remainingUlbCount ?? 0) > 0;
   });
 
   /** Narrowed to `FormStatusValue` here rather than widening the shared component's input. */
@@ -433,7 +446,8 @@ export class ClaimLetterDetailComponent implements OnInit {
       const financialOverview = overview.financialOverview;
       totalInstallmentAllocation = financialOverview.totalInstallmentAllocation;
       remainingAfterThisBatch = financialOverview.availableToClaim - liveClaimedTotal;
-      slotsRemaining = overview.nextBatchNumber !== null ? overview.batchSlotsMax - overview.nextBatchNumber : 0;
+      // Places left once this new letter takes one (slot numbers can be out of order after a return).
+      slotsRemaining = overview.nextBatchNumber !== null ? overview.batchSlotsMax - overview.batchSlotsUsed - 1 : 0;
     } else {
       const claim = this.claim();
       if (!claim) return [];
@@ -463,11 +477,13 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly hasInvalidRows = computed(() => (this.claimTable()?.invalidRowIdentifiers().length ?? 0) > 0);
 
-  /** Same wording as the backend's rejection, so the user sees one message either way. */
+  /** Same wording as the backend's rejection, so the user sees one message either way. A State-level failure is left
+   *  to `stateFormBanner` when it shows; this says it only as a fallback. */
   readonly rowValidationMessage = computed<string | null>(() => {
     const identifiers = this.claimTable()?.invalidRowIdentifiers() ?? [];
     if (!identifiers.length) return null;
-    return this.stateGateFailed() ? CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE : ineligibleUlbsMessage(identifiers);
+    if (!this.stateGateFailed()) return ineligibleUlbsMessage(identifiers);
+    return this.stateFormBanner() ? null : CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE;
   });
 
   get stateId(): string {

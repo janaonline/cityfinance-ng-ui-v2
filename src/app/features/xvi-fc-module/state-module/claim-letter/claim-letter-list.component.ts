@@ -50,7 +50,6 @@ export class ClaimLetterListComponent implements OnInit {
   private readonly moduleService = inject(XvifcModuleService);
   private readonly amountDisplay = inject(AmountDisplayModeService);
 
-
   readonly isLoading = signal(false);
   readonly loadError = signal(false);
   readonly isHistoryLoading = signal(false);
@@ -96,7 +95,9 @@ export class ClaimLetterListComponent implements OnInit {
 
   /** The SO review is internal to MoHUA, so the State sees a letter under SO review as under MoHUA review. */
   statusLabel(claim: ClaimLetterBatchSummary): string {
-    return claim.currentFormStatus === FORM_STATUS_UNDER_REVIEW_BY_SO ? 'Under Review by MoHUA' : claim.currentFormStatusLabel;
+    return claim.currentFormStatus === FORM_STATUS_UNDER_REVIEW_BY_SO
+      ? 'Under Review by MoHUA'
+      : claim.currentFormStatusLabel;
   }
 
   /** "2", or "2-R1" for a letter built after a return. */
@@ -107,11 +108,8 @@ export class ClaimLetterListComponent implements OnInit {
   readonly canCreateNewClaim = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
-    return (
-      this.isEligible() &&
-      eligibility.batchSlotsUsed < eligibility.batchSlotsMax &&
-      eligibility.activeBatchNumber === null
-    );
+    // Several letters may be in draft or under review at once, up to the cap.
+    return this.isEligible() && eligibility.batchSlotsUsed < eligibility.batchSlotsMax;
   });
 
   /** Why "New Claim" is disabled, checked in the same order as `canCreateNewClaim`; null when enabled. */
@@ -126,19 +124,17 @@ export class ClaimLetterListComponent implements OnInit {
       return 'No ULBs currently meet every eligibility criterion, so there is nothing to include in a new claim yet.';
     }
     if (eligibility.batchSlotsUsed >= eligibility.batchSlotsMax) {
-      return `You've used all ${eligibility.batchSlotsMax} claim batch slots for this installment. Resolve or wait on an existing batch before starting another.`;
-    }
-    if (eligibility.activeBatchNumber !== null) {
-      return `Only one claim batch can be processed at a time. Batch ${eligibility.activeBatchNumber} is still in progress or under MoHUA review.`;
+      return `All ${eligibility.batchSlotsMax} claim letters for this installment are in use. A letter that is discarded or returned frees its place.`;
     }
     return 'New claims are currently unavailable.';
   });
 
-  /** One slot left and ULBs in no batch: a ULB left out of the last batch cannot be claimed this installment. */
+  /** One place left or none, and ULBs in no letter: a ULB left out of the last letter cannot be claimed this
+   *  installment. */
   readonly showFinalBatchWarning = computed(() => {
     const eligibility = this.eligibility();
     if (!eligibility) return false;
-    return eligibility.batchSlotsMax - eligibility.batchSlotsUsed === 1 && eligibility.remainingUlbCount > 0;
+    return eligibility.batchSlotsMax - eligibility.batchSlotsUsed <= 1 && eligibility.remainingUlbCount > 0;
   });
 
   /** State-wide figures only (no batch in view); the full four-figure breakdown appears only here. */

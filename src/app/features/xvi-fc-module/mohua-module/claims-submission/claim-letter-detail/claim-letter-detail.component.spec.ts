@@ -306,6 +306,72 @@ describe('ClaimLetterDetailComponent', () => {
       expect(service.getClaimLetter).not.toHaveBeenCalled();
     });
 
+    it("keeps the row-mark count in step, so the return dialog's warning about other letters follows it", () => {
+      // The page loaded with one ULB marked with an Elected Body row.
+      service.getClaimLetter.and.returnValue(of({ ...detail, returnedUlbCount: 1, returnedRowUlbCount: 1 }));
+      service.getClaimLetterUlbs.and.returnValue(returnedRow());
+      service.decideUlb.and.returnValue(of(null));
+      const host = create();
+
+      (host.querySelector('tbody .cl-link-btn') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.letter()?.returnedRowUlbCount).toBe(0);
+    });
+
+    it('counts a ULB newly marked with a State-form row, which the page did not have when it loaded', () => {
+      service.decideUlb.and.returnValue(
+        of({
+          status: 'RETURNED' as const,
+          ulbFormIds: [],
+          rowFormIds: [23],
+          rejectExemptionFormIds: [],
+          remark: 'Wrong ward count',
+          decidedAt: '2026-11-20T00:00:00.000Z',
+        }),
+      );
+      create();
+
+      fixture.componentInstance['saveDecision'](ulbs.items[0], {
+        status: 'RETURNED',
+        ulbFormIds: [],
+        rowFormIds: [23],
+        rejectExemptionFormIds: [],
+        remark: 'Wrong ward count',
+      });
+
+      expect(fixture.componentInstance.letter()).toEqual(
+        jasmine.objectContaining({ returnedUlbCount: 1, returnedRowUlbCount: 1 }),
+      );
+    });
+
+    it('paints a ULB of a returned letter red only when the return reopened something for it', () => {
+      service.getClaimLetter.and.returnValue(of({ ...detail, status: 16, statusLabel: 'Returned for Correction' }));
+      const mark = {
+        status: 'RETURNED' as const,
+        ulbFormIds: [33],
+        rowFormIds: [],
+        rejectExemptionFormIds: [],
+        remark: 'Wrong IFSC',
+        decidedAt: '2026-11-03T00:00:00.000Z',
+      };
+      service.getClaimLetterUlbs.and.returnValue(
+        of({
+          ...ulbs,
+          items: [
+            // Marked, but the letter came back with another letter's State form: nothing reopened for it.
+            { ...ulbs.items[0], soDecision: mark, returnedFormIds: [] },
+            { ...ulbs.items[1], soDecision: mark, returnedFormIds: [33] },
+          ],
+        }),
+      );
+      const host = create();
+
+      const [notReturned, returned] = Array.from(host.querySelectorAll<HTMLElement>('tbody tr'));
+      expect(notReturned.classList).not.toContain('cl-row--returned');
+      expect(returned.classList).toContain('cl-row--returned');
+    });
+
     it('lists only the exemptions in the return dialog of an "Eligible via exemption" ULB', () => {
       service.getClaimLetterUlbs.and.returnValue(
         of({
@@ -323,29 +389,100 @@ describe('ClaimLetterDetailComponent', () => {
       expect(dialog).not.toContain('PFMS Bank Account');
     });
 
-    it('says the Approve confirmation also approves the State and ULB forms and pending exemptions, in green', () => {
+    it('says the Approve confirmation also approves the forms and pending exemptions, and which State forms it settles, in green', () => {
       const confirm = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
-      service.getClaimLetter.and.returnValue(of({ ...detail, pendingExemptionCount: 2 }));
+      service.getClaimLetter.and.returnValue(
+        of({
+          ...detail,
+          pendingExemptionCount: 2,
+          stateForms: [
+            { formId: 22, name: 'SFC Status', returnable: true, lockReason: null, acceptedWithLetter: null },
+            {
+              formId: 35,
+              name: 'Grant Transfer Certificate',
+              returnable: true,
+              lockReason: null,
+              acceptedWithLetter: null,
+            },
+          ],
+        }),
+      );
       const host = create();
 
       actionButton(host, 'Approve').click();
 
       const data = confirm.calls.mostRecent().args[0]!;
-      expect(data.message).toContain('the State forms and each ULB’s forms');
-      expect(data.message).toContain('the 2 exemption request(s) still under review');
+      expect(data.message).toContain(
+        'This also approves its State and ULB forms and 2 pending exemption request(s). ' +
+          "SFC Status and Grant Transfer Certificate will then be final for all of this State's claim letters.",
+      );
       expect(data.confirmButtonColor).toBe('success');
     });
 
-    it('leaves exemptions out of the Approve confirmation when none is pending', () => {
+    it('names only the State forms this approval settles', () => {
       const confirm = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
-      service.getClaimLetter.and.returnValue(of({ ...detail, pendingExemptionCount: 0 }));
+      service.getClaimLetter.and.returnValue(
+        of({
+          ...detail,
+          stateForms: [
+            {
+              formId: 22,
+              name: 'SFC Status',
+              returnable: false,
+              lockReason: 'ACCEPTED',
+              acceptedWithLetter: 'Claim Letter 1',
+            },
+            {
+              formId: 35,
+              name: 'Grant Transfer Certificate',
+              returnable: true,
+              lockReason: null,
+              acceptedWithLetter: null,
+            },
+          ],
+        }),
+      );
       const host = create();
 
       actionButton(host, 'Approve').click();
 
       const message = confirm.calls.mostRecent().args[0]!.message ?? '';
-      expect(message).toContain('the State forms and each ULB’s forms');
+      expect(message).toContain("Grant Transfer Certificate will then be final for all of this State's claim letters.");
+      expect(message).not.toContain('SFC Status');
+    });
+
+    it('leaves exemptions and the finality line out when nothing is pending and SFC/GTC are already settled', () => {
+      const confirm = spyOn(TestBed.inject(ConfirmDialogService), 'confirm').and.returnValue(of(false));
+      service.getClaimLetter.and.returnValue(
+        of({
+          ...detail,
+          pendingExemptionCount: 0,
+          stateForms: [
+            {
+              formId: 22,
+              name: 'SFC Status',
+              returnable: false,
+              lockReason: 'ACCEPTED',
+              acceptedWithLetter: 'Claim Letter 1',
+            },
+            {
+              formId: 35,
+              name: 'Grant Transfer Certificate',
+              returnable: false,
+              lockReason: 'EXEMPTED',
+              acceptedWithLetter: null,
+            },
+          ],
+        }),
+      );
+      const host = create();
+
+      actionButton(host, 'Approve').click();
+
+      const message = confirm.calls.mostRecent().args[0]!.message ?? '';
+      expect(message).toMatch(/This also approves its State and ULB forms\.$/);
       expect(message).not.toContain('exemption');
+      expect(message).not.toContain('final');
     });
 
     it('opens the return dialog for that one ULB from its return icon', () => {

@@ -4,7 +4,8 @@ import type { FormStatusValue } from '../../shared/form-progress/form-progress.c
 /** V1 sends and shows Installment 1 only; the backend rejects 2. */
 export type ClaimLetterInstallment = 1 | 2;
 export const CLAIM_LETTER_INSTALLMENT: ClaimLetterInstallment = 1;
-export type ClaimLetterBatchNumber = 1 | 2 | 3;
+/** 1 up to the formjson cap (`batchSlotsMax`, default 3). */
+export type ClaimLetterBatchNumber = number;
 export type ClaimLetterAssemblyStatus = 'BUILDING' | 'READY';
 export type ClaimLetterEligibilityResult = 'PASSED' | 'EXEMPTED' | 'FAILED';
 
@@ -103,10 +104,9 @@ export interface ClaimLetterEligibilitySummary {
   /** ULBs passing every ULB-bulk criterion at once. Ignores allocation and locks, so it is not the
    *  picker's count of pickable ULBs. */
   ulbReadiness: ClaimLetterUlbReadiness;
-  /** Expected ULBs in no batch, eligible or not; drives the final-batch warning and submit guard. */
+  /** Expected ULBs in no letter, eligible or not; once every place is taken, no letter can be submitted while any
+   *  remain (drives the last-place warning). */
   remainingUlbCount: number;
-  /** The batch in progress or under MoHUA review (one at a time); null when a new claim can start. */
-  activeBatchNumber: number | null;
   /** formjson 26 switch: off means each ULB's claim is its allocation, so no claim column or ±10% text. */
   claimAmountEditable: boolean;
 }
@@ -117,6 +117,8 @@ export interface ClaimLetterClaimContext {
   expectedUlbCount: number;
   batchSlotsUsed: number;
   batchSlotsMax: number;
+  /** Open drafts now; a new letter that takes the last place with none open is the last draft. */
+  openDraftCount: number;
   nextBatchNumber: ClaimLetterBatchNumber | null;
   financialOverview: ClaimLetterFinancialOverview;
   remainingUlbCount: number;
@@ -126,9 +128,9 @@ export interface ClaimLetterClaimContext {
    *  only while `claimAmountEditable` is on. */
   varianceLowerPercent: number;
   varianceUpperPercent: number;
-  /** PREPARE_GRANT_LETTERS and no active batch; stands in for `permissions.canEdit` before a batch exists. */
+  /** PREPARE_GRANT_LETTERS and a free place under the cap; stands in for `permissions.canEdit` before a batch exists. */
   canCreate: boolean;
-  /** Why a new claim can't start because another batch is active; null otherwise. */
+  /** Why a new claim can't start: every place under the cap is taken; null otherwise. */
   createBlockedReason: string | null;
 }
 
@@ -233,7 +235,7 @@ export interface ClaimLetterBatchSummary {
   ulbCount: number;
   isAbandoned: boolean;
   hasSignedFile: boolean;
-  /** null: nothing to show (no signed letter yet, abandoned, or blocked by another batch). */
+  /** null: nothing to show (no signed letter yet, abandoned, or a State-level condition fails). */
   finalClaimLetterStage: ClaimLetterFinalStage | null;
   financialSummary: ClaimLetterFinancialSummary;
   /** Sent back as `expectedRevision` on `updateDraft`. */
@@ -243,8 +245,12 @@ export interface ClaimLetterBatchSummary {
   supersedes: string | null;
   supersededBy: string | null;
   createdAt: string;
+  /** The letter's last write; History is sorted by it (newest first) and shows it as "Last activity". */
+  updatedAt: string;
   /** The SO's (or MoHUA's) remark when the letter was returned; null otherwise. */
   mohuaRemarks?: string | null;
+  /** Set when the letter was returned because another letter's State form was returned. */
+  returnedWithNote?: string | null;
   // Set by getDetail only, down to letterDetailsComplete.
   /** Formjson fields except the letter details (those come from `GET .../letter-details`). */
   questions?: ConditionalFieldConfig[];
@@ -258,10 +264,16 @@ export interface ClaimLetterBatchSummary {
   exemptionUnderReviewUlbCount?: number;
   /** getDetail only: State forms whose Entire State exemption request is still under MoHUA review. */
   stateExemptionsUnderReview?: string[];
-  /** Another batch is active (one at a time): preview, download, letter details and submit are
-   *  blocked, with the reason to show. On `getDetail` and `listHistory`. */
-  blockedByBatchNumber?: number | null;
+  /** getDetail only, drafts: a State-level condition fails (e.g. a State form returned with another letter is being
+   *  corrected), so letter details and preview, the signed-letter upload and submit are unavailable. */
   blockedReason?: string | null;
+  /** getDetail only, drafts: banner after another letter's State form return, or while State conditions fail. */
+  stateFormNotice?: string | null;
+  /** getDetail only, drafts: every place is taken and no other draft is open, so every ULB must be in a letter
+   *  before this one can be submitted. */
+  isLastPlace?: boolean;
+  /** getDetail only, the last draft: expected ULBs in no letter, read with `isLastPlace`; null otherwise. */
+  remainingUlbCount?: number | null;
   permissions: ClaimLetterPermissions;
 }
 
@@ -406,7 +418,6 @@ export const CLAIM_LETTER_ERROR_CODE = {
   LETTER_DETAILS_INCOMPLETE: 'LETTER_DETAILS_INCOMPLETE',
   FINAL_PDF_OUTDATED: 'FINAL_PDF_OUTDATED',
   FINAL_PDF_SOURCE_UNREADABLE: 'FINAL_PDF_SOURCE_UNREADABLE',
-  BATCH_BLOCKED: 'CLAIM_LETTER_BATCH_BLOCKED',
   /** A save refused some ULBs; `errors` names their rows (`ulbSelections.<index>.<field>`). */
   ULBS_REJECTED: 'CLAIM_LETTER_ULBS_REJECTED',
 } as const;

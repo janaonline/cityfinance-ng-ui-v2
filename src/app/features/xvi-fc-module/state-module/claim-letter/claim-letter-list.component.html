@@ -112,8 +112,9 @@
               <span class="small">
                 <b>{{ eligibilitySummary.expectedUlbCount - eligibilitySummary.remainingUlbCount }}</b> of
                 <b>{{ eligibilitySummary.expectedUlbCount }}</b> ULBs claimed so far. The remaining
-                <b>{{ eligibilitySummary.remainingUlbCount }}</b> ULB(s) must all be included in your final batch (Batch
-                {{ eligibilitySummary.batchSlotsMax }}) - any ULB left out cannot be claimed after that.
+                <b>{{ eligibilitySummary.remainingUlbCount }}</b> ULB(s) must all be in a claim letter before the last
+                of your {{ eligibilitySummary.batchSlotsMax }} claim letters can be submitted - any ULB left out cannot
+                be claimed after that.
               </span>
             </div>
           }
@@ -191,11 +192,11 @@
                 <thead class="table-light border-bottom">
                   <tr>
                     <th scope="col" class="ps-3 small fw-semibold">Batch #</th>
-                    <th scope="col" class="small fw-semibold">Version</th>
                     <th scope="col" class="small fw-semibold">Status</th>
                     <th scope="col" class="small fw-semibold text-end">ULBs</th>
                     <th scope="col" class="small fw-semibold text-end">Claimed Total</th>
                     <th scope="col" class="text-center small fw-semibold">Submitted</th>
+                    <th scope="col" class="text-center small fw-semibold">Last activity</th>
                     <th scope="col" class="text-center small fw-semibold text-end pe-3">Action</th>
                   </tr>
                 </thead>
@@ -207,7 +208,6 @@
                       data-cy="claim-letter-row"
                     >
                       <td class="ps-3 small">{{ batchLabel(claim) }}</td>
-                      <td class="small">{{ claim.version }}</td>
                       <td class="small">{{ statusLabel(claim) }}</td>
                       <td class="small text-end">{{ claim.ulbCount }}</td>
                       <td class="small text-end">
@@ -215,6 +215,9 @@
                       </td>
                       <td class="small text-center">
                         {{ claim.submittedAt ? (claim.submittedAt | date: 'mediumDate') : '-' }}
+                      </td>
+                      <td class="small text-center" data-cy="claim-letter-last-activity">
+                        {{ claim.updatedAt | date: 'mediumDate' }}
                       </td>
                       <td class="text-center pe-3">
                         <button

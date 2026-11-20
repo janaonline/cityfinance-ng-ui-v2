@@ -77,6 +77,7 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     supersedes: null,
     supersededBy: null,
     createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T00:00:00.000Z',
     // Backend-driven gates — canEdit()/canFinalSubmit() read these directly now, not
     // currentFormStatus/isAbandoned. Default to "fully editable" so existing tests that only care
     // about other behavior don't also have to specify permissions explicitly.
@@ -94,6 +95,7 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
     expectedUlbCount: 10,
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
+    openDraftCount: 0,
     nextBatchNumber: 1,
     financialOverview: {
       totalInstallmentAllocation: 25,
@@ -200,10 +202,18 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.stateName()).toBe('Test State');
     });
 
-    it('is the final batch only when the next batch takes the last slot', () => {
+    it('is the final batch only when the new letter takes the last place with no draft open', () => {
       expect(component.isFinalBatch()).toBe(false);
       component.eligibilityOverview.set(buildClaimContext({ nextBatchNumber: 3, batchSlotsUsed: 2 }));
       expect(component.isFinalBatch()).toBe(true);
+      // Slots free up out of order after a return: the last free place can be slot 1.
+      component.eligibilityOverview.set(buildClaimContext({ nextBatchNumber: 1, batchSlotsUsed: 2 }));
+      expect(component.isFinalBatch()).toBe(true);
+      // Another draft is open: whichever draft is submitted last needs every ULB, not this one yet.
+      component.eligibilityOverview.set(
+        buildClaimContext({ nextBatchNumber: 3, batchSlotsUsed: 2, openDraftCount: 1 }),
+      );
+      expect(component.isFinalBatch()).toBe(false);
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
@@ -690,9 +700,14 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
     });
 
-    it('is the final batch when this batch holds the last slot', async () => {
-      await setupEdit(buildClaim({ batchNumber: 3 }));
+    it('is the final batch when the backend says this letter fills the last place, whatever its slot', async () => {
+      await setupEdit(buildClaim({ batchNumber: 1, isLastPlace: true }));
       expect(component.isFinalBatch()).toBe(true);
+    });
+
+    it('is not the final batch in slot 3 while a place is still free', async () => {
+      await setupEdit(buildClaim({ batchNumber: 3, isLastPlace: false }));
+      expect(component.isFinalBatch()).toBe(false);
     });
 
     it('marks the ULB rows a save refused, and removes exactly them in one click', async () => {
@@ -844,9 +859,12 @@ describe('ClaimLetterDetailComponent', () => {
       expect(emissions).toBe(1);
     });
 
-    async function setupWithSavedRows(rows: ClaimLetterUlbRow[]): Promise<void> {
+    async function setupWithSavedRows(
+      rows: ClaimLetterUlbRow[],
+      claim: Partial<ClaimLetterBatchSummary> = {},
+    ): Promise<void> {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim(claim)));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(rows));
       spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
       fixture.detectChanges();
@@ -871,6 +889,24 @@ describe('ClaimLetterDetailComponent', () => {
       );
       expect(component.ineligibleUlbIdsToRemove().size).toBe(0);
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'))).toBeNull();
+    });
+
+    it('leaves a State-level failure to the banner at the top when it shows', async () => {
+      const reason =
+        'Grant Transfer Certificate is not verified yet. This claim letter can be downloaded, signed and submitted ' +
+        'once it is verified.';
+      await setupWithSavedRows([{ ...SAVED_ULB_ROWS[0], eligible: false, stateGatePassed: false }], {
+        blockedReason: reason,
+        stateFormNotice: reason,
+      });
+
+      expect(component.rowValidationMessage()).toBeNull();
+      expect(component.submitBlockedReason()).toBeNull();
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-row-validation-alert"]'))).toBeNull();
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).toBeNull();
+      expect(
+        fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]')).nativeElement.textContent,
+      ).toContain('Grant Transfer Certificate is not verified yet.');
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
@@ -1297,49 +1333,96 @@ describe('ClaimLetterDetailComponent', () => {
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).not.toBeNull();
     });
 
-    it('shows why the batch is blocked by another active batch', async () => {
+    it('shows why nothing can be signed while a State form is being corrected, and hides the upload', async () => {
+      const reason =
+        'SFC Status is not verified yet. This claim letter can be downloaded, signed and submitted once it is verified.';
       await setupEdit(
         buildClaim({
-          hasSignedFile: true,
-          blockedByBatchNumber: 1,
-          blockedReason: 'Only one claim batch can be processed at a time. Batch 1 is still in progress.',
+          blockedReason: reason,
+          stateFormNotice: reason,
           permissions: { canView: true, canEdit: true, canFinalSubmit: false },
         }),
       );
       fixture.detectChanges();
 
-      const alert = fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'));
-      expect(alert.nativeElement.textContent).toContain('Batch 1');
+      // Said once, at the top; not repeated above the buttons.
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]'));
+      expect(banner.nativeElement.textContent).toContain('SFC Status is not verified yet.');
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).toBeNull();
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'))).toBeNull();
+      expect(component.showSignedFileField()).toBeFalse();
+    });
+
+    it("explains a signed letter removed after another letter's State form return", async () => {
+      const notice =
+        'Your signed letter was removed because SFC Status was returned for correction by MoHUA with Claim Letter 1. ' +
+        'Once it is corrected and verified, download this letter again, get it signed by the concerned authority and ' +
+        'upload it.';
+      await setupEdit(buildClaim({ stateFormNotice: notice, blockedReason: null }));
+      fixture.detectChanges();
+
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]'));
+      expect(banner.nativeElement.textContent).toContain('Your signed letter was removed');
+      expect(component.showSignedFileField()).toBeTrue();
+    });
+
+    it("says why a letter was returned with another letter's State form", async () => {
+      await setupEdit(
+        buildClaim({
+          currentFormStatus: 16,
+          isAbandoned: true,
+          returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+        }),
+      );
+      fixture.detectChanges();
+
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-returned-with"]'));
+      expect(banner.nativeElement.textContent).toContain('Claim Letter 1');
     });
 
     // ─── Final-batch completeness guard (FE's first line of defense; BE is the real authority) ───
 
-    it('finalBatchIncomplete is true on the last batch slot while ULBs remain unclaimed', async () => {
+    it('finalBatchIncomplete is true on the last draft while ULBs remain unclaimed', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 2, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       expect(component.finalBatchIncomplete()).toBeTrue();
     });
 
-    it('finalBatchIncomplete is false once no ULBs remain unclaimed, even on the last batch slot', async () => {
+    it('finalBatchIncomplete is false once no ULBs remain unclaimed, even on the last draft', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 0, hasSignedFile: true })),
+      );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
+      fixture.detectChanges();
+
+      expect(component.finalBatchIncomplete()).toBeFalse();
+    });
+
+    it('finalBatchIncomplete follows the count on the letter, not the context loaded with the page', async () => {
+      await setup('claim-1');
+      // After a save that added the left-out ULBs, the reloaded letter says none remain; the context is from page load.
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 0, hasSignedFile: true })),
+      );
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
       spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 0 })),
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 8 })),
       );
       fixture.detectChanges();
 
       expect(component.finalBatchIncomplete()).toBeFalse();
     });
 
-    it('finalBatchIncomplete is false on a non-final batch, even with ULBs still unclaimed', async () => {
+    it('finalBatchIncomplete is false while a place is still free, even with ULBs still unclaimed', async () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 1, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
@@ -1353,27 +1436,30 @@ describe('ClaimLetterDetailComponent', () => {
 
     it('disables the submit button and shows the inline warning when finalBatchIncomplete', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 4 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 4, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       const submitButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'));
       expect((submitButton.nativeElement as HTMLButtonElement).disabled).toBeTrue();
       const warning = fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-blocked"]'));
       expect(warning).not.toBeNull();
-      expect(warning.nativeElement.textContent).toContain('4');
+      expect((warning.nativeElement.textContent as string).replace(/\s+/g, ' ').trim()).toBe(
+        '4 ULB(s) are in no claim letter yet. This is the last draft and all 3 places for this installment are in ' +
+          'use, so every ULB must be in a claim letter before you can submit it.',
+      );
     });
 
     it('submitToMohua is a no-op when finalBatchIncomplete, even if somehow invoked', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 2, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       component.submitToMohua();

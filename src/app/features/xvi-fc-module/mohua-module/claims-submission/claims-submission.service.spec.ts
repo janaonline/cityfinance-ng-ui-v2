@@ -86,10 +86,10 @@ describe('ClaimsSubmissionService', () => {
   });
 
   it('returns a letter with only the State-wide items in the body, leaving out an empty remark', () => {
-    service.returnClaimLetter('c1', 3, { stateFormIds: [22], stateRemark: '' }).subscribe();
+    service.returnClaimLetter('c1', 3, { stateFormIds: [22], stateRemark: '', affectedLetterIds: ['c2'] }).subscribe();
 
     const req = http.expectOne((r) => r.url.endsWith('xvi-fc/mohua/claim-letters/letter/c1/return'));
-    expect(req.request.body).toEqual({ expectedRevision: 3, stateFormIds: [22] });
+    expect(req.request.body).toEqual({ expectedRevision: 3, stateFormIds: [22], affectedLetterIds: ['c2'] });
     req.flush({ success: true, data: {} });
   });
 
