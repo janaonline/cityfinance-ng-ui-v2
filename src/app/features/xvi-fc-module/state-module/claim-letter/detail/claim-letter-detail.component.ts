@@ -641,7 +641,8 @@ export class ClaimLetterDetailComponent implements OnInit {
         next: ({ context, source, rows, options }) => {
           this.eligibilityOverview.set(context);
           this.isLoading.set(false);
-          if (!RETURNED_LETTER_STATUSES.includes(source.currentFormStatus)) {
+          // A ULB missing from a partial option list would read as ineligible, so copy nothing rather than guess.
+          if (!RETURNED_LETTER_STATUSES.includes(source.currentFormStatus) || options.total > options.options.length) {
             this.utilityService.triggerSnackbar(COPY_FAILED_MESSAGE, 'snackbar-danger');
             return;
           }

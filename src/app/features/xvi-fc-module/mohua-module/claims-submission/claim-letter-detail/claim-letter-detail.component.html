@@ -195,7 +195,7 @@
               }
             </p>
           </div>
-          @if (canReview()) {
+          @if (isUnderSoReview()) {
             <span
               class="cl-hint__counts badge rounded-pill"
               [class.cl-hint__counts--some]="l.returnedUlbCount > 0"
@@ -324,7 +324,7 @@
                         </span>
                       </td>
                       <td>
-                        @if (canReview()) {
+                        @if (isUnderSoReview()) {
                           @if (row.soDecision) {
                             <span class="cs-badge cs-badge--bad">
                               <i class="bi bi-arrow-return-left" aria-hidden="true"></i> Returned
@@ -332,15 +332,17 @@
                             <p class="small text-body-secondary mb-0 mt-1">
                               {{ decisionFormsText(row.soDecision!)
                               }}{{ row.soDecision!.remark ? ' — ' + row.soDecision!.remark : '' }}
-                              <button
-                                mat-button
-                                type="button"
-                                class="cl-link-btn"
-                                [disabled]="busy()"
-                                (click)="clearDecision(row)"
-                              >
-                                Clear
-                              </button>
+                              @if (canReview()) {
+                                <button
+                                  mat-button
+                                  type="button"
+                                  class="cl-link-btn"
+                                  [disabled]="busy()"
+                                  (click)="clearDecision(row)"
+                                >
+                                  Clear
+                                </button>
+                              }
                             </p>
                           } @else {
                             <span class="cl-pending small text-body-secondary"

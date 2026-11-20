@@ -230,7 +230,7 @@ describe('ClaimLetterDetailComponent', () => {
       },
     });
 
-    async function setupCopy(source: ClaimLetterBatchSummary = returnedSource): Promise<void> {
+    async function setupCopy(source: ClaimLetterBatchSummary = returnedSource, optionsTotal = 4): Promise<void> {
       await setup('new', { from: 'claim-9' });
       spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(source));
@@ -245,7 +245,7 @@ describe('ClaimLetterDetailComponent', () => {
           ],
           page: 1,
           limit: CLAIM_LETTER_MAX_ULBS,
-          total: 4,
+          total: optionsTotal,
         }),
       );
       fixture.detectChanges();
@@ -283,6 +283,17 @@ describe('ClaimLetterDetailComponent', () => {
         'snackbar-danger',
       );
       expect(component.eligibilityOverview()).not.toBeNull();
+    });
+
+    it('copies nothing when the ULB list came back incomplete, instead of calling the rest ineligible', async () => {
+      await setupCopy(returnedSource, 1500);
+
+      expect(component.rows.length).toBe(0);
+      expect(component.copyNote()).toBeNull();
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        "Couldn't copy the ULBs from that letter.",
+        'snackbar-danger',
+      );
     });
 
     it('stays a plain New Claim Letter when loading that letter fails', async () => {
