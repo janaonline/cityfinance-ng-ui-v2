@@ -53,6 +53,16 @@ const EXEMPTION_FORM_LABELS: Readonly<Record<number, string>> = {
 };
 
 const EXEMPTION_UNDER_REVIEW = 5;
+const EXEMPTION_REJECTED = 6;
+const EXEMPTION_APPROVED = 7;
+
+/** A State form the letter took as exempted through the State's own request, still under review: ticking it rejects it. */
+const REJECT_STATE_EXEMPTION_NOTE: StateFormLock = {
+  tag: 'Reject exemption',
+  reason:
+    'The State asked to be exempted from this form, and this letter relies on that request, which is still under ' +
+    'review. Ticking this rejects the request; the State must then file the form.',
+};
 const EXEMPTION_STATUS_TEXT: Readonly<Record<number, string>> = {
   5: 'exemption under review',
   6: 'exemption rejected',
@@ -75,6 +85,20 @@ function lockFor(form: ClaimLetterReturnableStateForm): StateFormLock {
           : 'Already accepted by MoHUA for this installment, so it can no longer be returned.',
       };
     case 'EXEMPTED':
+      // The State's own request, already decided: say how, since the SO can no longer act on it here.
+      if (form.exemptionStatus === EXEMPTION_APPROVED) {
+        return {
+          tag: 'Exemption approved',
+          reason: "MoHUA approved the State's exemption for this form, so there is no form to return.",
+        };
+      }
+      if (form.exemptionStatus === EXEMPTION_REJECTED) {
+        return {
+          tag: 'Exemption rejected',
+          reason:
+            "MoHUA already rejected the State's exemption for this form, so there is nothing left to return here.",
+        };
+      }
       return {
         tag: 'Exempted',
         reason: "This letter relies on the State's exemption for this form, so there is no form to return.",
@@ -194,12 +218,27 @@ export class ReturnClaimLetterDialogComponent {
     return this.lockedStateForms.get(formId) ?? null;
   }
 
+  /** State items whose tick rejects the State's own exemption request rather than reopening a form. */
+  private readonly exemptionStateFormIds = new Set(
+    (this.data.mode === 'letter' ? this.data.stateForms : []).filter((f) => f.rejectsExemption).map((f) => f.formId),
+  );
+
+  /** The tag and reason beside a State item whose tick rejects the State's exemption; null otherwise. */
+  stateFormExemptionNote(formId: number): StateFormLock | null {
+    return this.exemptionStateFormIds.has(formId) ? REJECT_STATE_EXEMPTION_NOTE : null;
+  }
+
+  /** How a picked State item reads in the outcome and the cascade warning. */
+  private stateFormPhrase(option: ReturnFormOption): string {
+    return this.exemptionStateFormIds.has(option.formId) ? `${option.label} (its exemption is rejected)` : option.label;
+  }
+
   /** Before confirming: a return that reopens a State form also returns the State's other letters under review. */
   readonly cascadeWarning = computed<string | null>(() => {
     if (this.data.mode !== 'letter' || !this.otherLetters.length) return null;
     const forms = this.stateFormOptions
       .filter((o) => o.formId !== CLAIM_LETTER_FORM_ID && this.selected().has(o.formId))
-      .map((o) => o.label);
+      .map((o) => this.stateFormPhrase(o));
     if (this.data.returnedRowUlbCount) forms.push('the State forms of the ULB rows marked for return');
     if (!forms.length) return null;
     const letters = this.otherLetters.map((l) => l.number);
@@ -232,11 +271,19 @@ export class ReturnClaimLetterDialogComponent {
       parts.push(`${this.returnedUlbCount} ULB(s) marked returned reopen with the forms and remarks picked for each.`);
     }
     // The claim letter (26) carries a remark only; it closes either way.
-    const stateForms = this.stateFormOptions
-      .filter((o) => this.selected().has(o.formId) && o.formId !== CLAIM_LETTER_FORM_ID)
-      .map((o) => o.label);
+    const picked = this.stateFormOptions.filter(
+      (o) => this.selected().has(o.formId) && o.formId !== CLAIM_LETTER_FORM_ID,
+    );
+    const stateForms = picked.filter((o) => !this.exemptionStateFormIds.has(o.formId)).map((o) => o.label);
     if (stateForms.length) {
       parts.push(`${stateForms.join(', ')} reopen${stateForms.length === 1 ? 's' : ''} for the State.`);
+    }
+    const exempted = picked.filter((o) => this.exemptionStateFormIds.has(o.formId)).map((o) => o.label);
+    if (exempted.length) {
+      parts.push(
+        `The State's exemption for ${joinWithAnd(exempted)} is rejected; the State must file ` +
+          `${exempted.length === 1 ? 'it' : 'them'}.`,
+      );
     }
     parts.push('The claim letter closes; the State prepares a new one once the corrections are approved.');
     return parts.join(' ');
