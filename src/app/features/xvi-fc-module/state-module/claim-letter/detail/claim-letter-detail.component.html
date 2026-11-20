@@ -75,6 +75,7 @@
                 <b>ULBs ({{ returned.ulbs.length }}):</b> {{ returnedUlbNames() }} - highlighted in the table below
               </div>
             }
+            <ng-container *ngTemplateOutlet="reuseLetterButton"></ng-container>
           </div>
         } @else {
           <app-returned-reason-banner
@@ -89,7 +90,10 @@
             data-cy="claim-letter-returned-with"
           >
             <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
-            <span class="small">{{ note }}</span>
+            <div>
+              <span class="small">{{ note }}</span>
+              <ng-container *ngTemplateOutlet="reuseLetterButton"></ng-container>
+            </div>
           </div>
         }
         @if (stateFormBanner(); as notice) {
@@ -102,6 +106,17 @@
             <span class="small">{{ notice }}</span>
           </div>
         }
+      }
+
+      @if (copyNote(); as note) {
+        <div
+          class="alert alert-info d-flex align-items-center gap-2 py-2 mb-0"
+          role="note"
+          data-cy="claim-letter-copy-note"
+        >
+          <i class="bi bi-arrow-repeat flex-shrink-0" aria-hidden="true"></i>
+          <span class="small">{{ note }}</span>
+        </div>
       }
 
       @if (summaryTiles().length) {
@@ -330,6 +345,25 @@
     </div>
   </div>
 }
+
+<ng-template #reuseLetterButton>
+  @if (canOfferReuse()) {
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+      <button
+        type="button"
+        matButton="outlined"
+        [disabled]="!reuseGate() || !!reuseBlockedReason()"
+        (click)="startLetterFromThis()"
+        data-cy="claim-letter-reuse-ulbs"
+      >
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Start a new letter with these ULBs
+      </button>
+      @if (reuseBlockedReason(); as reason) {
+        <span class="small text-body-secondary" data-cy="claim-letter-reuse-blocked">{{ reason }}</span>
+      }
+    </div>
+  }
+</ng-template>
 
 <ng-template #removeUlbsButton let-ulbIds>
   <button

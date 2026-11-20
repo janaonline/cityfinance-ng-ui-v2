@@ -18,9 +18,12 @@ import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
+  CLAIM_LETTER_MAX_ULBS,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
+  ClaimLetterEligibilitySummary,
   ClaimLetterFinalPdf,
+  ClaimLetterUlbOption,
   ClaimLetterUlbRow,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
@@ -128,10 +131,28 @@ const SAVED_ULB_ROWS: ClaimLetterUlbRow[] = [
   },
 ];
 
-function routeWithParam(claimLetterId: string | null): ActivatedRoute {
+function routeWithParam(claimLetterId: string | null, query: Record<string, string> = {}): ActivatedRoute {
   return {
-    snapshot: { paramMap: convertToParamMap(claimLetterId === null ? {} : { claimLetterId }) },
+    snapshot: {
+      paramMap: convertToParamMap(claimLetterId === null ? {} : { claimLetterId }),
+      queryParamMap: convertToParamMap(query),
+    },
   } as unknown as ActivatedRoute;
+}
+
+/** Only the State gate is read from the eligibility summary here. */
+function gateSummary(passed: boolean, failingForms: string[] = []): ClaimLetterEligibilitySummary {
+  return {
+    stateLevelGate: {
+      passed,
+      sources: failingForms.map((displayLabel) => ({
+        formType: 'FORM',
+        result: 'FAILED',
+        reasonCode: 'x',
+        displayLabel,
+      })),
+    },
+  } as unknown as ClaimLetterEligibilitySummary;
 }
 
 describe('ClaimLetterDetailComponent', () => {
@@ -142,7 +163,7 @@ describe('ClaimLetterDetailComponent', () => {
   let utilityService: UtilityService;
   let dialogOpenSpy: jasmine.Spy;
 
-  async function setup(routeParam: string | null): Promise<void> {
+  async function setup(routeParam: string | null, query: Record<string, string> = {}): Promise<void> {
     localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
 
     const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
@@ -156,7 +177,7 @@ describe('ClaimLetterDetailComponent', () => {
       imports: [HttpClientTestingModule, RouterTestingModule, ClaimLetterDetailComponent],
       providers: [
         { provide: XvifcModuleService, useValue: moduleService },
-        { provide: ActivatedRoute, useValue: routeWithParam(routeParam) },
+        { provide: ActivatedRoute, useValue: routeWithParam(routeParam, query) },
       ],
     })
       // overrideProvider forcefully replaces even providedIn:'root' singletons
@@ -178,6 +199,108 @@ describe('ClaimLetterDetailComponent', () => {
   });
 
   // ─── Create mode ────────────────────────────────────────────────────────────
+
+  describe('create mode from a returned letter', () => {
+    const option = (ulbId: string, overrides: Partial<ClaimLetterUlbOption> = {}): ClaimLetterUlbOption => ({
+      ulbId,
+      ulbName: `Fresh ${ulbId}`,
+      censusCode: null,
+      sbCode: null,
+      allocationAmount: 30,
+      eligible: true,
+      ineligibleReasonCode: null,
+      ineligibleReasonDetail: null,
+      claimedInBatch: null,
+      ...overrides,
+    });
+    const sourceRow = (ulbId: string): ClaimLetterUlbRow => ({
+      ...SAVED_ULB_ROWS[0],
+      ulbId,
+      ulbName: `Old ${ulbId}`,
+      claimAmount: 25,
+    });
+    const returnedSource = buildClaim({
+      currentFormStatus: 16,
+      isAbandoned: true,
+      batchNumber: 2,
+      resubmissionNumber: 1,
+      returnSummary: {
+        stateForms: [],
+        ulbs: [{ ulbId: 'u2', ulbName: 'Old u2', items: ['Bank Account'], remark: null }],
+      },
+    });
+
+    async function setupCopy(source: ClaimLetterBatchSummary = returnedSource): Promise<void> {
+      await setup('new', { from: 'claim-9' });
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(source));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(['u1', 'u2', 'u3', 'u4'].map(sourceRow)));
+      spyOn(claimLetterService, 'getUlbOptions').and.returnValue(
+        of({
+          options: [
+            option('u1'),
+            option('u2'),
+            option('u3', { eligible: false, claimedInBatch: { batchNumber: 3 } }),
+            option('u4', { eligible: false }),
+          ],
+          page: 1,
+          limit: CLAIM_LETTER_MAX_ULBS,
+          total: 4,
+        }),
+      );
+      fixture.detectChanges();
+    }
+
+    it('fills the table with the ULBs that can go into a new letter, and says what was left out', async () => {
+      await setupCopy();
+
+      expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-9');
+      expect(claimLetterService.getAllUlbs).toHaveBeenCalledWith('claim-9');
+      expect(claimLetterService.getUlbOptions).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1, {
+        limit: CLAIM_LETTER_MAX_ULBS,
+      });
+      expect(component.rows.length).toBe(1);
+      expect(component.rows.at(0).controls.ulbId.value).toBe('u1');
+      expect(component.rows.at(0).controls.claimedAmount.value).toBe(25); // the claim amount is editable here
+      expect(component.rows.at(0).enabled).toBeTrue();
+      expect(component.savedUlbRows()[0]).toEqual(
+        jasmine.objectContaining({ ulbName: 'Fresh u1', allocationAmount: 30 }),
+      );
+      const note = fixture.debugElement.query(By.css('[data-cy="claim-letter-copy-note"]'));
+      expect((note.nativeElement as HTMLElement).textContent?.trim()).toBe(
+        '1 ULB copied from Claim Letter 2-R1. 3 ULBs were not copied because 1 ULB was returned for correction, ' +
+          '1 ULB is already in another claim letter and 1 ULB is no longer eligible.',
+      );
+    });
+
+    it('stays a plain New Claim Letter when that letter was not returned', async () => {
+      await setupCopy(buildClaim());
+
+      expect(component.rows.length).toBe(0);
+      expect(component.copyNote()).toBeNull();
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        "Couldn't copy the ULBs from that letter.",
+        'snackbar-danger',
+      );
+      expect(component.eligibilityOverview()).not.toBeNull();
+    });
+
+    it('stays a plain New Claim Letter when loading that letter fails', async () => {
+      await setup('new', { from: 'claim-9' });
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(throwError(() => new Error('boom')));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getUlbOptions').and.returnValue(of({ options: [], page: 1, limit: 1, total: 0 }));
+      fixture.detectChanges();
+
+      expect(component.rows.length).toBe(0);
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        "Couldn't copy the ULBs from that letter.",
+        'snackbar-danger',
+      );
+      expect(component.eligibilityOverview()).not.toBeNull(); // reloaded for a plain create page
+    });
+  });
 
   describe('create mode', () => {
     beforeEach(async () => {
@@ -1476,6 +1599,95 @@ describe('ClaimLetterDetailComponent', () => {
         expect(fixture.debugElement.query(By.css('app-returned-reason-banner'))).not.toBeNull();
         expect(byCy('claim-letter-returned-with')).not.toBeNull();
         expect(component.returnedUlbs().size).toBe(0);
+      });
+
+      describe('starting a new letter with its ULBs', () => {
+        async function setupReturned(
+          claim: ClaimLetterBatchSummary,
+          gate = gateSummary(true),
+          context = buildClaimContext(),
+        ): Promise<void> {
+          await setup('claim-1');
+          spyOn(claimLetterService, 'getDetail').and.returnValue(of(claim));
+          spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+          spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(context));
+          spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(gate));
+          fixture.detectChanges();
+        }
+        const button = () => byCy('claim-letter-reuse-ulbs');
+
+        it("offers it in the box and opens New Claim Letter with this letter's ULBs", async () => {
+          await setupReturned(returnedClaim(2));
+
+          expect(claimLetterService.getEligibilitySummary).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
+          expect(
+            byCy('claim-letter-return-summary').query(By.css('[data-cy="claim-letter-reuse-ulbs"]')),
+          ).not.toBeNull();
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeFalse();
+
+          (button().nativeElement as HTMLButtonElement).click();
+
+          expect(router.navigate).toHaveBeenCalledWith(['/xvifc', 'year-test-id', 'claim-letter', 'new'], {
+            queryParams: { from: 'claim-1' },
+          });
+        });
+
+        it('is disabled, with the reason, while every place is taken', async () => {
+          await setupReturned(
+            returnedClaim(2),
+            gateSummary(true),
+            buildClaimContext({ canCreate: false, createBlockedReason: 'All 3 claim letters are in use.' }),
+          );
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain('All 3 claim letters are in use.');
+        });
+
+        it('is disabled, naming the form, while a returned State form is being corrected', async () => {
+          await setupReturned(returnedClaim(2), gateSummary(false, ['SFC Status']));
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain('Available once SFC Status is verified again.');
+          component.startLetterFromThis();
+          expect(router.navigate).not.toHaveBeenCalled();
+        });
+
+        it('is disabled, saying so, when the State-level conditions fail to load', async () => {
+          await setup('claim-1');
+          spyOn(claimLetterService, 'getDetail').and.returnValue(of(returnedClaim(2)));
+          spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+          spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+          spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(throwError(() => new Error('boom')));
+          fixture.detectChanges();
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain(
+            "Couldn't check the State-level conditions. Reload to try again.",
+          );
+        });
+
+        it('sits in the note for a letter returned with another letter', async () => {
+          await setupReturned(
+            buildClaim({
+              currentFormStatus: 16,
+              isAbandoned: true,
+              returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+              returnSummary: null,
+              permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+            }),
+          );
+
+          expect(
+            byCy('claim-letter-returned-with').query(By.css('[data-cy="claim-letter-reuse-ulbs"]')),
+          ).not.toBeNull();
+        });
+
+        it('is not offered on a draft, and the State gate is not fetched for it', async () => {
+          await setupReturned(buildClaim());
+
+          expect(button()).toBeNull();
+          expect(claimLetterService.getEligibilitySummary).not.toHaveBeenCalled();
+        });
       });
     });
 

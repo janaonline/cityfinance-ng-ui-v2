@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { REVIEW_REMARKS_MAX_LENGTH } from '../../../common/constants/review-remarks.constants';
+import { joinWithAnd } from '../../../common/utils/xvi-fc-text.utils';
 import type {
   ClaimLetterReturnableStateForm,
   ClaimLetterSoDecision,
@@ -84,11 +85,6 @@ function lockFor(form: ClaimLetterReturnableStateForm): StateFormLock {
         reason: "This form is not under review with this letter, so it can't be returned here.",
       };
   }
-}
-
-/** "A", "A and B", "A, B and C". */
-function joinWithAnd(items: readonly string[]): string {
-  return items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
 export function exemptionFormLabel(formId: number): string {

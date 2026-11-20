@@ -48,6 +48,7 @@ import {
 import {
   CLAIM_LETTER_ERROR_CODE,
   CLAIM_LETTER_INSTALLMENT,
+  CLAIM_LETTER_MAX_ULBS,
   ClaimLetterApiErrorMap,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
@@ -61,10 +62,14 @@ import { AmountDisplayModeService } from '../../../../../core/services/amount-di
 import { ClaimLetterService } from '../claim-letter.service';
 import {
   buildBatchNarrative,
+  copiedLetterNote,
+  copyReturnedLetterUlbs,
+  describeEligibilitySourceLabel,
   formatClaimLetterBatchLabel,
   ineligibleUlbsMessage,
   readApiError,
 } from '../claim-letter.utils';
+import { joinWithAnd } from '../../../common/utils/xvi-fc-text.utils';
 import {
   ClaimLetterDocumentPreviewDialogComponent,
   ClaimLetterDocumentPreviewDialogData,
@@ -152,6 +157,11 @@ const STATE_FORM_ROUTES: Readonly<Record<number, string>> = {
 /** The returned-letter box names this many ULBs, then "+N more"; the table marks every one. */
 const RETURN_BOX_ULB_NAMES = 3;
 
+/** Returned by the SO or by MoHUA: its ULBs can start a new letter. */
+const RETURNED_LETTER_STATUSES: readonly number[] = [FORM_STATUS.RETURNED_BY_SO, FORM_STATUS.RETURNED_BY_MOHUA];
+
+const COPY_FAILED_MESSAGE = "Couldn't copy the ULBs from that letter.";
+
 /** Replaces the list of codes when every row fails the State-level gate; no remove button then. */
 const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
   'The State-level eligibility conditions are not met, so no ULB can be claimed right now. Removing ULBs will not fix this. See the eligibility checklist on the Claim Letters page.';
@@ -199,6 +209,14 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly isCreateMode = this.routeClaimLetterId === null || this.routeClaimLetterId === 'new';
 
   readonly claimLetterId = signal<string | null>(this.isCreateMode ? null : this.routeClaimLetterId);
+  /** Create mode from a returned letter's "Start a new letter with these ULBs": that letter's id. */
+  private readonly copyFromId = this.isCreateMode ? this.route.snapshot.queryParamMap.get('from') : null;
+  /** What the copy kept and left out, shown above the table. */
+  readonly copyNote = signal<string | null>(null);
+  /** A returned letter: the State gate now, since create is refused while a State form fails it (null until loaded). */
+  readonly reuseGate = signal<{ passed: boolean; failingForms: string[] } | null>(null);
+  /** The State gate could not be read, so the button can't tell whether create would pass. */
+  readonly reuseGateFailed = signal(false);
   readonly claim = signal<ClaimLetterBatchSummary | null>(null);
   readonly installment = CLAIM_LETTER_INSTALLMENT;
 
@@ -369,6 +387,29 @@ export class ClaimLetterDetailComponent implements OnInit {
     return more > 0 ? `${names} +${more} more` : names;
   });
 
+  readonly isReturnedLetter = computed(
+    () => !this.isCreateMode && RETURNED_LETTER_STATUSES.includes(this.claim()?.currentFormStatus ?? -1),
+  );
+
+  /** Offered to anyone who can prepare letters (a full cap still names itself as the reason). */
+  readonly canOfferReuse = computed(() => {
+    const overview = this.eligibilityOverview();
+    return this.isReturnedLetter() && !!overview && (overview.canCreate || !!overview.createBlockedReason);
+  });
+
+  /** Why a new letter can't start yet: every place taken, or a State form still being corrected. */
+  readonly reuseBlockedReason = computed<string | null>(() => {
+    const blocked = this.eligibilityOverview()?.createBlockedReason;
+    if (blocked) return blocked;
+    if (this.reuseGateFailed()) return "Couldn't check the State-level conditions. Reload to try again.";
+    const gate = this.reuseGate();
+    if (!gate || gate.passed) return null;
+    const forms = gate.failingForms;
+    return forms.length
+      ? `Available once ${joinWithAnd(forms)} ${forms.length === 1 ? 'is' : 'are'} verified again.`
+      : 'Available once the State-level conditions are met again.';
+  });
+
   /** Banner text from the most recent failed create, save, abandon, upload or submit. */
   readonly formLevelErrors = signal<readonly string[]>([]);
 
@@ -536,10 +577,93 @@ export class ClaimLetterDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.copyFromId) {
+      this.copyUlbsFrom(this.copyFromId);
+      return;
+    }
     this.loadEligibilityOverview();
     if (!this.isCreateMode) {
       this.loadDetail();
     }
+  }
+
+  /** Opens New Claim Letter with this returned letter's ULBs (`copyUlbsFrom`). */
+  startLetterFromThis(): void {
+    const claimLetterId = this.claimLetterId();
+    if (!claimLetterId || !this.reuseGate() || this.reuseBlockedReason()) return;
+    this.router.navigate(['/xvifc', this.yearId, 'claim-letter', 'new'], { queryParams: { from: claimLetterId } });
+  }
+
+  /** The State gate for a returned letter's button; create would be refused while it fails. */
+  private loadReuseGate(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+    this.claimLetterService
+      .getEligibilitySummary(stateId, yearId, CLAIM_LETTER_INSTALLMENT)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ stateLevelGate }) =>
+          this.reuseGate.set({
+            passed: stateLevelGate.passed,
+            failingForms: stateLevelGate.sources
+              .filter((source) => source.result === 'FAILED')
+              .map(describeEligibilitySourceLabel),
+          }),
+        error: (err: unknown) => {
+          console.error('Failed to load the State-level conditions', err);
+          this.reuseGateFailed.set(true);
+        },
+      });
+  }
+
+  /**
+   * Create mode from a returned letter: its ULBs that can go into a new letter now fill the table. Loaded with the
+   * claim context, so the rows are built editable (`canEdit` is `canCreate` here). On any failure the page stays a
+   * plain New Claim Letter.
+   */
+  private copyUlbsFrom(sourceId: string): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+
+    this.isLoading.set(true);
+    forkJoin({
+      context: this.claimLetterService.getClaimContext(stateId, yearId, CLAIM_LETTER_INSTALLMENT),
+      source: this.claimLetterService.getDetail(sourceId),
+      rows: this.claimLetterService.getAllUlbs(sourceId),
+      options: this.claimLetterService.getUlbOptions(stateId, yearId, CLAIM_LETTER_INSTALLMENT, {
+        limit: CLAIM_LETTER_MAX_ULBS,
+      }),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ context, source, rows, options }) => {
+          this.eligibilityOverview.set(context);
+          this.isLoading.set(false);
+          if (!RETURNED_LETTER_STATUSES.includes(source.currentFormStatus)) {
+            this.utilityService.triggerSnackbar(COPY_FAILED_MESSAGE, 'snackbar-danger');
+            return;
+          }
+          const copied = copyReturnedLetterUlbs(
+            rows,
+            source.returnSummary?.ulbs ?? [],
+            options.options,
+            context.claimAmountEditable,
+          );
+          this.savedUlbRows.set(copied.rows);
+          this.hydrateRows(copied.rows);
+          this.copyNote.set(
+            copiedLetterNote(formatClaimLetterBatchLabel(source.batchNumber, source.resubmissionNumber), copied),
+          );
+        },
+        error: (err: unknown) => {
+          console.error('Failed to copy the ULBs of the returned claim letter', err);
+          this.isLoading.set(false);
+          this.utilityService.triggerSnackbar(COPY_FAILED_MESSAGE, 'snackbar-danger');
+          this.loadEligibilityOverview();
+        },
+      });
   }
 
   private loadEligibilityOverview(): void {
@@ -583,6 +707,7 @@ export class ClaimLetterDetailComponent implements OnInit {
           this.hydrateRows(ulbs);
           this.initSignedFileFormIfNeeded(detail);
           this.isLoading.set(false);
+          if (this.isReturnedLetter()) this.loadReuseGate();
         },
         error: (err: unknown) => {
           console.error('Failed to load Claim Letter', err);
