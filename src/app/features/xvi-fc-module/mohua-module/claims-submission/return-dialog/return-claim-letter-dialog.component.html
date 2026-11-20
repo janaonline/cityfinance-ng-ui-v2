@@ -118,6 +118,8 @@
       <div class="rcl-options">
         @for (option of stateFormOptions; track option.formId) {
           @let lock = stateFormLock(option.formId);
+          <!-- A locked form, or one whose tick rejects the State's exemption: both say why next to it. -->
+          @let note = lock ?? stateFormExemptionNote(option.formId);
           <label class="rcl-option" [class.rcl-option--disabled]="!!lock">
             <input
               type="checkbox"
@@ -126,15 +128,15 @@
               (change)="toggle(option.formId)"
             />
             {{ option.label }}
-            @if (lock) {
-              <span class="rcl-tag">{{ lock.tag }}</span>
+            @if (note) {
+              <span class="rcl-tag">{{ note.tag }}</span>
               <!-- Inside the label, so a click must not reach the checkbox; a tap shows the reason on touch screens. -->
               <span
                 class="rcl-why"
                 tabindex="0"
                 role="img"
-                [attr.aria-label]="lock.reason"
-                [matTooltip]="lock.reason"
+                [attr.aria-label]="note.reason"
+                [matTooltip]="note.reason"
                 #tip="matTooltip"
                 (click)="$event.preventDefault(); tip.toggle()"
                 (keydown.enter)="$event.preventDefault(); tip.toggle()"
