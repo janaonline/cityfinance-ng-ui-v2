@@ -18,7 +18,6 @@ export interface DigitizationV3Info {
   detectedDocTypes?: string[];
   segments?: DigitizationV3Segment[];
   isConsolidated?: boolean;
-  isMismatch?: boolean;
   /** Digitized by the old flow: contents unknown; can be re-queued for v3 */
   isLegacy?: boolean;
   expectedDocType?: string;
@@ -31,8 +30,16 @@ export interface DigitizationV3Info {
   digitizedAt?: string;
   /** How long the job took to run, in milliseconds */
   elapsedMs?: number;
-  /** Scores of the finished job; absent when that step did not run or the file predates them */
+  /** Scores of the finished job; absent when the file predates them */
+  scores?: DigitizationV3Scores;
+}
+
+export interface DigitizationV3Scores {
+  /** The uploaded document type is not among the types found in the file */
+  isMismatch?: boolean;
+  /** 0-100; absent when the OCR engine gives none */
   ocrConfidenceScore?: number;
+  /** 0-100 Gemini cross-check */
   accuracyScore?: number;
   /** PASS / FAIL / NOT_APPLICABLE */
   arithmeticAssessment?: string;
@@ -100,7 +107,46 @@ export interface DigitizationV3OverallMetrics {
   queued: number;
   processing: number;
   failed: number;
+  /** Score coverage of the digitized files; null until the API has computed it (metrics rebuild / score backfill) */
+  scores?: DigitizationV3ScoreMetrics | null;
+  /** Old flow vs v3 digitized / failed counts; null until the API has computed it */
+  runs?: DigitizationV3RunMetrics | null;
   updatedAt: string | null;
+}
+
+/** Finished files, split into the old flow ("old") and v3 ("new"). A snapshot, not live. */
+export interface DigitizationV3RunMetrics {
+  /** oldDigitized + newDigitized + oldFailed + newFailed */
+  totalRun: number;
+  oldDigitized: number;
+  newDigitized: number;
+  oldFailed: number;
+  newFailed: number;
+  computedAt: string | null;
+}
+
+/** How many v3-digitized files have each score. A snapshot, not live. */
+export interface DigitizationV3ScoreMetrics {
+  digitized: number;
+  withScoresObject: number;
+  withTextract: number;
+  withAccuracy: number;
+  withArithmetic: number;
+  withOverall: number;
+  mismatches: number;
+  /** Crosscheck confidence at or above / below 80 */
+  confidenceHigh: number;
+  confidenceLow: number;
+  arithmeticPass: number;
+  arithmeticFail: number;
+  /** Arithmetic skipped on a doc mismatch. Absent in snapshots computed before it existed. */
+  arithmeticSkipped?: number;
+  overallPass: number;
+  overallPartial: number;
+  overallFail: number;
+  /** digitized - mismatches */
+  matches: number;
+  computedAt: string | null;
 }
 
 export interface EnqueueSummary {
@@ -171,6 +217,13 @@ export class AfsDigitizationV3Service {
   getOverallMetrics() {
     return this.http
       .get<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics`)
+      .pipe(map((res) => res.data));
+  }
+
+  /** Recounts the score / run snapshot on the server right now and returns the fresh overall metrics. */
+  refreshOverallMetrics() {
+    return this.http
+      .post<{ success: boolean; data: DigitizationV3OverallMetrics }>(`${this.base}/metrics/refresh`, {})
       .pipe(map((res) => res.data));
   }
 

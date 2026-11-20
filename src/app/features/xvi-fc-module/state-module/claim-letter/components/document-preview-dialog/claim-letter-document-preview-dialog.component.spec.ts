@@ -356,7 +356,7 @@ describe('ClaimLetterDocumentPreviewDialogComponent', () => {
 
   describe('prefill', () => {
     const previous = {
-      source: { yearLabel: '2025-26', installment: 2, batchNumber: 1 },
+      source: { yearLabel: '2025-26', installment: 2, batchNumber: 1, resubmissionNumber: 1 },
       values: { departmentName: 'Old Department', gtcTransferredInTime: 'yes' },
     };
 
@@ -368,7 +368,7 @@ describe('ClaimLetterDocumentPreviewDialogComponent', () => {
 
       expect(confirm).toHaveBeenCalledTimes(1);
       expect(service.saveLetterDetails).toHaveBeenCalledOnceWith('claim-1', previous.values, false);
-      expect(component.notice()).toBe('Filled from Batch 1 (FY 2025-26, Installment 2).');
+      expect(component.notice()).toBe('Filled from Batch 1-R1 (FY 2025-26, Installment 2).');
     });
 
     it('changes nothing when the replace is cancelled', () => {

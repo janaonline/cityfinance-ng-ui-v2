@@ -9,74 +9,134 @@
   } @else if (error()) {
     <div class="cs-state cs-error" role="alert">
       <p>{{ error() }}</p>
-      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
     </div>
   } @else if (rows()) {
     @let list = rows()!;
-    @if (list.length === 0) {
-      <div class="cs-state">
-        <i class="bi bi-inbox" aria-hidden="true"></i>
-        <p>No OM has been issued yet.</p>
-      </div>
-    } @else {
-      <div class="cs-table-wrap">
-        <table class="cs-table">
-          <caption class="visually-hidden">Issued Office Memorandums</caption>
-          <thead>
-            <tr>
-              <th scope="col">OM no.</th>
-              <th scope="col">State</th>
-              <th scope="col" class="num">Cities</th>
-              <th scope="col">Date issued</th>
-              <th scope="col" class="num">Total allocation</th>
-              <th scope="col">OM status</th>
-              <th scope="col">DoE status</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of list; track row.omId) {
-              <tr>
-                <td>
-                  <span class="strong omh-ref">{{ row.refNo }}</span>
-                  @if (row.omNumber) {
-                    <span class="omh-sub">No. {{ row.omNumber }}</span>
-                  }
-                </td>
-                <td>{{ row.stateCode || row.stateName }}</td>
-                <td class="num">{{ row.ulbCount }} cities</td>
-                <td>{{ formatDate(row.issuedOn) }}</td>
-                <td class="num">{{ formatCrore(row.totalAmount) }}</td>
-                <td>
-                  <span class="cs-badge" [class.cs-badge--good]="row.status === 'SIGNED_UPLOADED'" [class.cs-badge--info]="row.status !== 'SIGNED_UPLOADED'">
-                    {{ statusLabel[row.status] }}
-                  </span>
-                </td>
-                <td><span class="cs-badge cs-badge--review">Pending</span></td>
-                <td class="omh-actions">
-                  @if (row.signedFile; as file) {
-                    <a class="cs-btn cs-btn--ghost" [href]="file.url" target="_blank" rel="noopener noreferrer">
-                      <i class="bi bi-eye" aria-hidden="true"></i> View PDF
-                    </a>
-                  }
-                  <button type="button" class="cs-btn cs-btn--ghost" (click)="upload(row)">
-                    <i class="bi bi-upload" aria-hidden="true"></i> {{ row.signedFile ? 'Replace' : 'Upload signed OM' }}
-                  </button>
-                  <button
-                    type="button"
-                    class="cs-btn cs-btn--ghost"
-                    [disabled]="downloadingId() === row.omId"
-                    [attr.aria-label]="'Download ' + row.refNo + ' with its annexures as PDF'"
-                    (click)="download(row)"
-                  >
-                    <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> OM (PDF)
-                  </button>
-                </td>
-              </tr>
+    <mat-card appearance="outlined" class="cs-panel" aria-labelledby="omh-heading">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <span class="cs-icon" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
+        <div class="flex-grow-1">
+          <h2 id="omh-heading" class="omh-heading fw-bold mb-0">Issued OMs</h2>
+          <p class="small text-body-secondary mb-0">
+            @if (canUpload) {
+              Upload the signed copy of each OM, or download it with its annexures.
+            } @else {
+              Every OM MoHUA issued: view the signed copy, or download it with its annexures.
             }
-          </tbody>
-        </table>
+          </p>
+        </div>
+        <span class="badge rounded-pill cs-tint">
+          <i class="bi bi-files" aria-hidden="true"></i> {{ list.length }} {{ list.length === 1 ? 'OM' : 'OMs' }}
+        </span>
       </div>
-    }
+
+      @if (list.length === 0) {
+        <p class="text-center text-body-secondary small py-4 mb-0">
+          <i class="bi bi-inbox" aria-hidden="true"></i> No OM has been issued yet.
+        </p>
+      } @else {
+        <div class="cs-flat-wrap">
+          <table class="table table-hover align-middle mb-0 cs-flat">
+            <caption class="visually-hidden">
+              Issued Office Memorandums
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">OM no.</th>
+                <th scope="col">State</th>
+                <th scope="col" class="text-end">ULBs</th>
+                <th scope="col">Date issued</th>
+                <th scope="col" class="text-end">Total allocation</th>
+                <th scope="col">OM status</th>
+                <th scope="col">DoE status</th>
+                <th scope="col" class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of list; track row.omId; let i = $index) {
+                <tr class="cs-row-in" [class.cs-edge]="row.status === 'SIGNED_UPLOADED'" [style.--i]="i">
+                  <td class="text-nowrap">
+                    <span class="d-inline-flex align-items-center gap-2">
+                      <span class="cs-icon cs-icon--sm" aria-hidden="true"
+                        ><i class="bi bi-file-earmark-text"></i
+                      ></span>
+                      <span>
+                        <span class="omh-ref d-block fw-semibold">{{ row.refNo }}</span>
+                        @if (row.omNumber) {
+                          <span class="d-block small text-body-secondary">No. {{ row.omNumber }}</span>
+                        }
+                      </span>
+                    </span>
+                  </td>
+                  <td>{{ row.stateName || row.stateCode }}</td>
+                  <td class="text-end">{{ row.ulbCount }}</td>
+                  <td class="text-nowrap">{{ formatDate(row.issuedOn) }}</td>
+                  <td class="text-end fw-semibold">{{ formatCrore(row.totalAmount) }}</td>
+                  <td>
+                    <span
+                      class="cs-badge"
+                      [class.cs-badge--good]="row.status === 'SIGNED_UPLOADED'"
+                      [class.cs-badge--info]="row.status !== 'SIGNED_UPLOADED'"
+                    >
+                      <i
+                        class="bi"
+                        [class.bi-check-circle-fill]="row.status === 'SIGNED_UPLOADED'"
+                        [class.bi-pen]="row.status !== 'SIGNED_UPLOADED'"
+                        aria-hidden="true"
+                      ></i>
+                      {{ statusLabel[row.status] }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="cs-badge cs-badge--review"
+                      ><i class="bi bi-hourglass-split" aria-hidden="true"></i> Pending</span
+                    >
+                  </td>
+                  <td>
+                    <div class="d-flex flex-wrap justify-content-end gap-1">
+                      @if (row.signedFile; as file) {
+                        <a
+                          mat-stroked-button
+                          class="cs-view-btn"
+                          [href]="file.url"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          matTooltip="View the signed OM (opens in a new tab)"
+                        >
+                          <i class="bi bi-eye" aria-hidden="true"></i> View PDF
+                        </a>
+                      }
+                      @if (canUpload) {
+                        <button mat-stroked-button type="button" class="cs-view-btn" (click)="upload(row)">
+                          <i class="bi bi-upload" aria-hidden="true"></i>
+                          {{ row.signedFile ? 'Replace' : 'Upload signed OM' }}
+                        </button>
+                      }
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        class="cs-view-btn"
+                        [disabled]="downloadingId() === row.omId"
+                        [attr.aria-label]="'Download ' + row.refNo + ' with its annexures as PDF'"
+                        [attr.aria-busy]="downloadingId() === row.omId"
+                        (click)="download(row)"
+                      >
+                        @if (downloadingId() === row.omId) {
+                          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        } @else {
+                          <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                        }
+                        OM (PDF)
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card>
   }
 </div>

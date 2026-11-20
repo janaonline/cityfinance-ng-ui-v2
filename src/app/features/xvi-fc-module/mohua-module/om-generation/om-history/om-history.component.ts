@@ -1,9 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import FileSaver from 'file-saver';
+import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { themedDialogConfig } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { formatReceivedOn, formatRupeesInCrore } from '../../claims-submission/claims-submission.models';
@@ -22,7 +26,7 @@ const LOAD_ERROR = 'Could not load the OM history. Please try again.';
 /** Every issued OM of the year with its status, the signed copy (View PDF) and the generated OM PDF with its annexures. */
 @Component({
   selector: 'app-om-history',
-  imports: [MohuaPageLoaderComponent, OmStepsComponent],
+  imports: [MatButtonModule, MatCardModule, MatTooltipModule, MohuaPageLoaderComponent, OmStepsComponent],
   templateUrl: './om-history.component.html',
   styleUrl: './om-history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +40,8 @@ export class OmHistoryComponent implements OnInit {
   /** Must be resolved in this field-initializer injection context — see themedDialogConfig's own doc. */
   private readonly dialogConfig = themedDialogConfig();
 
+  /** PMU monitors this page read-only: only MoHUA uploads the signed OM. */
+  readonly canUpload = inject(AuthPermissionService).isMohuaUser();
   readonly formatCrore = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
   readonly statusLabel = OM_STATUS_LABEL;

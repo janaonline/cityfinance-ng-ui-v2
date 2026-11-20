@@ -1,13 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnInit,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -32,6 +24,8 @@ import {
   PASSWORD_SECURITY_VALIDATORS,
   noNumericCode,
   passwordComplexity,
+  passwordComplexityMessage,
+  passwordMaxBytes,
 } from '../validators/auth-security.validators';
 import { ConfirmDialogService } from '../../shared/components/confirm-dialog/confirm-dialog.service';
 
@@ -81,8 +75,26 @@ export class ForgotPasswordComponent implements OnInit {
   readonly identifyForm = this.fb.nonNullable.group({
     role: ['ULB' as ForgotRole, Validators.required],
     // U4+U6: pattern enforces digits-only (rejects spaces, letters, @); minLength catches short codes
-    code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20), Validators.pattern(/^\d+$/), ...IDENTIFIER_SECURITY_VALIDATORS]],
-    email: ['', [Validators.required, Validators.email, Validators.maxLength(254), noNumericCode, ...IDENTIFIER_SECURITY_VALIDATORS]],
+    code: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(6),
+        Validators.maxLength(20),
+        Validators.pattern(/^\d+$/),
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ],
+    ],
+    email: [
+      '',
+      [
+        Validators.required,
+        Validators.email,
+        Validators.maxLength(254),
+        noNumericCode,
+        ...IDENTIFIER_SECURITY_VALIDATORS,
+      ],
+    ],
   });
 
   readonly resetForm = this.fb.nonNullable.group(
@@ -91,11 +103,23 @@ export class ForgotPasswordComponent implements OnInit {
       otp: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(4), Validators.pattern(/^\d+$/)]],
       newPassword: [
         '',
-        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+        [
+          Validators.required,
+          Validators.minLength(8),
+          passwordMaxBytes,
+          passwordComplexity,
+          ...PASSWORD_SECURITY_VALIDATORS,
+        ],
       ],
       confirmPassword: [
         '',
-        [Validators.required, Validators.minLength(8), Validators.maxLength(128), passwordComplexity, ...PASSWORD_SECURITY_VALIDATORS],
+        [
+          Validators.required,
+          Validators.minLength(8),
+          passwordMaxBytes,
+          passwordComplexity,
+          ...PASSWORD_SECURITY_VALIDATORS,
+        ],
       ],
     },
     { validators: [this.passwordMatchValidator()] },
@@ -118,18 +142,14 @@ export class ForgotPasswordComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.route.queryParams
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ type }) => {
-        if (LOGIN_TYPES.includes(type)) this.typeKey.set(type as LoginType);
-      });
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(({ type }) => {
+      if (LOGIN_TYPES.includes(type)) this.typeKey.set(type as LoginType);
+    });
 
-    this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        const type = params.get('type') as LoginType;
-        if (LOGIN_TYPES.includes(type)) this.typeKey.set(type);
-      });
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const type = params.get('type') as LoginType;
+      if (LOGIN_TYPES.includes(type)) this.typeKey.set(type);
+    });
   }
 
   onRoleChange(role: ForgotRole): void {
@@ -137,7 +157,7 @@ export class ForgotPasswordComponent implements OnInit {
     this.identifyForm.patchValue({ role, code: '', email: '' });
     this.identifyForm.markAsPristine();
     this.identifyForm.markAsUntouched();
-    this.requestError.set('');  // B2: clear stale error from previous role attempt
+    this.requestError.set(''); // B2: clear stale error from previous role attempt
   }
 
   onBackToLogin(): void {
@@ -334,7 +354,7 @@ export class ForgotPasswordComponent implements OnInit {
         this.resetError.set('');
         this.errorIsRateLimited.set(false);
         this.errorRetrySeconds.set(0);
-        this.showNewPassword.set(false);   // U2: don't carry password visibility into next attempt
+        this.showNewPassword.set(false); // U2: don't carry password visibility into next attempt
         this.showConfirmPassword.set(false);
       });
   }
@@ -394,7 +414,7 @@ export class ForgotPasswordComponent implements OnInit {
     };
     tick();
     this.countdownSub = timer(1000, 1000)
-      .pipe(takeUntilDestroyed(this.destroyRef))  // B1: prevent signal writes after destroy
+      .pipe(takeUntilDestroyed(this.destroyRef)) // B1: prevent signal writes after destroy
       .subscribe(tick);
   }
 
@@ -415,12 +435,25 @@ export class ForgotPasswordComponent implements OnInit {
 
   /**
    * Maps HTTP errors for the reset-password step.
-   * Fake-account failures are intentionally indistinguishable from invalid/expired OTP.
-   * 429s are safe to show verbatim — same reasoning as mapSendOtpError above.
+   * - 400: the API refused the input (e.g. the password rule) before checking the OTP, so the OTP is still good.
+   *   Show its message, never "Invalid OTP". It says nothing about whether the account exists.
+   * - 422: invalid or expired OTP. Fake-account failures land here too, so the two stay indistinguishable.
+   * - 429s are safe to show verbatim — same reasoning as mapSendOtpError above.
    */
   private mapResetPasswordError(err: HttpErrorResponse): string {
     if (err.status === 429) return err.error?.message || 'Too many attempts. Please try again later.';
-    return 'Invalid or expired OTP.';
+    if (err.status === 400) {
+      const message: unknown = err.error?.message;
+      const first = Array.isArray(message) ? message[0] : message;
+      return typeof first === 'string' && first ? first : 'Please check your new password and try again.';
+    }
+    if (err.status === 422) return 'Invalid or expired OTP.';
+    return 'Could not reset your password. Please try again.';
+  }
+
+  /** Names what the new password still lacks, e.g. "Password must also include a lowercase letter and a number." */
+  passwordComplexityText(): string | null {
+    return passwordComplexityMessage(this.resetForm.controls.newPassword.errors);
   }
 
   /**

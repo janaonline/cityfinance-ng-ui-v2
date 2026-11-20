@@ -26,6 +26,7 @@ import {
 } from '../../../../../shared/dynamic-form/components/file/file-metadata.types';
 import { ConditionalFieldConfig } from '../../../dynamic-form-visibility.service';
 import { XvifcModuleService } from '../../../xvi-fc-module.service';
+import { StateNotificationService } from '../../state-notification.service';
 import { XvifcBreadcrumbComponent, XvifcBreadcrumbLink } from '../../../shared/breadcrumb/breadcrumb.component';
 import {
   FORM_STATUS,
@@ -57,7 +58,12 @@ import {
 import { parseFieldPrefixedMessages } from '../../../common/utils/xvi-fc-error-lookup.utils';
 import { AmountDisplayModeService } from '../../../../../core/services/amount-display-mode.service';
 import { ClaimLetterService } from '../claim-letter.service';
-import { buildBatchNarrative, ineligibleUlbsMessage, readApiError } from '../claim-letter.utils';
+import {
+  buildBatchNarrative,
+  formatClaimLetterBatchLabel,
+  ineligibleUlbsMessage,
+  readApiError,
+} from '../claim-letter.utils';
 import {
   ClaimLetterDocumentPreviewDialogComponent,
   ClaimLetterDocumentPreviewDialogData,
@@ -163,6 +169,7 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly claimLetterService = inject(ClaimLetterService);
+  private readonly stateNotifications = inject(StateNotificationService);
   private readonly moduleService = inject(XvifcModuleService);
   private readonly amountDisplay = inject(AmountDisplayModeService);
   /** Applies the feature's current theme to all confirm dialogs opened by this component. */
@@ -364,8 +371,13 @@ export class ClaimLetterDetailComponent implements OnInit {
       routerLink: ['/xvifc', this.yearId, 'claim-letter'],
     };
     if (this.isCreateMode) return [listLink, { label: 'New Claim Letter' }];
+    return [listLink, { label: this.claim() ? 'Batch #' + this.batchLabel() : 'Claim Letter' }];
+  });
+
+  /** "2", or "2-R1" for a letter built after a return: the title and breadcrumb. */
+  readonly batchLabel = computed(() => {
     const claim = this.claim();
-    return [listLink, { label: claim ? 'Batch #' + claim.batchNumber : 'Claim Letter' }];
+    return claim ? formatClaimLetterBatchLabel(claim.batchNumber, claim.resubmissionNumber) : '';
   });
 
   /** Create mode: 3 State-wide tiles. Edit mode: 4, with this batch's claim and the remainder live
@@ -672,6 +684,8 @@ export class ClaimLetterDetailComponent implements OnInit {
           this.isSubmitting.set(false);
           this.utilityService.triggerSnackbar('Claim letter submitted to MoHUA.', 'snackbar-success');
           this.loadDetail();
+          // A new letter clears a returned-letter alert: update the bell now, not on the next navigation.
+          void this.stateNotifications.refreshNow(this.stateId);
         },
         error: (err: unknown) => {
           this.isSubmitting.set(false);

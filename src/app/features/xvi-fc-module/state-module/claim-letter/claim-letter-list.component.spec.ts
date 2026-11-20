@@ -25,6 +25,7 @@ const sampleClaim: ClaimLetterBatchSummary = {
   claimLetterId: 'claim-1',
   installment: 1,
   batchNumber: 1,
+  resubmissionNumber: 0,
   version: 1,
   currentFormStatus: 2,
   currentFormStatusLabel: 'In Progress',
@@ -120,6 +121,11 @@ describe('ClaimLetterListComponent', () => {
     expect(component.claims()).toEqual([sampleClaim]);
     expect(component.total()).toBe(1);
     expect(component.isLoading()).toBeFalse();
+  });
+
+  it('shows a letter built after a return as batch n-R<n>', () => {
+    expect(component.batchLabel(sampleClaim)).toBe('1');
+    expect(component.batchLabel({ ...sampleClaim, batchNumber: 2, resubmissionNumber: 1 })).toBe('2-R1');
   });
 
   it('renders the ULB-readiness stat in the banner, without special styling when ULBs are ready', () => {

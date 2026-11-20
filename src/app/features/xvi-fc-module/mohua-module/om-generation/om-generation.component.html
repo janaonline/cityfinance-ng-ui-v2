@@ -16,72 +16,107 @@
   } @else if (error()) {
     <div class="cs-state cs-error" role="alert">
       <p>{{ error() }}</p>
-      <button type="button" class="cs-btn cs-btn--ghost" (click)="load()">Try again</button>
+      <button mat-stroked-button type="button" (click)="load()">Try again</button>
     </div>
   } @else if (data()) {
     @let d = data()!;
-    @if (d.states.length === 0) {
-      <div class="cs-state">
-        <i class="bi bi-inbox" aria-hidden="true"></i>
-        <p>No claim letter has been verified yet. Verified letters appear here.</p>
+    <mat-card appearance="outlined" class="cs-panel" aria-labelledby="om-letters-heading">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <span class="cs-icon" aria-hidden="true"><i class="bi bi-file-earmark-check"></i></span>
+        <div class="flex-grow-1">
+          <h2 id="om-letters-heading" class="om-heading fw-bold mb-0">Verified claim letters</h2>
+          <p class="small text-body-secondary mb-0">Open a letter to fill in and generate its OM.</p>
+        </div>
+        <span class="badge rounded-pill cs-tint">
+          <i class="bi bi-geo-alt" aria-hidden="true"></i>
+          {{ d.states.length }} {{ d.states.length === 1 ? 'State' : 'States' }}
+        </span>
       </div>
-    } @else {
-      <div class="cs-table-wrap">
-        <table class="cs-table">
-          <caption class="visually-hidden">Verified claim letters</caption>
-          <thead>
-            <tr>
-              <th scope="col">Claim letter no.</th>
-              <th scope="col" class="num">ULBs</th>
-              <th scope="col" class="num">Amount</th>
-              <th scope="col">Status</th>
-              <th scope="col"><span class="visually-hidden">Action</span></th>
-            </tr>
-          </thead>
-          @for (state of d.states; track state.stateId) {
-            <!-- One group per State: its name across the table, then its claim letters, one OM each. -->
-            <tbody>
-              <tr class="om-state-row">
-                <th scope="rowgroup" colspan="5">
-                  <i class="bi bi-geo-alt" aria-hidden="true"></i> {{ state.stateName }}
-                  <span class="om-state-row__count">
-                    {{ state.claimLetters.length }} claim {{ state.claimLetters.length === 1 ? 'letter' : 'letters' }}
-                  </span>
-                </th>
+
+      @if (d.states.length === 0) {
+        <p class="text-center text-body-secondary small py-4 mb-0">
+          <i class="bi bi-inbox" aria-hidden="true"></i> No claim letter has been verified yet. Verified letters appear
+          here.
+        </p>
+      } @else {
+        <div class="cs-flat-wrap">
+          <table class="table table-hover align-middle mb-0 cs-flat">
+            <caption class="visually-hidden">
+              Verified claim letters
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Claim letter no.</th>
+                <th scope="col" class="text-end">ULBs</th>
+                <th scope="col" class="text-end">Amount</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-end">Action</th>
               </tr>
-              @for (letter of state.claimLetters; track letter.claimLetterId) {
-                <tr>
-                  <td class="strong om-letter-cell">{{ letter.claimLetterRefNo }}</td>
-                  <td class="num">{{ letter.ulbCount }}</td>
-                  <td class="num">{{ formatCrore(letter.amount) }}</td>
-                  <td>
-                    @if (isIssued(letter.omStatus)) {
-                      <span class="cs-badge cs-badge--good">OM {{ statusLabel[letter.omStatus!] }}</span>
-                    } @else {
-                      <span class="cs-badge cs-badge--good">Verified by MoHUA</span>
-                    }
-                  </td>
-                  <td class="om-action">
-                    <a
-                      class="cs-btn cs-btn--ghost"
-                      [routerLink]="['om-generation', 'letter', letter.claimLetterId]"
-                      [relativeTo]="mohuaRoute"
-                    >
-                      {{ isIssued(letter.omStatus) ? 'View OM' : 'Generate OM' }}
-                    </a>
-                  </td>
+            </thead>
+            @for (state of d.states; track state.stateId) {
+              <!-- One group per State: its name across the table, then its claim letters, one OM each. -->
+              <tbody>
+                <tr class="om-state-row">
+                  <th scope="rowgroup" colspan="5">
+                    <span class="d-inline-flex align-items-center gap-2">
+                      <span class="cs-icon cs-icon--sm cs-icon--solid" aria-hidden="true"
+                        ><i class="bi bi-geo-alt"></i
+                      ></span>
+                      {{ state.stateName }}
+                      <span class="badge rounded-pill cs-tint fw-semibold">
+                        {{ state.claimLetters.length }}
+                        {{ state.claimLetters.length === 1 ? 'claim letter' : 'claim letters' }}
+                      </span>
+                    </span>
+                  </th>
                 </tr>
-              }
-            </tbody>
-          }
-        </table>
-      </div>
-    }
+                @for (letter of state.claimLetters; track letter.claimLetterId; let i = $index) {
+                  <tr class="cs-row-in text-nowrap" [class.cs-edge]="isIssued(letter.omStatus)" [style.--i]="i">
+                    <td class="om-letter-cell fw-semibold">{{ letter.claimLetterRefNo }}</td>
+                    <td class="text-end">{{ letter.ulbCount }}</td>
+                    <td class="text-end fw-semibold">{{ formatCrore(letter.amount) }}</td>
+                    <td>
+                      @if (isIssued(letter.omStatus)) {
+                        <span class="cs-badge cs-badge--good"
+                          ><i class="bi bi-check-circle-fill" aria-hidden="true"></i> OM
+                          {{ statusLabel[letter.omStatus!] }}</span
+                        >
+                      } @else {
+                        <span class="cs-badge cs-badge--good"
+                          ><i class="bi bi-patch-check" aria-hidden="true"></i> Verified by MoHUA</span
+                        >
+                      }
+                    </td>
+                    <td class="text-end">
+                      <a
+                        mat-stroked-button
+                        class="cs-view-btn"
+                        [routerLink]="['om-generation', 'letter', letter.claimLetterId]"
+                        [relativeTo]="mohuaRoute"
+                        [attr.aria-label]="
+                          (isIssued(letter.omStatus) ? 'View OM for ' : 'Generate OM for ') + letter.claimLetterRefNo
+                        "
+                      >
+                        @if (isIssued(letter.omStatus)) {
+                          <i class="bi bi-eye" aria-hidden="true"></i> View OM
+                        } @else {
+                          <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Generate OM
+                        }
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            }
+          </table>
+        </div>
+      }
+    </mat-card>
   }
 
-  <p class="om-history-link">
-    <a [routerLink]="['om-history']" [relativeTo]="mohuaRoute">
-      <i class="bi bi-clock-history" aria-hidden="true"></i> OM Generation History
-    </a>
-  </p>
+  <a mat-button class="om-history-link mt-3" [routerLink]="['om-history']" [relativeTo]="mohuaRoute">
+    <i class="bi bi-clock-history" aria-hidden="true"></i> OM Generation History
+    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+  </a>
 </div>

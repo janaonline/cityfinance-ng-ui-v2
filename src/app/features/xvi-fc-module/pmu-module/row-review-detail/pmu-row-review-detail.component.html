@@ -78,6 +78,11 @@
         </div>
       }
 
+      <!-- Elected Body only: the same Eligible / Ineligible / 6th Schedule cards the State page shows. -->
+      @if (review()?.statusSummary; as statusSummary) {
+        <app-eulb-status-summary class="d-block my-3" [summary]="statusSummary" [showSubmittedAlert]="false" />
+      }
+
       @if (visibleFields().length > 0) {
         <form class="content-body">
           @for (item of visibleFields(); track item.key; let isLast = $last) {

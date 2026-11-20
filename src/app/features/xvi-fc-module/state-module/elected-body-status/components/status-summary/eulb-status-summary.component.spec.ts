@@ -16,12 +16,19 @@ function createStatusSummary(overrides: Partial<EulbStatusSummary> = {}): EulbSt
 describe('EulbStatusSummaryComponent', () => {
   let fixture: ComponentFixture<EulbStatusSummaryComponent>;
 
-  function setup(summary: EulbStatusSummary | null): void {
+  function setup(summary: EulbStatusSummary | null, showSubmittedAlert?: boolean): void {
     TestBed.configureTestingModule({ imports: [EulbStatusSummaryComponent] });
     fixture = TestBed.createComponent(EulbStatusSummaryComponent);
     fixture.componentRef.setInput('summary', summary);
+    if (showSubmittedAlert !== undefined) fixture.componentRef.setInput('showSubmittedAlert', showSubmittedAlert);
     fixture.detectChanges();
   }
+
+  it('shows only the cards, without the State banner, when showSubmittedAlert is false (PMU review)', () => {
+    setup(createStatusSummary(), false);
+    expect(fixture.debugElement.query(By.css('[role="alert"]'))).toBeNull();
+    expect(fixture.debugElement.queryAll(By.css('[data-testid="status-summary-card"]'))).toHaveSize(3);
+  });
 
   it('renders nothing when summary is null', () => {
     setup(null);

@@ -27,8 +27,8 @@ describe('OmGenerateDialogComponent', () => {
   it('shows the city counts the OM covers', () => {
     const text = create().textContent ?? '';
 
-    expect(text).toContain('Office Memorandum for 3 cities');
-    expect(text).toContain('Cities rejected / excluded from this OM');
+    expect(text).toContain('Office Memorandum for 3 ULBs');
+    expect(text).toContain('ULBs rejected / excluded from this OM');
   });
 
   it('closes with generate, preview, or nothing on cancel', () => {

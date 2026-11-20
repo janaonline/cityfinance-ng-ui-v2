@@ -24,6 +24,7 @@ import {
   claimsUnderReviewTotal,
 } from './components/summary-tiles/claim-letter-summary-tiles.component';
 import { ClaimLetterService } from './claim-letter.service';
+import { formatClaimLetterBatchLabel } from './claim-letter.utils';
 const CLAIM_LETTER_HISTORY_PAGE_SIZE = 10;
 const FORM_STATUS_UNDER_REVIEW_BY_SO = 15;
 
@@ -96,6 +97,11 @@ export class ClaimLetterListComponent implements OnInit {
   /** The SO review is internal to MoHUA, so the State sees a letter under SO review as under MoHUA review. */
   statusLabel(claim: ClaimLetterBatchSummary): string {
     return claim.currentFormStatus === FORM_STATUS_UNDER_REVIEW_BY_SO ? 'Under Review by MoHUA' : claim.currentFormStatusLabel;
+  }
+
+  /** "2", or "2-R1" for a letter built after a return. */
+  batchLabel(claim: ClaimLetterBatchSummary): string {
+    return formatClaimLetterBatchLabel(claim.batchNumber, claim.resubmissionNumber);
   }
 
   readonly canCreateNewClaim = computed(() => {
