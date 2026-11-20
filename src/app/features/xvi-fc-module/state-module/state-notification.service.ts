@@ -27,8 +27,8 @@ const STATE_FORMS: Readonly<Record<string, { title: string; route: string }>> = 
   GTC: { title: 'Grant Transfer Certificate', route: 'gtc' },
 };
 
-/** State-form status -> how a notification reads. PMU's 13/14 read like MoHUA's 5/6 — the State-facing UI
- *  never names PMU (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
+/** State-form status -> how a notification reads. PMU's 13/14 and the SO's 15/16 read like MoHUA's 5/6 — the
+ *  State-facing UI never names PMU or the SO (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
 const NOTIFICATION_BY_STATUS: Readonly<
   Record<number, { severity: UlbNotificationSeverity; message: string; icon: string }>
 > = {
@@ -42,12 +42,22 @@ const NOTIFICATION_BY_STATUS: Readonly<
     message: 'Returned for correction — action needed.',
     icon: 'bi-exclamation-triangle-fill',
   },
+  [FORM_STATUS.RETURNED_BY_SO]: {
+    severity: 'returned',
+    message: 'Returned for correction — action needed.',
+    icon: 'bi-exclamation-triangle-fill',
+  },
   [FORM_STATUS.UNDER_REVIEW_BY_PMU]: {
     severity: 'review',
     message: 'Under review by MoHUA.',
     icon: 'bi-hourglass-split',
   },
   [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: {
+    severity: 'review',
+    message: 'Under review by MoHUA.',
+    icon: 'bi-hourglass-split',
+  },
+  [FORM_STATUS.UNDER_REVIEW_BY_SO]: {
     severity: 'review',
     message: 'Under review by MoHUA.',
     icon: 'bi-hourglass-split',

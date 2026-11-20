@@ -31,16 +31,18 @@ interface ConditionStatusDisplay {
 }
 
 /** State-form status → how a requirement row looks. Not shared with the ULB page's table (its ids
- *  mean different things on ULB forms). PMU's 13/14 read exactly like MoHUA's 5/6 — the State-facing
- *  UI never names PMU (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
+ *  mean different things on ULB forms). PMU's 13/14 and the SO's 15/16 read exactly like MoHUA's 5/6 —
+ *  the State-facing UI never names PMU or the SO (see `STATE_STATUS_LABEL` in form-progress.component.ts). */
 const STATE_CONDITION_DISPLAY: Readonly<Partial<Record<FormStatusValue, ConditionStatusDisplay>>> = {
   [FORM_STATUS.NO_STATUS]: { buttonLabel: 'Start', tier: 'pending' },
   [FORM_STATUS.NOT_STARTED]: { buttonLabel: 'Start', tier: 'pending' },
   [FORM_STATUS.IN_PROGRESS]: { buttonLabel: 'Continue', tier: 'pending' },
   [FORM_STATUS.UNDER_REVIEW_BY_MOHUA]: { buttonLabel: 'Submitted', tier: 'success' },
   [FORM_STATUS.UNDER_REVIEW_BY_PMU]: { buttonLabel: 'Submitted', tier: 'success' },
+  [FORM_STATUS.UNDER_REVIEW_BY_SO]: { buttonLabel: 'Submitted', tier: 'success' },
   [FORM_STATUS.RETURNED_BY_MOHUA]: { buttonLabel: 'Resubmit', tier: 'warning' },
   [FORM_STATUS.RETURNED_BY_PMU]: { buttonLabel: 'Resubmit', tier: 'warning' },
+  [FORM_STATUS.RETURNED_BY_SO]: { buttonLabel: 'Resubmit', tier: 'warning' },
   [FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MOHUA]: { buttonLabel: 'Acknowledged', tier: 'success' },
 };
 

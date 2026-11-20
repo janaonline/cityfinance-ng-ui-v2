@@ -58,6 +58,7 @@ const sampleSummary: ClaimLetterBatchSummary = {
   supersedes: null,
   supersededBy: null,
   createdAt: '2026-07-01T00:00:00.000Z',
+  updatedAt: '2026-07-01T00:00:00.000Z',
   permissions: { canView: true, canEdit: true, canFinalSubmit: true },
 };
 
@@ -315,7 +316,24 @@ describe('ClaimLetterService', () => {
       expect(req.request.params.get('installment')).toBe('1');
       expect(req.request.params.get('page')).toBe('2');
       expect(req.request.params.get('limit')).toBe('10');
+      expect(req.request.params.has('status')).toBeFalse();
+      expect(req.request.params.has('batchNumber')).toBeFalse();
+      expect(req.request.params.has('sortBy')).toBeFalse();
+      expect(req.request.params.has('sortOrder')).toBeFalse();
       req.flush({ success: true, message: 'OK', data: [], meta: { page: 2, limit: 10, total: 0 } });
+    });
+
+    it('sends the status, batch and sort when set', () => {
+      service
+        .listHistory(stateId, yearId, { status: 'RETURNED', batchNumber: 2, sortBy: 'claimedTotal', sortOrder: 'asc' })
+        .subscribe();
+
+      const req = httpMock.expectOne((r) => r.url === url);
+      expect(req.request.params.get('status')).toBe('RETURNED');
+      expect(req.request.params.get('batchNumber')).toBe('2');
+      expect(req.request.params.get('sortBy')).toBe('claimedTotal');
+      expect(req.request.params.get('sortOrder')).toBe('asc');
+      req.flush({ success: true, message: 'OK', data: [], meta: { page: 1, limit: 20, total: 0 } });
     });
 
     it('resolves claims + pagination meta on success', () => {

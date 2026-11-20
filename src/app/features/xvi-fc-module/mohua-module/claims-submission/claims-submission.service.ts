@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import { ApiEnvelope, unwrapResponse } from '../api-response.util';
+import { ApiEnvelope, unwrapNullableResponse, unwrapResponse } from '../api-response.util';
 import {
   CLAIMS_INSTALLMENT,
   ClaimLetterDetail,
@@ -34,7 +34,10 @@ export class ClaimsSubmissionService {
     return this.get<ClaimLetterDetail>(`letter/${claimLetterId}`);
   }
 
-  getClaimLetterUlbs(claimLetterId: string, query: { search?: string; page?: number; limit?: number }): Observable<ClaimLetterUlbs> {
+  getClaimLetterUlbs(
+    claimLetterId: string,
+    query: { search?: string; page?: number; limit?: number },
+  ): Observable<ClaimLetterUlbs> {
     let params = new HttpParams();
     if (query.search) params = params.set('search', query.search);
     if (query.page) params = params.set('page', query.page);
@@ -61,6 +64,7 @@ export class ClaimsSubmissionService {
       .post<ApiEnvelope<ClaimLetterDetail> | ClaimLetterDetail>(`${this.baseUrl}letter/${claimLetterId}/return`, {
         expectedRevision,
         stateFormIds: selection.stateFormIds,
+        affectedLetterIds: selection.affectedLetterIds,
         ...(selection.stateRemark ? { stateRemark: selection.stateRemark } : {}),
       })
       .pipe(map((response) => unwrapResponse(response)));
@@ -72,12 +76,15 @@ export class ClaimsSubmissionService {
     ulbId: string,
     decision: { status: 'PENDING' } | ({ status: 'RETURNED' } & ReturnUlbDialogResult),
   ): Observable<ClaimLetterSoDecision | null> {
-    return this.http
-      .put<ApiEnvelope<ClaimLetterSoDecision | null> | ClaimLetterSoDecision | null>(
-        `${this.baseUrl}letter/${claimLetterId}/ulb/${ulbId}/decision`,
-        decision,
-      )
-      .pipe(map((response) => unwrapResponse(response)));
+    return (
+      this.http
+        .put<ApiEnvelope<ClaimLetterSoDecision | null> | ClaimLetterSoDecision | null>(
+          `${this.baseUrl}letter/${claimLetterId}/ulb/${ulbId}/decision`,
+          decision,
+        )
+        // Clearing a mark (PENDING) answers `data: null`, which is a success, not an empty envelope.
+        .pipe(map((response) => unwrapNullableResponse(response)))
+    );
   }
 
   private get<T>(path: string, params?: HttpParams): Observable<T> {

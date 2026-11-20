@@ -4,8 +4,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, map, startWith } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { distinctUntilChanged, filter, forkJoin, map, startWith } from 'rxjs';
 import { FieldSupportingActionEvent, FieldSupportingContent } from '../../../../../shared/dynamic-form/field.interface';
 import { withSupportingActionState } from '../../../../../shared/dynamic-form/supporting-action-state';
 import { UtilityService } from '../../../../../core/services/utility.service';
@@ -48,10 +48,12 @@ import {
 import {
   CLAIM_LETTER_ERROR_CODE,
   CLAIM_LETTER_INSTALLMENT,
+  CLAIM_LETTER_MAX_ULBS,
   ClaimLetterApiErrorMap,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
   ClaimLetterFinalPdf,
+  ClaimLetterReturnedUlb,
   ClaimLetterUlbRow,
   ClaimLetterUlbSelection,
 } from '../claim-letter.models';
@@ -60,10 +62,14 @@ import { AmountDisplayModeService } from '../../../../../core/services/amount-di
 import { ClaimLetterService } from '../claim-letter.service';
 import {
   buildBatchNarrative,
+  copiedLetterNote,
+  copyReturnedLetterUlbs,
+  describeEligibilitySourceLabel,
   formatClaimLetterBatchLabel,
   ineligibleUlbsMessage,
   readApiError,
 } from '../claim-letter.utils';
+import { joinWithAnd } from '../../../common/utils/xvi-fc-text.utils';
 import {
   ClaimLetterDocumentPreviewDialogComponent,
   ClaimLetterDocumentPreviewDialogData,
@@ -139,6 +145,23 @@ const CLAIM_LETTER_ABANDON_CONFIRM: Required<ConfirmDialogData> = {
 /** The backend's `ulbSelections.<index>.<field>` error keys, from an `errors` map or `buildErrorMapFromMessages`. */
 const CLAIM_ROW_ERROR_KEY_PATTERN = /^ulbSelections\.(\d+)\.(ulbId|claimedAmount)$/;
 
+/** State form id -> its State page (the sidebar route), for the returned-letter box. */
+const STATE_FORM_ROUTES: Readonly<Record<number, string>> = {
+  22: 'sfc-status',
+  35: 'gtc',
+  23: 'elected-body-status',
+  24: 'ulb-wise-allocation',
+  25: 'fc-unspent-declaration',
+};
+
+/** The returned-letter box names this many ULBs, then "+N more"; the table marks every one. */
+const RETURN_BOX_ULB_NAMES = 3;
+
+/** Returned by the SO or by MoHUA: its ULBs can start a new letter. */
+const RETURNED_LETTER_STATUSES: readonly number[] = [FORM_STATUS.RETURNED_BY_SO, FORM_STATUS.RETURNED_BY_MOHUA];
+
+const COPY_FAILED_MESSAGE = "Couldn't copy the ULBs from that letter.";
+
 /** Replaces the list of codes when every row fails the State-level gate; no remove button then. */
 const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
   'The State-level eligibility conditions are not met, so no ULB can be claimed right now. Removing ULBs will not fix this. See the eligibility checklist on the Claim Letters page.';
@@ -158,6 +181,7 @@ const CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE =
     AmountDisplayToggleComponent,
     ClaimLetterFinalClaimLetterComponent,
     ReturnedReasonBannerComponent,
+    RouterLink,
   ],
   templateUrl: './claim-letter-detail.component.html',
   styleUrl: './claim-letter-detail.component.scss',
@@ -185,6 +209,14 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly isCreateMode = this.routeClaimLetterId === null || this.routeClaimLetterId === 'new';
 
   readonly claimLetterId = signal<string | null>(this.isCreateMode ? null : this.routeClaimLetterId);
+  /** Create mode from a returned letter's "Start a new letter with these ULBs": that letter's id. */
+  private readonly copyFromId = this.isCreateMode ? this.route.snapshot.queryParamMap.get('from') : null;
+  /** What the copy kept and left out, shown above the table. */
+  readonly copyNote = signal<string | null>(null);
+  /** A returned letter: the State gate now, since create is refused while a State form fails it (null until loaded). */
+  readonly reuseGate = signal<{ passed: boolean; failingForms: string[] } | null>(null);
+  /** The State gate could not be read, so the button can't tell whether create would pass. */
+  readonly reuseGateFailed = signal(false);
   readonly claim = signal<ClaimLetterBatchSummary | null>(null);
   readonly installment = CLAIM_LETTER_INSTALLMENT;
 
@@ -212,12 +244,18 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** OnPush child: needs `refreshValidationDisplay()` after this component changes a row control. */
   private readonly claimTable = viewChild(ClaimUlbTableComponent);
 
-  /** The last batch slot, whose submit needs every ULB in a batch; the picker then says what is left. */
+  /** The last draft (every place taken, no other draft open), whose submit needs every ULB in a letter; the picker
+   *  then says what is left. A new letter is it when it takes the last place with no draft open; a saved one is told
+   *  by the backend. */
   readonly isFinalBatch = computed(() => {
+    if (!this.isCreateMode) return this.claim()?.isLastPlace === true;
     const overview = this.eligibilityOverview();
     if (!overview) return false;
-    const batchNumber = this.isCreateMode ? overview.nextBatchNumber : this.claim()?.batchNumber;
-    return batchNumber != null && batchNumber === overview.batchSlotsMax;
+    return (
+      overview.nextBatchNumber !== null &&
+      overview.batchSlotsUsed + 1 >= overview.batchSlotsMax &&
+      overview.openDraftCount === 0
+    );
   });
 
   /** Rows the last save refused, by ULB id and field, with the server's reasons; cleared when the next
@@ -320,8 +358,57 @@ export class ClaimLetterDetailComponent implements OnInit {
     if (this.claim()?.finalClaimLetterStage !== 'DRAFT' || !finalPdf) return null;
     return finalPdf.missingRequired.length ? null : finalPdf;
   });
-  /** After Submit the submitted copy replaces the upload field. */
-  readonly showSignedFileField = computed(() => this.claim()?.finalClaimLetterStage !== 'SUBMITTED');
+  /** After Submit the submitted copy replaces the upload field; while a State-level condition fails nothing can be
+   *  signed, so the field is hidden and the reason shows instead. */
+  readonly showSignedFileField = computed(
+    () => this.claim()?.finalClaimLetterStage !== 'SUBMITTED' && !this.claim()?.blockedReason,
+  );
+  /** The one place that says why a draft is blocked by a State form: the notice after another letter's State form
+   *  return, else the block reason. The alerts above the buttons stay quiet while this shows. */
+  readonly stateFormBanner = computed<string | null>(() => {
+    const claim = this.claim();
+    if (!claim || this.isCreateMode) return null;
+    return claim.stateFormNotice ?? claim.blockedReason ?? null;
+  });
+
+  /** Returned ULBs by id, for the red rows. */
+  readonly returnedUlbs = computed<ReadonlyMap<string, ClaimLetterReturnedUlb>>(
+    () => new Map((this.claim()?.returnSummary?.ulbs ?? []).map((ulb) => [ulb.ulbId, ulb])),
+  );
+
+  /** "Agra, Aligarh, Mathura +4 more": the box stays short however many ULBs went back. */
+  readonly returnedUlbNames = computed(() => {
+    const ulbs = this.claim()?.returnSummary?.ulbs ?? [];
+    const names = ulbs
+      .slice(0, RETURN_BOX_ULB_NAMES)
+      .map((ulb) => ulb.ulbName)
+      .join(', ');
+    const more = ulbs.length - RETURN_BOX_ULB_NAMES;
+    return more > 0 ? `${names} +${more} more` : names;
+  });
+
+  readonly isReturnedLetter = computed(
+    () => !this.isCreateMode && RETURNED_LETTER_STATUSES.includes(this.claim()?.currentFormStatus ?? -1),
+  );
+
+  /** Offered to anyone who can prepare letters (a full cap still names itself as the reason). */
+  readonly canOfferReuse = computed(() => {
+    const overview = this.eligibilityOverview();
+    return this.isReturnedLetter() && !!overview && (overview.canCreate || !!overview.createBlockedReason);
+  });
+
+  /** Why a new letter can't start yet: every place taken, or a State form still being corrected. */
+  readonly reuseBlockedReason = computed<string | null>(() => {
+    const blocked = this.eligibilityOverview()?.createBlockedReason;
+    if (blocked) return blocked;
+    if (this.reuseGateFailed()) return "Couldn't check the State-level conditions. Reload to try again.";
+    const gate = this.reuseGate();
+    if (!gate || gate.passed) return null;
+    const forms = gate.failingForms;
+    return forms.length
+      ? `Available once ${joinWithAnd(forms)} ${forms.length === 1 ? 'is' : 'are'} verified again.`
+      : 'Available once the State-level conditions are met again.';
+  });
 
   /** Banner text from the most recent failed create, save, abandon, upload or submit. */
   readonly formLevelErrors = signal<readonly string[]>([]);
@@ -334,12 +421,11 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly canFinalSubmit = computed(() => this.claim()?.permissions.canFinalSubmit ?? false);
 
-  /** Why Submit is unavailable for reasons the backend reports: another active batch (which also
-   *  hides Submit, via `canFinalSubmit`) or missing mandatory letter details. */
+  /** Why Submit is unavailable: missing mandatory letter details. A failing State-level condition hides Submit (via
+   *  `canFinalSubmit`) and is explained once, by `stateFormBanner`. */
   readonly submitBlockedReason = computed<string | null>(() => {
     const claim = this.claim();
     if (!claim || this.isCreateMode) return null;
-    if (claim.blockedReason) return claim.blockedReason;
     if (claim.permissions.canFinalSubmit && claim.letterDetailsComplete === false) {
       return 'Complete the mandatory letter details (Letter details & Preview) before submitting.';
     }
@@ -351,19 +437,23 @@ export class ClaimLetterDetailComponent implements OnInit {
     return this.claim()?.stateName ?? '';
   });
 
-  /** Saves a round trip: the last batch slot cannot be submitted while any ULB is in no batch (the
-   *  backend enforces it too). */
+  /** Saves a round trip: the last draft cannot be submitted while any ULB is in no letter (the backend enforces it
+   *  too). The count comes with the flag on every detail load, so a save that adds the ULBs unblocks it. */
   readonly finalBatchIncomplete = computed(() => {
     const claim = this.claim();
-    const overview = this.eligibilityOverview();
-    if (!claim || !overview) return false;
-    return claim.batchNumber === overview.batchSlotsMax && overview.remainingUlbCount > 0;
+    return claim?.isLastPlace === true && (claim.remainingUlbCount ?? 0) > 0;
   });
 
   /** Narrowed to `FormStatusValue` here rather than widening the shared component's input. */
   readonly currentFormStatusValue = computed<FormStatusValue>(
     () => (this.claim()?.currentFormStatus ?? FORM_STATUS.NOT_STARTED) as FormStatusValue,
   );
+
+  /** A returned State form's own page, or null for a form with no State page. */
+  stateFormLink(formId: number): string[] | null {
+    const route = STATE_FORM_ROUTES[formId];
+    return route ? ['/xvifc', this.yearId, route] : null;
+  }
 
   readonly breadcrumbLinks = computed<XvifcBreadcrumbLink[]>(() => {
     const listLink: XvifcBreadcrumbLink = {
@@ -433,7 +523,8 @@ export class ClaimLetterDetailComponent implements OnInit {
       const financialOverview = overview.financialOverview;
       totalInstallmentAllocation = financialOverview.totalInstallmentAllocation;
       remainingAfterThisBatch = financialOverview.availableToClaim - liveClaimedTotal;
-      slotsRemaining = overview.nextBatchNumber !== null ? overview.batchSlotsMax - overview.nextBatchNumber : 0;
+      // Places left once this new letter takes one (slot numbers can be out of order after a return).
+      slotsRemaining = overview.nextBatchNumber !== null ? overview.batchSlotsMax - overview.batchSlotsUsed - 1 : 0;
     } else {
       const claim = this.claim();
       if (!claim) return [];
@@ -463,11 +554,13 @@ export class ClaimLetterDetailComponent implements OnInit {
 
   readonly hasInvalidRows = computed(() => (this.claimTable()?.invalidRowIdentifiers().length ?? 0) > 0);
 
-  /** Same wording as the backend's rejection, so the user sees one message either way. */
+  /** Same wording as the backend's rejection, so the user sees one message either way. A State-level failure is left
+   *  to `stateFormBanner` when it shows; this says it only as a fallback. */
   readonly rowValidationMessage = computed<string | null>(() => {
     const identifiers = this.claimTable()?.invalidRowIdentifiers() ?? [];
     if (!identifiers.length) return null;
-    return this.stateGateFailed() ? CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE : ineligibleUlbsMessage(identifiers);
+    if (!this.stateGateFailed()) return ineligibleUlbsMessage(identifiers);
+    return this.stateFormBanner() ? null : CLAIM_LETTER_STATE_GATE_FAILED_MESSAGE;
   });
 
   get stateId(): string {
@@ -484,10 +577,94 @@ export class ClaimLetterDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.copyFromId) {
+      this.copyUlbsFrom(this.copyFromId);
+      return;
+    }
     this.loadEligibilityOverview();
     if (!this.isCreateMode) {
       this.loadDetail();
     }
+  }
+
+  /** Opens New Claim Letter with this returned letter's ULBs (`copyUlbsFrom`). */
+  startLetterFromThis(): void {
+    const claimLetterId = this.claimLetterId();
+    if (!claimLetterId || !this.reuseGate() || this.reuseBlockedReason()) return;
+    this.router.navigate(['/xvifc', this.yearId, 'claim-letter', 'new'], { queryParams: { from: claimLetterId } });
+  }
+
+  /** The State gate for a returned letter's button; create would be refused while it fails. */
+  private loadReuseGate(): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+    this.claimLetterService
+      .getEligibilitySummary(stateId, yearId, CLAIM_LETTER_INSTALLMENT)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ stateLevelGate }) =>
+          this.reuseGate.set({
+            passed: stateLevelGate.passed,
+            failingForms: stateLevelGate.sources
+              .filter((source) => source.result === 'FAILED')
+              .map(describeEligibilitySourceLabel),
+          }),
+        error: (err: unknown) => {
+          console.error('Failed to load the State-level conditions', err);
+          this.reuseGateFailed.set(true);
+        },
+      });
+  }
+
+  /**
+   * Create mode from a returned letter: its ULBs that can go into a new letter now fill the table. Loaded with the
+   * claim context, so the rows are built editable (`canEdit` is `canCreate` here). On any failure the page stays a
+   * plain New Claim Letter.
+   */
+  private copyUlbsFrom(sourceId: string): void {
+    const stateId = this.stateId;
+    const yearId = this.yearId;
+    if (!stateId || !yearId) return;
+
+    this.isLoading.set(true);
+    forkJoin({
+      context: this.claimLetterService.getClaimContext(stateId, yearId, CLAIM_LETTER_INSTALLMENT),
+      source: this.claimLetterService.getDetail(sourceId),
+      rows: this.claimLetterService.getAllUlbs(sourceId),
+      options: this.claimLetterService.getUlbOptions(stateId, yearId, CLAIM_LETTER_INSTALLMENT, {
+        limit: CLAIM_LETTER_MAX_ULBS,
+      }),
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ context, source, rows, options }) => {
+          this.eligibilityOverview.set(context);
+          this.isLoading.set(false);
+          // A ULB missing from a partial option list would read as ineligible, so copy nothing rather than guess.
+          if (!RETURNED_LETTER_STATUSES.includes(source.currentFormStatus) || options.total > options.options.length) {
+            this.utilityService.triggerSnackbar(COPY_FAILED_MESSAGE, 'snackbar-danger');
+            return;
+          }
+          const copied = copyReturnedLetterUlbs(
+            rows,
+            source.returnSummary?.ulbs ?? [],
+            options.options,
+            context.claimAmountEditable,
+          );
+          this.savedUlbRows.set(copied.rows);
+          this.hydrateRows(copied.rows);
+          this.copyNote.set(
+            copiedLetterNote(formatClaimLetterBatchLabel(source.batchNumber, source.resubmissionNumber), copied),
+          );
+        },
+        error: (err: unknown) => {
+          console.error('Failed to copy the ULBs of the returned claim letter', err);
+          this.isLoading.set(false);
+          this.utilityService.triggerSnackbar(COPY_FAILED_MESSAGE, 'snackbar-danger');
+          this.loadEligibilityOverview();
+        },
+      });
   }
 
   private loadEligibilityOverview(): void {
@@ -531,6 +708,7 @@ export class ClaimLetterDetailComponent implements OnInit {
           this.hydrateRows(ulbs);
           this.initSignedFileFormIfNeeded(detail);
           this.isLoading.set(false);
+          if (this.isReturnedLetter()) this.loadReuseGate();
         },
         error: (err: unknown) => {
           console.error('Failed to load Claim Letter', err);
@@ -569,10 +747,14 @@ export class ClaimLetterDetailComponent implements OnInit {
     const control = this.dynamicService.createContorl(field, false, false);
     this.signedFileForm.addControl('signedClaimFile', control);
 
-    control.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((raw: unknown) => {
-      if (!isUploadedFileMetadata(raw)) return;
-      this.uploadSignedFile(raw);
-    });
+    control.valueChanges
+      .pipe(
+        filter(isUploadedFileMetadata),
+        // The file field emits a picked file twice (setValue, then updateValueAndValidity): upload it once.
+        distinctUntilChanged((a, b) => a.path === b.path),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((file) => this.uploadSignedFile(file));
   }
 
   /** Re-reads only the batch summary (not every ULB page) after a dialog changed something. */

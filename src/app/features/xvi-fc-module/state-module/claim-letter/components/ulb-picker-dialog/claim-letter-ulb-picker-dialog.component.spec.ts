@@ -466,13 +466,13 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
 
   // ─── Final batch note ─────────────────────────────────────────────────────────
 
-  it('on the final batch, notes the eligible ULBs not yet added and the ineligible ones in no batch', async () => {
+  it('on the last draft, notes the eligible ULBs not yet added and the ineligible ones in no claim letter', async () => {
     const inBatch = makeOption('ulb-4', 'Delta ULB', { eligible: false, claimedInBatch: { batchNumber: 1 } });
     await setup([...options, inBatch], { ...baseData, isFinalBatch: true });
 
     expect(byCy('claim-letter-ulb-picker-final-batch-note')?.textContent?.trim()).toBe(
-      'This is the final batch. It can be submitted only when every ULB is in a batch: ' +
-        '1 eligible ULB is not yet added, and 1 ineligible ULB is in no batch.',
+      'This is the last draft for this installment, so it can be submitted only when every ULB is in a claim ' +
+        'letter: 1 eligible ULB is not yet added, and 1 ineligible ULB is in no claim letter.',
     );
   });
 
@@ -483,7 +483,8 @@ describe('ClaimLetterUlbPickerDialogComponent', () => {
     fixture.detectChanges();
 
     expect(byCy('claim-letter-ulb-picker-final-batch-note')?.textContent?.trim()).toBe(
-      'This is the final batch. It can be submitted only when every ULB is in a batch: 1 ineligible ULB is in no batch.',
+      'This is the last draft for this installment, so it can be submitted only when every ULB is in a claim ' +
+        'letter: 1 ineligible ULB is in no claim letter.',
     );
   });
 

@@ -196,6 +196,11 @@
                     <i class="bi {{ statusIcon(letter.status) }}" aria-hidden="true"></i>
                     {{ statusLabel(letter.status, letter.statusLabel) }}
                   </span>
+                  @if (letter.returnedWith; as w) {
+                    <p class="small text-body-secondary mb-0" data-cy="claim-letter-card-returned-with">
+                      Returned with {{ w.number }} ({{ w.formNames.join(', ') }})
+                    </p>
+                  }
                   <p class="small text-body-secondary mb-0">
                     <i class="bi bi-calendar-event" aria-hidden="true"></i> Received {{ formatDate(letter.receivedOn) }}
                   </p>

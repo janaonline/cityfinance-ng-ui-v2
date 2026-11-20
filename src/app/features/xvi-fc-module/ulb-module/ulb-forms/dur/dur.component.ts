@@ -115,6 +115,9 @@ interface DurDocument {
   postRejectionAttemptsUsed: number;
   manualReviewRejectionCount: number;
   uploadBlockedUntil: Date | null;
+  // Times a PASSED upload of this document was replaced. At MAX_PASSED_REPLACEMENTS the passed
+  // document is locked; a return of the form resets it to 0 (server-side).
+  passedReplacementsUsed: number;
 }
 
 function emptyDoc(id: DurDocId): DurDocument {
@@ -141,6 +144,7 @@ function emptyDoc(id: DurDocId): DurDocument {
     postRejectionAttemptsUsed: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
+    passedReplacementsUsed: 0,
   };
 }
 
@@ -162,6 +166,10 @@ const MAX_PDF_PAGES = 1000;
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
+/** Mirrors the backend's MAX_PASSED_REPLACEMENTS (common/utils/manual-review-cooldown.util.ts). */
+const MAX_PASSED_REPLACEMENTS = 3;
+/** Returned by the State (4), MoHUA (6) or the SO (16): a passed file from before the return is replaceable freely. */
+const DUR_RETURNED_STATUS_IDS = new Set([4, 6, 16]);
 const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
 function unwrap<T>(response: unknown): T {
@@ -273,6 +281,22 @@ export class DurComponent implements OnInit, OnDestroy {
     return doc.postRejectionAttemptsUsed >= MAX_MANUAL_REVIEW_ATTEMPTS;
   }
 
+  /** Replacements of this PASSED document still allowed. */
+  passedReplacementsLeft(doc: DurDocument): number {
+    return Math.max(MAX_PASSED_REPLACEMENTS - doc.passedReplacementsUsed, 0);
+  }
+
+  /** A passed document on a form that isn't returned, with no replacements left — mirrors the backend's cap. */
+  passedReplacementsExhausted(doc: DurDocument): boolean {
+    return (
+      doc.status === 'passed' &&
+      !DUR_RETURNED_STATUS_IDS.has(this.currentFormStatusId()) &&
+      this.passedReplacementsLeft(doc) === 0
+    );
+  }
+
+  readonly maxPassedReplacements = MAX_PASSED_REPLACEMENTS;
+
   readonly maxManualReviewAttempts = MAX_MANUAL_REVIEW_ATTEMPTS;
   readonly manualReviewCooldownHours = MANUAL_REVIEW_COOLDOWN_HOURS;
   readonly manualReviewSupportEmail = MANUAL_REVIEW_SUPPORT_EMAIL;
@@ -326,6 +350,7 @@ export class DurComponent implements OnInit, OnDestroy {
       isEligibleForManualReview: this.isEligibleForManualReview(doc),
       manualReviewAttemptsExhausted: this.manualReviewAttemptsExhausted(doc),
       isUploadBlocked: this.isUploadBlocked(doc),
+      passedReplacementsExhausted: this.passedReplacementsExhausted(doc),
     };
   }
 
@@ -338,12 +363,15 @@ export class DurComponent implements OnInit, OnDestroy {
     switch (event.action) {
       case 'upload':
       case 'reupload':
-      // DUR has no separate "clear the file" step — the doc slot always needs a document,
-      // so "delete" a passed-but-undecided upload the same as "reupload": pick a new file,
-      // which overwrites the current one in place via confirm-upload.
-      case 'delete':
         if (!this.canUpload()) return;
         this.triggerUpload(event.docKey as DurDocId);
+        return;
+      // DUR has no separate "clear the file" step — the doc slot always needs a document, so
+      // "delete" a passed-but-undecided upload means picking a new file that overwrites it in
+      // place via confirm-upload. That throws away a passed file, which is capped, so confirm first.
+      case 'delete':
+        if (!this.canUpload() || !doc) return;
+        void this.confirmReplacePassed(doc);
         return;
       case 'retry':
         if (!this.canUpload()) return;
@@ -464,6 +492,7 @@ export class DurComponent implements OnInit, OnDestroy {
               postRejectionAttemptsUsed: d.postRejectionAttemptsUsed,
               manualReviewRejectionCount: d.manualReviewRejectionCount,
               uploadBlockedUntil: d.uploadBlockedUntil,
+              passedReplacementsUsed: d.passedReplacementsUsed,
             }
           : d,
       ),
@@ -579,6 +608,45 @@ export class DurComponent implements OnInit, OnDestroy {
       console.error('[dur-retry] failed', err);
       this.documents.update((docs) => docs.map((d) => (d.id === docId ? { ...d, status: 'failed' } : d)));
     }
+  }
+
+  /** Replacing a passed file counts against its cap, so say how many replacements are left before the file picker opens. */
+  private async confirmReplacePassed(doc: DurDocument): Promise<void> {
+    // A returned form's files are replaceable without limit (and the count resets), so no warning.
+    if (DUR_RETURNED_STATUS_IDS.has(this.currentFormStatusId())) {
+      this.triggerUpload(doc.id);
+      return;
+    }
+    const left = this.passedReplacementsLeft(doc);
+    const capNote =
+      left <= 1
+        ? ' This is the last time you can replace it: after this, the passed document is locked and cannot be replaced again.'
+        : ` You can replace a passed document ${left} more times; after that it is locked.`;
+    const data: UlbFormsDialogData = {
+      title: 'Replace this document?',
+      icon: { name: 'warning_amber', color: '#e53935' },
+      description:
+        'This document has already passed validation. Replacing it will clear the current verification result — the system will run the checks again on your new file.' +
+        capNote,
+      buttons: [
+        { label: 'Cancel', result: 'cancel', variant: 'stroked' },
+        { label: 'Replace document', result: 'replace', variant: 'flat', color: 'warn' },
+      ],
+    };
+
+    const result = await firstValueFrom(
+      this.dialog
+        .open<UlbFormsDialogComponent, UlbFormsDialogData, string>(UlbFormsDialogComponent, {
+          data,
+          disableClose: true,
+          width: '500px',
+          maxWidth: '95vw',
+          maxHeight: '90vh',
+          panelClass: ULB_FORMS_DIALOG_PANEL_CLASS,
+        })
+        .afterClosed(),
+    );
+    if (result === 'replace') this.triggerUpload(doc.id);
   }
 
   async requestManualReview(docId: DurDocId): Promise<void> {
@@ -722,6 +790,7 @@ export class DurComponent implements OnInit, OnDestroy {
           postRejectionAttemptsUsed: number;
           manualReviewRejectionCount: number;
           uploadBlockedUntil: string | null;
+          passedReplacementsUsed?: number;
         }>;
       } | null>(result);
 
@@ -758,6 +827,7 @@ export class DurComponent implements OnInit, OnDestroy {
             postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
             manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
             uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
+            passedReplacementsUsed: saved.passedReplacementsUsed ?? 0,
           };
         }),
       );
@@ -824,6 +894,7 @@ export class DurComponent implements OnInit, OnDestroy {
               postRejectionAttemptsUsed: number;
               manualReviewRejectionCount: number;
               uploadBlockedUntil: string | null;
+              passedReplacementsUsed?: number;
             }>;
           }>(result);
           if (!status?.documents) return;
@@ -849,6 +920,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 (remote.postRejectionAttemptsUsed ?? 0) === doc.postRejectionAttemptsUsed &&
                 (remote.manualReviewRejectionCount ?? 0) === doc.manualReviewRejectionCount &&
                 newUploadBlockedUntil?.getTime() === doc.uploadBlockedUntil?.getTime() &&
+                (remote.passedReplacementsUsed ?? 0) === doc.passedReplacementsUsed &&
                 remote.manualReviewDecision?.status === doc.manualReviewDecision?.status;
               if (unchanged) return doc;
 
@@ -865,6 +937,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
                 manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
                 uploadBlockedUntil: newUploadBlockedUntil,
+                passedReplacementsUsed: remote.passedReplacementsUsed ?? 0,
               };
             }),
           );
