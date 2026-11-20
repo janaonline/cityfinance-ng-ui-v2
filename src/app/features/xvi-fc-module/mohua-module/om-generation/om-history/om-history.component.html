@@ -19,7 +19,11 @@
         <div class="flex-grow-1">
           <h2 id="omh-heading" class="omh-heading fw-bold mb-0">Issued OMs</h2>
           <p class="small text-body-secondary mb-0">
-            Upload the signed copy of each OM, or download it with its annexures.
+            @if (canUpload) {
+              Upload the signed copy of each OM, or download it with its annexures.
+            } @else {
+              Every OM MoHUA issued: view the signed copy, or download it with its annexures.
+            }
           </p>
         </div>
         <span class="badge rounded-pill cs-tint">
@@ -103,10 +107,12 @@
                           <i class="bi bi-eye" aria-hidden="true"></i> View PDF
                         </a>
                       }
-                      <button mat-stroked-button type="button" class="cs-view-btn" (click)="upload(row)">
-                        <i class="bi bi-upload" aria-hidden="true"></i>
-                        {{ row.signedFile ? 'Replace' : 'Upload signed OM' }}
-                      </button>
+                      @if (canUpload) {
+                        <button mat-stroked-button type="button" class="cs-view-btn" (click)="upload(row)">
+                          <i class="bi bi-upload" aria-hidden="true"></i>
+                          {{ row.signedFile ? 'Replace' : 'Upload signed OM' }}
+                        </button>
+                      }
                       <button
                         mat-stroked-button
                         type="button"

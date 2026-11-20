@@ -149,6 +149,10 @@ export class ClaimLetterService {
     if (query.installment !== undefined) params = params.set('installment', String(query.installment));
     if (query.page !== undefined) params = params.set('page', String(query.page));
     if (query.limit !== undefined) params = params.set('limit', String(query.limit));
+    if (query.status) params = params.set('status', query.status);
+    if (query.batchNumber !== undefined) params = params.set('batchNumber', String(query.batchNumber));
+    if (query.sortBy) params = params.set('sortBy', query.sortBy);
+    if (query.sortOrder) params = params.set('sortOrder', query.sortOrder);
 
     return this.http
       .get<ClaimLetterApiResponse<ClaimLetterBatchSummary[]>>(`${this.baseUrl}${stateId}/${yearId}/history`, { params })

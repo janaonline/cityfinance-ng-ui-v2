@@ -1,10 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { joinWithAnd } from '../../common/utils/xvi-fc-text.utils';
 import {
   ClaimLetterApiErrorMap,
   ClaimLetterApiErrorResponse,
   ClaimLetterExemptionNote,
   ClaimLetterInstallment,
+  ClaimLetterReturnedUlb,
   ClaimLetterUlbEligibilityTally,
+  ClaimLetterUlbOption,
+  ClaimLetterUlbRow,
 } from './claim-letter.models';
 
 /** Codes named in a refusal message; the rows themselves are marked one by one. */
@@ -19,8 +23,7 @@ export function ineligibleUlbsMessage(identifiers: readonly string[]): string {
       ? '1 selected ULB is ineligible or has an invalid claimed amount'
       : `${n} selected ULBs are ineligible or have an invalid claimed amount`;
   if (n <= MAX_NAMED_ULBS) return `${subject}: ${identifiers.join(', ')}.`;
-  const named = identifiers.slice(0, MAX_NAMED_ULBS);
-  return `${subject}, including ${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}.`;
+  return `${subject}, including ${joinWithAnd(identifiers.slice(0, MAX_NAMED_ULBS))}.`;
 }
 
 /** Typing-time preview only; the backend decides at save. */
@@ -54,6 +57,73 @@ export function humanizeToken(token: string): string {
 /** The batch as the State sees it: "2", or "2-R1" for a letter built in a slot a returned letter held. */
 export function formatClaimLetterBatchLabel(batchNumber: number, resubmissionNumber: number): string {
   return resubmissionNumber > 0 ? `${batchNumber}-R${resubmissionNumber}` : String(batchNumber);
+}
+
+/** A returned letter's ULBs that a new letter can start with, and how many were left out and why. */
+export interface CopiedLetterUlbs {
+  rows: ClaimLetterUlbRow[];
+  returned: number;
+  inOtherLetter: number;
+  ineligible: number;
+}
+
+/**
+ * Keeps the returned letter's ULBs that can go into a new letter now: not returned by the SO, not in another letter,
+ * still eligible (fresh from `ulb-options`). Names and allocation come from the option, the claim amount from the old
+ * row while it is editable. The server re-checks all of this on create.
+ */
+export function copyReturnedLetterUlbs(
+  sourceRows: readonly ClaimLetterUlbRow[],
+  returnedUlbs: readonly ClaimLetterReturnedUlb[],
+  options: readonly ClaimLetterUlbOption[],
+  claimAmountEditable: boolean,
+): CopiedLetterUlbs {
+  const returnedIds = new Set(returnedUlbs.map((ulb) => ulb.ulbId));
+  const optionById = new Map(options.map((option) => [option.ulbId, option]));
+  const copied: CopiedLetterUlbs = { rows: [], returned: 0, inOtherLetter: 0, ineligible: 0 };
+
+  for (const row of sourceRows) {
+    const option = optionById.get(row.ulbId);
+    if (returnedIds.has(row.ulbId)) copied.returned++;
+    else if (option?.claimedInBatch) copied.inOtherLetter++;
+    else if (!option?.eligible || !option.allocationAmount) copied.ineligible++;
+    else {
+      const allocationAmount = option.allocationAmount;
+      const claimAmount = claimAmountEditable ? row.claimAmount : allocationAmount;
+      copied.rows.push({
+        ulbId: row.ulbId,
+        ulbName: option.ulbName,
+        censusCode: option.censusCode,
+        sbCode: option.sbCode,
+        allocationAmount,
+        claimAmount,
+        differencePercentage: computeClaimDifferencePercentage(allocationAmount, claimAmount),
+        eligible: true,
+        exemptionNotes: option.exemptionNotes,
+      });
+    }
+  }
+  return copied;
+}
+
+const ulbs = (n: number) => `${n} ULB${n === 1 ? '' : 's'}`;
+
+/** The New Claim Letter note: "12 ULBs copied from Claim Letter 2-R1. 4 ULBs were not copied because ...". */
+export function copiedLetterNote(letterLabel: string, copied: CopiedLetterUlbs): string {
+  const count = copied.rows.length;
+  const reasons = [
+    copied.returned && `${ulbs(copied.returned)} ${copied.returned === 1 ? 'was' : 'were'} returned for correction`,
+    copied.inOtherLetter &&
+      `${ulbs(copied.inOtherLetter)} ${copied.inOtherLetter === 1 ? 'is' : 'are'} already in another claim letter`,
+    copied.ineligible && `${ulbs(copied.ineligible)} ${copied.ineligible === 1 ? 'is' : 'are'} no longer eligible`,
+  ].filter((reason): reason is string => !!reason);
+  const because = joinWithAnd(reasons);
+
+  if (!count) return `No ULBs copied from Claim Letter ${letterLabel}${because ? ` because ${because}` : ''}.`;
+  const head = `${ulbs(count)} copied from Claim Letter ${letterLabel}.`;
+  if (!because) return head;
+  const notCopied = copied.returned + copied.inOtherLetter + copied.ineligible;
+  return `${head} ${ulbs(notCopied)} ${notCopied === 1 ? 'was' : 'were'} not copied because ${because}.`;
 }
 
 /** `displayLabel`, else a humanized `formType`, so a source never renders blank. */

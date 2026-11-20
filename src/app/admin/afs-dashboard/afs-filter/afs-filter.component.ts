@@ -17,6 +17,8 @@ export const DEFAULT_YEAR = '606aadac4dff55e6c075c507'; // 2020-21
 export const DEFAULT_DOC_TYPE = 'bal_sheet_schedules';
 export const DEFAULT_AUDIT_STATUS = 'audited';
 export const DEFAULT_DIGITIZATION_STATUS = '';
+/** Years that have AFS data, shown in the Year filter (the API returns every active year). Static for now. */
+export const AFS_DATA_YEARS: readonly string[] = ['2019-20', '2020-21', '2021-22', '2022-23', '2023-24', '2024-25'];
 export const AFS_FILTER_KEY = 'afsFilter';
 
 interface YearOption {
@@ -149,6 +151,8 @@ export class AfsFilterComponent implements OnInit {
       next: (res) => {
         const resData: any = res.data;
         this.filters = res.data;
+        this.filters.years = (this.filters.years ?? []).filter((y) => AFS_DATA_YEARS.includes(y.year));
+        this.resetYearIfUnavailable();
         if (resData) {
           this.filteredStates = this.states = resData.states;
           this.cities = resData.ulbs;
@@ -161,6 +165,16 @@ export class AfsFilterComponent implements OnInit {
         console.error('Failed to load filters:', err);
       }
     });
+  }
+
+  /** A year restored from localStorage (e.g. the old empty "Select Year") may not be listed any more: use the default. */
+  private resetYearIfUnavailable(): void {
+    const listed = this.filters.years.map((y) => y._id);
+    const current = this.filterForm.get('yearId')!.value;
+    if (listed.length && !listed.includes(current)) {
+      this.filterForm.patchValue({ yearId: DEFAULT_YEAR });
+      this.filtersChanged.emit(this.filterForm.value);
+    }
   }
 
   updateOnStateChange(selectedStateId: string[]): void {

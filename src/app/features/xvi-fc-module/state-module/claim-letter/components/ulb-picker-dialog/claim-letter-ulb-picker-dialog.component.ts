@@ -30,7 +30,7 @@ export interface ClaimLetterUlbPickerDialogData {
   excludeUlbIds: string[];
   /** Lets this draft's own locked ULBs show as selectable; undefined in create mode. */
   claimLetterId?: string;
-  /** The last batch slot: the picker notes the ULBs still in no batch, which block its submit. */
+  /** The last draft: the picker notes the ULBs still in no claim letter, which block its submit. */
   isFinalBatch?: boolean;
 }
 
@@ -155,8 +155,8 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
     return inView.every((o) => selected.has(o.ulbId)) ? 'done' : 'offer';
   });
 
-  /** Final batch only: the ULBs still in no batch, which keep it from being submitted. ULBs ticked
-   *  here count as added, since confirming adds them. */
+  /** The last draft only: the ULBs still in no letter, which keep it from being submitted. ULBs ticked here count
+   *  as added, since confirming adds them. */
   readonly finalBatchNote = computed<string | null>(() => {
     if (!this.data.isFinalBatch) return null;
     const selected = this.selectedUlbs();
@@ -170,9 +170,9 @@ export class ClaimLetterUlbPickerDialogComponent implements OnInit {
     const parts: string[] = [];
     if (eligibleNotAdded) parts.push(`${eligibleNotAdded} eligible ${ulbsAre(eligibleNotAdded)} not yet added`);
     if (ineligibleInNoBatch)
-      parts.push(`${ineligibleInNoBatch} ineligible ${ulbsAre(ineligibleInNoBatch)} in no batch`);
+      parts.push(`${ineligibleInNoBatch} ineligible ${ulbsAre(ineligibleInNoBatch)} in no claim letter`);
     if (!parts.length) return null;
-    return `This is the final batch. It can be submitted only when every ULB is in a batch: ${parts.join(', and ')}.`;
+    return `This is the last draft for this installment, so it can be submitted only when every ULB is in a claim letter: ${parts.join(', and ')}.`;
   });
 
   readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
