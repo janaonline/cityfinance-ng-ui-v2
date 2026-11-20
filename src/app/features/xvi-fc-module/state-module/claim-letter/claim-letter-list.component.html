@@ -181,22 +181,119 @@
           <mat-card-title class="small fw-semibold">Claim Letter History</mat-card-title>
         </mat-card-header>
 
-        <mat-card-content class="p-2">
+        <mat-card-content class="p-3">
+          <!-- The PMU Review State Submissions filter fields, as a plain row inside the card. -->
+          @if (total() > 0 || hasActiveFilters()) {
+            <div class="mb-3" [formGroup]="filterForm" data-cy="claim-letter-history-filters">
+              <div class="small fw-semibold text-secondary mb-2">Filter by</div>
+
+              <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always" class="filter-field">
+                  <mat-label>Status</mat-label>
+                  <mat-select
+                    formControlName="status"
+                    placeholder="All Statuses"
+                    aria-label="Status"
+                    data-cy="claim-letter-history-status-filter"
+                  >
+                    <mat-option [value]="null">All Statuses</mat-option>
+                    @for (option of statusOptions; track option.value) {
+                      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <div class="d-flex align-items-center gap-2 filter-field">
+                  <mat-form-field
+                    appearance="outline"
+                    subscriptSizing="dynamic"
+                    floatLabel="always"
+                    class="flex-grow-1"
+                  >
+                    <mat-label>Batch</mat-label>
+                    <mat-select
+                      formControlName="batchNumber"
+                      placeholder="All Batches"
+                      aria-label="Batch"
+                      data-cy="claim-letter-history-batch-filter"
+                    >
+                      <mat-option [value]="null">All Batches</mat-option>
+                      @for (batch of batchOptions(); track batch) {
+                        <mat-option [value]="batch">Batch {{ batch }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <button
+                    type="button"
+                    class="btn btn-link p-2"
+                    (click)="resetFilters()"
+                    aria-label="Reset filters"
+                    title="Reset filters"
+                    data-cy="claim-letter-history-reset-filters"
+                  >
+                    <i class="fs-4 bi bi-arrow-counterclockwise" style="color: var(--color-primary)"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+
           <div class="table-responsive overflow-y-hidden rounded-3 border">
             @if (!claims().length) {
               <div class="text-center py-5 text-secondary small" data-cy="claim-letter-empty-state">
-                No claim letters yet. Start a new claim once you're eligible.
+                @if (hasActiveFilters()) {
+                  No claim letters match these filters.
+                } @else {
+                  No claim letters yet. Start a new claim once you're eligible.
+                }
               </div>
             } @else {
-              <table class="table table-sm table-hover align-middle mb-0">
+              <table
+                class="table table-sm table-hover align-middle mb-0"
+                matSort
+                matSortDisableClear
+                [matSortActive]="sortActive()"
+                [matSortDirection]="sortDirection()"
+                (matSortChange)="onSort($event)"
+              >
                 <thead class="table-light border-bottom">
                   <tr>
-                    <th scope="col" class="ps-3 small fw-semibold">Batch #</th>
+                    <th scope="col" class="ps-3 small fw-semibold" mat-sort-header="batchNumber" start="asc">
+                      Batch #
+                    </th>
                     <th scope="col" class="small fw-semibold">Status</th>
-                    <th scope="col" class="small fw-semibold text-end">ULBs</th>
-                    <th scope="col" class="small fw-semibold text-end">Claimed Total</th>
-                    <th scope="col" class="text-center small fw-semibold">Submitted</th>
-                    <th scope="col" class="text-center small fw-semibold">Last activity</th>
+                    <th
+                      scope="col"
+                      class="small fw-semibold text-end cl-sort-end"
+                      mat-sort-header="ulbCount"
+                      start="desc"
+                    >
+                      ULBs
+                    </th>
+                    <th
+                      scope="col"
+                      class="small fw-semibold text-end cl-sort-end"
+                      mat-sort-header="claimedTotal"
+                      start="desc"
+                    >
+                      Claimed Total
+                    </th>
+                    <th
+                      scope="col"
+                      class="text-center small fw-semibold cl-sort-center"
+                      mat-sort-header="submittedAt"
+                      start="desc"
+                    >
+                      Submitted
+                    </th>
+                    <th
+                      scope="col"
+                      class="text-center small fw-semibold cl-sort-center"
+                      mat-sort-header="updatedAt"
+                      start="desc"
+                    >
+                      Last activity
+                    </th>
                     <th scope="col" class="text-center small fw-semibold text-end pe-3">Action</th>
                   </tr>
                 </thead>
@@ -235,35 +332,38 @@
               </table>
             }
           </div>
+
+          @if (total() > 0) {
+            <div class="d-flex align-items-center justify-content-end gap-2 small mt-2">
+              @if (isHistoryLoading()) {
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
+              }
+              <span class="text-secondary me-2" data-cy="claim-letter-history-range">
+                Showing {{ rangeStart() }}-{{ rangeEnd() }} of {{ total() }}
+              </span>
+              <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasPrev() || isHistoryLoading()"
+                (click)="goToPage(page() - 1)"
+                aria-label="Previous page"
+              >
+                &lsaquo; Prev
+              </button>
+              <button
+                type="button"
+                class="btn btn-link btn-sm p-0 text-decoration-none"
+                [disabled]="!hasNext() || isHistoryLoading()"
+                (click)="goToPage(page() + 1)"
+                aria-label="Next page"
+              >
+                Next &rsaquo;
+              </button>
+            </div>
+          }
         </mat-card-content>
       </mat-card>
-
-      @if (total() > 0) {
-        <div class="d-flex align-items-center justify-content-end gap-2 small">
-          @if (isHistoryLoading()) {
-            <div class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></div>
-          }
-          <span class="text-secondary">{{ page() }} / {{ totalPages() }}</span>
-          <button
-            type="button"
-            class="btn btn-link btn-sm p-0 text-decoration-none"
-            [disabled]="!hasPrev() || isHistoryLoading()"
-            (click)="goToPage(page() - 1)"
-            aria-label="Previous page"
-          >
-            &lsaquo; Prev
-          </button>
-          <button
-            type="button"
-            class="btn btn-link btn-sm p-0 text-decoration-none"
-            [disabled]="!hasNext() || isHistoryLoading()"
-            (click)="goToPage(page() + 1)"
-            aria-label="Next page"
-          >
-            Next &rsaquo;
-          </button>
-        </div>
-      }
     }
   </div>
 </section>

@@ -3,11 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { By } from '@angular/platform-browser';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { XvifcModuleService } from '../../xvi-fc-module.service';
 import { ClaimLetterListComponent } from './claim-letter-list.component';
-import { ClaimLetterBatchSummary, ClaimLetterEligibilitySummary } from './claim-letter.models';
+import {
+  ClaimLetterBatchSummary,
+  ClaimLetterEligibilitySummary,
+  ClaimLetterHistoryResult,
+} from './claim-letter.models';
 import { ClaimLetterService } from './claim-letter.service';
 
 const financialSummary = {
@@ -468,5 +472,151 @@ describe('ClaimLetterListComponent', () => {
     component.goToPage(999);
 
     expect(claimLetterService.listHistory).not.toHaveBeenCalled();
+  });
+
+  describe('history filters and sort', () => {
+    const history = (): jasmine.Spy => claimLetterService.listHistory as jasmine.Spy;
+    const text = (selector: string): string =>
+      (fixture.nativeElement as HTMLElement).querySelector(selector)?.textContent?.trim() ?? '';
+
+    beforeEach(() => history().calls.reset());
+
+    it('reloads page 1 with the picked status and batch, and reset drops both', () => {
+      component.page.set(2);
+
+      component.filterForm.controls.status.setValue('RETURNED');
+      expect(history()).toHaveBeenCalledWith('state-test-id', 'year-test-id', {
+        installment: 1,
+        page: 1,
+        limit: 10,
+        status: 'RETURNED',
+      });
+
+      component.filterForm.controls.batchNumber.setValue(2);
+      expect(history().calls.mostRecent().args[2]).toEqual({
+        installment: 1,
+        page: 1,
+        limit: 10,
+        status: 'RETURNED',
+        batchNumber: 2,
+      });
+
+      component.resetFilters();
+      expect(history().calls.mostRecent().args[2]).toEqual({ installment: 1, page: 1, limit: 10 });
+      expect(component.hasActiveFilters()).toBeFalse();
+    });
+
+    it('offers Batch 1 to the cap', () => {
+      expect(component.batchOptions()).toEqual([1, 2, 3]);
+    });
+
+    it('sends a header sort, and Last activity, newest first, sends none (the default)', () => {
+      component.onSort({ active: 'claimedTotal', direction: 'asc' });
+      expect(history().calls.mostRecent().args[2]).toEqual({
+        installment: 1,
+        page: 1,
+        limit: 10,
+        sortBy: 'claimedTotal',
+        sortOrder: 'asc',
+      });
+
+      component.onSort({ active: 'updatedAt', direction: 'desc' });
+      expect(history().calls.mostRecent().args[2]).toEqual({ installment: 1, page: 1, limit: 10 });
+      expect(component.sortActive()).toBe('updatedAt');
+      expect(component.sortDirection()).toBe('desc');
+    });
+
+    it('flips a header between ascending and descending and never clears it, so its arrow stays', () => {
+      const header = (): HTMLElement =>
+        (fixture.nativeElement as HTMLElement).querySelector('th[mat-sort-header="batchNumber"]')!;
+      const orders: unknown[] = [];
+
+      for (let click = 0; click < 3; click++) {
+        header().click();
+        fixture.detectChanges();
+        orders.push(history().calls.mostRecent().args[2].sortOrder);
+      }
+
+      expect(orders).toEqual(['asc', 'desc', 'asc']);
+      expect(header().getAttribute('aria-sort')).toBe('ascending');
+    });
+
+    it('drops an older response that arrives after a newer request', () => {
+      const older = new Subject<ClaimLetterHistoryResult>();
+      const newer = new Subject<ClaimLetterHistoryResult>();
+      history().and.returnValues(older.asObservable(), newer.asObservable());
+      const returned = { ...sampleClaim, claimLetterId: 'returned' };
+      const discarded = { ...sampleClaim, claimLetterId: 'discarded' };
+
+      component.filterForm.controls.status.setValue('RETURNED');
+      component.filterForm.controls.status.setValue('DISCARDED');
+      newer.next({ claims: [discarded], page: 1, limit: 10, total: 1 });
+      older.next({ claims: [returned], page: 1, limit: 10, total: 1 });
+
+      expect(component.claims()).toEqual([discarded]);
+    });
+
+    it('puts a failed filter back to what the rows show, and picking it again retries', () => {
+      const utilityService = TestBed.inject(UtilityService);
+      spyOn(utilityService, 'triggerSnackbar');
+      history().and.returnValue(throwError(() => new Error('boom')));
+
+      component.filterForm.controls.status.setValue('RETURNED');
+
+      expect(utilityService.triggerSnackbar).toHaveBeenCalled();
+      expect(component.filterForm.controls.status.value).toBeNull();
+      expect(component.hasActiveFilters()).toBeFalse();
+      expect(component.claims()).toEqual([sampleClaim]);
+      expect(component.isHistoryLoading()).toBeFalse();
+      // Putting the filter back sent nothing.
+      expect(history()).toHaveBeenCalledTimes(1);
+
+      history().and.returnValue(of({ claims: [], page: 1, limit: 10, total: 0 }));
+      component.filterForm.controls.status.setValue('RETURNED');
+
+      expect(history()).toHaveBeenCalledTimes(2);
+      expect(history().calls.mostRecent().args[2].status).toBe('RETURNED');
+    });
+
+    it('puts a failed sort back to the last one that loaded', () => {
+      spyOn(TestBed.inject(UtilityService), 'triggerSnackbar');
+      component.onSort({ active: 'claimedTotal', direction: 'asc' });
+      history().and.returnValue(throwError(() => new Error('boom')));
+
+      component.onSort({ active: 'batchNumber', direction: 'asc' });
+
+      expect(component.sortActive()).toBe('claimedTotal');
+      expect(component.sortDirection()).toBe('asc');
+    });
+
+    it('says no letter matches when a filter leaves none, and keeps the filter panel', () => {
+      history().and.returnValue(of({ claims: [], page: 1, limit: 10, total: 0 }));
+
+      component.filterForm.controls.status.setValue('DISCARDED');
+      fixture.detectChanges();
+
+      expect(text('[data-cy="claim-letter-empty-state"]')).toBe('No claim letters match these filters.');
+      expect(text('[data-cy="claim-letter-history-filters"]')).toContain('Filter by');
+    });
+
+    it('hides the filter panel for a State with no letters', () => {
+      history().and.returnValue(of({ claims: [], page: 1, limit: 10, total: 0 }));
+
+      component.loadAll();
+      fixture.detectChanges();
+
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('[data-cy="claim-letter-history-filters"]'),
+      ).toBeNull();
+      expect(text('[data-cy="claim-letter-empty-state"]')).toContain('No claim letters yet.');
+    });
+
+    it('shows which letters the page holds', () => {
+      component.total.set(23);
+      component.page.set(2);
+      fixture.detectChanges();
+
+      expect(text('[data-cy="claim-letter-history-range"]')).toBe('Showing 11-20 of 23');
+    });
   });
 });

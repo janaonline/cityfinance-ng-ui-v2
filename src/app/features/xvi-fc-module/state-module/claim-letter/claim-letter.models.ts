@@ -422,10 +422,21 @@ export const CLAIM_LETTER_ERROR_CODE = {
   ULBS_REJECTED: 'CLAIM_LETTER_ULBS_REJECTED',
 } as const;
 
+/** History Status filter, as the API names it: under review covers SO and MoHUA review. */
+export type ClaimLetterHistoryStatusFilter = 'IN_PROGRESS' | 'UNDER_REVIEW' | 'RETURNED' | 'ACKNOWLEDGED' | 'DISCARDED';
+
+/** Sortable history columns; `updatedAt` is Last activity, the default. */
+export type ClaimLetterHistorySortField = 'updatedAt' | 'submittedAt' | 'batchNumber' | 'ulbCount' | 'claimedTotal';
+
 export interface ClaimLetterHistoryQuery {
   installment?: ClaimLetterInstallment;
   page?: number;
   limit?: number;
+  status?: ClaimLetterHistoryStatusFilter;
+  /** "Batch 2" also returns 2-R1, 2-R2. */
+  batchNumber?: number;
+  sortBy?: ClaimLetterHistorySortField;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ClaimLetterHistoryResult {
