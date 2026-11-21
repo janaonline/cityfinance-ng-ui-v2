@@ -18,4 +18,11 @@ export const AFS_DIGITIZATION_ROUTES: Route[] = [
         (mod) => mod.AfsDigitizationListComponent,
       ),
   },
+  {
+    path: 'evals',
+    loadComponent: () =>
+      import('./afs-digitization-evals/afs-digitization-evals.component').then(
+        (mod) => mod.AfsDigitizationEvalsComponent,
+      ),
+  },
 ];

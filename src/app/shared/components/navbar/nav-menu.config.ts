@@ -327,6 +327,14 @@ export const NAV_MENU_ITEMS: NavMenuItem[] = [
         path: '/ocr/afs-digitization/list',
         apps: ['v2'],
       },
+      {
+        id: 'digitization.afs-digitization-evals',
+        order: 40,
+        label: 'AFS Digitization Evals',
+        hostApp: 'v2',
+        path: '/ocr/afs-digitization/evals',
+        apps: ['v2'],
+      },
     ],
   },
   {
