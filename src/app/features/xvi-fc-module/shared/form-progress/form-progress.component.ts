@@ -21,6 +21,10 @@ export const FORM_STATUS = {
    *  own labels instead of introducing a separate "PMU" term the state-facing UI never had before. */
   UNDER_REVIEW_BY_PMU: 13,
   RETURNED_BY_PMU: 14,
+  /** MoHUA Section Officer (SO) review — State forms wait here for a claim letter once PMU approves. */
+  UNDER_REVIEW_BY_SO: 15,
+  /** The SO returned the claim letter; shown to the user as "Returned for correction". */
+  RETURNED_BY_SO: 16,
 } as const;
 
 // ─── Public API types ─────────────────────────────────────────────────────────
@@ -62,6 +66,8 @@ const IP_DONE: FormStatusStep = { label: 'In Progress', state: 'done' };
 const MOHUA_SUBMIT_DONE: FormStatusStep = { label: 'Submitted to MoHUA', state: 'done' };
 const MOHUA_ACKNOWLEDGED: FormStatusStep = { label: 'Ready to generate claim letter', state: 'done' };
 const MOHUA_REJECTED: FormStatusStep = { label: 'Returned by MoHUA', state: 'error' };
+// The SO's return reads the same as PMU's: it just needs correcting.
+const SO_RETURNED: FormStatusStep = { label: 'Returned for correction', state: 'error' };
 // PMU's return is shown to the state without naming PMU — just that it needs correcting.
 const PMU_RETURNED: FormStatusStep = { label: 'Returned for correction', state: 'error' };
 // Inactive (future/pending) atoms
@@ -91,6 +97,8 @@ const STATUS_TONE_MAP: Readonly<Record<FormStatusValue, StatusTone>> = {
   7: 'primary',
   13: 'primary',
   14: 'error',
+  15: 'primary',
+  16: 'error',
 };
 
 /** Human-readable status pill labels for State forms. 13 (PMU Review feature) aliases 5's label — see
@@ -107,6 +115,8 @@ const STATE_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   7: 'Acknowledged by MoHUA',
   13: 'Under Review by MoHUA',
   14: 'Returned for correction',
+  15: 'Under Review by MoHUA', // The SO review is internal to MoHUA; the State just sees it as MoHUA's review.
+  16: 'Returned for correction',
 };
 
 /** Human-readable status pill labels for ULB forms. */
@@ -121,6 +131,8 @@ const ULB_STATUS_LABEL: Readonly<Record<FormStatusValue, string>> = {
   7: 'Approved by MoHUA',
   13: 'In Progress', // Status not possible for ULB forms
   14: 'In Progress', // Status not possible for ULB forms
+  15: 'In Progress', // Status not possible for ULB forms
+  16: 'Returned for correction',
 };
 
 /**
@@ -138,6 +150,8 @@ const STATE_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep
   7: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED],
   13: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED_INACTIVE], // pending PMU's decision — not ready yet
   14: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, PMU_RETURNED], // PMU Review feature
+  15: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, MOHUA_ACKNOWLEDGED], // PMU approved — ready for a claim letter, with the SO
+  16: [NS_DONE, IP_DONE, MOHUA_SUBMIT_DONE, SO_RETURNED],
 };
 
 /** Ordered stepper steps for each numeric status on ULB forms. */
@@ -152,6 +166,8 @@ const ULB_FORM_STEPS: Readonly<Record<FormStatusValue, readonly FormStatusStep[]
   7: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, MOHUA_APPROVED],
   13: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
   14: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
+  15: [NS_DONE, IP_ACTIVE, STATE_SUBMIT_INACTIVE], // Status not possible for ULB forms
+  16: [NS_DONE, IP_DONE, STATE_SUBMIT_DONE, STATE_APPROVED_DONE, SO_RETURNED],
 };
 
 // ─── Pure helper functions ────────────────────────────────────────────────────

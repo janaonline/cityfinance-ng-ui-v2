@@ -8,8 +8,13 @@
   </header>
 
   @if (overview(); as data) {
-    <app-ov-briefing [rows]="rows()" [totals]="data.totals" (statusPick)="showStatus($event)" />
-    <app-ov-states-glance #states [rows]="rows()" [(filter)]="stateFilter" />
+    <app-ov-briefing
+      [rows]="rows()"
+      [totals]="data.totals"
+      [claims]="claims()?.overview ?? null"
+      (statusPick)="showStatus($event)"
+    />
+    <app-ov-states-glance #states [rows]="rows()" [claims]="claims()?.states ?? null" [(filter)]="stateFilter" />
   } @else if (loading()) {
     <app-mohua-page-loader label="Loading the overview" />
   } @else {

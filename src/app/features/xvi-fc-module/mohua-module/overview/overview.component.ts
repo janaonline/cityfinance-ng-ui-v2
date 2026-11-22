@@ -12,7 +12,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import { ClaimLettersStates } from '../claims-submission/claims-submission.models';
+import { ClaimsSubmissionService } from '../claims-submission/claims-submission.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { findRouteParam } from '../route-params.util';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -34,14 +37,17 @@ const LOAD_ERROR = 'Could not load the overview. Please try again.';
 })
 export class MohuaOverviewComponent {
   private readonly service = inject(MohuaOverviewService);
+  private readonly claimsService = inject(ClaimsSubmissionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly permissions = inject(AuthPermissionService);
 
-  /** DoE shares this dashboard with MoHUA, so only its subtitle names the department. */
+  /** DoE and PMU share this dashboard with MoHUA, so only its subtitle names who is viewing. */
   readonly organisationName = this.permissions.isDoeUser()
     ? 'Department of Expenditure'
-    : 'Ministry of Housing and Urban Affairs';
+    : this.permissions.isPmuUser()
+      ? 'Programme Management Unit'
+      : 'Ministry of Housing and Urban Affairs';
 
   readonly yearLabel = signal<string>(this.readStored(XVIFC_LS_KEYS.selectedYearString));
   readonly overview = signal<OverviewData | null>(null);
@@ -49,6 +55,9 @@ export class MohuaOverviewComponent {
   readonly error = signal<string | null>(null);
   readonly rows = computed(() => this.overview()?.rows ?? []);
   readonly stateFilter = signal<StateFilter | null>(null);
+  /** Claim letters per State and nationally; null until loaded, or if they fail, when the claim spots say "Coming soon". */
+  readonly claims = signal<ClaimLettersStates | null>(null);
+  private claimsRequest?: Subscription;
 
   private readonly statesSection = viewChild('states', { read: ElementRef<HTMLElement> });
 
@@ -66,6 +75,12 @@ export class MohuaOverviewComponent {
 
     this.loading.set(true);
     this.error.set(null);
+    // A retry cancels the earlier claims request, so a late answer can never overwrite the newer one.
+    this.claimsRequest?.unsubscribe();
+    this.claimsRequest = this.claimsService
+      .getStates(yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });
     this.service
       .getOverview(yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))

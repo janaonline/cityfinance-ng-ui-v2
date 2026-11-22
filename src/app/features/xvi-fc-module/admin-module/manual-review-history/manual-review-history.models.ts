@@ -68,9 +68,7 @@ export interface ManualReviewHistoryResult {
   page: number;
   pageSize: number;
   rows: ManualReviewHistoryRow[];
-  /** Form types whose rows are incomplete this call — either the backend failed outright, or it
-   *  had more matching rows than the client's page cap could fetch (see
-   *  ManualReviewHistoryService.fetchAllRows). */
+  /** Form types whose backend failed this call, so their rows are missing from the page. */
   failedSources: ManualReviewFormType[];
 }
 

@@ -239,7 +239,7 @@ describe('FcUnspentMohuaReviewService', () => {
     const url = `${BASE_URL}state-1/year-1/reject`;
 
     it('posts the exact URL and body', () => {
-      const payload = { mohuaRemarks: 'Please revise the declaration.' };
+      const payload = { rejectionRemarks: 'Please revise the declaration.' };
       service.rejectForm('state-1', 'year-1', payload).subscribe();
 
       const req = httpMock.expectOne(url);
@@ -256,11 +256,11 @@ describe('FcUnspentMohuaReviewService', () => {
       const errorBody = {
         success: false,
         message: 'Validation failed.',
-        errors: { mohuaRemarks: [{ message: 'Required.', code: 'required' }] },
+        errors: { rejectionRemarks: [{ message: 'Required.', code: 'required' }] },
       };
       let caughtError: unknown;
       service
-        .rejectForm('state-1', 'year-1', { mohuaRemarks: '' })
+        .rejectForm('state-1', 'year-1', { rejectionRemarks: '' })
         .subscribe({ error: (err: unknown) => (caughtError = err) });
 
       httpMock.expectOne(url).flush(errorBody);

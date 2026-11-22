@@ -132,7 +132,7 @@
                 >
                   <span class="os-rk">{{ listLayout().numbers.get(row.code) }}</span>
                   <span class="os-nm"><i></i>{{ row.name }}</span>
-                  <span class="os-claimsum">Coming soon</span>
+                  <span class="os-claimsum">{{ claimText(row) }}</span>
                   <span class="os-ulb">
                     @if (row.ulbsDone !== null) {
                       <mat-progress-bar mode="determinate" [value]="progressPercent(row)" />
@@ -188,7 +188,7 @@
             <span class="os-claim__icon"><i class="bi bi-envelope" aria-hidden="true"></i></span>
             <span class="os-claim__text">
               <b>Claim letter</b>
-              <small>Coming soon</small>
+              <small>{{ claimText(s) }}</small>
             </span>
           </div>
 

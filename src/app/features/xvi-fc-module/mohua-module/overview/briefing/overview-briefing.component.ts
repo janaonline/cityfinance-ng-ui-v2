@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
+import { ClaimLettersOverview, formatRupeesInCrore } from '../../claims-submission/claims-submission.models';
 import { CountUpDirective, RevealDirective } from '../../state-detail/state-detail.directives';
 import { OverviewTotals, StateRow, StateStatus, formatCrore } from '../overview.models';
 
@@ -24,16 +25,28 @@ interface StatButton {
 export class OverviewBriefingComponent {
   readonly rows = input.required<StateRow[]>();
   readonly totals = input.required<OverviewTotals>();
+  /** National claim-letter figures; null shows the claim tiles as "Coming soon". */
+  readonly claims = input<ClaimLettersOverview | null>(null);
   /** Emits when a status button is pressed, so the page can filter the states section. */
   readonly statusPick = output<StateStatus>();
 
   readonly formatCrore = formatCrore;
 
-  readonly claimTiles = [
-    { label: 'Under review', icon: 'bi-hourglass-split' },
-    { label: 'Returned', icon: 'bi-arrow-return-left' },
-    { label: 'Approved', icon: 'bi-shield-check' },
-  ];
+  /** Claim letters by stage: under SO review (15), returned (16/6), approved (5/7). `value` is null until loaded. */
+  readonly claimTiles = computed(() => {
+    const c = this.claims();
+    const tile = (label: string, icon: string, stage: ClaimLettersOverview['underReview'] | undefined) => ({
+      label,
+      icon,
+      value: stage ? `${stage.claims} ${stage.claims === 1 ? 'claim' : 'claims'}` : null,
+      sub: stage ? `${formatRupeesInCrore(stage.amount)} · ${stage.states} ${stage.states === 1 ? 'state' : 'states'}` : '',
+    });
+    return [
+      tile('Under review', 'bi-hourglass-split', c?.underReview),
+      tile('Returned', 'bi-arrow-return-left', c?.returned),
+      tile('Approved', 'bi-shield-check', c?.approved),
+    ];
+  });
 
   /** Later stages of a state's journey that have no data yet — shown as "Coming soon" cards beside the status counts. */
   readonly upcomingStages = ['Recommended to DoE', 'Released by DoE'];

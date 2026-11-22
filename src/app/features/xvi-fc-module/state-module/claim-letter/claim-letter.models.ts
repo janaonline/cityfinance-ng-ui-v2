@@ -224,6 +224,8 @@ export interface ClaimLetterBatchSummary {
   claimLetterId: string;
   installment: ClaimLetterInstallment;
   batchNumber: ClaimLetterBatchNumber;
+  /** Above 0 for a letter built in a slot a returned letter held: shown as "2-R1", as in its Ref No. */
+  resubmissionNumber: number;
   version: number;
   currentFormStatus: number;
   currentFormStatusLabel: string;
@@ -241,6 +243,8 @@ export interface ClaimLetterBatchSummary {
   supersedes: string | null;
   supersededBy: string | null;
   createdAt: string;
+  /** The SO's (or MoHUA's) remark when the letter was returned; null otherwise. */
+  mohuaRemarks?: string | null;
   // Set by getDetail only, down to letterDetailsComplete.
   /** Formjson fields except the letter details (those come from `GET .../letter-details`). */
   questions?: ConditionalFieldConfig[];
@@ -372,7 +376,7 @@ export interface ClaimLetterLetterDetails extends ClaimLetterLetterDetailsState 
   canEdit: boolean;
   /** The State's latest saved details from another batch, minus Letter No. / date. */
   previous: {
-    source: { yearLabel: string; installment: number; batchNumber: number };
+    source: { yearLabel: string; installment: number; batchNumber: number; resubmissionNumber: number };
     values: Record<string, unknown>;
   } | null;
 }

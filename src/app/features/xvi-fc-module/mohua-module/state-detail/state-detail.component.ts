@@ -13,7 +13,29 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { saveAs } from 'file-saver';
-import { EMPTY, Subject, catchError, debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  Subscription,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  switchMap,
+  tap,
+} from 'rxjs';
+import { AuthPermissionService } from '../../../../core/auth/auth-permission.service';
+import {
+  CLAIM_LETTER_APPROVED_STATUSES,
+  CLAIM_LETTER_RETURNED_STATUSES,
+  CLAIM_LETTER_VERIFIED_STATUS,
+  StateClaimLetters,
+  claimStatusBadgeClass,
+  claimStatusLabel,
+  formatReceivedOn,
+  formatRupeesInCrore,
+} from '../claims-submission/claims-submission.models';
+import { ClaimsSubmissionService } from '../claims-submission/claims-submission.service';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { formatCrore, StateStatus } from '../overview/overview.models';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
@@ -25,12 +47,26 @@ import { CountUpDirective, RevealDirective } from './state-detail.directives';
 import { IconMotion, StatItem, Tone } from './state-detail.types';
 
 const PAGE_SIZE = 15;
-const ULB_COLUMNS = ['name', 'census', 'allocation', 'unspent', 'electedBody', 'audited', 'unaudited', 'pfms', 'slb', 'dur'];
+const ULB_COLUMNS = [
+  'name',
+  'census',
+  'allocation',
+  'unspent',
+  'electedBody',
+  'audited',
+  'unaudited',
+  'pfms',
+  'slb',
+  'dur',
+];
 const SEARCH_DEBOUNCE_MS = 300;
 const LOAD_ERROR = 'Could not load this state. Please try again.';
 const ULBS_ERROR = 'Could not load the ULBs. Please try again.';
 const EXPORT_ERROR = 'Could not download the ULB-wise progress. Please try again.';
 const COMING_SOON = 'Coming soon';
+const UNDER_SO_REVIEW = 15;
+/** How many claim letters the State page shows; the rest are on Claims & Submissions. */
+const CLAIM_LETTERS_SHOWN = 4;
 
 /** Route segments (after review-state-submissions/:stateId) of the read-only form screens, keyed by the API's form keys. */
 const CONDITION_VIEW_ROUTE: Record<string, string[]> = {
@@ -94,6 +130,19 @@ export class StateDetailComponent {
   private readonly ulbsService = inject(MohuaStateUlbsService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly claimsService = inject(ClaimsSubmissionService);
+
+  /** MoHUA and PMU have the Claims & Submissions pages (PMU read-only); DoE sees the claim figures without links. */
+  private readonly permissions = inject(AuthPermissionService);
+  readonly canOpenClaims = this.permissions.isMohuaUser() || this.permissions.isPmuUser();
+  readonly claimLettersShown = CLAIM_LETTERS_SHOWN;
+  readonly formatRupees = formatRupeesInCrore;
+  readonly formatDate = formatReceivedOn;
+  readonly badgeClass = claimStatusBadgeClass;
+  readonly statusLabel = claimStatusLabel;
+  /** The State's claim letters, newest first; null until loaded, or if they fail, when the claim spots say "Coming soon". */
+  readonly claims = signal<StateClaimLetters | null>(null);
+  private claimsRequest?: Subscription;
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
@@ -106,7 +155,7 @@ export class StateDetailComponent {
   readonly stageLabel = computed(() => STAGE_LABEL[this.data()?.state.status ?? 'notStarted']);
   readonly stageTone = computed(() => STAGE_TONE[this.data()?.state.status ?? 'notStarted']);
 
-  /** Claim figures are not available yet; the cards stay in place and say so. */
+  /** Claim cards add up the State's claim letters by stage; Recommended to DoE has no data yet, so it says so. */
   readonly stats = computed<StatItem[]>(() => {
     const data = this.data();
     if (!data) return [];
@@ -118,6 +167,28 @@ export class StateDetailComponent {
       tone,
       motion,
     });
+    const letters = this.claims()?.claimLetters;
+    const claimStat = (
+      label: string,
+      statuses: readonly number[],
+      icon: string,
+      tone: Tone,
+      motion: IconMotion,
+    ): StatItem => {
+      if (!letters) return soon(label, icon, tone, motion);
+      const matching = letters.filter((l) => statuses.includes(l.status));
+      const ulbs = matching.reduce((sum, l) => sum + l.ulbCount, 0);
+      return {
+        value: formatRupeesInCrore(matching.reduce((sum, l) => sum + l.amount, 0)),
+        label,
+        note: matching.length
+          ? `${matching.length} ${matching.length === 1 ? 'letter' : 'letters'} · ${ulbs} ${ulbs === 1 ? 'ULB' : 'ULBs'}`
+          : 'No letters',
+        icon,
+        tone,
+        motion,
+      };
+    };
     return [
       {
         value: formatCrore(data.allocation),
@@ -135,9 +206,15 @@ export class StateDetailComponent {
         tone: 'teal',
         motion: 'pop',
       },
-      soon('Under Review by MoHUA', 'bi-hourglass-split', 'orange', 'flip'),
-      soon('Returned by MoHUA', 'bi-arrow-return-left', 'bad', 'back'),
-      soon('Approved by MoHUA', 'bi-shield-check', 'good', 'pop'),
+      claimStat('Under Review by MoHUA', [UNDER_SO_REVIEW], 'bi-hourglass-split', 'orange', 'flip'),
+      claimStat('Returned by MoHUA', CLAIM_LETTER_RETURNED_STATUSES, 'bi-arrow-return-left', 'bad', 'back'),
+      claimStat(
+        'Approved by MoHUA',
+        [CLAIM_LETTER_VERIFIED_STATUS, ...CLAIM_LETTER_APPROVED_STATUSES],
+        'bi-shield-check',
+        'good',
+        'pop',
+      ),
       soon('Recommended to DoE', 'bi-send', 'good', 'fly'),
     ];
   });
@@ -253,6 +330,12 @@ export class StateDetailComponent {
 
     this.loading.set(true);
     this.error.set(null);
+    // A retry cancels the earlier claims request, so a late answer can never overwrite the newer one.
+    this.claimsRequest?.unsubscribe();
+    this.claimsRequest = this.claimsService
+      .getStateClaimLetters(ids.stateId, ids.yearId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: (claims) => this.claims.set(claims), error: () => this.claims.set(null) });
     this.service
       .getDetail(ids.stateId, ids.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -297,7 +380,8 @@ export class StateDetailComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ blob, fileName }) => saveAs(blob, fileName ?? `${this.data()?.state.name ?? 'state'}-ulb-progress.xlsx`),
+        next: ({ blob, fileName }) =>
+          saveAs(blob, fileName ?? `${this.data()?.state.name ?? 'state'}-ulb-progress.xlsx`),
         error: () => this.snackBar.open(EXPORT_ERROR, 'Dismiss', { duration: 4000 }),
       });
   }
