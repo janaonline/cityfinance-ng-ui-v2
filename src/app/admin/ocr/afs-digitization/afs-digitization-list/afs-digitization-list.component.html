@@ -51,6 +51,15 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Source</mat-label>
+          <mat-select formControlName="source">
+            @for (opt of sourceOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>Filename</mat-label>
           <input matInput formControlName="filename" placeholder="Search filename" />
         </mat-form-field>

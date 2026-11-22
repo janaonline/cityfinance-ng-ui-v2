@@ -285,8 +285,20 @@ export interface DigitizationJobsListResponse {
   total_pages: number;
 }
 
+/** What a job was submitted with, shown in the job card's "Input" section. */
+export interface DigitizationJobInput {
+  ocrEngine: DigitizationOcrEngine | null;
+  geminiModel: string | null;
+  expected: DigitizationExpectedFields | null;
+  fileSizeBytes: number | null;
+  enableValidation: boolean | null;
+  enableArithmeticValidation: boolean | null;
+  enableDocumentClassification: boolean | null;
+}
+
 /** Client-side tracker for a job shown on the upload/tracking page. */
 export interface DigitizationJobTracker {
+  input?: DigitizationJobInput;
   jobId: string;
   /** Set for jobs queued in a batch (e.g. from NestJS); filled in once the status is loaded */
   batchId?: string | null;
