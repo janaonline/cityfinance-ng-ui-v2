@@ -264,6 +264,18 @@ export class AfsDigitizationComponent implements OnInit {
           this.addJob({
             jobId: response.job_id,
             filename,
+            input: {
+              ocrEngine,
+              geminiModel,
+              expected:
+                ulbNameValue || financialYear || docType
+                  ? { ulb_name: ulbNameValue, financial_year: financialYear || null, doc_type: docType || null }
+                  : null,
+              fileSizeBytes: typeof source === 'string' ? null : source.size,
+              enableValidation,
+              enableArithmeticValidation,
+              enableDocumentClassification,
+            },
             status: 'queued',
             message: response.message,
             progressStep: null,
@@ -476,6 +488,14 @@ export class AfsDigitizationComponent implements OnInit {
     if (seconds < 60) return { main: exact, exact: null };
     const rounded = Math.round(seconds);
     return { main: `${Math.floor(rounded / 60)}m ${rounded % 60}s`, exact };
+  }
+
+  getPdfViewUrl(jobId: string): string {
+    return this.digitizationService.getDigitizationFileViewUrl(jobId, 'pdf');
+  }
+
+  enabledLabel(value: boolean | null | undefined): string {
+    return value === null || value === undefined ? '—' : value ? 'Enabled' : 'Disabled';
   }
 
   formatFileSize(bytes: number | null): string {
@@ -758,6 +778,15 @@ export class AfsDigitizationComponent implements OnInit {
           jobId: status.job_id,
           batchId: status.batch_id ?? null,
           filename: status.filename,
+          input: {
+            ocrEngine: status.ocr_engine ?? null,
+            geminiModel: status.gemini_model ?? null,
+            expected: status.expected,
+            fileSizeBytes: status.file_size_bytes,
+            enableValidation: status.enable_validation ?? null,
+            enableArithmeticValidation: status.enable_arithmetic_validation ?? null,
+            enableDocumentClassification: status.enable_document_classification ?? null,
+          },
           status: status.status,
           message: status.message,
           progressStep: status.progress_step,

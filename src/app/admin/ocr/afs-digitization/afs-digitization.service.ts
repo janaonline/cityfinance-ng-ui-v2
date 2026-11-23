@@ -226,6 +226,7 @@ export class AfsDigitizationService {
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     overall_assessment?: string;
     arithmetic_assessment?: string;
@@ -239,6 +240,7 @@ export class AfsDigitizationService {
     sort_order?: 'asc' | 'desc';
   }) {
     const queryParams: Record<string, string | number> = {};
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;
@@ -271,6 +273,7 @@ export class AfsDigitizationService {
     doc_type?: string;
     ocr_engine?: DigitizationOcrEngine;
     batch_id?: string;
+    source?: string;
     job_id?: string;
     overall_assessment?: string;
     arithmetic_assessment?: string;
@@ -286,6 +289,7 @@ export class AfsDigitizationService {
     limit?: number;
   }) {
     const queryParams: Record<string, string | number> = {};
+    if (params?.source) queryParams['source'] = params.source;
     if (params?.batch_id) queryParams['batch_id'] = params.batch_id;
     if (params?.job_id) queryParams['job_id'] = params.job_id;
     if (params?.overall_assessment) queryParams['overall_assessment'] = params.overall_assessment;

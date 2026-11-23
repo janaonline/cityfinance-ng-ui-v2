@@ -82,6 +82,12 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'failed', label: 'Failed' },
   ];
 
+  readonly sourceOptions = [
+    { value: '', label: 'All' },
+    { value: '15thfc', label: '15th FC' },
+    { value: 'ocr', label: 'OCR tool' },
+  ];
+
   readonly assessmentOptions = [
     { value: '', label: 'All' },
     { value: 'PASS', label: 'Pass' },
@@ -111,6 +117,7 @@ export class AfsDigitizationListComponent implements OnInit {
 
   readonly filterForm = this.fb.nonNullable.group({
     status: [''],
+    source: [''],
     filename: [''],
     ulbName: [''],
     batchId: [''],
@@ -164,6 +171,7 @@ export class AfsDigitizationListComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.reset({
       status: '',
+      source: '',
       filename: '',
       ulbName: '',
       batchId: '',
@@ -415,6 +423,7 @@ export class AfsDigitizationListComponent implements OnInit {
           : {};
     return {
       status: f.status || undefined,
+      source: f.source || undefined,
       filename: f.filename.trim() || undefined,
       ulb_name: f.ulbName.trim() || undefined,
       batch_id: f.batchId.trim() || undefined,
