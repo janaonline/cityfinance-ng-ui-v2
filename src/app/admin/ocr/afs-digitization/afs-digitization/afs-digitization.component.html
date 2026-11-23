@@ -195,6 +195,16 @@
                     {{ getStatusLabel(job.status) }}
                   </span>
                   <span class="job-filename">{{ job.filename }}</span>
+                  @if (job.excelS3Key) {
+                    <button mat-icon-button type="button" aria-label="Download Excel" title="Download Excel"
+                      [disabled]="downloadingJobId() === job.jobId" (click)="downloadExcel(job)">
+                      <mat-icon class="text-success">{{ downloadingJobId() === job.jobId ? 'hourglass_empty' : 'table_chart' }}</mat-icon>
+                    </button>
+                  }
+                  <button mat-icon-button type="button" aria-label="Download PDF" title="Download PDF"
+                    [disabled]="downloadingPdfJobId() === job.jobId" (click)="downloadPdf(job)">
+                    <mat-icon class="text-danger">{{ downloadingPdfJobId() === job.jobId ? 'hourglass_empty' : 'picture_as_pdf' }}</mat-icon>
+                  </button>
                   <span class="job-id-chip">
                     Job ID: {{ job.jobId }}
                     <button
@@ -232,16 +242,6 @@
                   }
                 </div>
                 <div class="job-header__actions">
-                  @if (job.excelS3Key) {
-                    <button mat-stroked-button type="button" [disabled]="downloadingJobId() === job.jobId"
-                      (click)="downloadExcel(job)">
-                      @if (downloadingJobId() === job.jobId) { Downloading... } @else { Download Excel }
-                    </button>
-                  }
-                  <button mat-stroked-button type="button" [disabled]="downloadingPdfJobId() === job.jobId"
-                    (click)="downloadPdf(job)">
-                    @if (downloadingPdfJobId() === job.jobId) { Downloading... } @else { Download PDF }
-                  </button>
                   <button mat-stroked-button type="button" [disabled]="editingNotesJobId() === job.jobId"
                     (click)="startEditNotes(job)">
                     {{ job.notes ? 'Update Notes' : 'Add Notes' }}
@@ -313,6 +313,46 @@
                 </div>
               } @else if (job.notes) {
                 <p class="job-notes"><span class="job-notes__label">Notes:</span> {{ job.notes }}</p>
+              }
+
+              @if (job.input; as input) {
+                <div class="usage-section job-input">
+                  <h5>Input</h5>
+                  <div class="summary-grid">
+                    <div class="summary-item">
+                      <span class="summary-item__label">ULB</span>
+                      <span class="summary-item__value">{{ input.expected?.ulb_name || '—' }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Financial Year</span>
+                      <span class="summary-item__value">{{ input.expected?.financial_year || '—' }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Document Type</span>
+                      <span class="summary-item__value">{{ input.expected?.doc_type || '—' }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">OCR Engine</span>
+                      <span class="summary-item__value">{{ input.ocrEngine ? ocrEngineLabel(input.ocrEngine) : '—' }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Gemini Model</span>
+                      <span class="summary-item__value">{{ input.geminiModel || '—' }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Validation</span>
+                      <span class="summary-item__value">{{ enabledLabel(input.enableValidation) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Arithmetic Validation</span>
+                      <span class="summary-item__value">{{ enabledLabel(input.enableArithmeticValidation) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-item__label">Document Classification</span>
+                      <span class="summary-item__value">{{ enabledLabel(input.enableDocumentClassification) }}</span>
+                    </div>
+                  </div>
+                </div>
               }
 
               @if (job.showResult && job.result) {
