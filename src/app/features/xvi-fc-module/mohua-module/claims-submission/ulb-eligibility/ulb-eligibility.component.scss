@@ -1,0 +1,269 @@
+@use '../claims-shared';
+// Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
+@use '../claims-ui';
+
+$sl-width: 56px;
+$head-bg: color-mix(in srgb, var(--t) 5%, #fff);
+
+// ── Summary: the State in one sentence and two bullets ───────────────────────────────────────────────────────
+.ue-summary {
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--t) 18%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--t) 6%, #fff);
+  color: #0f1f26;
+
+  &__lead {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  &__list {
+    margin: 4px 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.78rem;
+    color: #3d4f57;
+  }
+}
+
+// ── Filter bar ───────────────────────────────────────────────────────────────────────────────────────────────
+.ue-bar {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--t) 18%, transparent);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 31 38 / 8%);
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+// Material only pads a mat-icon prefix; this one is a Bootstrap icon.
+.ue-search .bi {
+  padding: 0 8px 0 12px;
+}
+
+// Compact outlined pill that opens a filter menu; solid teal once a filter is applied.
+.ue-pill {
+  --mat-button-outlined-container-height: 32px;
+  --mat-button-outlined-label-text-size: 0.75rem;
+  --mat-button-outlined-label-text-weight: 500;
+  --mat-button-outlined-label-text-color: var(--t);
+  --mat-button-outlined-outline-color: color-mix(in srgb, var(--t) 45%, transparent);
+  --mat-button-outlined-horizontal-padding: 12px;
+  --mat-button-outlined-container-shape: 999px;
+
+  white-space: nowrap;
+
+  strong {
+    margin-left: 2px;
+    font-weight: 700;
+  }
+
+  .bi-chevron-down {
+    margin-left: 4px;
+    font-size: 0.65rem;
+  }
+
+  &--on {
+    --mat-button-outlined-label-text-color: #fff;
+    --mat-button-outlined-outline-color: var(--t);
+
+    background: var(--t);
+  }
+}
+
+// The Back button looks like the shared Back link.
+.ue-back {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+// On the selected (solid teal) option the teal count would vanish, so it turns white.
+.mat-button-toggle-checked .ue-count {
+  color: #fff;
+  background: rgb(255 255 255 / 22%);
+}
+
+.ue-reset {
+  font-size: 0.75rem;
+  color: var(--t);
+}
+
+.ue-asof {
+  font-size: 0.72rem;
+  color: #5b6b73;
+  white-space: nowrap;
+}
+
+// Menus: the panel is Material's, outside this component, so the height cap sits on a box inside it (the panel
+// otherwise grows to the full window for the State list).
+.ue-menu-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ue-menu-item {
+  min-height: 34px;
+  padding: 0 14px;
+}
+
+// One menu option: label, count on the right, tick on the chosen one.
+.ue-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+  font-size: 0.8rem;
+
+  &__count {
+    margin-left: auto;
+    color: #5b6b73;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__tick {
+    color: var(--t);
+  }
+
+  // With no count the tick still sits on the right.
+  > span:only-of-type + .ue-opt__tick {
+    margin-left: auto;
+  }
+}
+
+// ── Table ────────────────────────────────────────────────────────────────────────────────────────────────────
+// Holds the hidden "Not in a letter" text (absolutely positioned), so it can't stretch the page sideways.
+.ue-wrap {
+  position: relative;
+}
+
+// Keeps the table from jumping when the bar shows.
+.ue-progress {
+  height: 4px;
+}
+
+.ue-table {
+  // Solid, so the frozen columns can't show through; beats the shared see-through `.cs-flat > thead th`.
+  > thead > tr > th {
+    max-width: 140px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: normal;
+    background: $head-bg;
+  }
+
+  .ue-name {
+    min-width: 160px;
+    max-width: 220px;
+  }
+
+  .ue-code {
+    white-space: nowrap;
+  }
+
+  .ue-cond {
+    max-width: 160px;
+  }
+
+  // Every cell is centred except S.No and the ULB name.
+  > tbody > tr > td,
+  > tfoot > tr > td {
+    text-align: center;
+  }
+
+  > tbody > tr > td.ue-sticky {
+    text-align: left;
+  }
+
+  .ue-amt {
+    white-space: nowrap;
+  }
+
+  .ue-cell--failed {
+    color: var(--cl-red);
+    font-weight: 600;
+  }
+
+  .ue-batch-cell {
+    white-space: nowrap;
+
+    .bi {
+      margin-left: 6px;
+    }
+  }
+
+  .ue-total th,
+  .ue-total td {
+    background: $head-bg;
+    font-weight: 700;
+  }
+}
+
+// S.No and ULB stay put while the other columns scroll sideways.
+.ue-sticky {
+  position: sticky;
+  z-index: 1;
+  background: #fff;
+
+  &--sl {
+    left: 0;
+    width: $sl-width;
+    min-width: $sl-width;
+  }
+
+  &--ulb {
+    left: $sl-width;
+    box-shadow: inset -1px 0 0 color-mix(in srgb, var(--t) 12%, transparent);
+  }
+}
+
+.ue-table > thead > tr > th.ue-sticky {
+  z-index: 2;
+}
+
+// Underlined so it reads as a link, not just teal text.
+.ue-link {
+  color: var(--t);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-thickness: 2px;
+  }
+}
+
+// A letter's status as one icon in its colour (the status is the tooltip).
+.ue-status {
+  &--good {
+    color: #15803d;
+  }
+
+  &--review {
+    color: #b45309;
+  }
+
+  &--bad {
+    color: #b91c1c;
+  }
+
+  &--draft {
+    color: #6b7280;
+  }
+}
+
+.ue-warn {
+  color: #b45309;
+}

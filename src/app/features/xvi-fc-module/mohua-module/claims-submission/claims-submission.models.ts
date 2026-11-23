@@ -115,6 +115,8 @@ export interface ClaimLetterDetail {
   /** Sent back with an approval so a letter changed in the meantime is not approved blind. */
   revision: number;
   number: string;
+  /** Which claim letter of the State this is; the Claim Eligibility link filters to it. */
+  batchNumber: number;
   state: { id: string; name: string };
   yearId: string;
   installment: number;
@@ -250,4 +252,95 @@ export function claimStatusBadgeClass(status: number): string {
 
 export function formatReceivedOn(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+}
+
+// ─── ULB Eligibility page (see the API's MohuaUlbEligibility) ────────────────
+
+export type UlbEligibilityFilter = 'ELIGIBLE' | 'INELIGIBLE';
+
+/** The failed-condition key for a ULB with no devolution allocation. */
+export const ULB_ELIGIBILITY_NO_ALLOCATION = 'NO_ALLOCATION';
+/** The batch filter value for ULBs held by no letter. */
+export const ULB_ELIGIBILITY_NOT_IN_LETTER = 'NONE';
+export const ULB_ELIGIBILITY_PAGE_SIZE = 10;
+
+/** Statuses of a letter that holds ULBs, with MoHUA's labels. */
+export const ULB_ELIGIBILITY_LETTER_STATUSES: readonly { status: number; label: string }[] = [
+  { status: 2, label: 'Draft' },
+  { status: 15, label: 'Under Review by MoHUA' },
+  { status: CLAIM_LETTER_VERIFIED_STATUS, label: 'Verified' },
+  { status: 7, label: 'Acknowledged by MoHUA' },
+];
+
+export interface UlbEligibilityColumn {
+  key: string;
+  label: string;
+  header: string;
+  kind: 'serial' | 'name' | 'value' | 'yesNo' | 'amount';
+}
+
+export interface UlbEligibilityBatch {
+  claimLetterId: string;
+  batchNumber: number;
+  status: number;
+  statusLabel: string;
+  /** False for a draft: MoHUA can't open it. */
+  linkable: boolean;
+}
+
+export interface UlbEligibilityRow {
+  slNo: number;
+  ulbId: string;
+  name: string;
+  censusCode: string | null;
+  sbCode: string | null;
+  /** Whole Rupees; null when the ULB has no allocation. */
+  tied: number | null;
+  untied: number | null;
+  /** One per column. For an amount column, only its note (e.g. "Exempted"). */
+  cells: string[];
+  /** Whole Rupees for an amount column (0 = Nil), null for the others. Missing from a check cached before it existed. */
+  amounts?: (number | null)[];
+  eligible: boolean;
+  failedConditions: string[];
+  batch: UlbEligibilityBatch | null;
+}
+
+export interface UlbEligibility {
+  /** ISO time of the cached condition check. */
+  asOn: string;
+  stateName: string;
+  designYearLabel: string;
+  installment: number;
+  stateGate: { passed: boolean; failedConditions: { label: string; statusLabel: string }[] };
+  noneStarted: boolean;
+  columns: UlbEligibilityColumn[];
+  conditions: { key: string; label: string }[];
+  /** State-wide, before filters. */
+  counts: {
+    total: number;
+    eligible: number;
+    ineligible: number;
+    inLetter: number;
+    notInLetter: number;
+    /** Eligible ULBs no letter holds yet. */
+    eligibleNotInLetter: number;
+    batches: { batchNumber: number; count: number }[];
+    letterStatuses: { status: number; count: number }[];
+  };
+  /** Over every row matching the filters. */
+  totals: { tied: number; untied: number };
+  items: UlbEligibilityRow[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface UlbEligibilityQuery {
+  search?: string;
+  eligibility?: UlbEligibilityFilter;
+  batch?: string;
+  letterStatus?: number;
+  condition?: string;
+  page?: number;
+  limit?: number;
+  refresh?: boolean;
 }

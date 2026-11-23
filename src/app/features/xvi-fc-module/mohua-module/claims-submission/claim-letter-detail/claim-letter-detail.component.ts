@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,11 +8,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AuthPermissionService } from '../../../../../core/auth/auth-permission.service';
 import { UtilityService } from '../../../../../core/services/utility.service';
 import { ConfirmDialogService } from '../../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { readEligibilityReturn } from '../../eligibility-return.util';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
 import { CountUpDirective, RevealDirective } from '../../state-detail/state-detail.directives';
 import {
@@ -20,6 +22,7 @@ import {
   ClaimLetterReturnedForm,
   ClaimLetterSoDecision,
   ClaimLetterUlbRow,
+  CLAIM_LETTER_RETURNED_STATUSES,
   CLAIM_LETTER_VERIFIED_STATUS,
   ClaimLetterUlbs,
   claimStatusBadgeClass,
@@ -109,12 +112,16 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly confirmDialogService = inject(ConfirmDialogService);
   private readonly utilityService = inject(UtilityService);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
   /** PMU opens this page to monitor MoHUA's work: read-only, so only MoHUA gets the actions. */
   private readonly isMohua = inject(AuthPermissionService).isMohuaUser();
   private readonly search$ = new Subject<string>();
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
+  /** Set when the letter was opened from the ULB Eligibility page: Back then returns there, filters included. */
+  readonly eligibilityReturn = readEligibilityReturn(this.router, this.location);
   readonly installment = CLAIMS_INSTALLMENT;
   readonly formatCrore = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
@@ -192,6 +199,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
   readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
 
+  /** Claim Eligibility filtered to this batch. A returned letter holds no ULBs there, so it opens the whole State. */
+  readonly eligibilityQuery = computed(() => {
+    const l = this.letter();
+    return l && !CLAIM_LETTER_RETURNED_STATUSES.includes(l.status) ? { batch: l.batchNumber } : {};
+  });
+
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);
 
@@ -200,6 +213,10 @@ export class ClaimLetterDetailComponent implements OnInit {
   readonly busy = computed(() => this.approving() || this.returning() || this.decidingUlbId() !== null);
 
   readonly firstRowNumber = computed(() => ((this.ulbs()?.pagination.page ?? 1) - 1) * ULBS_PAGE_SIZE + 1);
+
+  backToEligibility(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.search$

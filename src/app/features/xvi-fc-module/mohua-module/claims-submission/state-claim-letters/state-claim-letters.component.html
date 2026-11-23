@@ -12,10 +12,23 @@
     </div>
   } @else {
     @if (data(); as d) {
-      <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
-      <p class="cs-subtitle">
-        All claim letters submitted by the State for the {{ installment === 1 ? 'first' : 'second' }} instalment.
-      </p>
+      <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+        <div>
+          <h1 class="cs-title">{{ d.state.name }} — Claim Letters</h1>
+          <p class="cs-subtitle">
+            All claim letters submitted by the State for the {{ installment === 1 ? 'first' : 'second' }} instalment.
+          </p>
+        </div>
+        <a
+          mat-stroked-button
+          class="cs-view-btn"
+          [routerLink]="['claims-submission', stateId, 'ulb-eligibility']"
+          [relativeTo]="mohuaRoute"
+          data-cy="state-claim-letters-eligibility-link"
+        >
+          <i class="bi bi-clipboard-check" aria-hidden="true"></i> Claim eligibility
+        </a>
+      </div>
 
       <!-- The State's claim progress as two rings, in the MoHUA dashboard's ring style. -->
       @if (d.claimLetters.length > 0) {
