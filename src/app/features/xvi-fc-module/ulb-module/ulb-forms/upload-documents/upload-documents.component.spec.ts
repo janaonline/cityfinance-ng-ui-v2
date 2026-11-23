@@ -48,6 +48,7 @@ function fakeDoc(def: UploadDocumentDef, status: UploadDocument['status']): Uplo
     postRejectionAttemptsUsed: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
+    passedReplacementsUsed: 0,
     failedUploadsInARow: 0,
   };
 }
