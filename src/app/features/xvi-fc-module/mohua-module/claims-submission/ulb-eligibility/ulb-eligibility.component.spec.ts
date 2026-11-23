@@ -3,7 +3,7 @@ import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Navigation, Router, convertToParamMap, provideRouter } from '@angular/router';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BehaviorSubject, Subject, of, throwError } from 'rxjs';
 import { ClaimLettersStates, UlbEligibility, UlbEligibilityRow } from '../claims-submission.models';
 import { ClaimsSubmissionService } from '../claims-submission.service';
 import { UlbEligibilityComponent } from './ulb-eligibility.component';
@@ -311,6 +311,32 @@ describe('UlbEligibilityComponent', () => {
     expect(navigate).toHaveBeenCalledWith([], jasmine.objectContaining({ queryParams: { search: 'agr', page: null } }));
   }));
 
+  it('drops a search still waiting on the debounce when Reset is pressed', fakeAsync(() => {
+    query$.next(convertToParamMap({ batch: '1' }));
+    create();
+    const cmp = fixture.componentInstance;
+    cmp.onSearch('agr');
+    tick(100);
+    cmp.resetFilters();
+    query$.next(convertToParamMap({}));
+    tick(300);
+    expect(navigate.calls.allArgs().some(([, extras]) => extras?.queryParams?.['search'] === 'agr')).toBeFalse();
+    expect(cmp.searchText()).toBe('');
+  }));
+
+  it('does not carry a search still waiting on the debounce to a new State', fakeAsync(() => {
+    create();
+    const cmp = fixture.componentInstance;
+    cmp.onSearch('agr');
+    tick(100);
+    cmp.changeState('s2');
+    routeSnapshot.paramMap = convertToParamMap({ stateId: 's2', yearId: 'y1' });
+    query$.next(convertToParamMap({}));
+    params$.next(convertToParamMap({ stateId: 's2' }));
+    tick(300);
+    expect(navigate.calls.allArgs().some(([, extras]) => extras?.queryParams?.['search'] === 'agr')).toBeFalse();
+  }));
+
   it('never overwrites what the user is typing when the URL catches up', fakeAsync(() => {
     create();
     const cmp = fixture.componentInstance;
@@ -363,6 +389,25 @@ describe('UlbEligibilityComponent', () => {
     params$.next(convertToParamMap({ stateId: 's2' }));
     expect(service.getUlbEligibility).toHaveBeenCalledTimes(1);
     expect(service.getUlbEligibility.calls.mostRecent().args[0]).toBe('s2');
+  });
+
+  it("never shows the old State's rows under the new State, while loading or after a failure", () => {
+    const host = create();
+    expect(host.querySelectorAll('tbody tr').length).toBeGreaterThan(0);
+
+    const next$ = new Subject<UlbEligibility>();
+    service.getUlbEligibility.and.returnValue(next$);
+    routeSnapshot.paramMap = convertToParamMap({ stateId: 's2', yearId: 'y1' });
+    query$.next(convertToParamMap({}));
+    params$.next(convertToParamMap({ stateId: 's2' }));
+    fixture.detectChanges();
+    expect(host.querySelectorAll('tbody tr').length).toBe(0);
+    expect(host.querySelector('app-mohua-page-loader')).not.toBeNull();
+
+    next$.error(new HttpErrorResponse({ status: 500 }));
+    fixture.detectChanges();
+    expect(host.querySelector('.cs-error')).not.toBeNull();
+    expect(host.querySelectorAll('tbody tr').length).toBe(0);
   });
 
   it('rebuilds the check on Refresh', () => {

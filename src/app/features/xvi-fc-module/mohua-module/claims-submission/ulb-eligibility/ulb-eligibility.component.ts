@@ -247,7 +247,9 @@ export class UlbEligibilityComponent {
       .subscribe(([params, query]) => {
         // On a State change the router emits the new query params before the new State id; skip that mixed pair.
         if (params.get('stateId') !== this.route.snapshot.paramMap.get('stateId')) return;
-        this.stateId.set(params.get('stateId') ?? '');
+        const stateId = params.get('stateId') ?? '';
+        if (stateId !== this.stateId()) this.data.set(null);
+        this.stateId.set(stateId);
         // The search box is not synced back from the URL: that would overwrite what the user is still typing.
         // It is set on load, and Reset and a State change clear it themselves.
         this.filters.set(readFilters(query));
@@ -285,7 +287,7 @@ export class UlbEligibilityComponent {
   }
 
   resetFilters(): void {
-    this.searchText.set('');
+    this.clearSearch();
     this.navigate({ search: null, eligibility: null, batch: null, letterStatus: null, condition: null, page: null });
   }
 
@@ -304,11 +306,17 @@ export class UlbEligibilityComponent {
   /** A new State starts with no filters, and replaces this history entry so Back still leaves the page. */
   changeState(stateId: string): void {
     if (stateId === this.stateId()) return;
-    this.searchText.set('');
+    this.clearSearch();
     void this.router.navigate(['claims-submission', stateId, 'ulb-eligibility'], {
       relativeTo: this.mohuaRoute,
       replaceUrl: true,
     });
+  }
+
+  /** Empties the box and replaces any search still waiting on the debounce. */
+  private clearSearch(): void {
+    this.searchText.set('');
+    this.searchInput$.next('');
   }
 
   goBack(): void {
