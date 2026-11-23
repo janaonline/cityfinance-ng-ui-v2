@@ -12,7 +12,7 @@ import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
-import { DigitizationJobStatusResponse } from '../afs-digitization-models';
+import { DigitizationCostBreakdown, DigitizationJobStatusResponse, DigitizationListSummary } from '../afs-digitization-models';
 
 interface DigitizationListRow {
   jobId: string;
@@ -28,8 +28,12 @@ interface DigitizationListRow {
   accuracyScore: number | null;
   overallAssessment: string | null;
   arithmeticAssessment: string | null;
+  docMatch: 'match' | 'mismatch' | null;
   pageCount: number | null;
   ocrPriceInr: number | null;
+  geminiCostInr: number | null;
+  costBreakdown: DigitizationCostBreakdown | null;
+  totalCostInr: number | null;
   hasExcel: boolean;
   expectedUlbName: string;
   expectedFinancialYear: string;
@@ -89,6 +93,12 @@ export class AfsDigitizationListComponent implements OnInit {
     { value: 'PASS', label: 'Pass' },
     { value: 'FAIL', label: 'Fail' },
     { value: 'NOT_APPLICABLE', label: 'Not applicable' },
+    { value: 'SKIPPED', label: 'Skipped (doc mismatch)' },
+  ];
+  readonly docMatchOptions = [
+    { value: '', label: 'All' },
+    { value: 'match', label: 'Match' },
+    { value: 'mismatch', label: 'Mismatch' },
   ];
   readonly scoreThresholdOptions = [
     { value: '', label: 'All' },
@@ -104,10 +114,12 @@ export class AfsDigitizationListComponent implements OnInit {
     filename: [''],
     ulbName: [''],
     batchId: [''],
+    jobId: [''],
     financialYear: [''],
     docType: [''],
     overall: [''],
     arithmetic: [''],
+    docMatch: [''],
     accuracy: [''],
     confidence: [''],
     dateFrom: this.fb.control<Date | null>(null),
@@ -128,6 +140,16 @@ export class AfsDigitizationListComponent implements OnInit {
   pageSize = 10;
   pageIndex = 0;
   totalItems = 0;
+  totalCostInr = 0;
+  totalCostBreakdown: DigitizationCostBreakdown | null = null;
+  summary: DigitizationListSummary | null = null;
+
+  readonly costSteps: { key: keyof DigitizationCostBreakdown; label: string }[] = [
+    { key: 'ocr', label: 'OCR' },
+    { key: 'cross_check', label: 'Cross-check' },
+    { key: 'arithmetic', label: 'Arithmetic' },
+    { key: 'classification', label: 'Doc class' },
+  ];
 
   ngOnInit(): void {
     this.loadJobs();
@@ -145,10 +167,12 @@ export class AfsDigitizationListComponent implements OnInit {
       filename: '',
       ulbName: '',
       batchId: '',
+      jobId: '',
       financialYear: '',
       docType: '',
       overall: '',
       arithmetic: '',
+      docMatch: '',
       accuracy: '',
       confidence: '',
       dateFrom: null,
@@ -394,10 +418,12 @@ export class AfsDigitizationListComponent implements OnInit {
       filename: f.filename.trim() || undefined,
       ulb_name: f.ulbName.trim() || undefined,
       batch_id: f.batchId.trim() || undefined,
+      job_id: f.jobId.trim() || undefined,
       financial_year: f.financialYear.trim() || undefined,
       doc_type: f.docType || undefined,
       overall_assessment: f.overall || undefined,
       arithmetic_assessment: f.arithmetic || undefined,
+      doc_match: f.docMatch || undefined,
       ...scoreBounds(f.accuracy, 'accuracy'),
       ...scoreBounds(f.confidence, 'confidence'),
       sort_order: this.sortOrder(),
@@ -420,10 +446,16 @@ export class AfsDigitizationListComponent implements OnInit {
         next: (response) => {
           this.dataSource.data = (response.jobs ?? []).map((j) => this.mapRow(j));
           this.totalItems = response.total ?? this.dataSource.data.length;
+          this.totalCostInr = response.total_cost_inr ?? 0;
+          this.totalCostBreakdown = response.total_cost_breakdown_inr ?? null;
+          this.summary = response.summary ?? null;
         },
         error: (err) => {
           this.dataSource.data = [];
           this.totalItems = 0;
+          this.totalCostInr = 0;
+          this.totalCostBreakdown = null;
+          this.summary = null;
           this.utilityService.swalPopup(
             'Failed to load jobs',
             err?.error?.detail || err?.error?.message || 'Please try again.',
@@ -448,8 +480,12 @@ export class AfsDigitizationListComponent implements OnInit {
       accuracyScore: job.accuracy_score,
       overallAssessment: job.overall_assessment ?? null,
       arithmeticAssessment: job.arithmetic_assessment ?? null,
+      docMatch: job.doc_match ?? null,
       pageCount: job.page_count,
       ocrPriceInr: job.ocr_price_inr,
+      geminiCostInr: job.gemini_cost_inr ?? null,
+      costBreakdown: job.cost_breakdown_inr ?? null,
+      totalCostInr: job.total_cost_inr ?? null,
       hasExcel: !!job.excel_s3_key,
       expectedUlbName: job.expected?.ulb_name || '—',
       expectedFinancialYear: job.expected?.financial_year || '—',

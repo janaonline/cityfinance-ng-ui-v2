@@ -117,7 +117,13 @@
             <div class="d-flex flex-wrap align-items-baseline column-gap-2 flex-grow-1 text-truncate">
               <h2 class="cl-review__title small fw-bold mb-0">State Forms</h2>
               <p class="cl-review__meta small text-body-secondary mb-0">
-                <span class="cl-review__forms" tabindex="0" [matTooltip]="stateFormNames" [attr.aria-label]="stateFormCount + ' conditions: ' + stateFormNames">{{ stateFormCount }} conditions</span>
+                <span
+                  class="cl-review__forms"
+                  tabindex="0"
+                  [matTooltip]="stateFormNames"
+                  [attr.aria-label]="stateFormCount + ' conditions: ' + stateFormNames"
+                  >{{ stateFormCount }} conditions</span
+                >
                 · <i class="bi bi-lock" aria-hidden="true"></i> Read-only
               </p>
             </div>
@@ -141,6 +147,13 @@
             <i class="bi bi-arrow-return-left" aria-hidden="true"></i>
             Returned for correction{{ r.returnedBy ? ' by ' + r.returnedBy : '' }} on {{ formatDate(r.returnedAt) }}
           </p>
+          @if (l.returnedWith; as w) {
+            <p class="mb-2" data-cy="claim-letter-returned-with">
+              Returned with {{ w.number }}, because {{ w.formNames.join(', ') }}
+              {{ w.formNames.length > 1 ? 'were' : 'was' }} returned for correction and this letter relied on
+              {{ w.formNames.length > 1 ? 'them' : 'it' }}.
+            </p>
+          }
           <dl class="row mb-0">
             @if (r.stateForms.length) {
               <dt class="col-sm-3 fw-semibold">State forms returned</dt>
@@ -182,7 +195,7 @@
               }
             </p>
           </div>
-          @if (canReview()) {
+          @if (isUnderSoReview()) {
             <span
               class="cl-hint__counts badge rounded-pill"
               [class.cl-hint__counts--some]="l.returnedUlbCount > 0"
@@ -277,9 +290,9 @@
                   @for (row of u.items; track row.ulbId; let i = $index) {
                     <tr
                       class="cs-row-in"
-                      [class.cl-row--returned]="row.soDecision?.status === 'RETURNED'"
-                      [class.cs-edge--red]="row.soDecision?.status === 'RETURNED'"
-                      [class.table-danger]="row.soDecision?.status === 'RETURNED'"
+                      [class.cl-row--returned]="isReturnedRow(row)"
+                      [class.cs-edge--red]="isReturnedRow(row)"
+                      [class.table-danger]="isReturnedRow(row)"
                       [style.--i]="i"
                     >
                       <td class="text-body-secondary">{{ firstRowNumber() + i }}</td>
@@ -311,7 +324,7 @@
                         </span>
                       </td>
                       <td>
-                        @if (canReview()) {
+                        @if (isUnderSoReview()) {
                           @if (row.soDecision) {
                             <span class="cs-badge cs-badge--bad">
                               <i class="bi bi-arrow-return-left" aria-hidden="true"></i> Returned
@@ -319,15 +332,17 @@
                             <p class="small text-body-secondary mb-0 mt-1">
                               {{ decisionFormsText(row.soDecision!)
                               }}{{ row.soDecision!.remark ? ' — ' + row.soDecision!.remark : '' }}
-                              <button
-                                mat-button
-                                type="button"
-                                class="cl-link-btn"
-                                [disabled]="busy()"
-                                (click)="clearDecision(row)"
-                              >
-                                Clear
-                              </button>
+                              @if (canReview()) {
+                                <button
+                                  mat-button
+                                  type="button"
+                                  class="cl-link-btn"
+                                  [disabled]="busy()"
+                                  (click)="clearDecision(row)"
+                                >
+                                  Clear
+                                </button>
+                              }
                             </p>
                           } @else {
                             <span class="cl-pending small text-body-secondary"

@@ -44,10 +44,79 @@
     } @else {
       @if (!isCreateMode && claim()) {
         <app-form-progress formType="state" [formStatus]="currentFormStatusValue()"></app-form-progress>
-        <app-returned-reason-banner
-          [currentFormStatus]="claim()!.currentFormStatus"
-          [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
-        />
+        @if (claim()!.returnSummary; as returned) {
+          <div class="alert alert-danger py-2 mb-0" role="alert" data-cy="claim-letter-return-summary">
+            <div class="small fw-semibold mb-1">
+              <i class="bi bi-arrow-return-left me-1" aria-hidden="true"></i>Returned for correction
+            </div>
+            @if (claim()!.mohuaRemarks; as remark) {
+              <div class="small" data-cy="claim-letter-return-reason"><b>Reason:</b> {{ remark }}</div>
+            }
+            @if (returned.stateForms.length) {
+              <div class="small" data-cy="claim-letter-return-state-forms">
+                <b>State forms:</b>
+                @for (form of returned.stateForms; track form.formId; let last = $last) {
+                  @if (stateFormLink(form.formId); as link) {
+                    <a class="alert-link fw-normal" [routerLink]="link">{{ form.name }}</a>
+                  } @else {
+                    <span>{{ form.name }}</span>
+                  }
+                  @if (form.ulbCount) {
+                    <span> ({{ form.ulbCount }} ULB{{ form.ulbCount === 1 ? '' : 's' }})</span>
+                  }
+                  @if (!last) {
+                    <span aria-hidden="true"> &middot; </span>
+                  }
+                }
+              </div>
+            }
+            @if (returned.ulbs.length) {
+              <div class="small" data-cy="claim-letter-return-ulbs">
+                <b>ULBs ({{ returned.ulbs.length }}):</b> {{ returnedUlbNames() }} - highlighted in the table below
+              </div>
+            }
+            <ng-container *ngTemplateOutlet="reuseLetterButton"></ng-container>
+          </div>
+        } @else {
+          <app-returned-reason-banner
+            [currentFormStatus]="claim()!.currentFormStatus"
+            [rejectionRemarks]="claim()!.mohuaRemarks ?? null"
+          />
+        }
+        @if (claim()!.returnedWithNote; as note) {
+          <div
+            class="alert alert-info d-flex align-items-start gap-2 py-2 mb-0"
+            role="note"
+            data-cy="claim-letter-returned-with"
+          >
+            <i class="bi bi-info-circle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+            <div>
+              <span class="small">{{ note }}</span>
+              <ng-container *ngTemplateOutlet="reuseLetterButton"></ng-container>
+            </div>
+          </div>
+        }
+        @if (stateFormBanner(); as notice) {
+          <div
+            class="alert alert-warning d-flex align-items-start gap-2 py-2 mb-0"
+            role="alert"
+            data-cy="claim-letter-state-form-notice"
+          >
+            <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+            <span class="small">{{ notice }}</span>
+          </div>
+        }
+      }
+
+      @if (copyNote(); as note) {
+        <div
+          class="alert alert-info d-flex align-items-center gap-2 py-2 mb-0"
+          role="note"
+          data-cy="claim-letter-copy-note"
+        >
+          <i class="bi bi-arrow-repeat flex-shrink-0" aria-hidden="true"></i>
+          <span class="small">{{ note }}</span>
+        </div>
       }
 
       @if (summaryTiles().length) {
@@ -115,6 +184,7 @@
             [stateId]="stateId"
             [yearId]="yearId"
             [claimLetterId]="claimLetterId() ?? undefined"
+            [returnedUlbs]="returnedUlbs()"
             [claimAmountEditable]="claimAmountEditable()"
             [varianceLowerPercent]="varianceLowerPercent()"
             [varianceUpperPercent]="varianceUpperPercent()"
@@ -177,8 +247,9 @@
     @if (finalBatchIncomplete()) {
       <div class="alert alert-danger small mt-2" data-cy="claim-letter-final-batch-blocked">
         <i class="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
-        {{ eligibilityOverview()?.remainingUlbCount }} ULB(s) are still unclaimed - every ULB must be included in this
-        final batch before it can be submitted.
+        {{ claim()?.remainingUlbCount }} ULB(s) are in no claim letter yet. This is the last draft and all
+        {{ eligibilityOverview()?.batchSlotsMax }} places for this installment are in use, so every ULB must be in a
+        claim letter before you can submit it.
       </div>
     }
 
@@ -274,6 +345,25 @@
     </div>
   </div>
 }
+
+<ng-template #reuseLetterButton>
+  @if (canOfferReuse()) {
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+      <button
+        type="button"
+        matButton="outlined"
+        [disabled]="!reuseGate() || !!reuseBlockedReason()"
+        (click)="startLetterFromThis()"
+        data-cy="claim-letter-reuse-ulbs"
+      >
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Start a new letter with these ULBs
+      </button>
+      @if (reuseBlockedReason(); as reason) {
+        <span class="small text-body-secondary" data-cy="claim-letter-reuse-blocked">{{ reason }}</span>
+      }
+    </div>
+  }
+</ng-template>
 
 <ng-template #removeUlbsButton let-ulbIds>
   <button

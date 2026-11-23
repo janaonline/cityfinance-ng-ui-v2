@@ -90,7 +90,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
         number: 12,
         question: 'How does my ULB qualify for the Performance Grant?',
         answer:
-          "<p>The Performance Grant starts from year 2, i.e. 2027-28. It is not available in FY 2026-27. From 2027-28 onwards, your ULB qualifies each year if its Own Source Revenue meets the lower of these two targets:</p><ul><li><strong>Target 1:</strong> 1.05 times the ULB's Own Source Revenue from year T-2.</li><li><strong>Target 2:</strong> 5% annual compounded growth from the ULB's 2025-26 Own Source Revenue.</li></ul><div class=\"faq-example\"><span class=\"faq-example-label\">EXAMPLE</span><p>If your Own Source Revenue is Rs. 100 in FY 2025-26: in FY 2027-28, under Target 1, you must show 1.05 times Rs. 100, i.e. Rs. 105. In FY 2027-28, under Target 2, you must show a 5% compounded growth from 2025-26, i.e. Rs. 105. The ULB only needs to meet whichever target is lower for that year.</p></div><p>For this calculation, Own Source Revenue excludes interest receipts, assigned revenue, loans, and government transfers. The provisional Receipts and Payments statement for FY 2025-26 will be used as the baseline for this calculation.</p>",
+          '<p>The Performance Grant starts from year 2, i.e. 2027-28. It is not available in FY 2026-27. From 2027-28 onwards, your ULB qualifies each year if its Own Source Revenue meets the lower of these two targets:</p><ul><li><strong>Target 1:</strong> 1.05 times the ULB\'s Own Source Revenue from year T-2.</li><li><strong>Target 2:</strong> 5% annual compounded growth from the ULB\'s 2025-26 Own Source Revenue.</li></ul><div class="faq-example"><span class="faq-example-label">EXAMPLE</span><p>If your Own Source Revenue is Rs. 100 in FY 2025-26: in FY 2027-28, under Target 1, you must show 1.05 times Rs. 100, i.e. Rs. 105. In FY 2027-28, under Target 2, you must show a 5% compounded growth from 2025-26, i.e. Rs. 105. The ULB only needs to meet whichever target is lower for that year.</p></div><p>For this calculation, Own Source Revenue excludes interest receipts, assigned revenue, loans, and government transfers. The provisional Receipts and Payments statement for FY 2025-26 will be used as the baseline for this calculation.</p>',
       },
       {
         number: 13,
@@ -157,7 +157,7 @@ export const FAQ_SECTIONS: readonly FaqSection[] = [
         number: 9,
         question: 'How many Claim Letters can I generate?',
         answer:
-          '<p>You can generate more than one Claim Letter. Approved and eligible ULBs can be processed in batches. As a practical approach, try to keep the number manageable — for example three to five Claim Letters — so that processing does not become burdensome for MoHUA.</p>',
+          '<p>You can generate more than one Claim Letter, and you do not need to wait for MoHUA to finish reviewing one before you submit the next. Approved and eligible ULBs can be processed in batches, up to a limit set for each installment (shown as Batch slots on the Claim Letter page). Keep the number manageable so that processing does not become burdensome for MoHUA.</p>',
       },
       {
         number: 10,
