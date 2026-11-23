@@ -41,8 +41,8 @@
 
       <!-- Filters -->
       <form [formGroup]="filterForm" class="filter-grid">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-          <mat-label>Status</mat-label>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
+          <mat-label>Job Status</mat-label>
           <mat-select formControlName="status">
             @for (opt of statusOptions; track opt.value) {
             <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
@@ -50,7 +50,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Source</mat-label>
           <mat-select formControlName="source">
             @for (opt of sourceOptions; track opt.value) {
@@ -59,23 +59,23 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Filename</mat-label>
           <input matInput formControlName="filename" placeholder="Search filename" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>ULB Name</mat-label>
           <input matInput formControlName="ulbName" placeholder="Search ULB name" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Batch ID</mat-label>
           <input matInput formControlName="batchId" placeholder="e.g. 20261029-153012-a1b2"
             (keydown.enter)="applyFilters()" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Financial Year</mat-label>
           <mat-select formControlName="financialYear">
             <mat-option value="">All</mat-option>
@@ -85,7 +85,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Document Type</mat-label>
           <mat-select formControlName="docType">
             <mat-option value="">All</mat-option>
@@ -95,12 +95,12 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Job ID</mat-label>
           <input matInput formControlName="jobId" placeholder="Job ID" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Date Range</mat-label>
           <mat-date-range-input [rangePicker]="rangePicker">
             <input matStartDate formControlName="dateFrom" placeholder="From" />
@@ -110,7 +110,7 @@
           <mat-date-range-picker #rangePicker></mat-date-range-picker>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Crosscheck Confidence</mat-label>
           <mat-select formControlName="accuracy">
             @for (opt of scoreThresholdOptions; track opt.value) {
@@ -119,7 +119,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Textract Confidence</mat-label>
           <mat-select formControlName="confidence">
             @for (opt of scoreThresholdOptions; track opt.value) {
@@ -128,7 +128,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Document Match</mat-label>
           <mat-select formControlName="docMatch">
             @for (opt of docMatchOptions; track opt.value) {
@@ -137,7 +137,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Arithmetic Accuracy</mat-label>
           <mat-select formControlName="arithmetic">
             @for (opt of arithmeticOptions; track opt.value) {
@@ -146,7 +146,7 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" floatLabel="always">
           <mat-label>Overall Assessment</mat-label>
           <mat-select formControlName="overall">
             @for (opt of assessmentOptions; track opt.value) {
