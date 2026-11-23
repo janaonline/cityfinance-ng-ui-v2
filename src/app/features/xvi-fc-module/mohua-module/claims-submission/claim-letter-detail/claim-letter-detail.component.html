@@ -8,9 +8,22 @@
     </div>
   } @else {
     @if (letter(); as l) {
-      <a class="cs-back" [routerLink]="['claims-submission', stateId]" [relativeTo]="mohuaRoute">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to {{ l.state.name }} Claim Letters
-      </a>
+      @if (eligibilityReturn.link; as eligibilityLink) {
+        <!-- A RouterLink would still navigate on click, so going back in history is a plain button. -->
+        @if (eligibilityReturn.viaHistory) {
+          <button type="button" class="cs-back cl-back-btn" (click)="backToEligibility()">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Claim Eligibility
+          </button>
+        } @else {
+          <a class="cs-back" [routerLink]="eligibilityLink">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Claim Eligibility
+          </a>
+        }
+      } @else {
+        <a class="cs-back" [routerLink]="['claims-submission', stateId]" [relativeTo]="mohuaRoute">
+          <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to {{ l.state.name }} Claim Letters
+        </a>
+      }
 
       <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
         <div>
@@ -20,18 +33,30 @@
           </h1>
           <p class="cs-subtitle">ULB-level eligibility review for this claim letter.</p>
         </div>
-        <!-- A letter the SO verified gets its OM; the OM page shows it instead if it is already generated. -->
-        @if (canGenerateOm()) {
+        <div class="d-flex flex-wrap align-items-center gap-2">
           <a
-            mat-flat-button
-            class="cl-om-btn"
-            [routerLink]="['om-generation', 'letter', l.id]"
+            mat-stroked-button
+            class="cs-view-btn"
+            [routerLink]="['claims-submission', stateId, 'ulb-eligibility']"
+            [queryParams]="eligibilityQuery()"
             [relativeTo]="mohuaRoute"
-            matTooltip="Opens this letter's Office Memorandum (shown read-only if it is already generated)"
+            data-cy="claim-letter-eligibility-link"
           >
-            <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Generate OM
+            <i class="bi bi-clipboard-check" aria-hidden="true"></i> Claim eligibility
           </a>
-        }
+          <!-- A letter the SO verified gets its OM; the OM page shows it instead if it is already generated. -->
+          @if (canGenerateOm()) {
+            <a
+              mat-flat-button
+              class="cl-om-btn"
+              [routerLink]="['om-generation', 'letter', l.id]"
+              [relativeTo]="mohuaRoute"
+              matTooltip="Opens this letter's Office Memorandum (shown read-only if it is already generated)"
+            >
+              <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Generate OM
+            </a>
+          }
+        </div>
       </div>
 
       <!-- Headline figures: an amount and its ULBs per card. -->

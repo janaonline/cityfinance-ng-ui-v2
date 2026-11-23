@@ -42,7 +42,8 @@
   font-size: 0.6875rem;
   color: var(--ud-muted);
 
-  a {
+  a,
+  .ud-crumb__back {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -54,6 +55,15 @@
       text-decoration: underline;
     }
   }
+}
+
+// Going back in history is a button (see the template); it looks like the crumb links.
+.ud-crumb__back {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+  cursor: pointer;
 }
 
 .ud-head {

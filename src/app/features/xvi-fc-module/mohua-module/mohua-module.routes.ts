@@ -68,7 +68,7 @@ export const MOHUA_DASHBOARD_ROUTES: Routes = [
 ];
 
 /**
- * Claims & Submissions (all States, one State, one claim letter) and the OM history: shared by MoHUA, who acts on
+ * Claims & Submissions (all States, one State, one claim letter, a State's ULB eligibility) and the OM history: shared by MoHUA, who acts on
  * them, and PMU, who only monitors. The pages hide their actions for anyone but MoHUA, and the API refuses them.
  * Generate OM stays MoHUA's own route.
  */
@@ -84,6 +84,11 @@ export const MOHUA_CLAIMS_READ_ROUTES: Routes = [
       import('./claims-submission/state-claim-letters/state-claim-letters.component').then(
         (m) => m.StateClaimLettersComponent,
       ),
+  },
+  {
+    path: 'claims-submission/:stateId/ulb-eligibility',
+    loadComponent: () =>
+      import('./claims-submission/ulb-eligibility/ulb-eligibility.component').then((m) => m.UlbEligibilityComponent),
   },
   {
     path: 'claims-submission/:stateId/letter/:claimLetterId',

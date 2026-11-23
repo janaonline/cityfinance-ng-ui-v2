@@ -6,8 +6,18 @@
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
     <a [routerLink]="['review-state-submissions', stateId()]" [relativeTo]="mohuaRoute">{{ stateName() || 'State' }}</a>
     <i class="bi bi-chevron-right" aria-hidden="true"></i>
-    @if (claimLetterId) {
-      <a [routerLink]="['claims-submission', stateId(), 'letter', claimLetterId]" [relativeTo]="mohuaRoute">Claim letter</a>
+    @if (eligibilityReturn.link; as eligibilityLink) {
+      <!-- A RouterLink would still navigate on click, so going back in history is a plain button. -->
+      @if (eligibilityReturn.viaHistory) {
+        <button type="button" class="ud-crumb__back" (click)="backToEligibility()">Claim Eligibility</button>
+      } @else {
+        <a [routerLink]="eligibilityLink">Claim Eligibility</a>
+      }
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    } @else if (claimLetterId) {
+      <a [routerLink]="['claims-submission', stateId(), 'letter', claimLetterId]" [relativeTo]="mohuaRoute"
+        >Claim letter</a
+      >
       <i class="bi bi-chevron-right" aria-hidden="true"></i>
     }
     <span aria-current="page">{{ ulbName() || 'ULB' }}</span>
@@ -199,7 +209,15 @@
     <div class="ud-message" role="alert">
       <p>{{ error() }}</p>
       <button mat-stroked-button type="button" (click)="load()">Try again</button>
-      @if (claimLetterId) {
+      @if (eligibilityReturn.link; as eligibilityLink) {
+        @if (eligibilityReturn.viaHistory) {
+          <button type="button" class="ud-link ud-crumb__back" (click)="backToEligibility()">
+            Back to Claim Eligibility
+          </button>
+        } @else {
+          <a class="ud-link" [routerLink]="eligibilityLink">Back to Claim Eligibility</a>
+        }
+      } @else if (claimLetterId) {
         <a
           class="ud-link"
           [routerLink]="['claims-submission', stateId(), 'letter', claimLetterId]"

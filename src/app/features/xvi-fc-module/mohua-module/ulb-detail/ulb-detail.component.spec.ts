@@ -1,6 +1,7 @@
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Navigation, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { MohuaStateDetailService } from '../state-detail/mohua-state-detail.service';
 import { MohuaUlbFormsService } from './mohua-ulb-forms.service';
@@ -89,7 +90,8 @@ const forms = {
 describe('UlbDetailComponent', () => {
   let formsService: { load: jasmine.Spy; getUlbName: jasmine.Spy };
 
-  const create = () => {
+  /** `beforeCreate` runs once the testing module exists, e.g. to fake the navigation state. */
+  const create = (beforeCreate?: () => void) => {
     const paramMap = convertToParamMap({ stateId: 'state-1', ulbId: 'ulb-1', yearId: 'year-1' });
     TestBed.configureTestingModule({
       imports: [UlbDetailComponent],
@@ -107,10 +109,15 @@ describe('UlbDetailComponent', () => {
         },
       ],
     });
+    beforeCreate?.();
     const fixture = TestBed.createComponent(UlbDetailComponent);
     fixture.detectChanges();
     return fixture;
   };
+
+  const ELIGIBILITY_URL = '/xvifc/year-1/claims-submission/state-1/ulb-eligibility?batch=2';
+  const crumbLinks = (host: HTMLElement) =>
+    Array.from(host.querySelectorAll<HTMLAnchorElement>('.ud-crumb a')).map((a) => a.textContent?.trim());
 
   beforeEach(() => {
     formsService = {
@@ -140,6 +147,46 @@ describe('UlbDetailComponent', () => {
     expect(fixture.componentInstance.ulbCode()).toBe('800123');
     expect(fixture.componentInstance.stateName()).toBe('Rajasthan');
     expect(fixture.nativeElement.querySelector('.ud-crumb')?.textContent).toContain('Rajasthan');
+    expect(crumbLinks(fixture.nativeElement)).toEqual(['All States', 'Rajasthan']);
+  });
+
+  it('returns to the ULB Eligibility page, filters included, when opened from it', () => {
+    const fixture = create(() =>
+      spyOn(TestBed.inject(Location), 'getState').and.returnValue({ ulbEligibilityUrl: ELIGIBILITY_URL }),
+    );
+    const host = fixture.nativeElement as HTMLElement;
+    expect(crumbLinks(host)).toEqual(['All States', 'Rajasthan', 'Claim Eligibility']);
+    const crumb = Array.from(host.querySelectorAll<HTMLAnchorElement>('.ud-crumb a')).pop()!;
+    expect(crumb.getAttribute('href')).toBe(ELIGIBILITY_URL);
+  });
+
+  it('ignores a passed URL that is not the ULB Eligibility page', () => {
+    const fixture = create(() =>
+      spyOn(TestBed.inject(Location), 'getState').and.returnValue({
+        ulbEligibilityUrl: 'https://example.com/ulb-eligibility',
+      }),
+    );
+    expect(crumbLinks(fixture.nativeElement)).toEqual(['All States', 'Rajasthan']);
+  });
+
+  it('goes back in history when the ULB Eligibility page is the previous page', () => {
+    let back!: jasmine.Spy;
+    const fixture = create(() => {
+      const router = TestBed.inject(Router);
+      spyOn(router, 'getCurrentNavigation').and.returnValue({
+        extras: { state: { ulbEligibilityUrl: ELIGIBILITY_URL } },
+        previousNavigation: { finalUrl: router.parseUrl(ELIGIBILITY_URL) },
+      } as unknown as Navigation);
+      back = spyOn(TestBed.inject(Location), 'back');
+    });
+    const navigateByUrl = spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+    const host = fixture.nativeElement as HTMLElement;
+    expect(crumbLinks(host)).toEqual(['All States', 'Rajasthan']);
+    const crumb = host.querySelector('.ud-crumb button.ud-crumb__back') as HTMLButtonElement;
+    expect(crumb.textContent?.trim()).toBe('Claim Eligibility');
+    crumb.click();
+    expect(back).toHaveBeenCalled();
+    expect(navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('counts uploaded documents out of the form’s documents, and shows no count before a record exists', () => {

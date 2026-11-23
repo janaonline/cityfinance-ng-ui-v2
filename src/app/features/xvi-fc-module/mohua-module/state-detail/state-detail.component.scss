@@ -354,6 +354,12 @@
   }
 }
 
+.sd-claims__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .sd-claims {
   display: grid;
   gap: 6px;

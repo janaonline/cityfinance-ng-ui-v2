@@ -79,12 +79,16 @@ const letter = (id: string, status: number, amount: number, ulbCount: number) =>
 const stateClaims: StateClaimLetters = {
   state: { id: 'state-1', name: 'Tripura' },
   installment: 1,
-  summary: { claimedUlbs: 5, pendingUlbs: 16, approvedUlbs: 2, underReviewUlbs: 3, returnedUlbs: 2, amountClaimed: 0, balance: 0 },
-  claimLetters: [
-    letter('3', 15, 93_000_000, 3),
-    letter('2', 16, 62_000_000, 2),
-    letter('1', 5, 62_000_000, 2),
-  ],
+  summary: {
+    claimedUlbs: 5,
+    pendingUlbs: 16,
+    approvedUlbs: 2,
+    underReviewUlbs: 3,
+    returnedUlbs: 2,
+    amountClaimed: 0,
+    balance: 0,
+  },
+  claimLetters: [letter('3', 15, 93_000_000, 3), letter('2', 16, 62_000_000, 2), letter('1', 5, 62_000_000, 2)],
 };
 
 describe('StateDetailComponent', () => {
@@ -119,7 +123,9 @@ describe('StateDetailComponent', () => {
   beforeEach(() => {
     detailService = { getDetail: jasmine.createSpy('getDetail').and.returnValue(of(detail)) };
     ulbsService = { getUlbs: jasmine.createSpy('getUlbs').and.returnValue(of(ulbs)) };
-    claimsService = { getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)) };
+    claimsService = {
+      getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)),
+    };
     isMohuaUser = true;
     isPmuUser = false;
   });
@@ -147,7 +153,9 @@ describe('StateDetailComponent', () => {
     const headers = Array.from(el.querySelectorAll('.sd-table th')).map((th) => th.textContent?.trim());
     expect(headers.indexOf('Unspent balance')).toBe(headers.indexOf('Allocation') + 1);
 
-    const cells = Array.from(el.querySelectorAll('.sd-table tbody tr:first-child td')).map((td) => td.textContent?.trim());
+    const cells = Array.from(el.querySelectorAll('.sd-table tbody tr:first-child td')).map((td) =>
+      td.textContent?.trim(),
+    );
     expect(cells).toContain('₹12.5 cr'); // allocation
     expect(cells).toContain('₹3.4 cr'); // unspent balance
   });
@@ -183,6 +191,28 @@ describe('StateDetailComponent', () => {
     host = create().nativeElement as HTMLElement;
     expect(host.querySelectorAll('.sd-claim').length).toBe(3);
     expect(host.querySelector('.sd-claim a')).toBeNull();
+  });
+
+  it('links to Claim Eligibility beside "See all claims" for MoHUA and PMU, even before the first letter, and not for DoE', () => {
+    const actions = (host: HTMLElement) =>
+      Array.from(host.querySelectorAll('.sd-claims__actions a')).map((a) => a.textContent?.trim());
+    let host = create().nativeElement as HTMLElement;
+    expect(actions(host)).toEqual(['Claim eligibility', 'See all claims']);
+    expect(host.querySelector('[data-cy="state-detail-eligibility-link"]')?.getAttribute('href')).toBe(
+      '/claims-submission/state-1/ulb-eligibility',
+    );
+
+    TestBed.resetTestingModule();
+    claimsService.getStateClaimLetters.and.returnValue(of({ ...stateClaims, claimLetters: [] }));
+    isMohuaUser = false;
+    isPmuUser = true;
+    host = create().nativeElement as HTMLElement;
+    expect(actions(host)).toEqual(['Claim eligibility']);
+
+    TestBed.resetTestingModule();
+    isPmuUser = false; // DoE
+    host = create().nativeElement as HTMLElement;
+    expect(host.querySelector('[data-cy="state-detail-eligibility-link"]')).toBeNull();
   });
 
   it('shows the real allocation, "--" for eligible, and "Coming soon" for every claim figure when claims fail to load', () => {

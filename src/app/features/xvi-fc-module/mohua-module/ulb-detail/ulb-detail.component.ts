@@ -1,15 +1,16 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { XVIFC_LS_KEYS } from '../../shared/years-selection/years-selection.component';
 import { SlbReviewComponent } from '../../state-module/ulb-submissions/slb-review/slb-review.component';
 import { ReviewFormId, SYSTEM_CHECKS_CONTENT } from '../../state-module/ulb-submissions/ulb-submissions.models';
 import { MohuaPageLoaderComponent } from '../page-loader/page-loader.component';
+import { readEligibilityReturn } from '../eligibility-return.util';
 import { findRouteParam } from '../route-params.util';
 import { MohuaStateDetailService } from '../state-detail/mohua-state-detail.service';
 import { RevealDirective } from '../state-detail/state-detail.directives';
@@ -86,6 +87,8 @@ export class UlbDetailComponent {
   private readonly formsService = inject(MohuaUlbFormsService);
   private readonly stateDetailService = inject(MohuaStateDetailService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
   readonly mohuaRoute = this.route.parent;
@@ -99,6 +102,9 @@ export class UlbDetailComponent {
   /** Set when the ULB was opened from a claim letter: the breadcrumb and back link then lead back to that letter. */
   readonly claimLetterId = this.route.snapshot.queryParamMap?.get('claimLetter') ?? '';
 
+  /** Set when the ULB was opened from the ULB Eligibility page: the breadcrumb then returns there, filters included. */
+  readonly eligibilityReturn = readEligibilityReturn(this.router, this.location);
+
   /** Loaded from the State detail API; the breadcrumb falls back to a generic label until it arrives. */
   readonly stateName = signal('');
   readonly forms = signal<UlbFormsData | null>(null);
@@ -109,8 +115,7 @@ export class UlbDetailComponent {
   private readonly lookedUpName = signal('');
 
   readonly ulbName = computed(
-    () =>
-      this.lookedUpName() || (this.forms()?.audited.data?.ulbName ?? this.forms()?.slb.data?.ulbName ?? ''),
+    () => this.lookedUpName() || (this.forms()?.audited.data?.ulbName ?? this.forms()?.slb.data?.ulbName ?? ''),
   );
   readonly ulbCode = computed(() => this.forms()?.audited.data?.ulbCode ?? null);
 
@@ -306,6 +311,10 @@ export class UlbDetailComponent {
     this.load();
     this.loadStateName();
     this.loadUlbName();
+  }
+
+  backToEligibility(): void {
+    this.location.back();
   }
 
   load(): void {

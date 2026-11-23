@@ -10,6 +10,8 @@ import {
   ClaimLetterUlbs,
   ClaimLettersStates,
   StateClaimLetters,
+  UlbEligibility,
+  UlbEligibilityQuery,
 } from './claims-submission.models';
 import type {
   ReturnLetterDialogResult,
@@ -43,6 +45,15 @@ export class ClaimsSubmissionService {
     if (query.page) params = params.set('page', query.page);
     if (query.limit) params = params.set('limit', query.limit);
     return this.get<ClaimLetterUlbs>(`letter/${claimLetterId}/ulbs`, params);
+  }
+
+  /** Every ULB of a State, live: eligible or not, why, and the letter holding it. */
+  getUlbEligibility(stateId: string, yearId: string, query: UlbEligibilityQuery): Observable<UlbEligibility> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '' && value !== false) params = params.set(key, value);
+    }
+    return this.get<UlbEligibility>(`ulb-eligibility/${stateId}/${yearId}/${CLAIMS_INSTALLMENT}`, params);
   }
 
   approveClaimLetter(claimLetterId: string, expectedRevision: number, remark?: string): Observable<ClaimLetterDetail> {

@@ -79,6 +79,13 @@ describe('StateClaimLettersComponent', () => {
     expect(card.querySelector('a')?.textContent).toContain('View');
   });
 
+  it("links to the State's Claim Eligibility from the header", () => {
+    const link = create().querySelector('[data-cy="state-claim-letters-eligibility-link"]') as HTMLAnchorElement;
+
+    expect(link.textContent).toContain('Claim eligibility');
+    expect(link.getAttribute('href')).toBe('/claims-submission/s1/ulb-eligibility');
+  });
+
   it('lists approved letters too, with their status on the ribbon and a View link', () => {
     const cards = Array.from(create().querySelectorAll('.cl-letter-card'));
 

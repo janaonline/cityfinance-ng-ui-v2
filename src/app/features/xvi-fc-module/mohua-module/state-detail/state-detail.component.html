@@ -81,10 +81,29 @@
           <h2 id="sd-h-claims">Claim Letters</h2>
           <p>Claim letters submitted by the state, newest first.</p>
         </div>
-        @if (canOpenClaims && claims()?.claimLetters?.length) {
-          <a mat-stroked-button class="sd-cond__pdf" [routerLink]="['claims-submission', d.state.id]" [relativeTo]="mohuaRoute">
-            See all claims <i class="bi bi-arrow-right" aria-hidden="true"></i>
-          </a>
+        @if (canOpenClaims) {
+          <div class="sd-claims__actions">
+            <!-- Eligibility matters before the first letter too, so it shows without one. -->
+            <a
+              mat-stroked-button
+              class="sd-cond__pdf"
+              [routerLink]="['claims-submission', d.state.id, 'ulb-eligibility']"
+              [relativeTo]="mohuaRoute"
+              data-cy="state-detail-eligibility-link"
+            >
+              <i class="bi bi-clipboard-check" aria-hidden="true"></i> Claim eligibility
+            </a>
+            @if (claims()?.claimLetters?.length) {
+              <a
+                mat-stroked-button
+                class="sd-cond__pdf"
+                [routerLink]="['claims-submission', d.state.id]"
+                [relativeTo]="mohuaRoute"
+              >
+                See all claims <i class="bi bi-arrow-right" aria-hidden="true"></i>
+              </a>
+            }
+          </div>
         }
       </div>
       @if (claims(); as c) {
@@ -98,8 +117,8 @@
                 <span class="sd-claim__text">
                   <b>{{ letter.number }}</b>
                   <span class="sd-muted">
-                    {{ formatDate(letter.receivedOn) }} · {{ letter.ulbCount }} {{ letter.ulbCount === 1 ? 'ULB' : 'ULBs' }}
-                    · {{ formatRupees(letter.amount) }}
+                    {{ formatDate(letter.receivedOn) }} · {{ letter.ulbCount }}
+                    {{ letter.ulbCount === 1 ? 'ULB' : 'ULBs' }} · {{ formatRupees(letter.amount) }}
                   </span>
                 </span>
                 <span class="cs-badge" [class]="badgeClass(letter.status)">{{
