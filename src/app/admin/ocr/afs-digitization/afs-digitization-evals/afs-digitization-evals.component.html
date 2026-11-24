@@ -1,0 +1,141 @@
+<div class="wrapper app-wrapper container-fluid">
+  <section class="evals-page">
+    <div class="hero-card text-white rounded-4 px-4 py-4 d-flex align-items-center justify-content-between gap-3">
+      <div>
+        <h3 class="h4 mb-1">AFS Digitization Evals</h3>
+        <p class="small opacity-75 mb-0">Score completed digitization jobs against golden expected data
+          (classification, table extraction, arithmetic checks).</p>
+      </div>
+      <a class="btn btn-light flex-shrink-0" routerLink="/ocr/afs-digitization/list">Jobs</a>
+    </div>
+
+    <section class="bg-white border rounded-3 p-3 p-md-4">
+      <h2 class="h5 mb-3">New eval run</h2>
+      <input class="form-control mb-3" placeholder="Run name (optional)" [(ngModel)]="runName" name="runName" />
+
+      @for (d of drafts; track $index) {
+      <div class="case-row border rounded-3 p-3 mb-2">
+        <div class="row g-2 align-items-start">
+          <div class="col-md-4">
+            <input class="form-control" placeholder="Job ID" [(ngModel)]="d.jobId" [name]="'job' + $index" />
+          </div>
+          <div class="col-md-3">
+            <input class="form-control" placeholder="Label (optional)" [(ngModel)]="d.label" [name]="'label' + $index" />
+          </div>
+          <div class="col-md-4">
+            <input class="form-control" type="file" accept=".json,application/json" (change)="onFile($event, d)" />
+          </div>
+          <div class="col-md-1 text-end">
+            <button type="button" mat-icon-button (click)="removeDraft($index)" title="Remove case">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="col-12">
+            <textarea class="form-control font-monospace small" rows="3" [(ngModel)]="d.expectedText"
+              [name]="'exp' + $index"
+              placeholder="Expected JSON: classification, tables and/or arithmetic (paste or choose a .expected.json file)"></textarea>
+          </div>
+        </div>
+      </div>
+      }
+
+      <div class="d-flex gap-2 align-items-center mt-3">
+        <button type="button" class="btn btn-outline-secondary" (click)="addDraft()">Add case</button>
+        <button type="button" class="btn btn-primary" [disabled]="running()" (click)="run()">
+          {{ running() ? 'Scoring...' : 'Run eval' }}
+        </button>
+        @if (error()) {
+        <span class="text-danger small">{{ error() }}</span>
+        }
+      </div>
+    </section>
+
+    @if (selected(); as run) {
+    <section class="bg-white border rounded-3 p-3 p-md-4">
+      <h2 class="h5 mb-3">{{ run.name }} <span class="small text-body-secondary">{{ run.created_at | date:'medium' }}</span></h2>
+      <div class="metrics mb-3">
+        <div class="metric"><span>Cell accuracy</span><b>{{ pct(run.summary.extraction_cell_accuracy) }}</b></div>
+        <div class="metric"><span>Row recall</span><b>{{ pct(run.summary.extraction_row_recall) }}</b></div>
+        <div class="metric"><span>Row precision</span><b>{{ pct(run.summary.extraction_row_precision) }}</b></div>
+        <div class="metric"><span>Column swaps</span><b>{{ run.summary.extraction_column_swaps }}</b></div>
+        <div class="metric"><span>Classification exact</span><b>{{ pct(run.summary.classification_exact_match) }}</b></div>
+        <div class="metric"><span>Classification P / R</span><b>{{ pct(run.summary.classification_precision) }} / {{ pct(run.summary.classification_recall) }}</b></div>
+        <div class="metric"><span>Arithmetic exact</span><b>{{ pct(run.summary.arithmetic_exact_match) }}</b></div>
+        <div class="metric"><span>Arithmetic FP / FN</span><b>{{ run.summary.arithmetic_false_positives }} / {{ run.summary.arithmetic_false_negatives }}</b></div>
+        <div class="metric"><span>Cases (failed)</span><b>{{ run.summary.cases }} ({{ run.summary.cases_failed_to_run }})</b></div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Case</th><th>Cls exact</th><th>Cell acc.</th><th>Row recall</th><th>Swaps</th>
+              <th>Arith exact</th><th>FP</th><th>FN</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of run.cases; track c.job_id) {
+            <tr>
+              <td>{{ c.label || c.job_id }}<div class="small text-body-secondary">{{ c.job_id }}</div></td>
+              <td>{{ c.classification ? (c.classification.exact_match ? 'yes' : 'no') : '-' }}</td>
+              <td>{{ pct(c.extraction?.cell_accuracy) }}</td>
+              <td>{{ pct(c.extraction?.row_recall) }}</td>
+              <td>{{ c.extraction?.column_swaps ?? '-' }}</td>
+              <td>{{ c.arithmetic ? (c.arithmetic.exact_match ? 'yes' : 'no') : '-' }}</td>
+              <td>{{ c.arithmetic?.false_positive?.join(', ') || '-' }}</td>
+              <td>{{ c.arithmetic?.false_negative?.join(', ') || '-' }}</td>
+              <td>
+                @if (c.error) {
+                <span class="text-danger">{{ c.error }}</span>
+                } @else if (c.extraction?.diffs?.length) {
+                <details>
+                  <summary>{{ c.extraction?.diffs?.length }} diff(s)</summary>
+                  @for (d of c.extraction?.diffs; track $index) {
+                  <div class="small">p{{ d.page }} · {{ d.label || '' }} · {{ d.issue }}
+                    @if (d.expected) { <br />exp: {{ d.expected | json }} }
+                    @if (d.actual) { <br />got: {{ d.actual | json }} }
+                  </div>
+                  }
+                </details>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+    }
+
+    <section class="bg-white border rounded-3 p-3 p-md-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Past runs</h2>
+        <button type="button" mat-icon-button [disabled]="loadingRuns()" (click)="loadRuns()" title="Refresh">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr><th>Name</th><th>When</th><th>Cases</th><th>Cell acc.</th><th>Cls exact</th><th>Arith exact</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (r of runs(); track r.run_id) {
+          <tr>
+            <td><a href="javascript:void(0)" (click)="open(r)">{{ r.name }}</a></td>
+            <td>{{ r.created_at | date:'short' }}</td>
+            <td>{{ r.summary.cases }}</td>
+            <td>{{ pct(r.summary.extraction_cell_accuracy) }}</td>
+            <td>{{ pct(r.summary.classification_exact_match) }}</td>
+            <td>{{ pct(r.summary.arithmetic_exact_match) }}</td>
+            <td class="text-end">
+              <button type="button" mat-icon-button (click)="remove(r)" title="Delete"><mat-icon>delete</mat-icon></button>
+            </td>
+          </tr>
+          } @empty {
+          <tr><td colspan="7" class="text-body-secondary">No eval runs yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  </section>
+</div>

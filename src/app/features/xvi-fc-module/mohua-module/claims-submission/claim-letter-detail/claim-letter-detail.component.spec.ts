@@ -165,7 +165,7 @@ describe('ClaimLetterDetailComponent', () => {
     expect(host.querySelectorAll('tbody tr').length).toBe(2);
 
     fixture.destroy();
-    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Verified' }));
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Under Review by MoHUA' }));
     host = create();
     expect(host.querySelector('.cl-om-btn')).toBeNull();
   });
@@ -610,7 +610,7 @@ describe('ClaimLetterDetailComponent', () => {
       expect(service.approveClaimLetter).toHaveBeenCalledOnceWith('c3', 3);
       expect(snackbar).toHaveBeenCalledWith('Claim letter approved.', 'snackbar-success');
       expect(host.querySelector('.cl-actions')).toBeNull();
-      expect(host.querySelector('.cs-badge')?.textContent).toContain('Verified');
+      expect(host.querySelector('.cs-badge')?.textContent).toContain('Approved');
     });
 
     it('does nothing when the confirmation is cancelled', () => {
