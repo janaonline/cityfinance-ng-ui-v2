@@ -6,7 +6,7 @@ interface OmStep {
 }
 
 const STEPS: readonly OmStep[] = [
-  { title: 'Claim Letter Review', note: 'Letter verified by MoHUA' },
+  { title: 'Claim Letter Review', note: 'Letter approved by MoHUA' },
   { title: 'Generate OM', note: 'One OM for each Claim Letter' },
   { title: 'Upload Signed OM', note: 'After e-Office sign-off' },
 ];
