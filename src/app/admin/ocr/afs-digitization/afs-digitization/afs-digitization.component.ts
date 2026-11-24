@@ -3,6 +3,7 @@ import { Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject,
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute } from '@angular/router';
 import {
   catchError,
@@ -23,11 +24,13 @@ import { environment } from '../../../../../environments/environment';
 import { UlbService } from '../../../../core/services/ulb.service';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService, GeminiPricing } from '../afs-digitization.service';
+import { RedigitizeDialogComponent } from '../redigitize-dialog/redigitize-dialog.component';
 import {
   AfsDocumentType,
   ArithmeticCheck,
   DigitizationJobTracker,
   DigitizationOcrEngine,
+  DigitizationRedigitizeOptions,
   DigitizationResult,
   DigitizationStatus,
   GeminiFieldCheck,
@@ -65,6 +68,7 @@ export class AfsDigitizationComponent implements OnInit {
   private readonly digitizationService = inject(AfsDigitizationService);
   private readonly ulbService = inject(UlbService);
   private readonly utilityService = inject(UtilityService);
+  private readonly dialog = inject(MatDialog);
 
   readonly maxFileSizeMb = 50;
   readonly maxNotesLength = 2000;
@@ -604,9 +608,29 @@ export class AfsDigitizationComponent implements OnInit {
 
   redigitizeJob(job: DigitizationJobTracker): void {
     if (this.redigitizingJobId()) return;
+    this.dialog
+      .open(RedigitizeDialogComponent, {
+        width: '480px',
+        data: {
+          filename: job.filename,
+          defaults: {
+            ocr_engine: job.input?.ocrEngine ?? undefined,
+            enable_validation: job.input?.enableValidation ?? undefined,
+            enable_arithmetic_validation: job.input?.enableArithmeticValidation ?? undefined,
+            enable_document_classification: job.input?.enableDocumentClassification ?? undefined,
+          },
+        },
+      })
+      .afterClosed()
+      .subscribe((options?: DigitizationRedigitizeOptions) => {
+        if (options) this.submitRedigitize(job, options);
+      });
+  }
+
+  private submitRedigitize(job: DigitizationJobTracker, options: DigitizationRedigitizeOptions): void {
     this.redigitizingJobId.set(job.jobId);
     this.digitizationService
-      .redigitizeDigitizationJob(job.jobId)
+      .redigitizeDigitizationJob(job.jobId, options)
       .pipe(finalize(() => this.redigitizingJobId.set(null)))
       .subscribe({
         next: (response) => {

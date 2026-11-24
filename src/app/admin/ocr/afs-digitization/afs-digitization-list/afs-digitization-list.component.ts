@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { PageEvent, MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { saveAs } from 'file-saver';
 import { finalize } from 'rxjs';
@@ -12,7 +13,8 @@ import { environment } from '../../../../../environments/environment';
 import { MaterialModule } from '../../../../material.module';
 import { UtilityService } from '../../../../core/services/utility.service';
 import { AfsDigitizationService } from '../afs-digitization.service';
-import { DigitizationCostBreakdown, DigitizationJobStatusResponse, DigitizationListSummary } from '../afs-digitization-models';
+import { RedigitizeDialogComponent } from '../redigitize-dialog/redigitize-dialog.component';
+import { DigitizationCostBreakdown, DigitizationOcrEngine, DigitizationRedigitizeOptions, DigitizationJobStatusResponse, DigitizationListSummary } from '../afs-digitization-models';
 
 interface DigitizationListRow {
   jobId: string;
@@ -67,6 +69,7 @@ export class AfsDigitizationListComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly digitizationService = inject(AfsDigitizationService);
   private readonly utilityService = inject(UtilityService);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild(MatPaginator) paginator?: MatPaginator;
 
@@ -365,15 +368,30 @@ export class AfsDigitizationListComponent implements OnInit {
 
   redigitizeJob(row: DigitizationListRow): void {
     if (this.redigitizingJobId()) return;
+    this.dialog
+      .open(RedigitizeDialogComponent, {
+        width: '480px',
+        data: {
+          filename: row.filename,
+          defaults: { ocr_engine: row.ocrEngine as DigitizationOcrEngine },
+        },
+      })
+      .afterClosed()
+      .subscribe((options?: DigitizationRedigitizeOptions) => {
+        if (options) this.submitRedigitize(row, options);
+      });
+  }
+
+  private submitRedigitize(row: DigitizationListRow, options: DigitizationRedigitizeOptions): void {
     this.redigitizingJobId.set(row.jobId);
     this.digitizationService
-      .redigitizeDigitizationJob(row.jobId)
+      .redigitizeDigitizationJob(row.jobId, options)
       .pipe(finalize(() => this.redigitizingJobId.set(null)))
       .subscribe({
         next: () => {
           this.utilityService.swalPopup(
             'Redigitization queued',
-            'The full pipeline is re-running on the stored source PDF. A new Excel version will be added when it finishes.',
+            'The previous result was saved to the job history. A new Excel version will be added when the re-run finishes.',
             'success',
           );
           this.loadJobs();

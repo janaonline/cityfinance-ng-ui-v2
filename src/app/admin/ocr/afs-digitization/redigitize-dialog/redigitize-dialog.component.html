@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Redigitize</h2>
+<mat-dialog-content [formGroup]="form">
+  <p class="mb-3">
+    Re-runs <strong>{{ data.filename }}</strong> from the stored source PDF. The current result is kept in the job's
+    history and is replaced by the new one.
+  </p>
+
+  <mat-form-field appearance="outline" class="w-100">
+    <mat-label>OCR engine</mat-label>
+    <mat-select formControlName="ocr_engine">
+      @for (engine of ocrEngines; track engine.value) {
+        <mat-option [value]="engine.value">{{ engine.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <div class="d-flex flex-column">
+    <mat-checkbox formControlName="enable_validation">Re-validation (Gemini cross-check against the PDF)</mat-checkbox>
+    <mat-checkbox formControlName="enable_arithmetic_validation">Arithmetic validation</mat-checkbox>
+    <mat-checkbox formControlName="enable_document_classification">Document classification</mat-checkbox>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Cancel</button>
+  <button mat-flat-button color="primary" type="button" (click)="submit()">Redigitize</button>
+</mat-dialog-actions>

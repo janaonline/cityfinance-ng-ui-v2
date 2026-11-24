@@ -8,6 +8,7 @@ import {
   DigitizationJobsListResponse,
   AfsDocumentType,
   DigitizationOcrEngine,
+  DigitizationRedigitizeOptions,
 } from './afs-digitization-models';
 
 export interface SelectOption<T = string> {
@@ -164,10 +165,10 @@ export class AfsDigitizationService {
     );
   }
 
-  redigitizeDigitizationJob(jobId: string) {
+  redigitizeDigitizationJob(jobId: string, options: Partial<DigitizationRedigitizeOptions> = {}) {
     return this.http.post<DigitizationJobSubmitResponse>(
       environment.api.url3 + `afs-digitization/jobs/${jobId}/redigitize`,
-      {},
+      options,
     );
   }
 

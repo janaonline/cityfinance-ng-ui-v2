@@ -2,6 +2,13 @@ export type DigitizationStatus = 'queued' | 'processing' | 'completed' | 'failed
 
 export type DigitizationOcrEngine = 'textract' | 'sarvam' | 'gemini';
 
+export interface DigitizationRedigitizeOptions {
+  ocr_engine: DigitizationOcrEngine;
+  enable_validation: boolean;
+  enable_arithmetic_validation: boolean;
+  enable_document_classification: boolean;
+}
+
 export interface DigitizationExpectedFields {
   ulb_name: string | null;
   financial_year: string | null;
