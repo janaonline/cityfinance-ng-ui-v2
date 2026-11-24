@@ -18,9 +18,12 @@ import { createClaimUlbRowGroup } from '../components/claim-ulb-table/claim-ulb-
 import { ClaimLetterDocumentPreviewDialogComponent } from '../components/document-preview-dialog/claim-letter-document-preview-dialog.component';
 import { ConfirmDialogComponent } from '../../../../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
+  CLAIM_LETTER_MAX_ULBS,
   ClaimLetterBatchSummary,
   ClaimLetterClaimContext,
+  ClaimLetterEligibilitySummary,
   ClaimLetterFinalPdf,
+  ClaimLetterUlbOption,
   ClaimLetterUlbRow,
 } from '../claim-letter.models';
 import { ClaimLetterService } from '../claim-letter.service';
@@ -77,6 +80,7 @@ function buildClaim(overrides: Partial<ClaimLetterBatchSummary> = {}): ClaimLett
     supersedes: null,
     supersededBy: null,
     createdAt: '2026-07-01T00:00:00.000Z',
+    updatedAt: '2026-07-01T00:00:00.000Z',
     // Backend-driven gates — canEdit()/canFinalSubmit() read these directly now, not
     // currentFormStatus/isAbandoned. Default to "fully editable" so existing tests that only care
     // about other behavior don't also have to specify permissions explicitly.
@@ -94,6 +98,7 @@ function buildClaimContext(overrides: Partial<ClaimLetterClaimContext> = {}): Cl
     expectedUlbCount: 10,
     batchSlotsUsed: 0,
     batchSlotsMax: 3,
+    openDraftCount: 0,
     nextBatchNumber: 1,
     financialOverview: {
       totalInstallmentAllocation: 25,
@@ -126,10 +131,28 @@ const SAVED_ULB_ROWS: ClaimLetterUlbRow[] = [
   },
 ];
 
-function routeWithParam(claimLetterId: string | null): ActivatedRoute {
+function routeWithParam(claimLetterId: string | null, query: Record<string, string> = {}): ActivatedRoute {
   return {
-    snapshot: { paramMap: convertToParamMap(claimLetterId === null ? {} : { claimLetterId }) },
+    snapshot: {
+      paramMap: convertToParamMap(claimLetterId === null ? {} : { claimLetterId }),
+      queryParamMap: convertToParamMap(query),
+    },
   } as unknown as ActivatedRoute;
+}
+
+/** Only the State gate is read from the eligibility summary here. */
+function gateSummary(passed: boolean, failingForms: string[] = []): ClaimLetterEligibilitySummary {
+  return {
+    stateLevelGate: {
+      passed,
+      sources: failingForms.map((displayLabel) => ({
+        formType: 'FORM',
+        result: 'FAILED',
+        reasonCode: 'x',
+        displayLabel,
+      })),
+    },
+  } as unknown as ClaimLetterEligibilitySummary;
 }
 
 describe('ClaimLetterDetailComponent', () => {
@@ -140,7 +163,7 @@ describe('ClaimLetterDetailComponent', () => {
   let utilityService: UtilityService;
   let dialogOpenSpy: jasmine.Spy;
 
-  async function setup(routeParam: string | null): Promise<void> {
+  async function setup(routeParam: string | null, query: Record<string, string> = {}): Promise<void> {
     localStorage.setItem('userData', JSON.stringify({ state: 'state-test-id' }));
 
     const moduleService = jasmine.createSpyObj<XvifcModuleService>('XvifcModuleService', ['yearId']);
@@ -154,7 +177,7 @@ describe('ClaimLetterDetailComponent', () => {
       imports: [HttpClientTestingModule, RouterTestingModule, ClaimLetterDetailComponent],
       providers: [
         { provide: XvifcModuleService, useValue: moduleService },
-        { provide: ActivatedRoute, useValue: routeWithParam(routeParam) },
+        { provide: ActivatedRoute, useValue: routeWithParam(routeParam, query) },
       ],
     })
       // overrideProvider forcefully replaces even providedIn:'root' singletons
@@ -176,6 +199,108 @@ describe('ClaimLetterDetailComponent', () => {
   });
 
   // ─── Create mode ────────────────────────────────────────────────────────────
+
+  describe('create mode from a returned letter', () => {
+    const option = (ulbId: string, overrides: Partial<ClaimLetterUlbOption> = {}): ClaimLetterUlbOption => ({
+      ulbId,
+      ulbName: `Fresh ${ulbId}`,
+      censusCode: null,
+      sbCode: null,
+      allocationAmount: 30,
+      eligible: true,
+      ineligibleReasonCode: null,
+      ineligibleReasonDetail: null,
+      claimedInBatch: null,
+      ...overrides,
+    });
+    const sourceRow = (ulbId: string): ClaimLetterUlbRow => ({
+      ...SAVED_ULB_ROWS[0],
+      ulbId,
+      ulbName: `Old ${ulbId}`,
+      claimAmount: 25,
+    });
+    const returnedSource = buildClaim({
+      currentFormStatus: 16,
+      isAbandoned: true,
+      batchNumber: 2,
+      resubmissionNumber: 1,
+      returnSummary: {
+        stateForms: [],
+        ulbs: [{ ulbId: 'u2', ulbName: 'Old u2', items: ['Bank Account'], remark: null }],
+      },
+    });
+
+    async function setupCopy(source: ClaimLetterBatchSummary = returnedSource): Promise<void> {
+      await setup('new', { from: 'claim-9' });
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(source));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(['u1', 'u2', 'u3', 'u4'].map(sourceRow)));
+      spyOn(claimLetterService, 'getUlbOptions').and.returnValue(
+        of({
+          options: [
+            option('u1'),
+            option('u2'),
+            option('u3', { eligible: false, claimedInBatch: { batchNumber: 3 } }),
+            option('u4', { eligible: false }),
+          ],
+          page: 1,
+          limit: CLAIM_LETTER_MAX_ULBS,
+          total: 4,
+        }),
+      );
+      fixture.detectChanges();
+    }
+
+    it('fills the table with the ULBs that can go into a new letter, and says what was left out', async () => {
+      await setupCopy();
+
+      expect(claimLetterService.getDetail).toHaveBeenCalledWith('claim-9');
+      expect(claimLetterService.getAllUlbs).toHaveBeenCalledWith('claim-9');
+      expect(claimLetterService.getUlbOptions).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1, {
+        limit: CLAIM_LETTER_MAX_ULBS,
+      });
+      expect(component.rows.length).toBe(1);
+      expect(component.rows.at(0).controls.ulbId.value).toBe('u1');
+      expect(component.rows.at(0).controls.claimedAmount.value).toBe(25); // the claim amount is editable here
+      expect(component.rows.at(0).enabled).toBeTrue();
+      expect(component.savedUlbRows()[0]).toEqual(
+        jasmine.objectContaining({ ulbName: 'Fresh u1', allocationAmount: 30 }),
+      );
+      const note = fixture.debugElement.query(By.css('[data-cy="claim-letter-copy-note"]'));
+      expect((note.nativeElement as HTMLElement).textContent?.trim()).toBe(
+        '1 ULB copied from Claim Letter 2-R1. 3 ULBs were not copied because 1 ULB was returned for correction, ' +
+          '1 ULB is already in another claim letter and 1 ULB is no longer eligible.',
+      );
+    });
+
+    it('stays a plain New Claim Letter when that letter was not returned', async () => {
+      await setupCopy(buildClaim());
+
+      expect(component.rows.length).toBe(0);
+      expect(component.copyNote()).toBeNull();
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        "Couldn't copy the ULBs from that letter.",
+        'snackbar-danger',
+      );
+      expect(component.eligibilityOverview()).not.toBeNull();
+    });
+
+    it('stays a plain New Claim Letter when loading that letter fails', async () => {
+      await setup('new', { from: 'claim-9' });
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(throwError(() => new Error('boom')));
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of([]));
+      spyOn(claimLetterService, 'getUlbOptions').and.returnValue(of({ options: [], page: 1, limit: 1, total: 0 }));
+      fixture.detectChanges();
+
+      expect(component.rows.length).toBe(0);
+      expect(utilityService.triggerSnackbar).toHaveBeenCalledWith(
+        "Couldn't copy the ULBs from that letter.",
+        'snackbar-danger',
+      );
+      expect(component.eligibilityOverview()).not.toBeNull(); // reloaded for a plain create page
+    });
+  });
 
   describe('create mode', () => {
     beforeEach(async () => {
@@ -200,10 +325,18 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.stateName()).toBe('Test State');
     });
 
-    it('is the final batch only when the next batch takes the last slot', () => {
+    it('is the final batch only when the new letter takes the last place with no draft open', () => {
       expect(component.isFinalBatch()).toBe(false);
       component.eligibilityOverview.set(buildClaimContext({ nextBatchNumber: 3, batchSlotsUsed: 2 }));
       expect(component.isFinalBatch()).toBe(true);
+      // Slots free up out of order after a return: the last free place can be slot 1.
+      component.eligibilityOverview.set(buildClaimContext({ nextBatchNumber: 1, batchSlotsUsed: 2 }));
+      expect(component.isFinalBatch()).toBe(true);
+      // Another draft is open: whichever draft is submitted last needs every ULB, not this one yet.
+      component.eligibilityOverview.set(
+        buildClaimContext({ nextBatchNumber: 3, batchSlotsUsed: 2, openDraftCount: 1 }),
+      );
+      expect(component.isFinalBatch()).toBe(false);
     });
 
     it('loads the state-wide financial overview (but never getDetail/getUlbs) on init', () => {
@@ -690,9 +823,14 @@ describe('ClaimLetterDetailComponent', () => {
       expect(component.formLevelErrors()).toEqual(['expectedRevision must be an integer number']);
     });
 
-    it('is the final batch when this batch holds the last slot', async () => {
-      await setupEdit(buildClaim({ batchNumber: 3 }));
+    it('is the final batch when the backend says this letter fills the last place, whatever its slot', async () => {
+      await setupEdit(buildClaim({ batchNumber: 1, isLastPlace: true }));
       expect(component.isFinalBatch()).toBe(true);
+    });
+
+    it('is not the final batch in slot 3 while a place is still free', async () => {
+      await setupEdit(buildClaim({ batchNumber: 3, isLastPlace: false }));
+      expect(component.isFinalBatch()).toBe(false);
     });
 
     it('marks the ULB rows a save refused, and removes exactly them in one click', async () => {
@@ -844,9 +982,12 @@ describe('ClaimLetterDetailComponent', () => {
       expect(emissions).toBe(1);
     });
 
-    async function setupWithSavedRows(rows: ClaimLetterUlbRow[]): Promise<void> {
+    async function setupWithSavedRows(
+      rows: ClaimLetterUlbRow[],
+      claim: Partial<ClaimLetterBatchSummary> = {},
+    ): Promise<void> {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim()));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim(claim)));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(rows));
       spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
       fixture.detectChanges();
@@ -871,6 +1012,24 @@ describe('ClaimLetterDetailComponent', () => {
       );
       expect(component.ineligibleUlbIdsToRemove().size).toBe(0);
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-remove-rejected"]'))).toBeNull();
+    });
+
+    it('leaves a State-level failure to the banner at the top when it shows', async () => {
+      const reason =
+        'Grant Transfer Certificate is not verified yet. This claim letter can be downloaded, signed and submitted ' +
+        'once it is verified.';
+      await setupWithSavedRows([{ ...SAVED_ULB_ROWS[0], eligible: false, stateGatePassed: false }], {
+        blockedReason: reason,
+        stateFormNotice: reason,
+      });
+
+      expect(component.rowValidationMessage()).toBeNull();
+      expect(component.submitBlockedReason()).toBeNull();
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-row-validation-alert"]'))).toBeNull();
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).toBeNull();
+      expect(
+        fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]')).nativeElement.textContent,
+      ).toContain('Grant Transfer Certificate is not verified yet.');
     });
 
     it('abandonDraft is a no-op when not editable', async () => {
@@ -942,6 +1101,25 @@ describe('ClaimLetterDetailComponent', () => {
       (component.signedFileForm.get('signedClaimFile') as AbstractControl<unknown>).setValue(null);
 
       expect(uploadSpy).not.toHaveBeenCalled();
+    });
+
+    it('uploads a picked file once, though the file field emits it twice', async () => {
+      await setupEdit(buildClaim({ questions: [SIGNED_FILE_FIELD] }));
+      const uploadSpy = spyOn(claimLetterService, 'uploadSignedFile').and.returnValue(
+        of(buildClaim({ hasSignedFile: true })),
+      );
+      const control = component.signedFileForm.get('signedClaimFile') as AbstractControl<unknown>;
+
+      // What the shared file field does on a pick: setValue, then updateValueAndValidity.
+      control.setValue(SAMPLE_FILE_METADATA);
+      control.updateValueAndValidity();
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+
+      // A new pick has a new storage path, so it still uploads.
+      const another = { ...SAMPLE_FILE_METADATA, path: 'claim-letter/signed-file/another.pdf' };
+      control.setValue(another);
+      expect(uploadSpy).toHaveBeenCalledTimes(2);
+      expect(uploadSpy.calls.mostRecent().args).toEqual(['claim-1', another]);
     });
 
     it('resets the control and surfaces the backend message when the upload fails', async () => {
@@ -1297,49 +1475,264 @@ describe('ClaimLetterDetailComponent', () => {
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).not.toBeNull();
     });
 
-    it('shows why the batch is blocked by another active batch', async () => {
+    it('shows why nothing can be signed while a State form is being corrected, and hides the upload', async () => {
+      const reason =
+        'SFC Status is not verified yet. This claim letter can be downloaded, signed and submitted once it is verified.';
       await setupEdit(
         buildClaim({
-          hasSignedFile: true,
-          blockedByBatchNumber: 1,
-          blockedReason: 'Only one claim batch can be processed at a time. Batch 1 is still in progress.',
+          blockedReason: reason,
+          stateFormNotice: reason,
           permissions: { canView: true, canEdit: true, canFinalSubmit: false },
         }),
       );
       fixture.detectChanges();
 
-      const alert = fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'));
-      expect(alert.nativeElement.textContent).toContain('Batch 1');
+      // Said once, at the top; not repeated above the buttons.
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]'));
+      expect(banner.nativeElement.textContent).toContain('SFC Status is not verified yet.');
+      expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-submit-blocked"]'))).toBeNull();
       expect(fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'))).toBeNull();
+      expect(component.showSignedFileField()).toBeFalse();
+    });
+
+    it("explains a signed letter removed after another letter's State form return", async () => {
+      const notice =
+        'Your signed letter was removed because SFC Status was returned for correction by MoHUA with Claim Letter 1. ' +
+        'Once it is corrected and verified, download this letter again, get it signed by the concerned authority and ' +
+        'upload it.';
+      await setupEdit(buildClaim({ stateFormNotice: notice, blockedReason: null }));
+      fixture.detectChanges();
+
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-state-form-notice"]'));
+      expect(banner.nativeElement.textContent).toContain('Your signed letter was removed');
+      expect(component.showSignedFileField()).toBeTrue();
+    });
+
+    it("says why a letter was returned with another letter's State form", async () => {
+      await setupEdit(
+        buildClaim({
+          currentFormStatus: 16,
+          isAbandoned: true,
+          returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+        }),
+      );
+      fixture.detectChanges();
+
+      const banner = fixture.debugElement.query(By.css('[data-cy="claim-letter-returned-with"]'));
+      expect(banner.nativeElement.textContent).toContain('Claim Letter 1');
+    });
+
+    describe('a letter the SO returned itself', () => {
+      const returnedUlb = (n: number) => ({
+        ulbId: `ulb-r${n}`,
+        ulbName: `ULB ${n}`,
+        items: ['Annual Accounts (Audited)'],
+        remark: null,
+      });
+      const returnedClaim = (ulbCount: number, overrides: Partial<ClaimLetterBatchSummary> = {}) =>
+        buildClaim({
+          currentFormStatus: 16,
+          isAbandoned: true,
+          mohuaRemarks: 'Please correct the GTC dates.',
+          returnSummary: {
+            stateForms: [
+              { formId: 22, name: 'SFC Status', ulbCount: 0 },
+              { formId: 23, name: 'Elected Body Status', ulbCount: 2 },
+            ],
+            ulbs: Array.from({ length: ulbCount }, (_, i) => returnedUlb(i + 1)),
+          },
+          permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+          ...overrides,
+        });
+      const byCy = (cy: string) => fixture.debugElement.query(By.css(`[data-cy="${cy}"]`));
+      const text = (cy: string) =>
+        (byCy(cy)?.nativeElement as HTMLElement | undefined)?.textContent?.replace(/\s+/g, ' ');
+
+      it('shows one box with the reason, the linked State forms and the ULBs, instead of the banner', async () => {
+        await setupEdit(returnedClaim(3));
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).not.toBeNull();
+        expect(fixture.debugElement.query(By.css('app-returned-reason-banner'))).toBeNull();
+        expect(text('claim-letter-return-reason')).toContain('Please correct the GTC dates.');
+        expect(text('claim-letter-return-state-forms')).toContain('Elected Body Status (2 ULBs)');
+        const links = byCy('claim-letter-return-state-forms')
+          .queryAll(By.css('a'))
+          .map((a) => (a.nativeElement as HTMLAnchorElement).getAttribute('href'));
+        expect(links).toEqual(['/xvifc/year-test-id/sfc-status', '/xvifc/year-test-id/elected-body-status']);
+        expect(text('claim-letter-return-ulbs')).toContain('ULBs (3): ULB 1, ULB 2, ULB 3 - highlighted');
+        expect(text('claim-letter-return-ulbs')).not.toContain('more');
+        expect(component.returnedUlbs().get('ulb-r2')?.ulbName).toBe('ULB 2');
+      });
+
+      it('names only the first 3 ULBs, then how many more', async () => {
+        await setupEdit(returnedClaim(5));
+        fixture.detectChanges();
+
+        expect(text('claim-letter-return-ulbs')).toContain('ULBs (5): ULB 1, ULB 2, ULB 3 +2 more');
+        expect(component.returnedUlbs().size).toBe(5);
+      });
+
+      it('has no Reason line when the SO wrote no general remark', async () => {
+        await setupEdit(returnedClaim(1, { mohuaRemarks: null }));
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).not.toBeNull();
+        expect(byCy('claim-letter-return-reason')).toBeNull();
+      });
+
+      it('keeps the banner and the note, with no box, for a letter returned with another letter', async () => {
+        await setupEdit(
+          buildClaim({
+            currentFormStatus: 16,
+            isAbandoned: true,
+            mohuaRemarks: 'SFC needs the ATR.',
+            returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+            returnSummary: null,
+            permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+          }),
+        );
+        fixture.detectChanges();
+
+        expect(byCy('claim-letter-return-summary')).toBeNull();
+        expect(fixture.debugElement.query(By.css('app-returned-reason-banner'))).not.toBeNull();
+        expect(byCy('claim-letter-returned-with')).not.toBeNull();
+        expect(component.returnedUlbs().size).toBe(0);
+      });
+
+      describe('starting a new letter with its ULBs', () => {
+        async function setupReturned(
+          claim: ClaimLetterBatchSummary,
+          gate = gateSummary(true),
+          context = buildClaimContext(),
+        ): Promise<void> {
+          await setup('claim-1');
+          spyOn(claimLetterService, 'getDetail').and.returnValue(of(claim));
+          spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+          spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(context));
+          spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(of(gate));
+          fixture.detectChanges();
+        }
+        const button = () => byCy('claim-letter-reuse-ulbs');
+
+        it("offers it in the box and opens New Claim Letter with this letter's ULBs", async () => {
+          await setupReturned(returnedClaim(2));
+
+          expect(claimLetterService.getEligibilitySummary).toHaveBeenCalledWith('state-test-id', 'year-test-id', 1);
+          expect(
+            byCy('claim-letter-return-summary').query(By.css('[data-cy="claim-letter-reuse-ulbs"]')),
+          ).not.toBeNull();
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeFalse();
+
+          (button().nativeElement as HTMLButtonElement).click();
+
+          expect(router.navigate).toHaveBeenCalledWith(['/xvifc', 'year-test-id', 'claim-letter', 'new'], {
+            queryParams: { from: 'claim-1' },
+          });
+        });
+
+        it('is disabled, with the reason, while every place is taken', async () => {
+          await setupReturned(
+            returnedClaim(2),
+            gateSummary(true),
+            buildClaimContext({ canCreate: false, createBlockedReason: 'All 3 claim letters are in use.' }),
+          );
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain('All 3 claim letters are in use.');
+        });
+
+        it('is disabled, naming the form, while a returned State form is being corrected', async () => {
+          await setupReturned(returnedClaim(2), gateSummary(false, ['SFC Status']));
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain('Available once SFC Status is verified again.');
+          component.startLetterFromThis();
+          expect(router.navigate).not.toHaveBeenCalled();
+        });
+
+        it('is disabled, saying so, when the State-level conditions fail to load', async () => {
+          await setup('claim-1');
+          spyOn(claimLetterService, 'getDetail').and.returnValue(of(returnedClaim(2)));
+          spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+          spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext()));
+          spyOn(claimLetterService, 'getEligibilitySummary').and.returnValue(throwError(() => new Error('boom')));
+          fixture.detectChanges();
+
+          expect((button().nativeElement as HTMLButtonElement).disabled).toBeTrue();
+          expect(text('claim-letter-reuse-blocked')).toContain(
+            "Couldn't check the State-level conditions. Reload to try again.",
+          );
+        });
+
+        it('sits in the note for a letter returned with another letter', async () => {
+          await setupReturned(
+            buildClaim({
+              currentFormStatus: 16,
+              isAbandoned: true,
+              returnedWithNote: 'Returned because SFC Status was returned for correction with Claim Letter 1.',
+              returnSummary: null,
+              permissions: { canView: true, canEdit: false, canFinalSubmit: false },
+            }),
+          );
+
+          expect(
+            byCy('claim-letter-returned-with').query(By.css('[data-cy="claim-letter-reuse-ulbs"]')),
+          ).not.toBeNull();
+        });
+
+        it('is not offered on a draft, and the State gate is not fetched for it', async () => {
+          await setupReturned(buildClaim());
+
+          expect(button()).toBeNull();
+          expect(claimLetterService.getEligibilitySummary).not.toHaveBeenCalled();
+        });
+      });
     });
 
     // ─── Final-batch completeness guard (FE's first line of defense; BE is the real authority) ───
 
-    it('finalBatchIncomplete is true on the last batch slot while ULBs remain unclaimed', async () => {
+    it('finalBatchIncomplete is true on the last draft while ULBs remain unclaimed', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 2, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       expect(component.finalBatchIncomplete()).toBeTrue();
     });
 
-    it('finalBatchIncomplete is false once no ULBs remain unclaimed, even on the last batch slot', async () => {
+    it('finalBatchIncomplete is false once no ULBs remain unclaimed, even on the last draft', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 0, hasSignedFile: true })),
+      );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
+      fixture.detectChanges();
+
+      expect(component.finalBatchIncomplete()).toBeFalse();
+    });
+
+    it('finalBatchIncomplete follows the count on the letter, not the context loaded with the page', async () => {
+      await setup('claim-1');
+      // After a save that added the left-out ULBs, the reloaded letter says none remain; the context is from page load.
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 0, hasSignedFile: true })),
+      );
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
       spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 0 })),
+        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 8 })),
       );
       fixture.detectChanges();
 
       expect(component.finalBatchIncomplete()).toBeFalse();
     });
 
-    it('finalBatchIncomplete is false on a non-final batch, even with ULBs still unclaimed', async () => {
+    it('finalBatchIncomplete is false while a place is still free, even with ULBs still unclaimed', async () => {
       await setup('claim-1');
       spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 1, hasSignedFile: true })));
       spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
@@ -1353,27 +1746,30 @@ describe('ClaimLetterDetailComponent', () => {
 
     it('disables the submit button and shows the inline warning when finalBatchIncomplete', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 4 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 4, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       const submitButton = fixture.debugElement.query(By.css('[data-cy="claim-letter-detail-submit"]'));
       expect((submitButton.nativeElement as HTMLButtonElement).disabled).toBeTrue();
       const warning = fixture.debugElement.query(By.css('[data-cy="claim-letter-final-batch-blocked"]'));
       expect(warning).not.toBeNull();
-      expect(warning.nativeElement.textContent).toContain('4');
+      expect((warning.nativeElement.textContent as string).replace(/\s+/g, ' ').trim()).toBe(
+        '4 ULB(s) are in no claim letter yet. This is the last draft and all 3 places for this installment are in ' +
+          'use, so every ULB must be in a claim letter before you can submit it.',
+      );
     });
 
     it('submitToMohua is a no-op when finalBatchIncomplete, even if somehow invoked', async () => {
       await setup('claim-1');
-      spyOn(claimLetterService, 'getDetail').and.returnValue(of(buildClaim({ batchNumber: 3, hasSignedFile: true })));
-      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
-      spyOn(claimLetterService, 'getClaimContext').and.returnValue(
-        of(buildClaimContext({ batchSlotsMax: 3, remainingUlbCount: 2 })),
+      spyOn(claimLetterService, 'getDetail').and.returnValue(
+        of(buildClaim({ batchNumber: 3, isLastPlace: true, remainingUlbCount: 2, hasSignedFile: true })),
       );
+      spyOn(claimLetterService, 'getAllUlbs').and.returnValue(of(SAVED_ULB_ROWS));
+      spyOn(claimLetterService, 'getClaimContext').and.returnValue(of(buildClaimContext({ batchSlotsMax: 3 })));
       fixture.detectChanges();
 
       component.submitToMohua();

@@ -161,6 +161,8 @@ describe('RequirementsComponent — status tooltip', () => {
               { formType: 'd', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 14 },
               { formType: 'e', result: 'PASSED', reasonCode: 'x', statusAtEvaluation: 7 },
               { formType: 'f', result: 'EXEMPTED', reasonCode: 'x', statusAtEvaluation: null },
+              { formType: 'g', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 15 }, // under SO review
+              { formType: 'h', result: 'FAILED', reasonCode: 'x', statusAtEvaluation: 16 }, // returned by the SO
             ],
           },
         },
@@ -175,7 +177,18 @@ describe('RequirementsComponent — status tooltip', () => {
       'Resubmit',
       'Acknowledged',
       'Exempted',
+      'Submitted',
+      'Resubmit',
     ]);
-    expect(component.conditionsToBeMet().map((c) => c.passed)).toEqual([false, false, true, false, true, true]);
+    expect(component.conditionsToBeMet().map((c) => c.passed)).toEqual([
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+    ]);
   });
 });
