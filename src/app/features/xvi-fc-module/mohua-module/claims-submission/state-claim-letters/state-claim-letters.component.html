@@ -36,7 +36,7 @@
                       p.ulbs.approved +
                       ' approved, ' +
                       p.ulbs.underReview +
-                      ' under review, ' +
+                      ' under review by MoHUA, ' +
                       p.ulbs.pending +
                       ' pending'
                     "
@@ -85,7 +85,7 @@
                       </li>
                       <li class="list-inline-item">
                         <span class="cl-dot cl-dot--review" aria-hidden="true"></span>
-                        <strong>{{ p.ulbs.underReview }}</strong> Under review
+                        <strong>{{ p.ulbs.underReview }}</strong> Under review by MoHUA
                       </li>
                       <li class="list-inline-item">
                         <span class="cl-dot" aria-hidden="true"></span> <strong>{{ p.ulbs.pending }}</strong> Pending
@@ -149,9 +149,6 @@
                         <strong>{{ formatCrore(p.amount.balance) }}</strong> Balance
                       </li>
                     </ul>
-                    <span class="cl-ring-card__note small text-body-secondary"
-                      >Under review or acknowledged, of this instalment</span
-                    >
                   </div>
                 </div>
               </mat-card>

@@ -117,22 +117,42 @@ export interface OmHistoryRow {
   stateName: string;
   stateCode: string;
   ulbCount: number;
+  /** Amount claimed in the letter the OM covers (whole rupees). */
   totalAmount: number;
+  /** The State's allocation for this installment (whole rupees); null when not set. */
+  allocation: number | null;
+  /** The "Dated" printed on the signed OM (YYYY-MM-DD); null until the signed copy is uploaded. */
   issuedOn: string | null;
   status: OmStatus;
-  doeStatus: 'PENDING';
   signedFile: OmSignedFile | null;
 }
 
 /** Signed OM upload: PDF only, up to 5 MB (the API enforces the same). */
 export const OM_SIGNED_FILE_MAX_MB = 5;
 
+/** Generated = the OM PDF exists; Issued = MoHUA uploaded the signed copy. */
 export const OM_STATUS_LABEL: Record<OmStatus, string> = {
   DRAFT: 'Draft',
-  GENERATED: 'Issued',
-  SIGNED_UPLOADED: 'Signed',
+  GENERATED: 'Generated',
+  SIGNED_UPLOADED: 'Issued',
 };
 
+/** True once the OM PDF exists (Generated or Issued): the letter then shows "View OM". */
 export function isIssued(status: OmStatus | null): boolean {
   return status === 'GENERATED' || status === 'SIGNED_UPLOADED';
+}
+
+/** The OM status filter of the Generate OM and OM history tables; NOT_GENERATED covers no OM yet and a draft. */
+export type OmStageFilter = 'ALL' | 'NOT_GENERATED' | 'GENERATED' | 'ISSUED';
+
+export function omStage(status: OmStatus | null): Exclude<OmStageFilter, 'ALL'> {
+  if (status === 'SIGNED_UPLOADED') return 'ISSUED';
+  if (status === 'GENERATED') return 'GENERATED';
+  return 'NOT_GENERATED';
+}
+
+/** Case-insensitive match of the search box against any of the given texts (State, claim letter no., OM no.). */
+export function matchesOmSearch(query: string, ...texts: (string | null | undefined)[]): boolean {
+  const q = query.trim().toLowerCase();
+  return !q || texts.some((text) => text?.toLowerCase().includes(q));
 }

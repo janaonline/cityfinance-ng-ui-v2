@@ -101,7 +101,7 @@ export class ClaimsSubmissionComponent implements OnInit {
         },
         {
           key: 'underReview',
-          label: 'Under review',
+          label: 'Under review by MoHUA',
           icon: 'bi-hourglass-split',
           value: claimsText(o.underReview.claims),
           sub: ofClaims,

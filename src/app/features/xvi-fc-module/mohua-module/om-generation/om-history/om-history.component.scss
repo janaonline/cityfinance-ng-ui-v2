@@ -9,3 +9,8 @@
 .omh-ref {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+// The State picker sits next to the search box at its compact height, but narrower.
+.omh-state-filter {
+  flex: 0 1 200px;
+}
