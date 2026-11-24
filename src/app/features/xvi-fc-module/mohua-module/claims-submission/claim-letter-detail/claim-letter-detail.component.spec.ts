@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -17,6 +18,7 @@ const detail: ClaimLetterDetail = {
   id: 'c3',
   revision: 3,
   number: 'AP-CL-003',
+  batchNumber: 3,
   state: { id: 's1', name: 'Andhra Pradesh' },
   yearId: 'y1',
   installment: 1,
@@ -113,6 +115,44 @@ describe('ClaimLetterDetailComponent', () => {
         },
       ],
     }).compileComponents();
+  });
+
+  it("goes Back to the State's claim letters by default", () => {
+    const host = create();
+    expect(host.querySelector('.cs-back')?.textContent).toContain('Claim Letters');
+  });
+
+  it('goes Back to the ULB Eligibility page, filters included, when opened from it', () => {
+    const url = '/xvifc/y1/claims-submission/s1/ulb-eligibility?batch=2';
+    spyOn(TestBed.inject(Location), 'getState').and.returnValue({ ulbEligibilityUrl: url });
+    const host = create();
+    const back = host.querySelector('a.cs-back') as HTMLAnchorElement;
+    expect(back.textContent).toContain('Back to Claim Eligibility');
+    expect(back.getAttribute('href')).toBe(url);
+  });
+
+  it('links to Claim Eligibility filtered to this batch, before Generate OM, for MoHUA and PMU', () => {
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Verified' }));
+    let host = create();
+    const link = () => host.querySelector('[data-cy="claim-letter-eligibility-link"]') as HTMLAnchorElement;
+
+    expect(link().textContent).toContain('Claim eligibility');
+    expect(link().getAttribute('href')).toBe('/claims-submission/s1/ulb-eligibility?batch=3');
+    expect(
+      link().compareDocumentPosition(host.querySelector('.cl-om-btn')!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fixture.destroy();
+    isMohuaUser = false;
+    host = create();
+    expect(link().getAttribute('href')).toBe('/claims-submission/s1/ulb-eligibility?batch=3');
+  });
+
+  it('opens the whole State from a returned letter, whose ULBs are in no batch there', () => {
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 16, statusLabel: 'Returned' }));
+    const link = create().querySelector('[data-cy="claim-letter-eligibility-link"]') as HTMLAnchorElement;
+
+    expect(link.getAttribute('href')).toBe('/claims-submission/s1/ulb-eligibility');
   });
 
   it('is read-only for PMU: no review actions on a letter under SO review, and no Generate OM once verified', () => {

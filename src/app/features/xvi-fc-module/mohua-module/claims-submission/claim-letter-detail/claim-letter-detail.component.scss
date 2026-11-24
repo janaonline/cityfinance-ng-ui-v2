@@ -2,6 +2,14 @@
 // Material + Bootstrap tuning shared by the claims screens; only this page's own pieces are below.
 @use '../claims-ui';
 
+// Going back to the ULB Eligibility page is a button (see the template) that looks like the Back link.
+.cl-back-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
 // A tone per headline card: the card's outline, icon and value take it (teal is the page default).
 .cl-tone--orange {
   --t: var(--clr-primary, #d9730d);

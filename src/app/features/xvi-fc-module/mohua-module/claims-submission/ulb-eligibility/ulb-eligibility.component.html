@@ -1,0 +1,420 @@
+<div class="cs-page">
+  <!-- A RouterLink would still navigate on click, so going back in history is a plain button. -->
+  @if (cameFromApp) {
+    <button type="button" class="cs-back ue-back" (click)="goBack()">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back
+    </button>
+  } @else {
+    <a class="cs-back" [routerLink]="['claims-submission', stateId()]" [relativeTo]="mohuaRoute">
+      <i class="bi bi-arrow-left" aria-hidden="true"></i> Back
+    </a>
+  }
+
+  @if (data(); as d) {
+    <h1 class="cs-title">
+      Claim Eligibility<span class="cs-year">{{ d.designYearLabel }} · {{ installmentLabel() }}</span>
+    </h1>
+    <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="ue-asof">As on {{ d.asOn | date: 'd MMM, h:mm a' }}</span>
+        <button
+          mat-stroked-button
+          type="button"
+          class="cs-view-btn"
+          matTooltip="Re-check every ULB's conditions now"
+          [disabled]="loading()"
+          (click)="refresh()"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    @if (summary(); as sum) {
+      <section class="ue-summary" aria-label="Summary">
+        <p class="ue-summary__lead">{{ sum.lead }}</p>
+        <ul class="ue-summary__list">
+          @for (line of sum.bullets; track line) {
+            <li>{{ line }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (!d.stateGate.passed) {
+      <div class="alert alert-warning d-flex gap-2 small py-2 mb-2" role="status">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <span>
+          State conditions not met:
+          @for (c of d.stateGate.failedConditions; track c.label; let last = $last) {
+            <strong>{{ c.label }}</strong> ({{ c.statusLabel }}){{ last ? '.' : ', ' }}
+          }
+          No ULB of this State can be claimed until they are.
+        </span>
+      </div>
+    }
+    @if (d.noneStarted) {
+      <div class="alert alert-info d-flex gap-2 small py-2 mb-2" role="status">
+        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+        <span>No ULB in this State has started its forms yet.</span>
+      </div>
+    }
+
+    <section class="ue-bar" aria-label="Filters">
+      <div class="ue-bar__row">
+        <button mat-stroked-button type="button" class="ue-pill" [matMenuTriggerFor]="stateMenu">
+          <i class="bi bi-geo-alt" aria-hidden="true"></i> State: <strong>{{ d.stateName }}</strong>
+          <i class="bi bi-chevron-down" aria-hidden="true"></i>
+        </button>
+        <mat-form-field class="cs-search ue-search" appearance="outline" subscriptSizing="dynamic">
+          <i class="bi bi-search" matPrefix aria-hidden="true"></i>
+          <input
+            matInput
+            type="search"
+            placeholder="Search ULB name or code"
+            aria-label="Search ULBs"
+            maxlength="100"
+            [value]="searchText()"
+            (input)="onSearch($any($event.target).value)"
+          />
+        </mat-form-field>
+        <mat-button-toggle-group
+          class="cs-toggle ms-auto"
+          aria-label="Eligibility"
+          hideSingleSelectionIndicator
+          [value]="filters().eligibility ?? 'ALL'"
+          (change)="setFilter('eligibility', $event.value === 'ALL' ? null : $event.value)"
+        >
+          <mat-button-toggle value="ALL"
+            >All <span class="badge rounded-pill cs-tint ms-1 ue-count">{{ d.counts.total }}</span></mat-button-toggle
+          >
+          <mat-button-toggle value="ELIGIBLE"
+            ><i class="bi bi-check-circle me-1" aria-hidden="true"></i>Eligible
+            <span class="badge rounded-pill cs-tint ms-1 ue-count">{{ d.counts.eligible }}</span></mat-button-toggle
+          >
+          <mat-button-toggle value="INELIGIBLE"
+            ><i class="bi bi-x-circle me-1" aria-hidden="true"></i>Ineligible
+            <span class="badge rounded-pill cs-tint ms-1 ue-count">{{ d.counts.ineligible }}</span></mat-button-toggle
+          >
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="ue-bar__row">
+        <button
+          mat-stroked-button
+          type="button"
+          class="ue-pill"
+          [class.ue-pill--on]="filters().batch"
+          [matMenuTriggerFor]="batchMenu"
+        >
+          Batch: <strong>{{ batchLabel() }}</strong> <i class="bi bi-chevron-down" aria-hidden="true"></i>
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          class="ue-pill"
+          [class.ue-pill--on]="filters().letterStatus !== null"
+          [matMenuTriggerFor]="letterStatusMenu"
+        >
+          Letter status: <strong>{{ letterStatusLabel() }}</strong>
+          <i class="bi bi-chevron-down" aria-hidden="true"></i>
+        </button>
+        <button
+          mat-stroked-button
+          type="button"
+          class="ue-pill"
+          [class.ue-pill--on]="filters().condition"
+          [matMenuTriggerFor]="conditionMenu"
+        >
+          Failed condition: <strong>{{ conditionLabel() }}</strong>
+          <i class="bi bi-chevron-down" aria-hidden="true"></i>
+        </button>
+        @if (hasFilters()) {
+          <button mat-button type="button" class="ue-reset" (click)="resetFilters()">
+            <i class="bi bi-x-lg" aria-hidden="true"></i> Reset
+          </button>
+        }
+        <app-amount-display-toggle class="ms-auto" />
+      </div>
+    </section>
+
+    <mat-menu #stateMenu="matMenu">
+      <div class="ue-menu-list">
+        @for (s of stateOptions(); track s.stateId) {
+          <button mat-menu-item type="button" class="ue-menu-item" (click)="changeState(s.stateId)">
+            <span class="ue-opt">
+              <span>{{ s.name }}</span>
+              @if (s.stateId === stateId()) {
+                <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+              }
+            </span>
+          </button>
+        }
+      </div>
+    </mat-menu>
+    <mat-menu #batchMenu="matMenu">
+      <div class="ue-menu-list">
+        <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('batch', null)">
+          <span class="ue-opt">
+            <span>All</span><span class="ue-opt__count">{{ d.counts.total }}</span>
+            @if (!filters().batch) {
+              <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+            }
+          </span>
+        </button>
+        @for (o of batchOptions(); track o.value) {
+          <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('batch', o.value)">
+            <span class="ue-opt">
+              <span>{{ o.label }}</span
+              ><span class="ue-opt__count">{{ o.count }}</span>
+              @if (filters().batch === o.value) {
+                <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+              }
+            </span>
+          </button>
+        }
+      </div>
+    </mat-menu>
+    <mat-menu #letterStatusMenu="matMenu">
+      <div class="ue-menu-list">
+        <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('letterStatus', null)">
+          <span class="ue-opt">
+            <span>All</span>
+            @if (filters().letterStatus === null) {
+              <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+            }
+          </span>
+        </button>
+        @for (s of letterStatuses; track s.status) {
+          <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('letterStatus', s.status)">
+            <span class="ue-opt">
+              <span>{{ s.label }}</span
+              ><span class="ue-opt__count">{{ letterStatusCounts().get(s.status) ?? 0 }}</span>
+              @if (filters().letterStatus === s.status) {
+                <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+              }
+            </span>
+          </button>
+        }
+      </div>
+    </mat-menu>
+    <mat-menu #conditionMenu="matMenu">
+      <div class="ue-menu-list">
+        <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('condition', null)">
+          <span class="ue-opt">
+            <span>All</span>
+            @if (!filters().condition) {
+              <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+            }
+          </span>
+        </button>
+        @for (c of d.conditions; track c.key) {
+          <button mat-menu-item type="button" class="ue-menu-item" (click)="setFilter('condition', c.key)">
+            <span class="ue-opt">
+              <span>{{ c.label }}</span>
+              @if (filters().condition === c.key) {
+                <i class="bi bi-check2 ue-opt__tick" aria-label="Selected"></i>
+              }
+            </span>
+          </button>
+        }
+      </div>
+    </mat-menu>
+
+    <mat-card appearance="outlined" class="cs-panel mt-3">
+      @if (error()) {
+        <div class="alert alert-danger d-flex align-items-center justify-content-between gap-2 small py-2" role="alert">
+          <span>{{ error() }}</span>
+          <button mat-stroked-button type="button" (click)="retry()">Try again</button>
+        </div>
+      }
+
+      <div class="ue-progress">
+        @if (loading()) {
+          <mat-progress-bar mode="indeterminate" aria-label="Loading ULBs" />
+        }
+      </div>
+      <div class="cs-flat-wrap ue-wrap" [attr.aria-busy]="loading()">
+        <table class="table table-hover align-middle mb-0 cs-flat ue-table">
+          <caption class="visually-hidden">
+            Eligibility of every ULB in
+            {{
+              d.stateName
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="ue-sticky ue-sticky--sl">S.No</th>
+              <th scope="col" class="ue-sticky ue-sticky--ulb">ULB</th>
+              <th scope="col">Code</th>
+              <th scope="col">Eligibility</th>
+              <th scope="col">Batch</th>
+              @for (c of d.columns; track c.key) {
+                <th scope="col">{{ c.header }}</th>
+              }
+              <th scope="col">Tied grant</th>
+              <th scope="col">Untied grant</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of d.items; track row.ulbId) {
+              <tr>
+                <td class="ue-sticky ue-sticky--sl text-body-secondary">{{ row.slNo }}</td>
+                <td class="ue-sticky ue-sticky--ulb ue-name">
+                  <a
+                    class="ue-link fw-semibold"
+                    [routerLink]="['review-state-submissions', stateId(), 'ulb', row.ulbId]"
+                    [relativeTo]="mohuaRoute"
+                    [state]="{ ulbEligibilityUrl: currentUrl() }"
+                    >{{ row.name }}</a
+                  >
+                </td>
+                <td
+                  class="ue-code"
+                  [matTooltip]="row.censusCode ? 'Census code' : 'SB code'"
+                  [matTooltipDisabled]="!row.censusCode && !row.sbCode"
+                >
+                  {{ row.censusCode || row.sbCode || '-' }}
+                </td>
+                <td>
+                  <span
+                    class="cs-badge"
+                    [class.cs-badge--good]="row.eligible"
+                    [class.cs-badge--bad]="!row.eligible"
+                    [matTooltip]="failedText(row)"
+                    [matTooltipDisabled]="row.eligible"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-check-circle-fill]="row.eligible"
+                      [class.bi-x-circle-fill]="!row.eligible"
+                      aria-hidden="true"
+                    ></i>
+                    {{ row.eligible ? 'Eligible' : 'Ineligible' }}
+                  </span>
+                  @if (hasNoAllocation(row)) {
+                    <div class="small text-body-secondary mt-1">No devolution allocation</div>
+                  }
+                </td>
+                <td class="ue-batch-cell">
+                  @if (row.batch; as b) {
+                    @if (b.linkable) {
+                      <a
+                        class="ue-link fw-semibold"
+                        [routerLink]="['claims-submission', stateId(), 'letter', b.claimLetterId]"
+                        [relativeTo]="mohuaRoute"
+                        [state]="{ ulbEligibilityUrl: currentUrl() }"
+                        >Batch {{ b.batchNumber }}</a
+                      >
+                    } @else {
+                      <span class="fw-semibold">Batch {{ b.batchNumber }}</span>
+                    }
+                    <i
+                      class="bi ue-status {{ batchStatusIcon(b) }}"
+                      role="img"
+                      [attr.aria-label]="batchStatusLabel(b)"
+                      [matTooltip]="batchStatusLabel(b)"
+                    ></i>
+                    @if (!row.eligible) {
+                      <i
+                        class="bi bi-exclamation-triangle-fill ue-warn"
+                        role="img"
+                        aria-label="In a letter but no longer eligible"
+                        matTooltip="In a letter but no longer eligible"
+                      ></i>
+                    }
+                  } @else {
+                    <span class="text-body-secondary" aria-hidden="true">-</span
+                    ><span class="visually-hidden">Not in a letter</span>
+                  }
+                </td>
+                @for (c of d.columns; track c.key; let ci = $index) {
+                  <td
+                    class="ue-cond"
+                    [class.ue-cell--failed]="isFailedCell(row, c.key)"
+                    [matTooltip]="exactAmount(row.amounts?.[ci] ?? null)"
+                    [matTooltipDisabled]="!row.amounts?.[ci]"
+                  >
+                    {{ conditionText(row, ci) }}
+                  </td>
+                }
+                <td class="ue-amt" [matTooltip]="exactAmount(row.tied)" [matTooltipDisabled]="row.tied === null">
+                  {{ row.tied === null ? '-' : amount(row.tied) }}
+                </td>
+                <td class="ue-amt" [matTooltip]="exactAmount(row.untied)" [matTooltipDisabled]="row.untied === null">
+                  {{ row.untied === null ? '-' : amount(row.untied) }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="d.columns.length + 7" class="text-center text-body-secondary py-4">
+                  <i class="bi bi-search" aria-hidden="true"></i>
+                  @if (filters().search) {
+                    No ULB matches '{{ filters().search }}'.
+                    @if (cutoffYear(); as year) {
+                      <div class="small mt-1">
+                        Cantonment Boards and ULBs formed after 31 March {{ year }} are not part of XVI FC.
+                      </div>
+                    }
+                  } @else {
+                    No ULB matches these filters.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+          @if (d.pagination.total > 0) {
+            <tfoot>
+              <tr class="ue-total">
+                <th scope="row" [attr.colspan]="d.columns.length + 5">Total ({{ d.pagination.total }} ULBs)</th>
+                <td class="ue-amt" [matTooltip]="exactAmount(d.totals.tied)">{{ amount(d.totals.tied) }}</td>
+                <td class="ue-amt" [matTooltip]="exactAmount(d.totals.untied)">{{ amount(d.totals.untied) }}</td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+
+      @if (d.pagination.totalPages > 1) {
+        <nav class="d-flex align-items-center justify-content-end gap-2 mt-2 small" aria-label="ULB pages">
+          <button
+            mat-stroked-button
+            type="button"
+            class="cs-view-btn"
+            [disabled]="loading() || d.pagination.page <= 1"
+            (click)="goToPage(d.pagination.page - 1)"
+          >
+            <i class="bi bi-chevron-left" aria-hidden="true"></i> Previous
+          </button>
+          <span class="text-body-secondary"
+            >Page {{ d.pagination.page }} of {{ d.pagination.totalPages }} · {{ d.pagination.total }} ULBs</span
+          >
+          <button
+            mat-stroked-button
+            type="button"
+            class="cs-view-btn"
+            [disabled]="loading() || d.pagination.page >= d.pagination.totalPages"
+            (click)="goToPage(d.pagination.page + 1)"
+          >
+            Next <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </nav>
+      }
+    </mat-card>
+  } @else if (error()) {
+    <div class="cs-state cs-error" role="alert">
+      <p>{{ error() }}</p>
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <button mat-stroked-button type="button" (click)="retry()">Try again</button>
+        <!-- A bad filter in a link would fail again on retry, so the filters can be cleared here too. -->
+        @if (hasFilters()) {
+          <button mat-stroked-button type="button" class="ue-error-reset" (click)="resetFilters()">
+            Reset filters
+          </button>
+        }
+      </div>
+    </div>
+  } @else {
+    <app-mohua-page-loader label="Checking every ULB's conditions…" />
+  }
+</div>
