@@ -42,7 +42,7 @@ export class OverviewBriefingComponent {
       sub: stage ? `${formatRupeesInCrore(stage.amount)} · ${stage.states} ${stage.states === 1 ? 'state' : 'states'}` : '',
     });
     return [
-      tile('Under review', 'bi-hourglass-split', c?.underReview),
+      tile('Under review by MoHUA', 'bi-hourglass-split', c?.underReview),
       tile('Returned', 'bi-arrow-return-left', c?.returned),
       tile('Approved', 'bi-shield-check', c?.approved),
     ];

@@ -31,13 +31,17 @@
   --mat-form-field-outlined-outline-color: color-mix(in srgb, var(--t) 45%, transparent);
   --mat-form-field-outlined-hover-outline-color: var(--t);
   --mat-form-field-outlined-focus-outline-color: var(--t);
+  // The same compact text when the field holds a select (e.g. the OM pages' State picker), not Material's larger default.
+  --mat-select-trigger-text-size: 0.75rem;
+  --mat-select-enabled-trigger-text-color: var(--bs-body-color);
 
   flex: 1 1 220px;
   max-width: 340px;
   font-size: 0.75rem;
 
+  // The prefix icon sits inside the rounded outline, not on it.
   .bi {
-    padding-right: 8px;
+    padding: 0 8px 0 12px;
     color: var(--t);
   }
 }

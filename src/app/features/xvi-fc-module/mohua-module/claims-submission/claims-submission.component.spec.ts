@@ -134,7 +134,7 @@ describe('ClaimsSubmissionComponent', () => {
       expect(overview.querySelector('.cl-overview__hero-sub')?.textContent).toContain('across 2 states');
 
       const labels = Array.from(overview.querySelectorAll('.cl-pipeline__label')).map((l) => l.textContent?.trim());
-      expect(labels).toEqual(['Submitted', 'Under review', 'Approved', 'Released']);
+      expect(labels).toEqual(['Submitted', 'Under review by MoHUA', 'Approved', 'Released']);
 
       // Values count up on screen, so they are read from the model; subs and amounts are plain text.
       const p = fixture.componentInstance.pipeline();
