@@ -330,12 +330,12 @@ export class OverviewStatesGlanceComponent {
 
   /** "2nd claim · ₹432 cr claimed in all" (the amount is the State's total, not the latest letter's), "No claim
    *  yet", or "Coming soon" while the claim figures are not loaded. */
-  claimText(row: StateRow): string {
+  claimText(row: StateRow, short = false): string {
     if (!this.claims()) return 'Coming soon';
     const claim = this.claimsByState().get(row.stateId);
     if (!claim?.claimLetterCount) return 'No claim yet';
     const number = claim.latestClaimNumber ?? claim.claimLetterCount;
-    return `${formatOrdinal(number)} claim · ${formatRupeesInCrore(claim.amountClaimed)} claimed in all`;
+    // The list's narrow column takes the short form; its tooltip and the side panel say "in all".
+    return `${formatOrdinal(number)} claim · ${formatRupeesInCrore(claim.amountClaimed)} claimed${short ? '' : ' in all'}`;
   }
-
 }
