@@ -18,10 +18,7 @@
       Generate OM — {{ v.content.claimLetterRefNo }}
       <span class="cs-year">FY {{ v.content.designYearLabel }}</span>
     </h1>
-    <p class="cs-subtitle">
-      {{ v.content.stateName }}. One OM for this claim letter, covering every ULB on it. The figures come from the
-      verified letter.
-    </p>
+    <p class="cs-subtitle">{{ v.content.stateName }}</p>
 
     <!-- Headline figures, in the claim-letter review page's card style. -->
     <section class="row row-cols-1 row-cols-sm-3 g-2 mb-3" aria-label="Claim letter summary">
@@ -41,7 +38,10 @@
         </mat-card>
       </div>
       <div class="col" appReveal [revealDelay]="80">
-        <mat-card appearance="outlined" class="cs-panel oml-tone--orange h-100 d-flex flex-row align-items-center gap-2">
+        <mat-card
+          appearance="outlined"
+          class="cs-panel oml-tone--orange h-100 d-flex flex-row align-items-center gap-2"
+        >
           <span class="cs-icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
           <div class="d-flex flex-column text-truncate">
             <span class="oml-value fw-bold cs-accent" [appCountUp]="formatCrore(totalClaimed())"></span>
@@ -136,7 +136,7 @@
           <h2 class="oml-heading fw-bold mb-0">Office Memorandum</h2>
           <p class="small text-body-secondary mb-0" aria-live="polite">
             @if (issued()) {
-              <i class="bi bi-lock" aria-hidden="true"></i> Issued — read-only
+              <i class="bi bi-lock" aria-hidden="true"></i> {{ statusLabel[v.status] }} — read-only
             } @else {
               {{ saveText() }}
             }
