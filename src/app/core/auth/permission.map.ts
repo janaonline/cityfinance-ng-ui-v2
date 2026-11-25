@@ -41,10 +41,7 @@ export const STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permission[]> =
     Permission.VIEW_STATE_FORMS,
     Permission.EDIT_STATE_FORMS,
   ],
-  VIEWER: [
-    Permission.VIEW_STATUS_REPORTS,
-    Permission.VIEW_DASHBOARDS,
-  ],
+  VIEWER: [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS],
 };
 
 /**
@@ -72,6 +69,8 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
     Permission.UPDATE_MANAGED_USER,
     Permission.DELETE_MANAGED_USER,
   ],
+  // The reviewer: every review action the admin has (approve / return claim letters, OMs, final submit to DoE);
+  // only team management stays with the admin. Mirrors the API's XVIFC_MOHUA_PERMISSIONS.reviewer.
   EDITOR: [
     Permission.VIEW_STATUS_REPORTS,
     Permission.VIEW_DASHBOARDS,
@@ -79,12 +78,11 @@ export const MOHUA_STATE_ACCESS_LEVEL_PERMISSIONS: Record<AccessLevel, Permissio
     Permission.REVIEW_STATE_SUBMISSIONS,
     Permission.SEND_REMINDERS_TO_STATES,
     Permission.REQUEST_INFO_FROM_STATES,
+    Permission.APPROVE_STATE_SUBMISSIONS,
+    Permission.ISSUE_OFFICE_MEMORANDUM,
+    Permission.FINAL_SUBMIT_TO_DOE,
   ],
-  VIEWER: [
-    Permission.VIEW_STATUS_REPORTS,
-    Permission.VIEW_DASHBOARDS,
-    Permission.REVIEW_STATE_SUBMISSIONS_PMU,
-  ],
+  VIEWER: [Permission.VIEW_STATUS_REPORTS, Permission.VIEW_DASHBOARDS, Permission.REVIEW_STATE_SUBMISSIONS_PMU],
 };
 
 /**

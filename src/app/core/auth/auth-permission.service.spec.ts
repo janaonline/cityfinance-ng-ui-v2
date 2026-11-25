@@ -33,6 +33,21 @@ describe('AuthPermissionService — PMU and DoE', () => {
     });
   });
 
+  it('a MoHUA reviewer can approve, issue OMs and submit to DoE like the admin, but not manage the team', () => {
+    service.setUser(userWith('MoHUA', 'EDITOR'));
+
+    expect(service.canApproveStateSubmissions()).toBeTrue();
+    expect(service.hasPermission(Permission.ISSUE_OFFICE_MEMORANDUM)).toBeTrue();
+    expect(service.hasPermission(Permission.FINAL_SUBMIT_TO_DOE)).toBeTrue();
+    expect(service.hasPermission(Permission.MANAGE_USERS)).toBeFalse();
+  });
+
+  it('a MoHUA viewer cannot approve', () => {
+    service.setUser(userWith('MoHUA', 'VIEWER'));
+
+    expect(service.canApproveStateSubmissions()).toBeFalse();
+  });
+
   it('only the DoE admin manages the team', () => {
     service.setUser(userWith('XVIFC_DOE', 'ADMIN'));
     expect(service.hasPermission(Permission.MANAGE_USERS)).toBeTrue();

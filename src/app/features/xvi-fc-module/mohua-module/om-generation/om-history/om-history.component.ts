@@ -57,8 +57,9 @@ export class OmHistoryComponent implements OnInit {
   /** Must be resolved in this field-initializer injection context — see themedDialogConfig's own doc. */
   private readonly dialogConfig = themedDialogConfig();
 
-  /** PMU monitors this page read-only: only MoHUA uploads the signed OM. */
-  readonly canUpload = inject(AuthPermissionService).isMohuaUser();
+  /** PMU and the MoHUA viewer read this page only: the MoHUA admin and reviewer upload the signed OM. */
+  private readonly auth = inject(AuthPermissionService);
+  readonly canUpload = this.auth.isMohuaUser() && this.auth.canIssueOfficeMemorandum();
   readonly formatCrore = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
   readonly statusLabel = OM_STATUS_LABEL;
