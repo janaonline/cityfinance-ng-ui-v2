@@ -91,11 +91,11 @@
               <ul>
                 <li><b class="text-danger">Fail</b> – document mismatch</li>
                 <li><b class="text-danger">Fail</b> – Textract confidence &lt; 80</li>
-                <li><b class="text-success">Pass</b> – crosscheck ≥ 80 and arithmetic not failed</li>
-                <li><b class="text-danger">Fail</b> – crosscheck &lt; 80 and arithmetic failed</li>
-                <li><b class="text-warning">Partial</b> – any other case (crosscheck &lt; 80 with arithmetic passed, or
-                  crosscheck ≥ 80 with arithmetic failed)</li>
-                <li class="text-muted">No crosscheck score: not rated</li>
+                <li><b class="text-success">Pass</b> – confidence ≥ 80 and accuracy not failed</li>
+                <li><b class="text-danger">Fail</b> – confidence &lt; 80 and accuracy failed</li>
+                <li><b class="text-warning">Partial</b> – any other case (confidence &lt; 80 with accuracy passed, or
+                  confidence ≥ 80 with accuracy failed)</li>
+                <li class="text-muted">No confidence score: not rated</li>
               </ul>
             </span>
           </span>
@@ -463,7 +463,7 @@
             <span class="badge assess assess-fail">No</span>
             } @else { <span class="badge assess assess-pass">Yes</span> }
           </div>
-          <div matTooltip="Share of extracted values that match the source PDF (Gemini cross-check)">
+          <div matTooltip="Share of extracted values that match the source PDF (Gemini check)">
             <span class="score-label">Confidence</span>
             <span [ngClass]="scoreClass(s.accuracyScore)">{{ formatScore(s.accuracyScore) }}</span>
           </div>
@@ -474,7 +474,7 @@
               assessLabel(s.arithmeticAssessment) }}</span>
             } @else { <span class="text-muted">–</span> }
           </div>
-          <div matTooltip="Overall result: fails on a document mismatch or low Textract confidence, otherwise from the crosscheck and arithmetic results">
+          <div matTooltip="Overall result: fails on a document mismatch or low Textract confidence, otherwise from the confidence and accuracy results">
             <span class="score-label">Overall</span>
             @if (s.overallAssessment) {
             <span class="badge assess" [ngClass]="assessClass(s.overallAssessment)">{{

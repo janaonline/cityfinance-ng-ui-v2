@@ -135,7 +135,7 @@ export class AfsDigitizationV3Component implements OnInit {
   readonly overallScoreCards: { key: OverallKey; title: string; icon: string; class: string }[] = [
     { key: 'confidence', title: 'Confidence', icon: 'bi bi-speedometer2', class: 'text-primary' },
     { key: 'docMatch', title: 'Doc match', icon: 'bi bi-patch-check', class: 'text-success' },
-    { key: 'arithmetic', title: 'Arithmetic', icon: 'bi bi-calculator', class: 'text-primary' },
+    { key: 'arithmetic', title: 'Accuracy', icon: 'bi bi-calculator', class: 'text-primary' },
     { key: 'overallScore', title: 'Overall', icon: 'bi bi-clipboard-check', class: 'text-primary' },
   ];
 
@@ -457,13 +457,13 @@ export class AfsDigitizationV3Component implements OnInit {
     if (o?.runs && (key === 'oldDigitized' || key === 'oldFailed')) return 'Run through the old flow, before v3 went live';
     if (o?.runs && (key === 'newDigitized' || key === 'newFailed')) return 'Run through v3';
     const sc = o?.scores;
-    if (sc && key === 'confidence') return 'Digitized files with a crosscheck confidence (Gemini accuracy) score, split at 80';
+    if (sc && key === 'confidence') return 'Digitized files with a confidence (Gemini) score, split at 80';
     if (sc && key === 'arithmetic') {
       const ran = sc.arithmeticPass + sc.arithmeticFail;
       const skipped = sc.arithmeticSkipped ?? 0;
       const n = (value: number) => value.toLocaleString('en-IN');
       return (
-        `Arithmetic ran on ${n(ran)} of ${n(sc.matches)} files whose document matched (pass + fail). ` +
+        `Accuracy check ran on ${n(ran)} of ${n(sc.matches)} files whose document matched (pass + fail). ` +
         `${n(skipped)} skipped because the uploaded document type isn't in the file.`
       );
     }

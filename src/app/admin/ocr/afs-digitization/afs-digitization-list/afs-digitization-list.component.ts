@@ -156,8 +156,8 @@ export class AfsDigitizationListComponent implements OnInit {
 
   readonly costSteps: { key: keyof DigitizationCostBreakdown; label: string }[] = [
     { key: 'ocr', label: 'OCR' },
-    { key: 'cross_check', label: 'Cross-check' },
-    { key: 'arithmetic', label: 'Arithmetic' },
+    { key: 'cross_check', label: 'Confidence' },
+    { key: 'arithmetic', label: 'Accuracy' },
     { key: 'classification', label: 'Doc class' },
   ];
 
