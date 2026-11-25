@@ -18,6 +18,8 @@ export interface ClaimLettersStateRow {
   claimLetterCount: number;
   /** The highest claim letter number the state has submitted (1, 2, 3...), null when none. */
   latestClaimNumber: number | null;
+  /** Every listed letter of the state, newest first (the expanded row and the card filters). Missing from an older API. */
+  claimLetters?: ClaimLetterListItem[];
 }
 
 /** Claim letters at one stage: how many, from how many States, and their amount (whole Rupees). */

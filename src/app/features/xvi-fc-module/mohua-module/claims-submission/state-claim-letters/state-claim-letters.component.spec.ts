@@ -119,7 +119,7 @@ describe('StateClaimLettersComponent', () => {
     expect(ulbLegend).toContain('51 Pending');
     expect(ulbs.querySelector('.cl-ring-card__note')?.textContent).toContain('10 ULBs were returned earlier');
     expect(ulbs.querySelector('.cl-ring')?.getAttribute('aria-label')).toBe(
-      '72 of 123 ULBs claimed: 40 approved, 22 under review, 51 pending',
+      '72 of 123 ULBs claimed: 40 approved, 22 under review by MoHUA, 51 pending',
     );
     const amountLegend = amount.querySelector('.cl-legend')?.textContent?.replace(/\s+/g, ' ') ?? '';
     expect(amountLegend).toContain('₹432 cr Claimed');

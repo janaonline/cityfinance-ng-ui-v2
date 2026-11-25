@@ -40,7 +40,7 @@
                 <li class="col" appReveal [revealDelay]="(i + 1) * 90">
                   <mat-card
                     appearance="outlined"
-                    class="cs-panel cl-pipeline__step h-100"
+                    class="cs-panel cl-pipeline__step"
                     [class.cl-pipeline__step--soon]="step.value === null"
                   >
                     <span class="cs-icon cs-icon--sm mb-1" aria-hidden="true"><i class="bi {{ step.icon }}"></i></span>
@@ -77,6 +77,20 @@
               Open a State that has sent a claim letter to review its letters.
             </p>
           </div>
+          <!-- Claim letters by stage, with the same counts as the summary cards above. -->
+          <mat-button-toggle-group
+            class="cs-toggle"
+            aria-label="Show claim letters by stage"
+            hideSingleSelectionIndicator
+            [value]="stage() ?? 'all'"
+            (change)="selectStage($event.value === 'all' ? null : $event.value)"
+          >
+            @for (chip of stageChips(); track chip.value) {
+              <mat-button-toggle [value]="chip.value">
+                {{ chip.label }} <span class="badge rounded-pill cs-tint ms-1">{{ chip.count }}</span>
+              </mat-button-toggle>
+            }
+          </mat-button-toggle-group>
           <span class="cl-states__count badge rounded-pill cs-tint">
             <i class="bi bi-envelope-check" aria-hidden="true"></i>
             {{ counts().received }} of {{ counts().all }} {{ counts().all === 1 ? 'state has' : 'states have' }}
@@ -130,9 +144,37 @@
             </thead>
             <tbody>
               @for (row of visibleStates(); track row.stateId; let i = $index) {
-                <tr class="cs-row-in text-nowrap" [class.cs-edge]="row.firstClaimStatus === 'RECEIVED'" [style.--i]="i">
+                <tr
+                  class="cs-row-in text-nowrap"
+                  [class.cs-edge]="row.firstClaimStatus === 'RECEIVED'"
+                  [class.cl-state-open]="isExpanded(row.stateId)"
+                  [style.--i]="i"
+                >
                   <td class="fw-semibold">
                     <span class="cl-state-row__name d-inline-flex align-items-center gap-2">
+                      <!-- Opens the State's letters in place; a State with no letter has nothing to open. While a
+                           stage chip is chosen every listed State is already open, so there is nothing to toggle. -->
+                      @if (row.firstClaimStatus === 'RECEIVED' && !stage()) {
+                        <button
+                          type="button"
+                          class="cl-expand"
+                          [attr.aria-expanded]="isExpanded(row.stateId)"
+                          [attr.aria-controls]="'cl-letters-' + row.stateId"
+                          [attr.aria-label]="
+                            (isExpanded(row.stateId) ? 'Hide' : 'Show') + ' claim letters of ' + row.name
+                          "
+                          (click)="toggle(row.stateId)"
+                        >
+                          <i
+                            class="bi"
+                            [class.bi-chevron-down]="isExpanded(row.stateId)"
+                            [class.bi-chevron-right]="!isExpanded(row.stateId)"
+                            aria-hidden="true"
+                          ></i>
+                        </button>
+                      } @else {
+                        <span class="cl-expand cl-expand--none" aria-hidden="true"></span>
+                      }
                       <span
                         class="cs-icon cs-icon--sm fw-bold"
                         [class.cs-icon--solid]="row.firstClaimStatus === 'RECEIVED'"
@@ -195,6 +237,51 @@
                     }
                   </td>
                 </tr>
+                @if (row.firstClaimStatus === 'RECEIVED' && isExpanded(row.stateId)) {
+                  @let letters = lettersOf(row);
+                  <!-- Same tint and left bar as its State row, so the letters read as part of that State. -->
+                  <tr class="cl-letters-row cs-edge" [id]="'cl-letters-' + row.stateId">
+                    <td colspan="6" class="p-0">
+                      <div class="cl-letters">
+                        @if (letters.length === 0) {
+                          <p class="small text-body-secondary mb-0">No claim letter yet.</p>
+                        } @else {
+                          <!-- One quiet line per letter; the tint and edge bar already tie it to the State above. -->
+                          <ul
+                            class="cl-letters__list list-unstyled mb-0"
+                            [attr.aria-label]="'Claim letters of ' + row.name"
+                          >
+                            @for (letter of letters; track letter.id) {
+                              <li class="cl-letter-line">
+                                <span class="cl-letter-line__main">
+                                  <i class="bi bi-file-earmark-text cs-accent" aria-hidden="true"></i>
+                                  <span class="fw-semibold">{{ letter.number }}</span>
+                                  <span class="text-body-secondary"
+                                    >· {{ formatDate(letter.receivedOn) }} · {{ letter.ulbCount }}
+                                    {{ letter.ulbCount === 1 ? 'ULB' : 'ULBs' }}</span
+                                  >
+                                </span>
+                                <span class="cl-letter-line__amount fw-semibold">{{ formatCrore(letter.amount) }}</span>
+                                <span class="cs-badge" [class]="letterBadgeClass(letter.status)">{{
+                                  letterStatusLabel(letter.status, letter.statusLabel)
+                                }}</span>
+                                <a
+                                  mat-stroked-button
+                                  class="cs-view-btn"
+                                  [routerLink]="['claims-submission', row.stateId, 'letter', letter.id]"
+                                  [relativeTo]="mohuaRoute"
+                                  [attr.aria-label]="'View claim letter ' + letter.number"
+                                >
+                                  <i class="bi bi-eye" aria-hidden="true"></i> View
+                                </a>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
               } @empty {
                 <tr>
                   <td colspan="6" class="text-center text-body-secondary py-4">
