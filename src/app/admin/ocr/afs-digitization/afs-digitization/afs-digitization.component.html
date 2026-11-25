@@ -275,6 +275,8 @@
                       (click)="regenerateExcel(job)">
                       @if (regeneratingJobId() === job.jobId) { Regenerating... } @else { Regenerate Excel }
                     </button>
+                  }
+                  @if (job.status === 'completed' || job.status === 'failed') {
                     <button mat-stroked-button type="button" [disabled]="redigitizingJobId() === job.jobId"
                       title="Re-run the full pipeline (OCR + Gemini) on the stored source PDF"
                       (click)="redigitizeJob(job)">
