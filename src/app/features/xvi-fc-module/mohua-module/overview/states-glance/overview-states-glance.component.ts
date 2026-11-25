@@ -360,4 +360,9 @@ export class OverviewStatesGlanceComponent {
     if (returned) chips.push({ label: `${returned} returned`, tone: 'bad' });
     return chips;
   }
+
+  /** The chips cell's tooltip: the claim summary plus every chip, since a narrow column clips the last chips. */
+  claimChipsTitle(row: StateRow, chips: { label: string }[]): string {
+    return `${this.claimText(row)} (${chips.map((c) => c.label).join(', ')})`;
+  }
 }

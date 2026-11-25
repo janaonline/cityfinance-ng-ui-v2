@@ -103,7 +103,12 @@ describe('ClaimLetterDetailComponent', () => {
         { provide: ClaimsSubmissionService, useValue: service },
         {
           provide: AuthPermissionService,
-          useValue: { isMohuaUser: () => isMohuaUser, canApproveStateSubmissions: () => canApprove },
+          useValue: {
+            isMohuaUser: () => isMohuaUser,
+            canApproveStateSubmissions: () => canApprove,
+            // A MoHUA viewer holds neither permission; admin and reviewer hold both.
+            canIssueOfficeMemorandum: () => canApprove,
+          },
         },
         {
           provide: ActivatedRoute,
@@ -142,6 +147,15 @@ describe('ClaimLetterDetailComponent', () => {
 
     expect(fixture.componentInstance.canReview()).toBeFalse();
     expect(host.querySelector('.cl-actions')).toBeNull();
+  });
+
+  it('shows a MoHUA viewer no Generate OM on a verified letter', () => {
+    canApprove = false;
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Under Review by MoHUA' }));
+    const host = create();
+
+    expect(fixture.componentInstance.canGenerateOm()).toBeFalse();
+    expect(host.querySelector('.cl-om-btn')).toBeNull();
   });
 
   it('shows the title with the letter status and the two review bars', () => {

@@ -184,8 +184,12 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** Only MoHUA acts, and only on a letter still under SO review; returned and acknowledged ones are read-only. */
   readonly canReview = computed(() => this.canDecide && this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
 
-  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
-  readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
+  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. A MoHUA viewer cannot issue
+   *  OMs, so it never sees the action (the API would refuse it with a 403). */
+  readonly canGenerateOm = computed(
+    () =>
+      this.isMohua && this.auth.canIssueOfficeMemorandum() && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS,
+  );
 
   /** The ULB whose mark is being saved; its icons show a spinner meanwhile. */
   readonly decidingUlbId = signal<string | null>(null);

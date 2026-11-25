@@ -135,7 +135,7 @@
                   <!-- Count chips per letter status; the claim number and total amount are in the tooltip. -->
                   @let chips = claimChips(row);
                   @if (chips.length) {
-                    <span class="os-claimchips" [title]="claimText(row)">
+                    <span class="os-claimchips" [title]="claimChipsTitle(row, chips)">
                       @for (chip of chips; track chip.label) {
                         <span class="os-chip os-chip--{{ chip.tone }}">{{ chip.label }}</span>
                       }

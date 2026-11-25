@@ -317,12 +317,14 @@ mat-button-toggle-group {
   color: var(--os-muted);
 }
 
-// A State's letters by status: small pills that wrap inside the column rather than cut off.
+// A State's letters by status: small pills on one line. Rows sit at a fixed 32px pitch (ROW_HEIGHT), so the pills
+// must not wrap into the next row; in a narrow column the last ones are clipped and the cell's tooltip has them all.
 .os-claimchips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 3px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .os-chip {
@@ -332,6 +334,7 @@ mat-button-toggle-group {
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
+  flex-shrink: 0;
 
   &--all {
     background: color-mix(in srgb, var(--color-primary, #12535c) 10%, transparent);
