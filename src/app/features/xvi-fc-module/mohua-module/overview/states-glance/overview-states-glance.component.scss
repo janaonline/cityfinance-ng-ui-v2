@@ -284,7 +284,8 @@ mat-button-toggle-group {
 .os-lhead,
 .os-row {
   display: grid;
-  grid-template-columns: 28px minmax(130px, 1.2fr) minmax(90px, 0.7fr) minmax(170px, 1.3fr) minmax(90px, 0.7fr) 104px;
+  // Claim letters gets a little more room ("2nd claim · ₹36.5 cr claimed"), taken from ULB progress.
+  grid-template-columns: 28px minmax(130px, 1.2fr) minmax(150px, 0.9fr) minmax(150px, 1.1fr) minmax(90px, 0.7fr) 104px;
   gap: 16px;
   align-items: center;
   padding: 0 12px;
@@ -314,6 +315,46 @@ mat-button-toggle-group {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--os-muted);
+}
+
+// A State's letters by status: small pills on one line. Rows sit at a fixed 32px pitch (ROW_HEIGHT), so the pills
+// must not wrap into the next row; in a narrow column the last ones are clipped and the cell's tooltip has them all.
+.os-claimchips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.os-chip {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--all {
+    background: color-mix(in srgb, var(--color-primary, #12535c) 10%, transparent);
+    color: var(--color-primary, #12535c);
+  }
+
+  &--good {
+    background: #e3f4ea;
+    color: #1d7a46;
+  }
+
+  &--review {
+    background: #fdf0de;
+    color: #b25e09;
+  }
+
+  &--bad {
+    background: #fbe6e5;
+    color: #c0322b;
+  }
 }
 
 .os-group {

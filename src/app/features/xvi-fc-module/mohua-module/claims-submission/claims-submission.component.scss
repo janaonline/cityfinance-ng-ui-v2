@@ -43,3 +43,91 @@
 
   border: 1px dashed color-mix(in srgb, var(--t) 35%, transparent);
 }
+
+// ── A State row's expand toggle and the claim letters shown under it ──────────────────────────────────────────
+.cl-expand {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--t);
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--t) 10%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--t);
+    outline-offset: 1px;
+  }
+
+  // Keeps every State name lined up whether or not its row can open.
+  &--none {
+    cursor: default;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+}
+
+
+// An open State and its letters read as one block: the same tint, the edge bar running down both, and a
+// divider under the panel before the next State.
+.cl-state-open > td {
+  background: color-mix(in srgb, var(--t) 7%, transparent);
+  border-bottom-color: transparent;
+}
+
+.cl-letters-row > td {
+  background: color-mix(in srgb, var(--t) 7%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--t) 30%, transparent);
+}
+
+.cl-letters {
+  padding: 4px 12px 10px 44px;
+}
+
+
+// Each letter on one line: what it is on the left; amount, status and View in fixed columns on the right.
+.cl-letter-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 190px auto;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 0.78rem;
+
+  & + & {
+    border-top: 1px dashed color-mix(in srgb, var(--t) 20%, transparent);
+  }
+
+  &__main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  &__amount {
+    text-align: right;
+  }
+
+  .cs-badge {
+    justify-self: start;
+  }
+}
+
+// The summary cards grow with their text (a two-line label pushed "With the Section Officer" out of a fixed-height card).
+.cl-pipeline__step {
+  min-height: 100%;
+}

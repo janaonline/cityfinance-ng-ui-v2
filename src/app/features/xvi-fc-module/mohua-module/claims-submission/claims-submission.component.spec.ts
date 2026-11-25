@@ -56,7 +56,10 @@ describe('ClaimsSubmissionComponent', () => {
   };
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj<ClaimsSubmissionService>('ClaimsSubmissionService', ['getStates']);
+    service = jasmine.createSpyObj<ClaimsSubmissionService>('ClaimsSubmissionService', [
+      'getStates',
+      'getStateClaimLetters',
+    ]);
     service.getStates.and.returnValue(of(states));
     await TestBed.configureTestingModule({
       imports: [ClaimsSubmissionComponent],
@@ -117,7 +120,7 @@ describe('ClaimsSubmissionComponent', () => {
     const rows = Array.from(create().querySelectorAll('tbody tr'));
 
     expect(rows[0].querySelector('a')?.textContent).toContain('View claims');
-    expect(rows[0].querySelector('button')).toBeNull();
+    expect(rows[0].querySelector('button:not(.cl-expand)')).toBeNull();
     const track = rows[1].querySelector('button') as HTMLButtonElement;
     expect(track.textContent).toContain('Track');
     expect(track.disabled).toBeTrue();
@@ -134,7 +137,7 @@ describe('ClaimsSubmissionComponent', () => {
       expect(overview.querySelector('.cl-overview__hero-sub')?.textContent).toContain('across 2 states');
 
       const labels = Array.from(overview.querySelectorAll('.cl-pipeline__label')).map((l) => l.textContent?.trim());
-      expect(labels).toEqual(['Submitted', 'Under review', 'Approved', 'Released']);
+      expect(labels).toEqual(['Submitted', 'Under review by MoHUA', 'Approved', 'Released']);
 
       // Values count up on screen, so they are read from the model; subs and amounts are plain text.
       const p = fixture.componentInstance.pipeline();
@@ -166,7 +169,7 @@ describe('ClaimsSubmissionComponent', () => {
         n.textContent?.replace(/\s+/g, ' ').trim(),
       );
     const filterButton = (host: HTMLElement, label: string) =>
-      Array.from(host.querySelectorAll<HTMLButtonElement>('mat-button-toggle button')).find((b) =>
+      Array.from(host.querySelectorAll<HTMLButtonElement>('[aria-label="Show states"] mat-button-toggle button')).find((b) =>
         b.textContent?.includes(label),
       ) as HTMLButtonElement;
 
@@ -224,5 +227,94 @@ describe('ClaimsSubmissionComponent', () => {
     (host.querySelector('[role="alert"] button') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(host.querySelectorAll('tbody tr').length).toBe(2);
+  });
+
+  describe('claim letters per State', () => {
+    const letter = (id: string, batchNumber: number, status: number, statusLabel: string) => ({
+      id,
+      number: `CF_AP_2026-27_1-${batchNumber}`,
+      batchNumber,
+      receivedOn: '2026-11-04T00:00:00.000Z',
+      ulbCount: 10,
+      amount: 1_000_000_000,
+      status,
+      statusLabel,
+    });
+    const withLetters: ClaimLettersStates = {
+      ...states,
+      states: [
+        {
+          ...states.states[0],
+          claimLetters: [
+            letter('l3', 3, 15, 'Under Review by SO'),
+            letter('l2', 2, 5, 'Under Review by MoHUA'),
+            letter('l1', 1, 16, 'Returned for Correction'),
+          ],
+        },
+        { ...states.states[1], claimLetters: [] },
+      ],
+    };
+    const letterNumbers = (host: HTMLElement) =>
+      Array.from(host.querySelectorAll('.cl-letter-line__main .fw-semibold')).map((el) => el.textContent?.trim());
+
+    beforeEach(() => service.getStates.and.returnValue(of(withLetters)));
+
+    it("expands a State's row to list its letters and collapses it again; a State with none has no toggle", () => {
+      const host = create();
+      const toggle = () => host.querySelector<HTMLButtonElement>('button.cl-expand')!;
+
+      expect(host.querySelectorAll('button.cl-expand').length).toBe(1);
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(toggle().getAttribute('aria-expanded')).toBe('true');
+      expect(letterNumbers(host)).toEqual(['CF_AP_2026-27_1-3', 'CF_AP_2026-27_1-2', 'CF_AP_2026-27_1-1']);
+      expect(host.querySelector('a[aria-label="View claim letter CF_AP_2026-27_1-2"]')).not.toBeNull();
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(host.querySelector('.cl-letters')).toBeNull();
+    });
+
+    /** The chip the stage toggle group shows as selected, by its label. */
+    const selectedChip = (host: HTMLElement) =>
+      host.querySelector('[aria-label="Show claim letters by stage"] .mat-button-toggle-checked')?.textContent?.trim();
+
+    const chip = (host: HTMLElement, label: string) =>
+      Array.from(host.querySelectorAll<HTMLButtonElement>('[aria-label="Show claim letters by stage"] button')).find(
+        (b) => b.textContent?.includes(label),
+      )!;
+
+    it('a stage chip narrows the table to its letters, with their States open; All letters shows every State', () => {
+      const host = create();
+      expect(selectedChip(host)).toContain('All letters');
+
+      chip(host, 'Approved').click();
+      fixture.detectChanges();
+      // Only the State with an approved (5) letter, opened, showing just that letter; its chevron is hidden.
+      expect(host.querySelectorAll('tbody tr.cl-state-open').length).toBe(1);
+      expect(letterNumbers(host)).toEqual(['CF_AP_2026-27_1-2']);
+      expect(host.querySelector('button.cl-expand')).toBeNull();
+
+      chip(host, 'Under review by MoHUA').click();
+      fixture.detectChanges();
+      expect(letterNumbers(host)).toEqual(['CF_AP_2026-27_1-3']);
+
+      chip(host, 'Returned').click();
+      fixture.detectChanges();
+      expect(letterNumbers(host)).toEqual(['CF_AP_2026-27_1-1']);
+
+      chip(host, 'All letters').click();
+      fixture.detectChanges();
+      expect(host.querySelector('.cl-letters')).toBeNull();
+      expect(host.querySelectorAll('tbody > tr').length).toBe(2);
+    });
+
+    it('the summary cards only show figures: they are not buttons', () => {
+      const host = create();
+
+      expect(host.querySelectorAll('.cl-pipeline button, .cl-hero button').length).toBe(0);
+    });
   });
 });

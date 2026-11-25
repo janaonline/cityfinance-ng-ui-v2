@@ -18,6 +18,8 @@ export interface ClaimLettersStateRow {
   claimLetterCount: number;
   /** The highest claim letter number the state has submitted (1, 2, 3...), null when none. */
   latestClaimNumber: number | null;
+  /** Every listed letter of the state, newest first (the expanded row and the stage chips). Missing from an older API. */
+  claimLetters?: ClaimLetterListItem[];
 }
 
 /** Claim letters at one stage: how many, from how many States, and their amount (whole Rupees). */
@@ -193,20 +195,20 @@ export const CLAIM_LETTER_APPROVED_STATUSES: readonly number[] = [7];
 /** Returned by the SO (16) or by MoHUA (6). */
 export const CLAIM_LETTER_RETURNED_STATUSES: readonly number[] = [6, 16];
 
-/** A letter the SO approved (now under MoHUA review, 5): shown as "Verified" on the Claims & Submissions screens. */
+/** A letter the SO approved (now under MoHUA review, 5): shown as "Approved" on the Claims & Submissions and OM screens. */
 export const CLAIM_LETTER_VERIFIED_STATUS = 5;
 
 /** Under SO review (15): shown as "Under Review by MoHUA" on the Claims & Submissions screens. */
 const CLAIM_LETTER_UNDER_SO_REVIEW_STATUS = 15;
 
-/** The label to show for a claim letter's status: "Verified" for 5, "Under Review by MoHUA" for 15, else the API's. */
+/** The label to show for a claim letter's status: "Approved" for 5, "Under Review by MoHUA" for 15, else the API's. */
 export function claimStatusLabel(status: number, label: string): string {
-  if (status === CLAIM_LETTER_VERIFIED_STATUS) return 'Verified';
+  if (status === CLAIM_LETTER_VERIFIED_STATUS) return 'Approved';
   if (status === CLAIM_LETTER_UNDER_SO_REVIEW_STATUS) return 'Under Review by MoHUA';
   return label;
 }
 
-/** Badge colour for a claim letter's status: returned red, approved or verified green, otherwise amber (under review). */
+/** Badge colour for a claim letter's status: returned red, approved (5 or 7) green, otherwise amber (under review). */
 export function claimStatusBadgeClass(status: number): string {
   if (CLAIM_LETTER_APPROVED_STATUSES.includes(status) || status === CLAIM_LETTER_VERIFIED_STATUS)
     return 'cs-badge--good';

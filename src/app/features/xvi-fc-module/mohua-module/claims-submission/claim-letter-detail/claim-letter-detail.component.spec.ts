@@ -75,6 +75,8 @@ describe('ClaimLetterDetailComponent', () => {
 
   /** MoHUA acts on this page; PMU only monitors it. */
   let isMohuaUser: boolean;
+  /** MoHUA admin and reviewer may approve / return; a MoHUA viewer may not. */
+  let canApprove: boolean;
 
   const create = (): HTMLElement => {
     fixture = TestBed.createComponent(ClaimLetterDetailComponent);
@@ -92,13 +94,22 @@ describe('ClaimLetterDetailComponent', () => {
     service.getClaimLetter.and.returnValue(of(detail));
     service.getClaimLetterUlbs.and.returnValue(of(ulbs));
     isMohuaUser = true;
+    canApprove = true;
     await TestBed.configureTestingModule({
       imports: [ClaimLetterDetailComponent],
       providers: [
         provideRouter([]),
         provideNoopAnimations(),
         { provide: ClaimsSubmissionService, useValue: service },
-        { provide: AuthPermissionService, useValue: { isMohuaUser: () => isMohuaUser } },
+        {
+          provide: AuthPermissionService,
+          useValue: {
+            isMohuaUser: () => isMohuaUser,
+            canApproveStateSubmissions: () => canApprove,
+            // A MoHUA viewer holds neither permission; admin and reviewer hold both.
+            canIssueOfficeMemorandum: () => canApprove,
+          },
+        },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -125,8 +136,25 @@ describe('ClaimLetterDetailComponent', () => {
     expect(host.querySelectorAll('tbody tr').length).toBe(2);
 
     fixture.destroy();
-    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Verified' }));
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Under Review by MoHUA' }));
     host = create();
+    expect(host.querySelector('.cl-om-btn')).toBeNull();
+  });
+
+  it('is read-only for a MoHUA viewer, who may not approve: no review actions that would be refused', () => {
+    canApprove = false;
+    const host = create();
+
+    expect(fixture.componentInstance.canReview()).toBeFalse();
+    expect(host.querySelector('.cl-actions')).toBeNull();
+  });
+
+  it('shows a MoHUA viewer no Generate OM on a verified letter', () => {
+    canApprove = false;
+    service.getClaimLetter.and.returnValue(of({ ...detail, status: 5, statusLabel: 'Under Review by MoHUA' }));
+    const host = create();
+
+    expect(fixture.componentInstance.canGenerateOm()).toBeFalse();
     expect(host.querySelector('.cl-om-btn')).toBeNull();
   });
 
@@ -417,7 +445,7 @@ describe('ClaimLetterDetailComponent', () => {
       expect(service.approveClaimLetter).toHaveBeenCalledOnceWith('c3', 3);
       expect(snackbar).toHaveBeenCalledWith('Claim letter approved.', 'snackbar-success');
       expect(host.querySelector('.cl-actions')).toBeNull();
-      expect(host.querySelector('.cs-badge')?.textContent).toContain('Verified');
+      expect(host.querySelector('.cs-badge')?.textContent).toContain('Approved');
     });
 
     it('does nothing when the confirmation is cancelled', () => {

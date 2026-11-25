@@ -1,9 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import FileSaver from 'file-saver';
@@ -13,7 +17,7 @@ import { themedDialogConfig } from '../../../../../shared/components/confirm-dia
 import { formatReceivedOn, formatRupeesInCrore } from '../../claims-submission/claims-submission.models';
 import { MohuaPageLoaderComponent } from '../../page-loader/page-loader.component';
 import { findRouteParam } from '../../route-params.util';
-import { OM_STATUS_LABEL, OmHistoryRow } from '../om-generation.models';
+import { OM_STATUS_LABEL, OmHistoryRow, OmStageFilter, matchesOmSearch, omStage } from '../om-generation.models';
 import { OmGenerationService } from '../om-generation.service';
 import {
   OmSignedUploadDialogComponent,
@@ -23,10 +27,23 @@ import { OmStepsComponent } from '../om-steps/om-steps.component';
 
 const LOAD_ERROR = 'Could not load the OM history. Please try again.';
 
-/** Every issued OM of the year with its status, the signed copy (View PDF) and the generated OM PDF with its annexures. */
+/**
+ * Every OM of the year: Generated (PDF created) or Issued (signed copy uploaded, dated from the OM's "Dated"), with
+ * the State's allocation and the amount claimed, the signed copy (View PDF) and the OM PDF with its annexures.
+ */
 @Component({
   selector: 'app-om-history',
-  imports: [MatButtonModule, MatCardModule, MatTooltipModule, MohuaPageLoaderComponent, OmStepsComponent],
+  imports: [
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatTooltipModule,
+    MohuaPageLoaderComponent,
+    OmStepsComponent,
+  ],
   templateUrl: './om-history.component.html',
   styleUrl: './om-history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,8 +57,9 @@ export class OmHistoryComponent implements OnInit {
   /** Must be resolved in this field-initializer injection context — see themedDialogConfig's own doc. */
   private readonly dialogConfig = themedDialogConfig();
 
-  /** PMU monitors this page read-only: only MoHUA uploads the signed OM. */
-  readonly canUpload = inject(AuthPermissionService).isMohuaUser();
+  /** PMU and the MoHUA viewer read this page only: the MoHUA admin and reviewer upload the signed OM. */
+  private readonly auth = inject(AuthPermissionService);
+  readonly canUpload = this.auth.isMohuaUser() && this.auth.canIssueOfficeMemorandum();
   readonly formatCrore = formatRupeesInCrore;
   readonly formatDate = formatReceivedOn;
   readonly statusLabel = OM_STATUS_LABEL;
@@ -51,6 +69,41 @@ export class OmHistoryComponent implements OnInit {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly downloadingId = signal<string | null>(null);
+
+  /** Search (State, OM no., claim letter no.) and the State / OM status filters; all on the loaded list. */
+  readonly query = signal('');
+  readonly stateFilter = signal<string>('ALL');
+  readonly stageFilter = signal<OmStageFilter>('ALL');
+  readonly stageOptions: readonly { value: OmStageFilter; label: string }[] = [
+    { value: 'ALL', label: 'All' },
+    { value: 'GENERATED', label: OM_STATUS_LABEL.GENERATED },
+    { value: 'ISSUED', label: OM_STATUS_LABEL.SIGNED_UPLOADED },
+  ];
+
+  readonly stateOptions = computed(() =>
+    [...new Map((this.rows() ?? []).map((r) => [r.stateId, r.stateName || r.stateCode])).entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  );
+
+  readonly filteredRows = computed(() =>
+    (this.rows() ?? []).filter(
+      (r) =>
+        (this.stateFilter() === 'ALL' || r.stateId === this.stateFilter()) &&
+        (this.stageFilter() === 'ALL' || omStage(r.status) === this.stageFilter()) &&
+        matchesOmSearch(this.query(), r.stateName, r.refNo, r.omNumber, r.claimLetterRefNo),
+    ),
+  );
+
+  readonly isFiltered = computed(
+    () => !!this.query().trim() || this.stateFilter() !== 'ALL' || this.stageFilter() !== 'ALL',
+  );
+
+  clearFilters(): void {
+    this.query.set('');
+    this.stateFilter.set('ALL');
+    this.stageFilter.set('ALL');
+  }
 
   ngOnInit(): void {
     this.load();
@@ -87,19 +140,25 @@ export class OmHistoryComponent implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.downloadingId.set(null);
           const message = err.error?.message;
-          this.utilityService.triggerSnackbar(typeof message === 'string' ? message : 'Could not download the OM.', 'snackbar-danger');
+          this.utilityService.triggerSnackbar(
+            typeof message === 'string' ? message : 'Could not download the OM.',
+            'snackbar-danger',
+          );
         },
       });
   }
 
   upload(row: OmHistoryRow): void {
     this.dialog
-      .open<OmSignedUploadDialogComponent, OmSignedUploadDialogData, OmHistoryRow | undefined>(OmSignedUploadDialogComponent, {
-        ...this.dialogConfig,
-        data: { omId: row.omId, refNo: row.refNo, ulbCount: row.ulbCount, justGenerated: false },
-        width: '560px',
-        maxWidth: '95vw',
-      })
+      .open<OmSignedUploadDialogComponent, OmSignedUploadDialogData, OmHistoryRow | undefined>(
+        OmSignedUploadDialogComponent,
+        {
+          ...this.dialogConfig,
+          data: { omId: row.omId, refNo: row.refNo, ulbCount: row.ulbCount, justGenerated: false },
+          width: '560px',
+          maxWidth: '95vw',
+        },
+      )
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updated) => {

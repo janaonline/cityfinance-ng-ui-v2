@@ -12,14 +12,28 @@ import { findRouteParam } from '../route-params.util';
 import { CountUpDirective, RevealDirective } from '../state-detail/state-detail.directives';
 import {
   CLAIMS_INSTALLMENT,
+  ClaimLetterListItem,
   ClaimLettersStateRow,
   ClaimLettersStates,
+  claimStatusBadgeClass,
+  claimStatusLabel,
   formatOrdinal,
+  formatReceivedOn,
   formatRupeesInCrore,
 } from './claims-submission.models';
 import { ClaimsSubmissionService } from './claims-submission.service';
 
 const LOAD_ERROR = 'Could not load the claim letters. Please try again.';
+
+/** A stage chip the States table can be narrowed to: its letters' statuses, as the API counts them. */
+type ClaimStageKey = 'underReview' | 'approved' | 'returned';
+
+/** Each stage chip's letter statuses, matching the summary cards' counts (All letters is no filter at all). */
+const STAGE_STATUSES: Readonly<Record<ClaimStageKey, readonly number[]>> = {
+  underReview: [15],
+  approved: [5, 7],
+  returned: [16, 6],
+};
 
 /** Which states the table shows: every state, only those that sent a claim letter, or only those that have not. */
 type StateFilter = 'all' | 'received' | 'pending';
@@ -76,6 +90,27 @@ export class ClaimsSubmissionComponent implements OnInit {
   readonly installment = CLAIMS_INSTALLMENT;
   readonly formatCrore = formatRupeesInCrore;
   readonly ordinal = formatOrdinal;
+  readonly formatDate = formatReceivedOn;
+  readonly letterStatusLabel = claimStatusLabel;
+  readonly letterBadgeClass = claimStatusBadgeClass;
+
+  private readonly yearId = findRouteParam(this.route.snapshot, 'yearId');
+
+  /** States whose row is open; several can be open at once. */
+  readonly expanded = signal<ReadonlySet<string>>(new Set());
+  /** The stage chip the table is narrowed to (its States open, only its letters shown); null shows everything. */
+  readonly stage = signal<ClaimStageKey | null>(null);
+
+  /** The chips beside "States": All letters plus each stage, with the counts the summary cards show. */
+  readonly stageChips = computed(() => {
+    const o = this.data()?.overview;
+    return [
+      { value: 'all', label: 'All letters', count: o?.submitted.claims ?? 0 },
+      { value: 'underReview', label: 'Under review by MoHUA', count: o?.underReview.claims ?? 0 },
+      { value: 'approved', label: 'Approved', count: o?.approved.claims ?? 0 },
+      { value: 'returned', label: 'Returned', count: o?.returned.claims ?? 0 },
+    ] as const;
+  });
 
   readonly data = signal<ClaimLettersStates | null>(null);
   readonly loading = signal(true);
@@ -101,7 +136,7 @@ export class ClaimsSubmissionComponent implements OnInit {
         },
         {
           key: 'underReview',
-          label: 'Under review',
+          label: 'Under review by MoHUA',
           icon: 'bi-hourglass-split',
           value: claimsText(o.underReview.claims),
           sub: ofClaims,
@@ -146,12 +181,26 @@ export class ClaimsSubmissionComponent implements OnInit {
   readonly visibleStates = computed(() => {
     const term = this.query().trim().toLowerCase();
     const filter = this.filter();
+    const stage = this.stage();
     return (this.data()?.states ?? []).filter(
       (s) =>
         (filter === 'all' || (filter === 'received') === (s.firstClaimStatus === 'RECEIVED')) &&
-        (!term || s.name.toLowerCase().includes(term)),
+        (!term || s.name.toLowerCase().includes(term)) &&
+        (!stage || this.lettersOf(s).length > 0),
     );
   });
+
+  /** A State's letters, narrowed to the chosen stage chip's statuses when one is chosen. */
+  lettersOf(row: ClaimLettersStateRow): ClaimLetterListItem[] {
+    const stage = this.stage();
+    const letters = row.claimLetters ?? [];
+    return stage ? letters.filter((l) => STAGE_STATUSES[stage].includes(l.status)) : letters;
+  }
+
+  /** The stage chips: one narrows the table to that stage's letters; All letters (null) shows everything. */
+  selectStage(key: ClaimStageKey | null): void {
+    this.stage.set(key);
+  }
 
   /** The claimed amount as a share of the State's installment allocation ("33%", "<1%"); null when there is
    *  no claim or no allocation to compare with. */
@@ -165,6 +214,19 @@ export class ClaimsSubmissionComponent implements OnInit {
   clearFilters(): void {
     this.query.set('');
     this.filter.set('all');
+    this.stage.set(null);
+  }
+
+  /** While a stage chip is chosen its States are all shown open; otherwise only the rows MoHUA opened. */
+  isExpanded(stateId: string): boolean {
+    return this.stage() !== null || this.expanded().has(stateId);
+  }
+
+  /** Opens or closes a State's row. While a stage chip is chosen every listed State is open, so the toggle is hidden. */
+  toggle(stateId: string): void {
+    const next = new Set(this.expanded());
+    if (!next.delete(stateId)) next.add(stateId);
+    this.expanded.set(next);
   }
 
   ngOnInit(): void {
@@ -174,8 +236,11 @@ export class ClaimsSubmissionComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set(null);
+    // A reload starts with every row closed and no stage chip chosen.
+    this.expanded.set(new Set());
+    this.stage.set(null);
     this.service
-      .getStates(findRouteParam(this.route.snapshot, 'yearId'))
+      .getStates(this.yearId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {

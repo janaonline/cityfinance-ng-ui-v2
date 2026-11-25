@@ -22,6 +22,7 @@ const detail: StateDetailData = {
       statusCode: 5,
       statusLabel: 'Under Review by MoHUA',
       completed: true,
+      approved: true,
       canView: true,
     },
     {
@@ -30,6 +31,7 @@ const detail: StateDetailData = {
       statusCode: 0,
       statusLabel: 'Not Started',
       completed: false,
+      approved: false,
       canView: false,
     },
     {
@@ -38,6 +40,7 @@ const detail: StateDetailData = {
       statusCode: 2,
       statusLabel: 'In Progress',
       completed: false,
+      approved: false,
       canView: true,
     },
   ],
@@ -79,12 +82,16 @@ const letter = (id: string, status: number, amount: number, ulbCount: number) =>
 const stateClaims: StateClaimLetters = {
   state: { id: 'state-1', name: 'Tripura' },
   installment: 1,
-  summary: { claimedUlbs: 5, pendingUlbs: 16, approvedUlbs: 2, underReviewUlbs: 3, returnedUlbs: 2, amountClaimed: 0, balance: 0 },
-  claimLetters: [
-    letter('3', 15, 93_000_000, 3),
-    letter('2', 16, 62_000_000, 2),
-    letter('1', 5, 62_000_000, 2),
-  ],
+  summary: {
+    claimedUlbs: 5,
+    pendingUlbs: 16,
+    approvedUlbs: 2,
+    underReviewUlbs: 3,
+    returnedUlbs: 2,
+    amountClaimed: 0,
+    balance: 0,
+  },
+  claimLetters: [letter('3', 15, 93_000_000, 3), letter('2', 16, 62_000_000, 2), letter('1', 5, 62_000_000, 2)],
 };
 
 describe('StateDetailComponent', () => {
@@ -119,7 +126,9 @@ describe('StateDetailComponent', () => {
   beforeEach(() => {
     detailService = { getDetail: jasmine.createSpy('getDetail').and.returnValue(of(detail)) };
     ulbsService = { getUlbs: jasmine.createSpy('getUlbs').and.returnValue(of(ulbs)) };
-    claimsService = { getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)) };
+    claimsService = {
+      getStateClaimLetters: jasmine.createSpy('getStateClaimLetters').and.returnValue(of(stateClaims)),
+    };
     isMohuaUser = true;
     isPmuUser = false;
   });
@@ -147,7 +156,9 @@ describe('StateDetailComponent', () => {
     const headers = Array.from(el.querySelectorAll('.sd-table th')).map((th) => th.textContent?.trim());
     expect(headers.indexOf('Unspent balance')).toBe(headers.indexOf('Allocation') + 1);
 
-    const cells = Array.from(el.querySelectorAll('.sd-table tbody tr:first-child td')).map((td) => td.textContent?.trim());
+    const cells = Array.from(el.querySelectorAll('.sd-table tbody tr:first-child td')).map((td) =>
+      td.textContent?.trim(),
+    );
     expect(cells).toContain('₹12.5 cr'); // allocation
     expect(cells).toContain('₹3.4 cr'); // unspent balance
   });
@@ -214,6 +225,23 @@ describe('StateDetailComponent', () => {
 
     expect(text).toContain('Not Started');
     expect(text).toContain('In Progress');
+  });
+
+  it('ticks a form only once PMU approved it; one still with PMU (13) shows "Under Review by PMU" instead', () => {
+    detailService.getDetail.and.returnValue(
+      of({
+        ...detail,
+        forms: [
+          { ...detail.forms[0], statusCode: 15, statusLabel: 'Under Review by MoHUA', completed: true, approved: true },
+          { ...detail.forms[1], statusCode: 13, statusLabel: 'Under Review by PMU', completed: true, approved: false },
+        ],
+      }),
+    );
+    const items = Array.from(create().nativeElement.querySelectorAll('.sd-cond__item')) as HTMLElement[];
+
+    expect(items[0].querySelector('.sd-cond__stamp')).not.toBeNull();
+    expect(items[1].querySelector('.sd-cond__stamp')).toBeNull();
+    expect(items[1].textContent).toContain('Under Review by PMU');
   });
 
   it('sorts and pages through the API, always from page 1 after a sort', () => {

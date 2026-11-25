@@ -9,7 +9,10 @@ export interface StateForm {
   canView: boolean;
   /** Display text of the form's status, e.g. "Under Review by MoHUA". */
   statusLabel: string;
+  /** Submitted onward (13 or later): what the Overview stages count. */
   completed: boolean;
+  /** Approved by PMU or later (15, 5, 7): the tick on the State page's condition cards. Missing from an older API. */
+  approved?: boolean;
 }
 
 export interface StateRow {
