@@ -317,6 +317,43 @@ mat-button-toggle-group {
   color: var(--os-muted);
 }
 
+// A State's letters by status: small pills that wrap inside the column rather than cut off.
+.os-claimchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+}
+
+.os-chip {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  &--all {
+    background: color-mix(in srgb, var(--color-primary, #12535c) 10%, transparent);
+    color: var(--color-primary, #12535c);
+  }
+
+  &--good {
+    background: #e3f4ea;
+    color: #1d7a46;
+  }
+
+  &--review {
+    background: #fdf0de;
+    color: #b25e09;
+  }
+
+  &--bad {
+    background: #fbe6e5;
+    color: #c0322b;
+  }
+}
+
 .os-group {
   position: absolute;
   right: 0;

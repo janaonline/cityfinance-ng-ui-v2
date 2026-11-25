@@ -132,7 +132,17 @@
                 >
                   <span class="os-rk">{{ listLayout().numbers.get(row.code) }}</span>
                   <span class="os-nm"><i></i>{{ row.name }}</span>
-                  <span class="os-claimsum" [title]="claimText(row)">{{ claimText(row, true) }}</span>
+                  <!-- Count chips per letter status; the claim number and total amount are in the tooltip. -->
+                  @let chips = claimChips(row);
+                  @if (chips.length) {
+                    <span class="os-claimchips" [title]="claimText(row)">
+                      @for (chip of chips; track chip.label) {
+                        <span class="os-chip os-chip--{{ chip.tone }}">{{ chip.label }}</span>
+                      }
+                    </span>
+                  } @else {
+                    <span class="os-claimsum" [title]="claimText(row)">{{ claimText(row, true) }}</span>
+                  }
                   <span class="os-ulb">
                     @if (row.ulbsDone !== null) {
                       <mat-progress-bar mode="determinate" [value]="progressPercent(row)" />

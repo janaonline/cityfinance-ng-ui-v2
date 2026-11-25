@@ -71,3 +71,58 @@ describe('OverviewStatesGlanceComponent default selection', () => {
     expect(setup([]).selected()).toBeNull();
   });
 });
+
+describe('OverviewStatesGlanceComponent claim letter chips', () => {
+  const letter = (status: number) => ({
+    id: `l${status}`,
+    number: `CF_KA_${status}`,
+    batchNumber: 1,
+    receivedOn: null,
+    ulbCount: 1,
+    amount: 1,
+    status,
+    statusLabel: '',
+  });
+
+  const setup = (claimLetters: ReturnType<typeof letter>[]) => {
+    TestBed.configureTestingModule({
+      imports: [OverviewStatesGlanceComponent],
+      providers: [provideRouter([]), provideNoopAnimations()],
+    });
+    const fixture = TestBed.createComponent(OverviewStatesGlanceComponent);
+    fixture.componentRef.setInput('rows', [row('KA', 'review')]);
+    fixture.componentRef.setInput('claims', [
+      {
+        stateId: 'id-KA',
+        name: 'KA',
+        code: 'KA',
+        firstClaimStatus: claimLetters.length ? 'RECEIVED' : 'PENDING',
+        installmentAllocation: 100,
+        amountClaimed: 10,
+        ulbsIncluded: 1,
+        claimLetterCount: claimLetters.length,
+        latestClaimNumber: claimLetters.length || null,
+        claimLetters,
+      },
+    ]);
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  };
+
+  it('counts submitted, approved (5, 7), under review (15) and returned (16, 6), leaving out zero counts', () => {
+    const component = setup([letter(15), letter(5), letter(7), letter(16)]);
+
+    expect(component.claimChips(row('KA', 'review')).map((c) => c.label)).toEqual([
+      '4 submitted',
+      '2 approved',
+      '1 under review',
+      '1 returned',
+    ]);
+  });
+
+  it('shows no chips for a State without a letter (its cell falls back to the claim text)', () => {
+    const component = setup([]);
+
+    expect(component.claimChips(row('KA', 'review'))).toEqual([]);
+  });
+});

@@ -338,4 +338,26 @@ export class OverviewStatesGlanceComponent {
     // The list's narrow column takes the short form; its tooltip and the side panel say "in all".
     return `${formatOrdinal(number)} claim · ${formatRupeesInCrore(claim.amountClaimed)} claimed${short ? '' : ' in all'}`;
   }
+
+  /**
+   * The list's count chips for a State's letters: submitted (every letter received) always, then approved (5, 7),
+   * under review (15, with the Section Officer) and returned (16, 6) only when there are any. Empty while the claim
+   * figures are not loaded or the State has no letter (the cell then shows `claimText`). Counted from the letters the
+   * Claims & Submissions API already sends, so no extra request.
+   */
+  claimChips(row: StateRow): { label: string; tone: 'all' | 'good' | 'review' | 'bad' }[] {
+    const letters = this.claimsByState().get(row.stateId)?.claimLetters ?? [];
+    if (!letters.length) return [];
+    const count = (statuses: number[]) => letters.filter((l) => statuses.includes(l.status)).length;
+    const chips: { label: string; tone: 'all' | 'good' | 'review' | 'bad' }[] = [
+      { label: `${letters.length} submitted`, tone: 'all' },
+    ];
+    const approved = count([5, 7]);
+    const review = count([15]);
+    const returned = count([16, 6]);
+    if (approved) chips.push({ label: `${approved} approved`, tone: 'good' });
+    if (review) chips.push({ label: `${review} under review`, tone: 'review' });
+    if (returned) chips.push({ label: `${returned} returned`, tone: 'bad' });
+    return chips;
+  }
 }
