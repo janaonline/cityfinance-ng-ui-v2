@@ -120,6 +120,14 @@ describe('OverviewStatesGlanceComponent claim letter chips', () => {
     ]);
   });
 
+  it('puts every count in the accessible name of the row link, since a narrow column clips chips from view', () => {
+    const component = setup([letter(15), letter(16)]);
+
+    const label = component.rowLabel(row('KA', 'review'));
+    expect(label).toContain('View KA');
+    expect(label).toContain('2 submitted, 1 under review, 1 returned');
+  });
+
   it('shows no chips for a State without a letter (its cell falls back to the claim text)', () => {
     const component = setup([]);
 

@@ -126,7 +126,7 @@
                 <a
                   class="os-row os-tone--{{ toneOf(row) }}"
                   [routerLink]="['../review-state-submissions', row.stateId]"
-                  [attr.aria-label]="'View ' + row.name"
+                  [attr.aria-label]="rowLabel(row)"
                   [style.top.px]="listLayout().tops.get(row.code)"
                   [style.--dl]="i * 16 + 'ms'"
                 >

@@ -361,6 +361,12 @@ export class OverviewStatesGlanceComponent {
     return chips;
   }
 
+  /** The row link's accessible name: the State plus its claim counts, which a narrow column may clip from view. */
+  rowLabel(row: StateRow): string {
+    const chips = this.claimChips(row);
+    return chips.length ? `View ${row.name}: ${this.claimChipsTitle(row, chips)}` : `View ${row.name}`;
+  }
+
   /** The chips cell's tooltip: the claim summary plus every chip, since a narrow column clips the last chips. */
   claimChipsTitle(row: StateRow, chips: { label: string }[]): string {
     return `${this.claimText(row)} (${chips.map((c) => c.label).join(', ')})`;
