@@ -37,6 +37,7 @@ import { DevolutionFormulaService } from '../../devolution-formula.service';
 import {
   buildDfRowUpdatePayload,
   buildDfRowViewModel,
+  computeInstallmentHalf,
   DfRowViewModel,
   isDfRowValidationStatus,
   parseDfRowUpdateErrors,
@@ -108,6 +109,9 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
 
   protected readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   protected readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);
+  /** Live instalment preview while editing: half of the typed Total. */
+  protected readonly installmentHalf = (total: unknown) =>
+    computeInstallmentHalf(typeof total === 'number' ? total : null);
   /** Info-icon tooltip for a row's editable amount inputs — the whole-number instruction plus the
    *  currently-typed value spelled out in words. */
   protected readonly wholeNumberInfoText = (value: number | null | undefined) =>
@@ -178,11 +182,12 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
     this.buildEditForm(row);
   }
 
-  startEditAtField(row: DevolutionRow, field: string): void {
+  /** `focusField` differs from `field` for the display-only instalment cells, whose fix is the Total. */
+  startEditAtField(row: DevolutionRow, field: string, focusField: string = field): void {
     if (!this.canEdit || this.editingRowId() !== null || !this.hasCellError(row, field)) return;
     this.startEdit(row);
     setTimeout(() => {
-      const el = this.elementRef.nativeElement.querySelector(`[data-df-edit-field="${field}"]`);
+      const el = this.elementRef.nativeElement.querySelector(`[data-df-edit-field="${focusField}"]`);
       if (el instanceof HTMLElement) el.focus();
     }, 50);
   }
@@ -204,17 +209,10 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
 
     const raw = this.editForm.getRawValue() as {
       totalGrantAllocation: number | null;
-      installment1Amount: number | null;
-      installment2Amount: number | null;
       devolutionFormula: string | null;
     };
 
-    const payload = buildDfRowUpdatePayload(
-      raw.totalGrantAllocation,
-      raw.installment1Amount,
-      raw.installment2Amount,
-      raw.devolutionFormula,
-    );
+    const payload = buildDfRowUpdatePayload(raw.totalGrantAllocation, raw.devolutionFormula);
 
     this.service
       .updateRow(this.stateId, this.yearId, this.installment, rowId, payload)
@@ -326,12 +324,8 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
     this.editForm = this.fb.group({});
     this.currentEditFields = this.rowEditFields();
 
-    const EDITABLE_KEYS = new Set([
-      'totalGrantAllocation',
-      'installment1Amount',
-      'installment2Amount',
-      'devolutionFormula',
-    ]);
+    // Instalments are display-only (Total / 2), so no controls are built for them.
+    const EDITABLE_KEYS = new Set(['totalGrantAllocation', 'devolutionFormula']);
 
     for (const field of this.currentEditFields) {
       const key = field.key;

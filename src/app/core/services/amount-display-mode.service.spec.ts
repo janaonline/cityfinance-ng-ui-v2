@@ -73,6 +73,20 @@ describe('AmountDisplayModeService', () => {
     expect(service.formatExact(25000000)).toBe('₹ 2,50,00,000');
   });
 
+  it('format()/formatExact() show both paise digits for a Rupee figure ending in .5', () => {
+    expect(service.format(19485981.5, 'inr')).toBe('₹ 1,94,85,981.50');
+    expect(service.formatExact(19485981.5)).toBe('₹ 1,94,85,981.50');
+  });
+
+  it('format()/formatExact() keep whole Rupee figures without decimals', () => {
+    expect(service.format(19485981, 'inr')).toBe('₹ 1,94,85,981');
+    expect(service.formatExact(19485981)).toBe('₹ 1,94,85,981');
+  });
+
+  it('format() leaves scaled units unchanged for a figure with paise', () => {
+    expect(service.format(19485981.5, 'cr')).toBe(service.format(19485981, 'cr'));
+  });
+
   it('format() returns a dash for null/undefined', () => {
     expect(service.format(null, 'auto')).toBe('-');
     expect(service.format(undefined, 'inr')).toBe('-');
