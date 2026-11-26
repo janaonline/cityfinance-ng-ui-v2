@@ -271,6 +271,9 @@ export function parseDfRowUpdateErrors(error: unknown): DfRowUpdateApiError[] {
   return dfErrorsMapToRowErrors(error['errors']);
 }
 
+/** Instalment header tooltip; the API's Excel template header comment uses the same text. */
+export const DF_INSTALLMENT_NOTE = 'Calculated automatically as half of the Total Allocation.';
+
 /** Each instalment is half of the Total (the API derives and stores the same value), so it can end in .50. */
 export function computeInstallmentHalf(total: number | null | undefined): number | null {
   return typeof total === 'number' && Number.isFinite(total) && total >= 0 ? total / 2 : null;
