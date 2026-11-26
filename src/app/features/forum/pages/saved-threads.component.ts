@@ -11,7 +11,6 @@ import { ForumService } from '../forum.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="page-intro">
-      <p class="eyebrow">Your reading list</p>
       <h1>Saved discussions</h1>
       <p>Threads you bookmarked are kept here across devices.</p>
     </section>
@@ -34,7 +33,11 @@ import { ForumService } from '../forum.service';
             <h2>Saved</h2>
             <span>{{ v.data.length }} {{ v.data.length === 1 ? 'thread' : 'threads' }}</span>
           </section>
-          <app-forum-thread-list [threads]="v.data" [bookmarkedOverride]="true" />
+          <app-forum-thread-list
+            [threads]="v.data"
+            emptyTitle="You have not saved any discussions yet."
+            [emptyMessage]="null"
+          />
         }
       }
     }

@@ -22,6 +22,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="threads" routerLinkActive="active" ariaCurrentWhenActive="page">
             <i class="bi bi-chat-left-text" aria-hidden="true"></i>Threads
           </a>
+          <a routerLink="reports" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <i class="bi bi-flag" aria-hidden="true"></i>Reports
+          </a>
         </nav>
       </aside>
       <div class="admin-content"><router-outlet /></div>

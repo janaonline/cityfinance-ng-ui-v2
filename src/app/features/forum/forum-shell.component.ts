@@ -30,7 +30,7 @@ import { injectForumViewer } from './forum-viewer';
               routerLink="/forum"
               [class.active]="section() === 'discussions'"
               [attr.aria-current]="section() === 'discussions' ? 'page' : null"
-              >Discussions</a
+              ><i class="bi bi-house-door" aria-hidden="true"></i> Home</a
             >
             <a
               class="nav-link"

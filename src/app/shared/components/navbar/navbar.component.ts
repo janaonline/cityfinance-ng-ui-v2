@@ -178,6 +178,15 @@ export class NavbarComponent implements OnInit {
       .subscribe(() => this.refreshMenus());
   }
 
+  /**
+   * Name in the user menu. On /forum pages it is the forum display name (TS-1305: the ULB name,
+   * "State DMA, <State>" or "MoHUA"); every other module keeps the account name.
+   */
+  get menuUserName(): string {
+    const onForum = /^\/forum(\/|\?|#|$)/.test(this._router.url);
+    return (onForum && this.user?.forumDisplayName) || this.user?.name || '';
+  }
+
   private isOcrRoute(): boolean {
     return this._router.url.startsWith('/ocr');
   }

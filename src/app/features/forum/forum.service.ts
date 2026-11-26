@@ -7,12 +7,15 @@ import {
   CreateCommentPayload,
   CreateThreadPayload,
   ForumAdminComment,
+  ForumAdminReport,
   ForumCategory,
   ForumComment,
   ForumCommentLikeResult,
   ForumEnvelope,
   ForumReactionKind,
   ForumReactionResult,
+  ForumReportReason,
+  ForumReportTarget,
   ForumThread,
   ForumThreadDetail,
   ModerateThreadPayload,
@@ -114,7 +117,10 @@ export class ForumService {
     return this.unwrap(
       this.http.post<ForumEnvelope<ForumReactionResult>>(
         `${this.baseUrl}/threads/${threadId}/reactions`,
-        { reaction, active },
+        {
+          reaction,
+          active,
+        },
       ),
     );
   }
@@ -128,7 +134,38 @@ export class ForumService {
     );
   }
 
+  // ---- Reports -------------------------------------------------------------------------------
+
+  /** Reports a thread or reply to the administrators; a repeat report is rejected with 409. */
+  reportPost(
+    target: ForumReportTarget,
+    id: string,
+    reason: ForumReportReason,
+  ): Observable<{ reported: boolean }> {
+    const path = target === 'thread' ? 'threads' : 'comments';
+    return this.unwrap(
+      this.http.post<ForumEnvelope<{ reported: boolean }>>(`${this.baseUrl}/${path}/${id}/report`, {
+        reason,
+      }),
+    );
+  }
+
   // ---- Admin ---------------------------------------------------------------------------------
+
+  getAdminReports(): Observable<ForumAdminReport[]> {
+    return this.unwrap(
+      this.http.get<ForumEnvelope<ForumAdminReport[]>>(`${this.baseUrl}/admin/reports`),
+    );
+  }
+
+  /** `hide` hides the reported post (restorable from Threads); `dismiss` keeps it. */
+  resolveReport(id: string, action: 'hide' | 'dismiss'): Observable<{ updated: boolean }> {
+    return this.unwrap(
+      this.http.patch<ForumEnvelope<{ updated: boolean }>>(`${this.baseUrl}/admin/reports/${id}`, {
+        action,
+      }),
+    );
+  }
 
   getAdminThreads(): Observable<ForumThread[]> {
     return this.unwrap(

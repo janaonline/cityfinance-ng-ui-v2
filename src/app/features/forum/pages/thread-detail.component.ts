@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject, catchError, map, of, switchMap } from 'rxjs';
 import { CommentFormComponent } from '../components/comment-form.component';
 import { CommentListComponent } from '../components/comment-list.component';
 import { ReactionButtonComponent } from '../components/reaction-button.component';
+import { ReportButtonComponent } from '../components/report-button.component';
 import { ThreadActionsComponent } from '../components/thread-actions.component';
 import { formatDate } from '../forum-date';
 import { toFormError } from '../forum-errors';
@@ -23,10 +24,10 @@ import { HttpErrorResponse } from '@angular/common/http';
   selector: 'app-forum-thread-detail',
   standalone: true,
   imports: [
-    RouterLink,
     MarkdownComponent,
     ReactionButtonComponent,
     ThreadActionsComponent,
+    ReportButtonComponent,
     CommentListComponent,
     CommentFormComponent,
     ForumStatusComponent,
@@ -52,7 +53,6 @@ import { HttpErrorResponse } from '@angular/common/http';
         @case ('ready') {
           @let thread = s.data.thread;
           <div class="thread-page">
-            <a class="back-link" routerLink="/forum">Back to discussions</a>
             <h1 class="thread-page-title">{{ thread.title }}</h1>
             <article class="thread-detail">
               <div class="author-line">
@@ -79,6 +79,9 @@ import { HttpErrorResponse } from '@angular/common/http';
                   [initialCount]="thread.bookmarkCount"
                   [initialActive]="!!thread.bookmarked"
                 />
+                @if (mayComment() && !thread.reported) {
+                  <app-forum-report-button target="thread" [targetId]="thread.id" />
+                }
               </div>
               @if (mayEdit(thread)) {
                 <app-forum-thread-actions

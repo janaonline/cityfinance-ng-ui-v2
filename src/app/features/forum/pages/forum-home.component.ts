@@ -25,7 +25,6 @@ const score = (t: ForumThread) => t.viewCount + t.replyCount + t.likeCount;
   template: `
     <section class="hero">
       <div>
-        <p class="eyebrow">16th Finance Commission</p>
         <h1>Discussion forum</h1>
         <p>
           A collaborative space for ULBs, State DMAs, and MoHUA to ask questions, share resources,

@@ -134,6 +134,30 @@ describe('ForumService', () => {
     expect(del.request.method).toBe('DELETE');
     del.flush(wrap({ deleted: true }));
   });
+
+  it('reports threads and replies with a reason', () => {
+    service.reportPost('thread', 't1', 'off-topic').subscribe();
+    const thread = http.expectOne(`${base}/threads/t1/report`);
+    expect(thread.request.method).toBe('POST');
+    expect(thread.request.body).toEqual({ reason: 'off-topic' });
+    thread.flush(wrap({ reported: true }));
+
+    service.reportPost('comment', 'c1', 'personal-details').subscribe();
+    const comment = http.expectOne(`${base}/comments/c1/report`);
+    expect(comment.request.body).toEqual({ reason: 'personal-details' });
+    comment.flush(wrap({ reported: true }));
+  });
+
+  it('lists and resolves admin reports', () => {
+    service.getAdminReports().subscribe();
+    http.expectOne(`${base}/admin/reports`).flush(wrap([]));
+
+    service.resolveReport('r1', 'hide').subscribe();
+    const req = http.expectOne(`${base}/admin/reports/r1`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ action: 'hide' });
+    req.flush(wrap({ updated: true }));
+  });
 });
 
 describe('toFormError', () => {

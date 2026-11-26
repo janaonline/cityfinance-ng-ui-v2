@@ -396,43 +396,6 @@ $line-soft: #dce4e1;
     }
   }
 
-  .back-link {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 0 24px;
-    color: #4f5f5a;
-    font-size: 14px;
-    font-weight: 700;
-
-    &::before {
-      content: '';
-      flex: none;
-      width: 18px;
-      height: 18px;
-      border: 1px solid #c8d4d0;
-      border-radius: 50%;
-      background: linear-gradient(180deg, #fff, #f4f8f6);
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 50%;
-      width: 6px;
-      height: 6px;
-      border-left: 2px solid var(--accent);
-      border-bottom: 2px solid var(--accent);
-      transform: translateY(-50%) rotate(45deg);
-    }
-
-    &:hover {
-      color: var(--accent);
-    }
-  }
-
   // ---- Thread list ----------------------------------------------------------------------------
   .thread-list {
     border: 1px solid $line-soft;
@@ -446,7 +409,7 @@ $line-soft: #dce4e1;
   .thread-list-head,
   .thread-card {
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) repeat(3, 64px) 76px;
+    grid-template-columns: 48px minmax(0, 1fr) repeat(3, 64px) 150px;
     gap: 12px;
     align-items: center;
   }
@@ -465,6 +428,10 @@ $line-soft: #dce4e1;
 
     span:not(:first-child) {
       text-align: center;
+    }
+
+    span:last-child {
+      text-align: left;
     }
   }
 
@@ -572,6 +539,23 @@ $line-soft: #dce4e1;
     justify-self: center;
   }
 
+  // "Last post": ULB / State name of the latest reply and its date.
+  .thread-last-post {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    color: #68756f;
+    font-size: 12px;
+    line-height: 1.4;
+
+    strong {
+      overflow: hidden;
+      color: #111827;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
   .pagination {
     display: flex;
     align-items: center;
@@ -633,6 +617,53 @@ $line-soft: #dce4e1;
 
   .comment-reactions {
     margin-top: 12px;
+  }
+
+  // Report a thread / reply (TS-1305): inline reason picker under the reactions.
+  app-forum-report-button:has(.report-form) {
+    flex-basis: 100%;
+  }
+
+  .report-form {
+    max-width: 420px;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: white;
+
+    fieldset {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0 0 10px;
+      padding: 0;
+      border: 0;
+    }
+
+    legend {
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+  }
+
+  .report-form-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .report-done {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 5px;
   }
 
   // The full variant also carries `btn btn-sm btn-outline-cfPrimary` (set in the component), so only
@@ -1635,10 +1666,6 @@ $line-soft: #dce4e1;
 
     .forum-form {
       padding: 20px;
-    }
-
-    .back-link {
-      margin-top: 0;
     }
 
     .my-threads-intro {

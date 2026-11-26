@@ -38,8 +38,39 @@ export interface ForumThread {
   createdAt: string;
   updatedAt: string;
   lastActivityAt: string;
+  /** Latest visible reply ("Last post" column); null when the thread has no reply. List endpoints only. */
+  lastReply?: ForumLastReply | null;
   liked?: boolean;
   bookmarked?: boolean;
+  /** Thread detail only: the viewer has already reported this thread. */
+  reported?: boolean;
+}
+
+export interface ForumLastReply {
+  userId: string;
+  /** ULB / State DMA / MoHUA name of the replier. */
+  name: string;
+  role: string;
+  createdAt: string;
+}
+
+export type ForumReportReason = 'off-topic' | 'wrong-information' | 'personal-details' | 'other';
+export type ForumReportTarget = 'thread' | 'comment';
+
+/** One open report in the admin reports list. */
+export interface ForumAdminReport {
+  id: string;
+  targetType: ForumReportTarget;
+  targetId: string;
+  threadId: string;
+  threadTitle: string;
+  threadSlug: string | null;
+  excerpt: string;
+  author: ForumPublicUser | null;
+  reason: ForumReportReason;
+  reporter: ForumPublicUser;
+  createdAt: string;
+  isHidden: boolean;
 }
 
 export interface ForumComment {
@@ -54,6 +85,8 @@ export interface ForumComment {
   createdAt: string;
   updatedAt: string;
   liked?: boolean;
+  /** Thread detail only: the viewer has already reported this reply. */
+  reported?: boolean;
 }
 
 export interface ForumAdminComment extends ForumComment {

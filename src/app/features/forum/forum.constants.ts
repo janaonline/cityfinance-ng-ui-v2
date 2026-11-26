@@ -1,4 +1,4 @@
-import { ForumCategoryContent } from './forum.models';
+import { ForumCategoryContent, ForumReportReason } from './forum.models';
 
 /** Page copy for the canonical categories, keyed by slug. Ported from Next `forum-categories.ts`. */
 export const FORUM_CATEGORY_CONTENT: readonly ForumCategoryContent[] = [
@@ -37,6 +37,18 @@ export const FORUM_CATEGORY_SLUGS: string[] = FORUM_CATEGORY_CONTENT.map((c) => 
 
 export function findCategoryContent(slug: string): ForumCategoryContent | undefined {
   return FORUM_CATEGORY_CONTENT.find((c) => c.slug === slug);
+}
+
+/** Report reasons, in the order the Report form lists them (values match the API enum). */
+export const FORUM_REPORT_REASONS: readonly { value: ForumReportReason; label: string }[] = [
+  { value: 'off-topic', label: 'Off-topic' },
+  { value: 'wrong-information', label: 'Wrong information' },
+  { value: 'personal-details', label: 'Personal details shared' },
+  { value: 'other', label: 'Other' },
+];
+
+export function reportReasonLabel(reason: ForumReportReason): string {
+  return FORUM_REPORT_REASONS.find((r) => r.value === reason)?.label ?? reason;
 }
 
 export const THREADS_PAGE_SIZE = 6;
