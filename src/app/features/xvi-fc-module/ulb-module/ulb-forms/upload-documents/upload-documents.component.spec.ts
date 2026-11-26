@@ -115,22 +115,22 @@ describe('UploadDocumentsComponent — required/optional document gating', () =>
   });
 
   it('offers Request Manual Review only for a real validation FAIL, not a technical failure', () => {
-    const failedFourTimes = { ...fakeDoc(requiredDoc, 'pending'), failedUploadsInARow: 4 };
+    const failedThreeTimes = { ...fakeDoc(requiredDoc, 'pending'), failedUploadsInARow: 3 };
 
-    expect(component.isEligibleForManualReview({ ...failedFourTimes, validationStatus: 'FAIL' })).toBe(true);
-    expect(component.isEligibleForManualReview({ ...failedFourTimes, validationStatus: 'fail' })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...failedThreeTimes, validationStatus: 'FAIL' })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...failedThreeTimes, validationStatus: 'fail' })).toBe(true);
     // The OCR job crashed: no validationStatus, so Retry / Re-upload stay instead.
-    expect(component.isEligibleForManualReview({ ...failedFourTimes, validationStatus: null })).toBe(false);
-    expect(component.isEligibleForManualReview({ ...failedFourTimes, validationStatus: 'PASS' })).toBe(false);
+    expect(component.isEligibleForManualReview({ ...failedThreeTimes, validationStatus: null })).toBe(false);
+    expect(component.isEligibleForManualReview({ ...failedThreeTimes, validationStatus: 'PASS' })).toBe(false);
   });
 
-  it('offers Request Manual Review only after 4 failed uploads in a row; retries of the same file do not count', () => {
+  it('offers Request Manual Review only after 3 failed uploads in a row; retries of the same file do not count', () => {
     const fail = { ...fakeDoc(requiredDoc, 'failed'), validationStatus: 'FAIL' };
 
-    expect(component.isEligibleForManualReview({ ...fail, failedUploadsInARow: 3, retryValidationCount: 9 })).toBe(
+    expect(component.isEligibleForManualReview({ ...fail, failedUploadsInARow: 2, retryValidationCount: 9 })).toBe(
       false,
     );
-    expect(component.isEligibleForManualReview({ ...fail, failedUploadsInARow: 4 })).toBe(true);
+    expect(component.isEligibleForManualReview({ ...fail, failedUploadsInARow: 3 })).toBe(true);
   });
 
   it('after a rejection with all attempts used, offers Request Manual Review only if the last upload was a real FAIL', () => {
