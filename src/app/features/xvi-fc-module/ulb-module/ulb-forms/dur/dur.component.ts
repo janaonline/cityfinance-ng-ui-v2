@@ -164,7 +164,7 @@ const POLL_INTERVAL_MS = 5000;
 const MAX_PDF_PAGES = 1000;
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
 /** Mirrors the backend's MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW (common/utils/manual-review-cooldown.util.ts). */
-const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 4;
+const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 3;
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 const PROCESSING_POLL_TIMEOUT_MS = 20 * 60 * 1000;
