@@ -21,7 +21,7 @@ const TONES = ['mint', 'gold', 'violet', 'rose'];
         </h2>
         <p class="meta">
           <strong>{{ thread().user.name }}</strong> · {{ date() }} ·
-          <a [routerLink]="['/forum/categories', thread().categorySlug]">{{ categoryName() }}</a>
+          <a [routerLink]="['/forum/categories', thread().categorySlug]">{{ topic() }}</a>
         </p>
       </div>
       <div class="thread-stats">
@@ -34,29 +34,31 @@ const TONES = ['mint', 'gold', 'violet', 'rose'];
           [initialCount]="thread().likeCount"
           [initialActive]="liked()"
         />
-        <app-forum-reaction-button
-          [compact]="true"
-          target="thread-bookmark"
-          [targetId]="thread().id"
-          [initialCount]="thread().bookmarkCount"
-          [initialActive]="bookmarked()"
-        />
+        <div class="thread-last-post">
+          @if (thread().lastReply; as reply) {
+            <strong>{{ reply.name }}</strong>
+            <span>{{ lastReplyDate() }}</span>
+          } @else {
+            <span>No replies yet</span>
+          }
+        </div>
       </div>
     </article>
   `,
 })
 export class ThreadCardComponent {
   readonly thread = input.required<ForumThread>();
-  /** Overrides the thread's own viewer flag (e.g. everything on /saved is bookmarked). */
-  readonly bookmarkedOverride = input<boolean | null>(null);
+  /** Category name from the API, used for categories without built-in page copy. */
+  readonly categoryName = input<string | null>(null);
 
   protected readonly tone = computed(() => TONES[this.thread().title.length % TONES.length]);
   protected readonly date = computed(() => formatDate(this.thread().createdAt));
-  protected readonly categoryName = computed(
-    () => findCategoryContent(this.thread().categorySlug)?.name ?? this.thread().categorySlug,
+  protected readonly lastReplyDate = computed(() => formatDate(this.thread().lastReply?.createdAt));
+  protected readonly topic = computed(
+    () =>
+      findCategoryContent(this.thread().categorySlug)?.name ??
+      this.categoryName() ??
+      this.thread().categorySlug,
   );
   protected readonly liked = computed(() => !!this.thread().liked);
-  protected readonly bookmarked = computed(
-    () => this.bookmarkedOverride() ?? !!this.thread().bookmarked,
-  );
 }

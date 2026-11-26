@@ -18,12 +18,19 @@ import { toFormError } from '../forum-errors';
 import { MarkdownComponent } from '../markdown/markdown.component';
 import { CommentFormComponent } from './comment-form.component';
 import { ReactionButtonComponent } from './reaction-button.component';
+import { ReportButtonComponent } from './report-button.component';
 
 /** Threaded comment list (up to three levels) with inline reply forms. */
 @Component({
   selector: 'app-forum-comment-list',
   standalone: true,
-  imports: [NgTemplateOutlet, MarkdownComponent, ReactionButtonComponent, CommentFormComponent],
+  imports: [
+    NgTemplateOutlet,
+    MarkdownComponent,
+    ReactionButtonComponent,
+    CommentFormComponent,
+    ReportButtonComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ng-template #node let-comment let-depth="depth">
@@ -51,6 +58,9 @@ import { ReactionButtonComponent } from './reaction-button.component';
               }
               @if (mayModerate(comment)) {
                 <button class="text-action" type="button" (click)="remove(comment)">Remove</button>
+              }
+              @if (mayReply() && !comment.reported) {
+                <app-forum-report-button target="comment" [targetId]="comment.id" />
               }
               @if (errors()[comment.id]; as err) {
                 <span class="field-error">{{ err }}</span>

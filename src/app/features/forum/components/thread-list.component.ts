@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { THREADS_PAGE_SIZE } from '../forum.constants';
-import { ForumThread } from '../forum.models';
+import { ForumCategory, ForumThread } from '../forum.models';
+import { ForumService } from '../forum.service';
 import { ThreadCardComponent } from './thread-card.component';
 
 /** Paginated (client-side) thread list. */
@@ -12,17 +15,22 @@ import { ThreadCardComponent } from './thread-card.component';
   template: `
     @if (!threads().length) {
       <div class="empty-state">
-        <h2>No discussions yet</h2>
-        <p>Start a discussion to add one here.</p>
+        <h2>{{ emptyTitle() }}</h2>
+        @if (emptyMessage()) {
+          <p>{{ emptyMessage() }}</p>
+        }
       </div>
     } @else {
       <div class="thread-list">
         <div class="thread-list-head">
           <span>Discussion</span><span>Replies</span><span>Views</span><span>Likes</span
-          ><span>Bookmarks</span>
+          ><span>Last post</span>
         </div>
         @for (thread of visibleThreads(); track thread.id) {
-          <app-forum-thread-card [thread]="thread" [bookmarkedOverride]="bookmarkedOverride()" />
+          <app-forum-thread-card
+            [thread]="thread"
+            [categoryName]="categoryNames().get(thread.categorySlug) ?? null"
+          />
         }
         @if (pageCount() > 1) {
           <nav class="pagination" aria-label="Discussion pages">
@@ -61,7 +69,19 @@ import { ThreadCardComponent } from './thread-card.component';
 })
 export class ThreadListComponent {
   readonly threads = input.required<ForumThread[]>();
-  readonly bookmarkedOverride = input<boolean | null>(null);
+  readonly emptyTitle = input('No discussions yet');
+  readonly emptyMessage = input<string | null>('Start a discussion to add one here.');
+
+  /** Category names by slug (cached for the session), so every topic shows its name, not its slug. */
+  private readonly categories = toSignal(
+    inject(ForumService)
+      .getCategories()
+      .pipe(catchError(() => of([] as ForumCategory[]))),
+    { initialValue: [] as ForumCategory[] },
+  );
+  protected readonly categoryNames = computed(
+    () => new Map(this.categories().map((c) => [c.slug, c.name])),
+  );
 
   private readonly page = signal(1);
   protected readonly pageCount = computed(() =>

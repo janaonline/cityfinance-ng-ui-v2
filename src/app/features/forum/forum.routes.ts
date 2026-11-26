@@ -71,6 +71,12 @@ export const FORUM_ROUTES: Routes = [
             loadComponent: () =>
               import('./pages/admin/admin-threads.component').then((m) => m.AdminThreadsComponent),
           },
+          {
+            path: 'reports',
+            title: 'Reported posts',
+            loadComponent: () =>
+              import('./pages/admin/admin-reports.component').then((m) => m.AdminReportsComponent),
+          },
         ],
       },
       {

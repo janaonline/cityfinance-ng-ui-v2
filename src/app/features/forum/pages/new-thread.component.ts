@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { RichTextEditorComponent } from '../components/rich-text-editor.component';
 import { toFormError } from '../forum-errors';
 import { toLoadable } from '../forum-loadable';
@@ -9,13 +9,11 @@ import { ForumService } from '../forum.service';
 @Component({
   selector: 'app-forum-new-thread',
   standalone: true,
-  imports: [RouterLink, RichTextEditorComponent],
+  imports: [RichTextEditorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="narrow composer-page">
-      <a class="back-link" routerLink="/forum">Back to discussions</a>
       <section class="page-intro">
-        <p class="eyebrow">Forum contribution</p>
         <h1>Start a discussion</h1>
         <p>
           Share a question, clarification, or field experience that can help ULBs, State DMAs, and
