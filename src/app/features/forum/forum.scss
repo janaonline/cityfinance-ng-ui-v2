@@ -311,9 +311,15 @@ $line-soft: #dce4e1;
   // ---- Board layout, category pills, search ------------------------------------------------------
   .board-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 330px;
+    grid-template-columns: minmax(0, 1fr) 360px;
     gap: var(--forum-space-section);
     align-items: start;
+
+    // Grid items default to `min-width: auto`, so wide content (the category row, the popular
+    // table) would push them past their track and out of the container. Keep both inside it.
+    > * {
+      min-width: 0;
+    }
   }
 
   .feed-toolbar {
@@ -324,11 +330,13 @@ $line-soft: #dce4e1;
     margin-bottom: var(--forum-space-card);
   }
 
+  // Wraps onto a second row when there are more categories than fit, instead of running under
+  // the sidebar. `min-width: 0` lets it shrink inside the flex toolbar.
   .category-nav {
     display: flex;
-    gap: 28px;
-    overflow-x: auto;
-    scrollbar-width: none;
+    flex-wrap: wrap;
+    column-gap: var(--forum-space-section);
+    min-width: 0;
   }
 
   .category-pill {
@@ -767,6 +775,11 @@ $line-soft: #dce4e1;
     }
   }
 
+  // The table needs the card's full width, so this card uses the tighter card padding.
+  .popular-threads-card {
+    padding: var(--forum-space-card);
+  }
+
   .popular-thread-table-wrap {
     overflow-x: auto;
     border: 1px solid #e1e8e5;
@@ -782,7 +795,7 @@ $line-soft: #dce4e1;
     }
 
     th {
-      padding: 0.75rem 0.5rem;
+      padding: 0.75rem 0.375rem;
       color: #52615b;
       font-size: var(--forum-fs-micro);
       font-weight: 700;
@@ -794,7 +807,7 @@ $line-soft: #dce4e1;
     }
 
     td {
-      padding: 0.75rem 0.5rem;
+      padding: 0.75rem 0.375rem;
       border-top: 1px solid #e1e8e5;
       color: #3f4f49;
       text-align: center;
@@ -808,8 +821,8 @@ $line-soft: #dce4e1;
         font-weight: 800;
       }
 
+      // Takes whatever the number columns leave; long titles wrap to two lines (see `a` below).
       &:nth-child(2) {
-        min-width: 125px;
         text-align: left;
       }
     }
