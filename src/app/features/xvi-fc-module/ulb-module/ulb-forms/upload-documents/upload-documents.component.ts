@@ -120,6 +120,9 @@ export interface UploadDocument extends UploadDocumentDef {
   // directly (no need to re-request and get rejected a second time); reset to 0 once this document
   // passes or is rejected again (starting a fresh 3-attempt window).
   postRejectionAttemptsUsed: number;
+  // Uploads that failed in a row (retries of the same file not counted); "Request Manual Review" needs
+  // MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW. A pass resets it (server-side).
+  failedUploadsInARow: number;
   // Total times ADMIN has returned a manual-review request on this document — audit/stats only,
   // no longer gates the cooldown (see postRejectionAttemptsUsed).
   manualReviewRejectionCount: number;
@@ -181,6 +184,8 @@ interface BackendStatusDoc {
   manualReviewDecision: BackendDecision | null;
   // Failed re-upload attempts since ADMIN last returned a manual-review request for this document.
   postRejectionAttemptsUsed: number;
+  // Uploads of this document that failed in a row (retries of the same file not counted); a pass resets it.
+  failedUploadsInARow?: number;
   // Total times ADMIN has returned a manual-review request on this document.
   manualReviewRejectionCount: number;
   // Set after a second manual-review rejection — null the rest of the time.
@@ -264,6 +269,8 @@ const POLL_INTERVAL_MS = 5000;
 const MAX_PDF_PAGES = 1000;
 /** Mirrors the backend's MAX_POST_REJECTION_ATTEMPTS (annual-account-status-access.util.ts). */
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
+/** Mirrors the backend's MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW (common/utils/manual-review-cooldown.util.ts). */
+const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 4;
 /** Mirrors the backend's POST_REJECTION_COOLDOWN_HOURS (annual-account-status-access.util.ts). */
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 /** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
@@ -316,6 +323,7 @@ function emptyDoc(def: UploadDocumentDef): UploadDocument {
     manualReviewError: null,
     isStale: false,
     postRejectionAttemptsUsed: 0,
+    failedUploadsInARow: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
     passedReplacementsUsed: 0,
@@ -456,12 +464,12 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
     return doc.isManualReviewRequested && !doc.manualReviewDecision;
   }
 
-  /** True once this document has failed OCR validation enough times to offer "Request Manual
-   *  Review" — a retry on the same file, or any re-upload, both count. Only a real validation FAIL
-   *  qualifies (the server refuses anything else): a technical failure (the OCR job crashed, so no
-   *  validationStatus) keeps Retry / Re-upload instead. */
+  /** True once this document has failed MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW uploads in a row (the first upload and
+   *  3 re-uploads) to offer "Request Manual Review". Retries of the same file don't count, and a pass starts again
+   *  from 0. Only a real validation FAIL qualifies (the server refuses anything else): a technical failure (the OCR
+   *  job crashed, so no validationStatus) keeps Retry / Re-upload instead. Mirrors the API's hasEnoughFailedUploads. */
   isEligibleForManualReview(doc: UploadDocument): boolean {
-    return isValidationFail(doc.validationStatus) && (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1);
+    return isValidationFail(doc.validationStatus) && doc.failedUploadsInARow >= MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW;
   }
 
   /** True while this document is in its post-rejection cooldown — mirrors the backend's
@@ -735,6 +743,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
               // had never been rejected, re-offering "Request Manual Review" a turn early.
               manualReviewDecision: d.manualReviewDecision,
               postRejectionAttemptsUsed: d.postRejectionAttemptsUsed,
+              failedUploadsInARow: d.failedUploadsInARow,
               manualReviewRejectionCount: d.manualReviewRejectionCount,
               uploadBlockedUntil: d.uploadBlockedUntil,
               passedReplacementsUsed: d.passedReplacementsUsed,
@@ -1190,6 +1199,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
             latestDecision,
             manualReviewDecision,
             postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
+            failedUploadsInARow: saved.failedUploadsInARow ?? 0,
             manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
             uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
             passedReplacementsUsed: saved.passedReplacementsUsed ?? 0,
@@ -1277,6 +1287,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
                 // everything else in this block.
                 manualReviewDecision: remote.manualReviewDecision,
                 postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
+                failedUploadsInARow: remote.failedUploadsInARow ?? 0,
                 manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
                 uploadBlockedUntil: remote.uploadBlockedUntil ? new Date(remote.uploadBlockedUntil) : null,
                 passedReplacementsUsed: remote.passedReplacementsUsed ?? 0,

@@ -22,6 +22,7 @@ const detail: StateDetailData = {
       statusCode: 5,
       statusLabel: 'Under Review by MoHUA',
       completed: true,
+      approved: true,
       canView: true,
     },
     {
@@ -30,6 +31,7 @@ const detail: StateDetailData = {
       statusCode: 0,
       statusLabel: 'Not Started',
       completed: false,
+      approved: false,
       canView: false,
     },
     {
@@ -38,6 +40,7 @@ const detail: StateDetailData = {
       statusCode: 2,
       statusLabel: 'In Progress',
       completed: false,
+      approved: false,
       canView: true,
     },
   ],
@@ -244,6 +247,23 @@ describe('StateDetailComponent', () => {
 
     expect(text).toContain('Not Started');
     expect(text).toContain('In Progress');
+  });
+
+  it('ticks a form only once PMU approved it; one still with PMU (13) shows "Under Review by PMU" instead', () => {
+    detailService.getDetail.and.returnValue(
+      of({
+        ...detail,
+        forms: [
+          { ...detail.forms[0], statusCode: 15, statusLabel: 'Under Review by MoHUA', completed: true, approved: true },
+          { ...detail.forms[1], statusCode: 13, statusLabel: 'Under Review by PMU', completed: true, approved: false },
+        ],
+      }),
+    );
+    const items = Array.from(create().nativeElement.querySelectorAll('.sd-cond__item')) as HTMLElement[];
+
+    expect(items[0].querySelector('.sd-cond__stamp')).not.toBeNull();
+    expect(items[1].querySelector('.sd-cond__stamp')).toBeNull();
+    expect(items[1].textContent).toContain('Under Review by PMU');
   });
 
   it('sorts and pages through the API, always from page 1 after a sort', () => {
