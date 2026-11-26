@@ -44,6 +44,13 @@
     </form>
   </div>
 
+  @if (!isLoading() && rows().length) {
+    <div class="border-bottom px-3 py-2 small text-secondary" data-cy="df-rows-installment-note">
+      <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Installment 1 and Installment 2 are automatically
+      calculated as half of the Total Allocation.
+    </div>
+  }
+
   <!-- Table -->
   <div class="table-responsive df-table-wrap">
     @if (isLoading()) {
@@ -77,11 +84,11 @@
             <th class="text-nowrap small fw-semibold">ULB Name</th>
             <th class="text-nowrap small fw-semibold">
               Installment 1
-              <app-info-icon text="Calculated automatically as half of the Total Allocation." />
+              <app-info-icon [text]="installmentNote" />
             </th>
             <th class="text-nowrap small fw-semibold">
               Installment 2
-              <app-info-icon text="Calculated automatically as half of the Total Allocation." />
+              <app-info-icon [text]="installmentNote" />
             </th>
             <th class="text-nowrap small fw-semibold">Total Allocation</th>
             <th class="text-nowrap small fw-semibold">Allocation Formula</th>
