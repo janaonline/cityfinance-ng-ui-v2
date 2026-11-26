@@ -114,8 +114,11 @@ export class ClaimLetterDetailComponent implements OnInit {
   private readonly utilityService = inject(UtilityService);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
+  private readonly auth = inject(AuthPermissionService);
   /** PMU opens this page to monitor MoHUA's work: read-only, so only MoHUA gets the actions. */
-  private readonly isMohua = inject(AuthPermissionService).isMohuaUser();
+  private readonly isMohua = this.auth.isMohuaUser();
+  /** MoHUA admin and reviewer may approve / return; a MoHUA viewer only reads (the API would refuse it with a 403). */
+  private readonly canDecide = this.isMohua && this.auth.canApproveStateSubmissions();
   private readonly search$ = new Subject<string>();
 
   /** Parent (MoHUA module) route — links are built from it, so they never depend on how many URL segments this route has. */
@@ -193,11 +196,15 @@ export class ClaimLetterDetailComponent implements OnInit {
   /** Only MoHUA acts, and only on a letter still under SO review; returned and acknowledged ones are read-only. */
   /** The SO's marks show to everyone who can open the page while the letter is under SO review; PMU reads them. */
   readonly isUnderSoReview = computed(() => this.letter()?.status === FORM_STATUS_UNDER_REVIEW_BY_SO);
-  /** Marking, clearing and the letter's decision buttons: MoHUA only. */
-  readonly canReview = computed(() => this.isMohua && this.isUnderSoReview());
+  /** Marking, clearing and the letter's decision buttons: MoHUA admin and reviewer only (not the viewer, not PMU). */
+  readonly canReview = computed(() => this.canDecide && this.isUnderSoReview());
 
-  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. */
-  readonly canGenerateOm = computed(() => this.isMohua && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS);
+  /** Only a letter the SO verified (5) can get an OM; the API refuses any other status. A MoHUA viewer cannot issue
+   *  OMs, so it never sees the action (the API would refuse it with a 403). */
+  readonly canGenerateOm = computed(
+    () =>
+      this.isMohua && this.auth.canIssueOfficeMemorandum() && this.letter()?.status === CLAIM_LETTER_VERIFIED_STATUS,
+  );
 
   /** Claim Eligibility filtered to this batch. A returned letter holds no ULBs there, so it opens the whole State. */
   readonly eligibilityQuery = computed(() => {

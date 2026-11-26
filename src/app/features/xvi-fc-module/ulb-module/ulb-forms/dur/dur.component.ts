@@ -113,6 +113,8 @@ interface DurDocument {
   manualReviewError: string | null;
   retryValidationCount: number;
   postRejectionAttemptsUsed: number;
+  // Uploads that failed in a row (retries of the same file not counted); a pass resets it (server-side).
+  failedUploadsInARow: number;
   manualReviewRejectionCount: number;
   uploadBlockedUntil: Date | null;
   // Times a PASSED upload of this document was replaced. At MAX_PASSED_REPLACEMENTS the passed
@@ -142,6 +144,7 @@ function emptyDoc(id: DurDocId): DurDocument {
     manualReviewError: null,
     retryValidationCount: 0,
     postRejectionAttemptsUsed: 0,
+    failedUploadsInARow: 0,
     manualReviewRejectionCount: 0,
     uploadBlockedUntil: null,
     passedReplacementsUsed: 0,
@@ -164,6 +167,8 @@ const API = `${environment.api.url2}`;
 const POLL_INTERVAL_MS = 5000;
 const MAX_PDF_PAGES = 1000;
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
+/** Mirrors the backend's MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW (common/utils/manual-review-cooldown.util.ts). */
+const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 4;
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 const MANUAL_REVIEW_SUPPORT_EMAIL = '16fc.grant@cityfinance.in';
 /** Mirrors the backend's MAX_PASSED_REPLACEMENTS (common/utils/manual-review-cooldown.util.ts). */
@@ -269,7 +274,8 @@ export class DurComponent implements OnInit, OnDestroy {
     return (
       doc.status === 'failed' &&
       isValidationFail(doc.validationStatus) &&
-      (doc.retryValidationCount > 1 || (doc.version ?? 1) > 1)
+      // MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW uploads in a row; retries of the same file do not count (API rule).
+      doc.failedUploadsInARow >= MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW
     );
   }
 
@@ -490,6 +496,7 @@ export class DurComponent implements OnInit, OnDestroy {
               fileName: file.name,
               manualReviewDecision: d.manualReviewDecision,
               postRejectionAttemptsUsed: d.postRejectionAttemptsUsed,
+              failedUploadsInARow: d.failedUploadsInARow,
               manualReviewRejectionCount: d.manualReviewRejectionCount,
               uploadBlockedUntil: d.uploadBlockedUntil,
               passedReplacementsUsed: d.passedReplacementsUsed,
@@ -788,6 +795,7 @@ export class DurComponent implements OnInit, OnDestroy {
           } | null;
           manualReviewDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
           postRejectionAttemptsUsed: number;
+          failedUploadsInARow?: number;
           manualReviewRejectionCount: number;
           uploadBlockedUntil: string | null;
           passedReplacementsUsed?: number;
@@ -825,6 +833,7 @@ export class DurComponent implements OnInit, OnDestroy {
             retryValidationCount: cu.retryValidationCount ?? 0,
             manualReviewDecision: saved.manualReviewDecision,
             postRejectionAttemptsUsed: saved.postRejectionAttemptsUsed ?? 0,
+            failedUploadsInARow: saved.failedUploadsInARow ?? 0,
             manualReviewRejectionCount: saved.manualReviewRejectionCount ?? 0,
             uploadBlockedUntil: saved.uploadBlockedUntil ? new Date(saved.uploadBlockedUntil) : null,
             passedReplacementsUsed: saved.passedReplacementsUsed ?? 0,
@@ -892,6 +901,7 @@ export class DurComponent implements OnInit, OnDestroy {
               } | null;
               manualReviewDecision: { status: 'APPROVED' | 'RETURNED'; note: string | null } | null;
               postRejectionAttemptsUsed: number;
+              failedUploadsInARow?: number;
               manualReviewRejectionCount: number;
               uploadBlockedUntil: string | null;
               passedReplacementsUsed?: number;
@@ -918,6 +928,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 (remote.currentUpload.ocrInfo?.isManualReviewRequested ?? false) === doc.isManualReviewRequested &&
                 (remote.currentUpload.retryValidationCount ?? 0) === doc.retryValidationCount &&
                 (remote.postRejectionAttemptsUsed ?? 0) === doc.postRejectionAttemptsUsed &&
+                (remote.failedUploadsInARow ?? 0) === doc.failedUploadsInARow &&
                 (remote.manualReviewRejectionCount ?? 0) === doc.manualReviewRejectionCount &&
                 newUploadBlockedUntil?.getTime() === doc.uploadBlockedUntil?.getTime() &&
                 (remote.passedReplacementsUsed ?? 0) === doc.passedReplacementsUsed &&
@@ -935,6 +946,7 @@ export class DurComponent implements OnInit, OnDestroy {
                 retryValidationCount: remote.currentUpload.retryValidationCount ?? 0,
                 manualReviewDecision: remote.manualReviewDecision,
                 postRejectionAttemptsUsed: remote.postRejectionAttemptsUsed ?? 0,
+                failedUploadsInARow: remote.failedUploadsInARow ?? 0,
                 manualReviewRejectionCount: remote.manualReviewRejectionCount ?? 0,
                 uploadBlockedUntil: newUploadBlockedUntil,
                 passedReplacementsUsed: remote.passedReplacementsUsed ?? 0,
