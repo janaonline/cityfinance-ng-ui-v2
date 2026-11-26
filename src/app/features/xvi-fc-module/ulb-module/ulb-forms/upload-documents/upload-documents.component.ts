@@ -270,7 +270,7 @@ const MAX_PDF_PAGES = 1000;
 /** Mirrors the backend's MAX_POST_REJECTION_ATTEMPTS (annual-account-status-access.util.ts). */
 const MAX_MANUAL_REVIEW_ATTEMPTS = 3;
 /** Mirrors the backend's MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW (common/utils/manual-review-cooldown.util.ts). */
-const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 4;
+const MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW = 3;
 /** Mirrors the backend's POST_REJECTION_COOLDOWN_HOURS (annual-account-status-access.util.ts). */
 const MANUAL_REVIEW_COOLDOWN_HOURS = 24;
 /** Mirrors the backend's MANUAL_REVIEW_SUPPORT_EMAIL (annual-account-status-access.util.ts). */
@@ -465,7 +465,7 @@ export class UploadDocumentsComponent implements OnInit, OnDestroy {
   }
 
   /** True once this document has failed MIN_FAILED_UPLOADS_FOR_MANUAL_REVIEW uploads in a row (the first upload and
-   *  3 re-uploads) to offer "Request Manual Review". Retries of the same file don't count, and a pass starts again
+   *  2 re-uploads) to offer "Request Manual Review". Retries of the same file don't count, and a pass starts again
    *  from 0. Only a real validation FAIL qualifies (the server refuses anything else): a technical failure (the OCR
    *  job crashed, so no validationStatus) keeps Retry / Re-upload instead. Mirrors the API's hasEnoughFailedUploads. */
   isEligibleForManualReview(doc: UploadDocument): boolean {
