@@ -3,6 +3,7 @@ import {
   buildDevolutionDraftPayloadData,
   buildDevolutionFinalSubmitPayloadData,
   buildDfRowUpdatePayload,
+  computeInstallmentHalf,
   extractApiErrorResponse,
   extractValidationSummaryFromError,
   getDfValidationStatusLabel,
@@ -241,32 +242,42 @@ describe('isDfRowValidationStatus', () => {
 // ─── buildDfRowUpdatePayload ──────────────────────────────────────────────────
 
 describe('buildDfRowUpdatePayload', () => {
-  it('includes all four fields when all values are finite numbers and non-null formula', () => {
-    const payload = buildDfRowUpdatePayload(1000, 500, 500, 'Pop * 2');
-    expect(payload.totalGrantAllocation).toBe(1000);
-    expect(payload.installment1Amount).toBe(500);
-    expect(payload.installment2Amount).toBe(500);
-    expect(payload.devolutionFormula).toBe('Pop * 2');
+  it('sends only the Total and the formula (the API derives the instalments)', () => {
+    const payload = buildDfRowUpdatePayload(1000, 'Pop * 2');
+    expect(payload).toEqual({ totalGrantAllocation: 1000, devolutionFormula: 'Pop * 2' });
   });
 
-  it('omits a numeric field when its value is null', () => {
-    const payload = buildDfRowUpdatePayload(null, 500, 500, 'Pop * 2');
+  it('omits the Total when its value is null', () => {
+    const payload = buildDfRowUpdatePayload(null, 'Pop * 2');
     expect('totalGrantAllocation' in payload).toBeFalse();
   });
 
-  it('omits a numeric field when its value is NaN', () => {
-    const payload = buildDfRowUpdatePayload(NaN, 500, 500, 'Pop * 2');
+  it('omits the Total when its value is NaN', () => {
+    const payload = buildDfRowUpdatePayload(NaN, 'Pop * 2');
     expect('totalGrantAllocation' in payload).toBeFalse();
   });
 
   it('omits devolutionFormula when value is null', () => {
-    const payload = buildDfRowUpdatePayload(1000, 500, 500, null);
+    const payload = buildDfRowUpdatePayload(1000, null);
     expect('devolutionFormula' in payload).toBeFalse();
   });
 
   it('includes devolutionFormula when value is an empty string (intentional clear)', () => {
-    const payload = buildDfRowUpdatePayload(1000, 500, 500, '');
+    const payload = buildDfRowUpdatePayload(1000, '');
     expect(payload.devolutionFormula).toBe('');
+  });
+});
+
+// ─── computeInstallmentHalf ───────────────────────────────────────────────────
+
+describe('computeInstallmentHalf', () => {
+  it('halves an even Total exactly', () => expect(computeInstallmentHalf(38971962)).toBe(19485981));
+  it('gives x.50 for an odd Total', () => expect(computeInstallmentHalf(38971963)).toBe(19485981.5));
+  it('returns null for a missing, non-finite or negative Total', () => {
+    expect(computeInstallmentHalf(null)).toBeNull();
+    expect(computeInstallmentHalf(undefined)).toBeNull();
+    expect(computeInstallmentHalf(NaN)).toBeNull();
+    expect(computeInstallmentHalf(-2)).toBeNull();
   });
 });
 

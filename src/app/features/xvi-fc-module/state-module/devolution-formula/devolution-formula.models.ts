@@ -176,10 +176,9 @@ export interface ValidateExcelDevolutionPayload {
   excelFile: DevolutionFileRef;
 }
 
+/** Instalments aren't sent: the API always sets them to Total / 2. */
 export interface UpdateDevolutionRowPayload {
   totalGrantAllocation?: number;
-  installment1Amount?: number;
-  installment2Amount?: number;
   devolutionFormula?: string;
 }
 
