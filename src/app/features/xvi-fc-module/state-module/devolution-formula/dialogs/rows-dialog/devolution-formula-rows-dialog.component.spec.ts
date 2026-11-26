@@ -208,6 +208,21 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(component.isLoading()).toBeFalse();
     });
 
+    it('shows the auto-calculated installments note between the filters and the table', () => {
+      createComponent([makeRow()]);
+      const note = (fixture.nativeElement as HTMLElement).querySelector('[data-cy="df-rows-installment-note"]');
+      expect(note?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Installment 1 and Installment 2 are automatically calculated as half of the Total Allocation.',
+      );
+      expect(note?.querySelector('i.bi-info-circle')).not.toBeNull();
+    });
+
+    it('hides the installments note when no rows are listed', () => {
+      createComponent([]);
+      const note = (fixture.nativeElement as HTMLElement).querySelector('[data-cy="df-rows-installment-note"]');
+      expect(note).toBeNull();
+    });
+
     it('shows snackbar and clears isLoading on error', () => {
       const error$ = new Subject<XviFcApiResponse<DevolutionRowsResponseData>>();
       dfService.getRows.and.returnValue(
@@ -637,6 +652,23 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(component.editingRowId()).toBe('row-1');
     }));
 
+    it('clicking an instalment cell with an old error opens the row and focuses the Total', fakeAsync(() => {
+      const row = makeRow({
+        validationStatus: 'INVALID',
+        validationErrors: [{ field: 'installment1Amount', code: 'allocationMismatch', message: 'Old split' }],
+      });
+      createComponent([row]);
+      fixture.detectChanges();
+
+      const tds = fixture.nativeElement.querySelectorAll('[data-cy="df-rows-row"] td');
+      (tds[3] as HTMLElement).click(); // installment1 column
+      fixture.detectChanges();
+      tick(50);
+
+      expect(component.editingRowId()).toBe('row-1');
+      expect(document.activeElement?.getAttribute('data-df-edit-field')).toBe('totalGrantAllocation');
+    }));
+
     it('error icon in a row cell uses bi-exclamation-triangle-fill', () => {
       const row = makeRow({
         validationStatus: 'INVALID',
@@ -739,11 +771,23 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(component.editingRowId()).toBe('row-1');
     });
 
-    it('clicking edit creates controls for exactly the four editable fields', () => {
+    it('clicking edit creates controls only for the Total and the formula (instalments are display-only)', () => {
       createComponent([makeRow()]);
       component.startEdit(component.rows()[0]);
       const keys = Object.keys(component.editForm.controls).sort();
-      expect(keys).toEqual(['devolutionFormula', 'installment1Amount', 'installment2Amount', 'totalGrantAllocation']);
+      expect(keys).toEqual(['devolutionFormula', 'totalGrantAllocation']);
+    });
+
+    it('shows each instalment as half of the typed Total, including .50 for an odd Total', () => {
+      createComponent([makeRow({ totalGrantAllocation: 1000 })]);
+      component.startEdit(component.rows()[0]);
+      component.getEditFormControl('totalGrantAllocation')?.setValue(38971963);
+      fixture.detectChanges();
+
+      const inst1 = fixture.nativeElement.querySelector('[data-cy="df-edit-installment1"]') as HTMLElement;
+      const inst2 = fixture.nativeElement.querySelector('[data-cy="df-edit-installment2"]') as HTMLElement;
+      expect(inst1.textContent).toContain('1,94,85,981.50');
+      expect(inst2.textContent).toContain('1,94,85,981.50');
     });
 
     it('censusCode is not a form control when editing', () => {
@@ -772,7 +816,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       fixture.detectChanges();
 
       const inputs = fixture.debugElement.queryAll(By.css('[data-df-edit-field]'));
-      expect(inputs.length).toBe(4);
+      expect(inputs.length).toBe(2);
     });
 
     it('startEdit is a no-op when canEdit is false', () => {
@@ -790,8 +834,8 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       createComponent([makeRow()]);
       component.startEdit(component.rows()[0]);
       expect(component.editForm.contains('totalGrantAllocation')).toBeTrue();
-      expect(component.editForm.contains('installment1Amount')).toBeTrue();
-      expect(component.editForm.contains('installment2Amount')).toBeTrue();
+      expect(component.editForm.contains('installment1Amount')).toBeFalse();
+      expect(component.editForm.contains('installment2Amount')).toBeFalse();
       expect(component.editForm.contains('devolutionFormula')).toBeTrue();
     });
 
@@ -867,12 +911,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
         'year-1',
         1,
         row._id,
-        jasmine.objectContaining({
-          totalGrantAllocation: 1000,
-          installment1Amount: 400,
-          installment2Amount: 600,
-          devolutionFormula: 'Formula A',
-        }),
+        { totalGrantAllocation: 1000, devolutionFormula: 'Formula A' },
       );
     });
   });
@@ -922,7 +961,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       );
     });
 
-    it('payload contains only the four editable fields', () => {
+    it('payload contains only the Total and the formula', () => {
       const row = makeRow({ totalGrantAllocation: 8000, devolutionFormula: 'Pop * 2' });
       createComponent([row]);
       component.startEdit(row);
@@ -931,12 +970,7 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       component.saveRow('row-1');
 
       const payload = dfService.updateRow.calls.mostRecent().args[4] as UpdateDevolutionRowPayload;
-      expect(Object.keys(payload).sort()).toEqual([
-        'devolutionFormula',
-        'installment1Amount',
-        'installment2Amount',
-        'totalGrantAllocation',
-      ]);
+      expect(Object.keys(payload).sort()).toEqual(['devolutionFormula', 'totalGrantAllocation']);
       expect(payload.totalGrantAllocation).toBe(8000);
       expect(payload.devolutionFormula).toBe('Pop * 2');
     });

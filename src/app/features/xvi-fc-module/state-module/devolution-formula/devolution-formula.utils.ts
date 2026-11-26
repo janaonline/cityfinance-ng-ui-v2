@@ -271,21 +271,22 @@ export function parseDfRowUpdateErrors(error: unknown): DfRowUpdateApiError[] {
   return dfErrorsMapToRowErrors(error['errors']);
 }
 
+/** Instalment header tooltip; the API's Excel template header comment uses the same text. */
+export const DF_INSTALLMENT_NOTE = 'Calculated automatically as half of the Total Allocation.';
+
+/** Each instalment is half of the Total (the API derives and stores the same value), so it can end in .50. */
+export function computeInstallmentHalf(total: number | null | undefined): number | null {
+  return typeof total === 'number' && Number.isFinite(total) && total >= 0 ? total / 2 : null;
+}
+
+/** Only the Total and the formula are sent; the API works out both instalments. */
 export function buildDfRowUpdatePayload(
   totalGrantAllocation: number | null,
-  installment1Amount: number | null,
-  installment2Amount: number | null,
   devolutionFormula: string | null,
 ): UpdateDevolutionRowPayload {
   const payload: UpdateDevolutionRowPayload = {};
   if (typeof totalGrantAllocation === 'number' && Number.isFinite(totalGrantAllocation)) {
     payload.totalGrantAllocation = totalGrantAllocation;
-  }
-  if (typeof installment1Amount === 'number' && Number.isFinite(installment1Amount)) {
-    payload.installment1Amount = installment1Amount;
-  }
-  if (typeof installment2Amount === 'number' && Number.isFinite(installment2Amount)) {
-    payload.installment2Amount = installment2Amount;
   }
   if (devolutionFormula !== null) {
     payload.devolutionFormula = devolutionFormula;

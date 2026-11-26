@@ -15,6 +15,11 @@ const UNIT_SUFFIXES: Record<InrFormat, string> = {
   raw: '',
 };
 
+/** A Rupee figure with paise (e.g. an instalment of an odd Total) shows both digits: 1,94,85,981.50, not .5. */
+function paiseMinDigits(value: number | null | undefined, format: InrFormat): number {
+  return format === 'inr' && typeof value === 'number' && !Number.isInteger(value) ? 2 : 0;
+}
+
 /** localStorage key the current global override is persisted under, restored on next visit. */
 export const AMOUNT_DISPLAY_OVERRIDE_STORAGE_KEY = 'cf.amountDisplayOverride';
 
@@ -53,13 +58,13 @@ export class AmountDisplayModeService {
    */
   format(value: number | null | undefined, pageDefault: InrFormat, opts?: { ignoreOverride?: boolean }): string {
     const resolved = opts?.ignoreOverride ? pageDefault : this.override() ?? pageDefault;
-    return this.pipe.transform(value, resolved, { max: 2 });
+    return this.pipe.transform(value, resolved, { max: 2, min: paiseMinDigits(value, resolved) });
   }
 
   /** Always the full grouped Rupee figure, regardless of page default or override — for hover/title
    *  text where the visible figure may be Cr/Lakh/K-scaled. */
   formatExact(value: number | null | undefined): string {
-    return this.pipe.transform(value, 'inr', { max: 2 });
+    return this.pipe.transform(value, 'inr', { max: 2, min: paiseMinDigits(value, 'inr') });
   }
 
   /** Short label (e.g. "Cr.", "₹") for whatever format is actually resolved for `pageDefault` right
