@@ -79,12 +79,18 @@ const TOOLS: EditorTool[] = [
             type="button"
             [title]="tool.title"
             [attr.aria-label]="tool.title"
+            [disabled]="disabled()"
             (click)="apply(tool)"
           >
             {{ tool.label }}
           </button>
         }
-        <button class="preview-toggle" type="button" (click)="preview.set(!preview())">
+        <button
+          class="preview-toggle"
+          type="button"
+          [disabled]="disabled()"
+          (click)="preview.set(!preview())"
+        >
           {{ preview() ? 'Write' : 'Preview' }}
         </button>
       </div>
@@ -94,13 +100,17 @@ const TOOLS: EditorTool[] = [
         <textarea
           #field
           [value]="value()"
-          (input)="value.set(field.value)"
+          (input)="onInput(field.value)"
+          [disabled]="disabled()"
           [attr.minlength]="minLength()"
           [attr.maxlength]="maxLength()"
           [rows]="rows()"
           [placeholder]="placeholder()"
           [attr.aria-label]="ariaLabel()"
         ></textarea>
+      }
+      @if (toolError()) {
+        <span class="field-error" role="alert">{{ toolError() }}</span>
       }
       <small class="editor-count"
         >{{ value().length.toLocaleString() }} /
@@ -116,9 +126,13 @@ export class RichTextEditorComponent {
   readonly rows = input(10);
   readonly placeholder = input('');
   readonly ariaLabel = input('Text');
+  /** Locks the textarea and toolbar, e.g. while the parent form is submitting. */
+  readonly disabled = input(false);
 
   protected readonly tools = TOOLS;
   protected readonly preview = signal(false);
+  /** Set when a toolbar edit was refused (for example, it would exceed `maxLength`). */
+  protected readonly toolError = signal('');
   private readonly field = viewChild<ElementRef<HTMLTextAreaElement>>('field');
 
   /** Returns the editor to write mode (used by parents after a successful submit). */
@@ -126,11 +140,26 @@ export class RichTextEditorComponent {
     this.preview.set(false);
   }
 
+  protected onInput(text: string): void {
+    this.toolError.set('');
+    this.value.set(text);
+  }
+
   protected apply(tool: EditorTool): void {
+    if (this.disabled()) return;
     const el = this.field()?.nativeElement;
     const current = this.value();
-    const start = el?.selectionStart ?? current.length;
-    const end = el?.selectionEnd ?? current.length;
+    let start = el?.selectionStart ?? current.length;
+    let end = el?.selectionEnd ?? current.length;
+    if (tool.mode !== 'wrap') {
+      // Block tools (headings, lists, quotes) only render at the start of a line, so they act on
+      // whole lines: widen the range to the start of the first line and the end of the last one.
+      // A selection that ends right after a line break stops at the previous line.
+      start = start === 0 ? 0 : current.lastIndexOf('\n', start - 1) + 1;
+      const endAnchor = end > start && current[end - 1] === '\n' ? end - 1 : end;
+      const lineEnd = current.indexOf('\n', endAnchor);
+      end = lineEnd === -1 ? current.length : lineEnd;
+    }
     const selected = current.slice(start, end) || tool.fallback;
     const formatted =
       tool.mode === 'prefix'
@@ -144,7 +173,15 @@ export class RichTextEditorComponent {
               .map((line, index) => `${index + 1}. ${line}`)
               .join('\n')
           : `${tool.before}${selected}${tool.after}`;
-    this.value.set(`${current.slice(0, start)}${formatted}${current.slice(end)}`);
+    const proposed = `${current.slice(0, start)}${formatted}${current.slice(end)}`;
+    if (proposed.length > this.maxLength()) {
+      this.toolError.set(
+        `${tool.title} would take the text over the ${this.maxLength().toLocaleString()}-character limit.`,
+      );
+      return;
+    }
+    this.toolError.set('');
+    this.value.set(proposed);
     if (el) {
       // Wait for the textarea to re-render with the new value before restoring the selection.
       requestAnimationFrame(() => {

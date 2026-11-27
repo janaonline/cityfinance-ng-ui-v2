@@ -52,7 +52,12 @@ import { ReportButtonComponent } from './report-button.component';
                 [initialActive]="!!comment.liked"
               />
               @if (mayReply() && depth < maxDepth - 1) {
-                <button class="text-action" type="button" (click)="toggleReply(comment.id)">
+                <button
+                  class="text-action"
+                  type="button"
+                  [disabled]="replyPending()"
+                  (click)="toggleReply(comment.id)"
+                >
                   Reply
                 </button>
               }
@@ -74,6 +79,7 @@ import { ReportButtonComponent } from './report-button.component';
                   [cancellable]="true"
                   (posted)="onPosted()"
                   (cancelled)="replyingTo.set(null)"
+                  (pendingChange)="replyPending.set($event)"
                 />
               </div>
             }
@@ -111,6 +117,8 @@ export class CommentListComponent {
 
   protected readonly maxDepth = MAX_COMMENT_DEPTH;
   protected readonly replyingTo = signal<string | null>(null);
+  /** True while the open inline reply form is posting. */
+  protected readonly replyPending = signal(false);
   protected readonly errors = signal<Record<string, string>>({});
 
   protected readonly roots = computed(() => this.comments().filter((c) => !c.parentId));
@@ -155,10 +163,14 @@ export class CommentListComponent {
   }
 
   protected toggleReply(id: string): void {
+    // Switching or closing the open form while it posts would destroy it before it can report
+    // success, so the new reply would not appear until the next reload.
+    if (this.replyPending()) return;
     this.replyingTo.update((current) => (current === id ? null : id));
   }
 
   protected onPosted(): void {
+    this.replyPending.set(false);
     this.replyingTo.set(null);
     this.changed.emit();
   }

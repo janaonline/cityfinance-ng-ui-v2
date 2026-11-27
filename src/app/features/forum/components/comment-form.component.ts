@@ -20,6 +20,7 @@ import { RichTextEditorComponent } from './rich-text-editor.component';
           [minLength]="2"
           [maxLength]="10000"
           [rows]="parentId() ? 3 : 5"
+          [disabled]="pending()"
           placeholder="Write a thoughtful reply…"
           ariaLabel="Reply"
         />
@@ -32,7 +33,14 @@ import { RichTextEditorComponent } from './rich-text-editor.component';
           {{ pending() ? 'Posting…' : 'Post reply' }}
         </button>
         @if (cancellable()) {
-          <button class="btn btn-outline-cfPrimary" type="button" (click)="cancelled.emit()">
+          <!-- Disabled while posting: closing the form would drop the "posted" event the page
+               needs to show the new reply. -->
+          <button
+            class="btn btn-outline-cfPrimary"
+            type="button"
+            [disabled]="pending()"
+            (click)="cancelled.emit()"
+          >
             Cancel
           </button>
         }
@@ -48,6 +56,8 @@ export class CommentFormComponent {
   readonly cancellable = input(false);
   readonly posted = output<void>();
   readonly cancelled = output<void>();
+  /** True while a reply is being posted, so the list can keep this form open until it finishes. */
+  readonly pendingChange = output<boolean>();
 
   protected readonly body = signal('');
   protected readonly pending = signal(false);
@@ -57,23 +67,30 @@ export class CommentFormComponent {
   protected submit(event: Event): void {
     event.preventDefault();
     if (this.pending()) return;
-    this.pending.set(true);
+    const submitted = this.body();
+    this.setPending(true);
     this.message.set('');
     this.bodyError.set('');
     this.forum
-      .addComment(this.threadId(), { body: this.body().trim(), parentId: this.parentId() })
+      .addComment(this.threadId(), { body: submitted.trim(), parentId: this.parentId() })
       .subscribe({
         next: () => {
-          this.pending.set(false);
-          this.body.set('');
+          this.setPending(false);
+          // Clear only what was sent; never wipe text that differs from the posted reply.
+          if (this.body() === submitted) this.body.set('');
           this.posted.emit();
         },
         error: (err: unknown) => {
           const error = toFormError(err);
           this.bodyError.set(error.fields['body'] ?? '');
           this.message.set(error.message);
-          this.pending.set(false);
+          this.setPending(false);
         },
       });
+  }
+
+  private setPending(value: boolean): void {
+    this.pending.set(value);
+    this.pendingChange.emit(value);
   }
 }
