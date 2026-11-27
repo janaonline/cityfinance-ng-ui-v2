@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, catchError, map, of, switchMap } from 'rxjs';
+import { EMPTY, Subject, catchError, map, of, switchMap } from 'rxjs';
 import { CommentFormComponent } from '../components/comment-form.component';
 import { CommentListComponent } from '../components/comment-list.component';
 import { ReactionButtonComponent } from '../components/reaction-button.component';
@@ -54,6 +54,12 @@ import { HttpErrorResponse } from '@angular/common/http';
           @let thread = s.data.thread;
           <div class="thread-page">
             <h1 class="thread-page-title">{{ thread.title }}</h1>
+            @if (refreshError()) {
+              <p class="form-alert" role="alert">
+                Could not refresh this discussion: {{ refreshError() }}
+                <button class="text-action" type="button" (click)="reload()">Retry</button>
+              </p>
+            }
             <article class="thread-detail">
               <div class="author-line">
                 <div class="avatar">{{ thread.user.name.charAt(0).toUpperCase() }}</div>
@@ -123,6 +129,8 @@ export class ThreadDetailComponent {
 
   protected readonly viewer = injectForumViewer();
   protected readonly state = signal<Loadable<ForumThreadDetail>>({ status: 'loading' });
+  /** Message for a failed background refresh; the last loaded thread stays on screen. */
+  protected readonly refreshError = signal('');
 
   private slug = '';
   /** Emits `true` for a silent reload (keeps the page visible) and `false` for a fresh load. */
@@ -134,14 +142,24 @@ export class ThreadDetailComponent {
         switchMap((silent) => {
           if (!silent) this.state.set({ status: 'loading' });
           return this.forum.getThread(this.slug).pipe(
-            map((data): Loadable<ForumThreadDetail> => ({ status: 'ready', data })),
-            catchError((err: unknown) =>
-              of<Loadable<ForumThreadDetail>>({
-                status: 'error',
-                message: toFormError(err, 'The thread could not load. Please try again.').message,
-                notFound: err instanceof HttpErrorResponse && err.status === 404,
-              }),
-            ),
+            map((data): Loadable<ForumThreadDetail> => {
+              this.refreshError.set('');
+              return { status: 'ready', data };
+            }),
+            catchError((err: unknown) => {
+              const notFound = err instanceof HttpErrorResponse && err.status === 404;
+              const message = toFormError(
+                err,
+                'The thread could not load. Please try again.',
+              ).message;
+              // A failed background refresh keeps the page (and any reply being typed) on screen.
+              // Only a first load, or a thread that is now gone, switches to the error page.
+              if (silent && !notFound && this.state().status === 'ready') {
+                this.refreshError.set(message);
+                return EMPTY;
+              }
+              return of<Loadable<ForumThreadDetail>>({ status: 'error', message, notFound });
+            }),
           );
         }),
         takeUntilDestroyed(this.destroyRef),

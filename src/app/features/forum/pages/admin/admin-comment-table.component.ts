@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  linkedSignal,
-  output,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { formatDate } from '../../forum-date';
 import { toFormError } from '../../forum-errors';
 import { ForumAdminComment } from '../../forum.models';
@@ -57,7 +49,7 @@ import { ForumService } from '../../forum.service';
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-cfPrimary"
-                        [disabled]="pending() === comment.id"
+                        [disabled]="isPending(comment.id)"
                         (click)="update(comment, false)"
                       >
                         Restore
@@ -66,7 +58,7 @@ import { ForumService } from '../../forum.service';
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-danger"
-                        [disabled]="pending() === comment.id"
+                        [disabled]="isPending(comment.id)"
                         (click)="update(comment, true)"
                       >
                         Soft delete
@@ -89,21 +81,29 @@ import { ForumService } from '../../forum.service';
 export class AdminCommentTableComponent {
   private readonly forum = inject(ForumService);
 
-  readonly initialComments = input.required<ForumAdminComment[]>();
-  /** Net change in visible replies (negative when comments were hidden). */
-  readonly visibilityChange = output<number>();
+  /**
+   * One thread's comments. The parent owns this list and applies each `moderated` change to it,
+   * so the status survives re-renders and closing / reopening the panel.
+   */
+  readonly comments = input.required<ForumAdminComment[]>();
+  /** A successful soft-delete / restore: the comment plus its replies, for the parent to apply. */
+  readonly moderated = output<CommentModeration>();
 
-  protected readonly comments = linkedSignal(() => this.initialComments());
-  protected readonly pending = signal<string | null>(null);
+  private readonly pendingIds = signal<ReadonlySet<string>>(new Set());
   protected readonly error = signal('');
 
   protected date(value: string): string {
     return formatDate(value);
   }
 
+  protected isPending(commentId: string): boolean {
+    return this.pendingIds().has(commentId);
+  }
+
   protected update(comment: ForumAdminComment, isDeleted: boolean): void {
+    if (this.isPending(comment.id)) return;
     this.error.set('');
-    this.pending.set(comment.id);
+    this.setPending(comment.id, true);
     const all = this.comments();
     const affected = new Set([comment.id]);
     let grew = true;
@@ -121,24 +121,30 @@ export class AdminCommentTableComponent {
     ).length;
     this.forum.moderateComment(comment.id, isDeleted).subscribe({
       next: () => {
-        this.comments.update((items) =>
-          items.map((item) =>
-            affected.has(item.id)
-              ? {
-                  ...item,
-                  deletedAt: isDeleted ? new Date().toISOString() : null,
-                  deletedBy: isDeleted ? 'admin' : null,
-                }
-              : item,
-          ),
-        );
-        this.visibilityChange.emit(isDeleted ? -changedCount : changedCount);
-        this.pending.set(null);
+        this.moderated.emit({ ids: [...affected], isDeleted, changedCount });
+        this.setPending(comment.id, false);
       },
       error: (err: unknown) => {
         this.error.set(toFormError(err, 'Could not update comment.').message);
-        this.pending.set(null);
+        this.setPending(comment.id, false);
       },
     });
   }
+
+  private setPending(commentId: string, value: boolean): void {
+    this.pendingIds.update((ids) => {
+      const next = new Set(ids);
+      if (value) next.add(commentId);
+      else next.delete(commentId);
+      return next;
+    });
+  }
+}
+
+/** A comment and its replies that were soft-deleted or restored together. */
+export interface CommentModeration {
+  ids: string[];
+  isDeleted: boolean;
+  /** How many of them actually changed visibility (for the thread's reply count). */
+  changedCount: number;
 }

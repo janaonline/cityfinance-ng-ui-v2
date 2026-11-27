@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { BehaviorSubject, switchMap } from 'rxjs';
 import { RichTextEditorComponent } from '../components/rich-text-editor.component';
 import { toFormError } from '../forum-errors';
-import { toLoadable } from '../forum-loadable';
+import { Loadable, toLoadable } from '../forum-loadable';
+import { ForumCategory } from '../forum.models';
 import { ForumService } from '../forum.service';
 
 @Component({
@@ -48,7 +50,17 @@ import { ForumService } from '../forum.service';
             [value]="categorySlug()"
             (change)="categorySlug.set($any($event.target).value)"
           >
-            <option value="" disabled>Select a topic area</option>
+            @switch (categories().status) {
+              @case ('loading') {
+                <option value="" disabled>Loading topic areas…</option>
+              }
+              @case ('error') {
+                <option value="" disabled>Topic areas could not load</option>
+              }
+              @default {
+                <option value="" disabled>Select a topic area</option>
+              }
+            }
             @if (categories(); as c) {
               @if (c.status === 'ready') {
                 @for (category of c.data; track category.id) {
@@ -60,6 +72,15 @@ import { ForumService } from '../forum.service';
             }
           </select>
         </label>
+        @if (categories(); as c) {
+          @if (c.status === 'error') {
+            <!-- Retry only reloads the list; the title and details typed so far are kept. -->
+            <span class="field-error" role="alert">
+              {{ c.message }}
+              <button class="text-action" type="button" (click)="retryCategories()">Retry</button>
+            </span>
+          }
+        }
         @if (errors()['categorySlug']) {
           <span class="field-error">{{ errors()['categorySlug'] }}</span>
         }
@@ -87,13 +108,22 @@ export class NewThreadComponent {
   private readonly forum = inject(ForumService);
   private readonly router = inject(Router);
 
-  protected readonly categories = toSignal(toLoadable(this.forum.getCategories()));
+  /** Emits `true` to force a fresh request (Retry), `false` for the first, cached load. */
+  private readonly loadCategories$ = new BehaviorSubject(false);
+  protected readonly categories = toSignal(
+    this.loadCategories$.pipe(switchMap((force) => toLoadable(this.forum.getCategories(force)))),
+    { initialValue: { status: 'loading' } as Loadable<ForumCategory[]> },
+  );
   protected readonly title = signal('');
   protected readonly categorySlug = signal('');
   protected readonly body = signal('');
   protected readonly pending = signal(false);
   protected readonly message = signal('');
   protected readonly errors = signal<Record<string, string>>({});
+
+  protected retryCategories(): void {
+    this.loadCategories$.next(true);
+  }
 
   protected submit(event: Event): void {
     event.preventDefault();

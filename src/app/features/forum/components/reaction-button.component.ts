@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   linkedSignal,
@@ -57,9 +58,22 @@ export class ReactionButtonComponent {
   readonly initialActive = input(false);
   readonly compact = input(false);
 
-  protected readonly active = linkedSignal(() => this.initialActive());
-  protected readonly count = linkedSignal(() => this.initialCount());
-  protected readonly pending = signal(false);
+  // Confirmed state: follows the inputs (a silent page refresh updates them) and the server's
+  // replies. The click being sent is kept apart in `optimistic`, so a failed request simply drops
+  // it and shows whatever the confirmed state is by then, rather than undoing a delta.
+  private readonly confirmedActive = linkedSignal(() => this.initialActive());
+  private readonly confirmedCount = linkedSignal(() => this.initialCount());
+  /** The state the user asked for while its request is in flight; null when nothing is pending. */
+  private readonly optimistic = signal<boolean | null>(null);
+
+  protected readonly pending = computed(() => this.optimistic() !== null);
+  protected readonly active = computed(() => this.optimistic() ?? this.confirmedActive());
+  protected readonly count = computed(() => {
+    const wanted = this.optimistic();
+    const confirmed = this.confirmedCount();
+    if (wanted === null || wanted === this.confirmedActive()) return confirmed;
+    return Math.max(0, confirmed + (wanted ? 1 : -1));
+  });
 
   protected label(): string {
     return this.target() === 'thread-bookmark' ? 'Bookmark' : 'Like';
@@ -68,21 +82,17 @@ export class ReactionButtonComponent {
   protected toggle(): void {
     if (this.pending()) return;
     const next = !this.active();
-    this.pending.set(true);
-    this.active.set(next);
-    this.count.update((value) => Math.max(0, value + (next ? 1 : -1)));
+    const expectedCount = this.count() + (next ? 1 : -1);
+    this.optimistic.set(next);
     this.request(next).subscribe({
       next: (result) => {
         const server =
           this.target() === 'thread-bookmark' ? result.bookmarkCount : result.likeCount;
-        if (typeof server === 'number') this.count.set(server);
-        this.pending.set(false);
+        this.confirmedActive.set(result.active);
+        this.confirmedCount.set(typeof server === 'number' ? server : Math.max(0, expectedCount));
+        this.optimistic.set(null);
       },
-      error: () => {
-        this.active.set(!next);
-        this.count.update((value) => Math.max(0, value + (next ? -1 : 1)));
-        this.pending.set(false);
-      },
+      error: () => this.optimistic.set(null),
     });
   }
 
