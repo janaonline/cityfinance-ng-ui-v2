@@ -38,6 +38,7 @@ import {
   buildDfRowUpdatePayload,
   buildDfRowViewModel,
   computeInstallmentHalf,
+  DF_INSTALLMENT_NOTE,
   DfRowViewModel,
   isDfRowValidationStatus,
   parseDfRowUpdateErrors,
@@ -106,6 +107,7 @@ export class DevolutionFormulaRowsDialogComponent implements OnInit {
   readonly rowViewModels = computed<DfRowViewModel<DevolutionRow>[]>(() => this.rows().map(buildDfRowViewModel));
 
   readonly validationStatusOptions = DF_ROW_VALIDATION_STATUS_OPTIONS;
+  protected readonly installmentNote = DF_INSTALLMENT_NOTE;
 
   protected readonly formatAmount = (value: number | null | undefined) => this.amountDisplay.format(value, 'inr');
   protected readonly formatAmountExact = (value: number | null | undefined) => this.amountDisplay.formatExact(value);

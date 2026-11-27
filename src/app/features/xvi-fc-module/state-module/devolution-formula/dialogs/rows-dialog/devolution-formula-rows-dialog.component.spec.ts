@@ -208,6 +208,21 @@ describe('DevolutionFormulaRowsDialogComponent', () => {
       expect(component.isLoading()).toBeFalse();
     });
 
+    it('shows the auto-calculated installments note between the filters and the table', () => {
+      createComponent([makeRow()]);
+      const note = (fixture.nativeElement as HTMLElement).querySelector('[data-cy="df-rows-installment-note"]');
+      expect(note?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'Installment 1 and Installment 2 are automatically calculated as half of the Total Allocation.',
+      );
+      expect(note?.querySelector('i.bi-info-circle')).not.toBeNull();
+    });
+
+    it('hides the installments note when no rows are listed', () => {
+      createComponent([]);
+      const note = (fixture.nativeElement as HTMLElement).querySelector('[data-cy="df-rows-installment-note"]');
+      expect(note).toBeNull();
+    });
+
     it('shows snackbar and clears isLoading on error', () => {
       const error$ = new Subject<XviFcApiResponse<DevolutionRowsResponseData>>();
       dfService.getRows.and.returnValue(
