@@ -1,8 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { ClaimLetterUlbOption, ClaimLetterUlbRow } from './claim-letter.models';
 import {
   buildBatchNarrative,
   buildExemptionBadges,
   computeClaimDifferencePercentage,
+  copiedLetterNote,
+  copyReturnedLetterUlbs,
   formatClaimLetterBatchLabel,
   formatUnderReviewSuffix,
   describeEligibilitySourceDescription,
@@ -222,5 +225,93 @@ describe('buildBatchNarrative', () => {
     });
     expect(narrative[0]).toContain('(0.0%)');
     expect(narrative[1]).toContain('0.0%');
+  });
+});
+
+describe('copyReturnedLetterUlbs', () => {
+  const row = (ulbId: string, claimAmount = 25): ClaimLetterUlbRow => ({
+    ulbId,
+    ulbName: `Old ${ulbId}`,
+    censusCode: null,
+    sbCode: null,
+    allocationAmount: 20,
+    claimAmount,
+    differencePercentage: 25,
+    eligible: true,
+  });
+  const option = (ulbId: string, overrides: Partial<ClaimLetterUlbOption> = {}): ClaimLetterUlbOption => ({
+    ulbId,
+    ulbName: `Fresh ${ulbId}`,
+    censusCode: '800001',
+    sbCode: null,
+    allocationAmount: 40,
+    eligible: true,
+    ineligibleReasonCode: null,
+    ineligibleReasonDetail: null,
+    claimedInBatch: null,
+    ...overrides,
+  });
+
+  it('leaves out returned ULBs, ULBs in another letter and ULBs no longer eligible, counting each', () => {
+    const copied = copyReturnedLetterUlbs(
+      [row('a'), row('b'), row('c'), row('d'), row('e')],
+      [{ ulbId: 'b', ulbName: 'Old b', items: ['Bank Account'], remark: null }],
+      [
+        option('a'),
+        option('b'),
+        option('c', { eligible: false, claimedInBatch: { batchNumber: 2 } }),
+        option('d', { eligible: false }),
+      ],
+      true,
+    );
+
+    expect(copied.rows.map((r) => r.ulbId)).toEqual(['a']);
+    expect(copied).toEqual(jasmine.objectContaining({ returned: 1, inOtherLetter: 1, ineligible: 2 })); // e has no option
+  });
+
+  it('takes fresh names and allocation, and keeps the old claim amount only while it is editable', () => {
+    const [editable] = copyReturnedLetterUlbs([row('a', 44)], [], [option('a')], true).rows;
+    const [fixed] = copyReturnedLetterUlbs([row('a', 44)], [], [option('a')], false).rows;
+
+    expect(editable).toEqual(
+      jasmine.objectContaining({ ulbName: 'Fresh a', censusCode: '800001', allocationAmount: 40, claimAmount: 44 }),
+    );
+    expect(editable.differencePercentage).toBeCloseTo(10);
+    expect(fixed).toEqual(jasmine.objectContaining({ claimAmount: 40, differencePercentage: 0 }));
+  });
+});
+
+describe('copiedLetterNote', () => {
+  const copied = (kept: number, returned = 0, inOtherLetter = 0, ineligible = 0) => ({
+    rows: Array.from({ length: kept }) as ClaimLetterUlbRow[],
+    returned,
+    inOtherLetter,
+    ineligible,
+  });
+
+  it('says how many were copied and only the reasons that apply', () => {
+    expect(copiedLetterNote('2-R1', copied(12))).toBe('12 ULBs copied from Claim Letter 2-R1.');
+    expect(copiedLetterNote('2-R1', copied(12, 2, 2))).toBe(
+      '12 ULBs copied from Claim Letter 2-R1. 4 ULBs were not copied because 2 ULBs were returned for correction ' +
+        'and 2 ULBs are already in another claim letter.',
+    );
+  });
+
+  it('uses singular words for one ULB', () => {
+    expect(copiedLetterNote('2', copied(1, 1, 1, 1))).toBe(
+      '1 ULB copied from Claim Letter 2. 3 ULBs were not copied because 1 ULB was returned for correction, ' +
+        '1 ULB is already in another claim letter and 1 ULB is no longer eligible.',
+    );
+    expect(copiedLetterNote('2', copied(3, 0, 0, 1))).toBe(
+      '3 ULBs copied from Claim Letter 2. 1 ULB was not copied because 1 ULB is no longer eligible.',
+    );
+  });
+
+  it('says none were copied, and why, when nothing was kept', () => {
+    expect(copiedLetterNote('1', copied(0, 2, 2))).toBe(
+      'No ULBs copied from Claim Letter 1 because 2 ULBs were returned for correction and 2 ULBs are already in ' +
+        'another claim letter.',
+    );
+    expect(copiedLetterNote('1', copied(0))).toBe('No ULBs copied from Claim Letter 1.');
   });
 });

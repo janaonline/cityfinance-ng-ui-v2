@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormArray } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { ClaimLetterUlbOption, ClaimLetterUlbRow } from '../../claim-letter.models';
@@ -107,6 +108,75 @@ describe('ClaimUlbTableComponent', () => {
   it('shows an empty state with zero rows', () => {
     setupWithRows([]);
     expect(fixture.debugElement.query(By.css('[data-cy="claim-ulb-table-empty"]'))).toBeTruthy();
+  });
+
+  describe('returned and refused rows', () => {
+    const second: ClaimLetterUlbRow = {
+      ...SAVED_ROWS[0],
+      ulbId: ULB_OPTIONS[1].ulbId,
+      ulbName: ULB_OPTIONS[1].ulbName,
+      censusCode: null,
+      sbCode: 'SB-0142',
+    };
+    const rowFor = (name: string) =>
+      fixture.debugElement
+        .queryAll(By.css('tr[data-cy="claim-ulb-table-row"]'))
+        .find((tr) => (tr.nativeElement as HTMLElement).textContent?.includes(name))!;
+    const isRed = (name: string) => (rowFor(name).nativeElement as HTMLElement).classList.contains('table-danger');
+
+    beforeEach(() => {
+      setupWithRows(
+        [SAVED_ROWS[0], second].map((row) =>
+          createClaimUlbRowGroup(false, { ulbId: row.ulbId, claimedAmount: row.claimAmount }),
+        ),
+        { canEdit: false, savedRows: [SAVED_ROWS[0], second] },
+      );
+    });
+
+    it('marks a ULB the SO returned light red, with a badge and its forms and remark on hover', () => {
+      fixture.componentRef.setInput(
+        'returnedUlbs',
+        new Map([
+          [
+            ULB_OPTIONS[0].ulbId,
+            {
+              ulbId: ULB_OPTIONS[0].ulbId,
+              ulbName: ULB_OPTIONS[0].ulbName,
+              items: ['Annual Accounts (Audited)', 'Elected Body Status'],
+              remark: 'Audit report missing',
+            },
+          ],
+        ]),
+      );
+      fixture.detectChanges();
+
+      const returned = rowFor('Sample Municipal Corporation');
+      const other = rowFor('Sample Municipal Council');
+      expect(isRed('Sample Municipal Corporation')).toBeTrue();
+      expect(returned.attributes['tabindex']).toBe('0');
+      expect(returned.injector.get(MatTooltip).message).toBe(
+        'Returned: Annual Accounts (Audited), Elected Body Status. Remark: Audit report missing',
+      );
+      expect(returned.query(By.css('[data-cy="claim-ulb-table-returned"]'))).not.toBeNull();
+      expect(isRed('Sample Municipal Council')).toBeFalse();
+      expect(other.attributes['tabindex']).toBeFalsy();
+      expect(other.injector.get(MatTooltip).disabled).toBeTrue();
+      expect(other.query(By.css('[data-cy="claim-ulb-table-returned"]'))).toBeNull();
+    });
+
+    it('leaves the remark out of the hover text when there is none', () => {
+      expect(component.returnedTooltip({ ulbId: 'x', ulbName: 'X', items: ['Bank Account'], remark: null })).toBe(
+        'Returned: Bank Account.',
+      );
+    });
+
+    it('marks a ULB the last save refused light red too', () => {
+      fixture.componentRef.setInput('rejectedRows', new Map([[second.ulbId, { ulbId: 'Already in Claim Batch #2.' }]]));
+      fixture.detectChanges();
+
+      expect(isRed('Sample Municipal Council')).toBeTrue();
+      expect(isRed('Sample Municipal Corporation')).toBeFalse();
+    });
   });
 
   it('hydrates a saved row from savedRows, not the picker', () => {

@@ -30,7 +30,8 @@
         }
 
         <label class="rcl-remarks-label" for="rcl-remark">
-          Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
+          Remarks
+          <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
         </label>
         <textarea
           id="rcl-remark"
@@ -46,52 +47,55 @@
         }
       </section>
     } @else {
-    <p class="rcl-lead">
-      Select the forms requiring correction by the ULB. The selected forms shall be reopened upon return of the claim
-      letter.
-    </p>
+      <p class="rcl-lead">
+        Select the forms requiring correction by the ULB. The selected forms shall be reopened upon return of the claim
+        letter.
+      </p>
 
-    <section class="rcl-section" aria-labelledby="rcl-ulb-heading">
-      <h3 id="rcl-ulb-heading" class="rcl-heading">ULB forms</h3>
-      <div class="rcl-options">
-        @for (option of ulbFormOptions; track option.formId) {
-          <label class="rcl-option">
-            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
-            {{ option.label }}
-          </label>
+      <section class="rcl-section" aria-labelledby="rcl-ulb-heading">
+        <h3 id="rcl-ulb-heading" class="rcl-heading">ULB forms</h3>
+        <div class="rcl-options">
+          @for (option of ulbFormOptions; track option.formId) {
+            <label class="rcl-option">
+              <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+              {{ option.label }}
+            </label>
+          }
+        </div>
+      </section>
+
+      <section class="rcl-section" aria-labelledby="rcl-row-heading">
+        <h3 id="rcl-row-heading" class="rcl-heading">
+          State forms <span class="rcl-heading__note">this ULB's row only</span>
+        </h3>
+        <div class="rcl-options">
+          @for (option of rowFormOptions; track option.formId) {
+            <label class="rcl-option">
+              <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+              {{ option.label }}
+            </label>
+          }
+        </div>
+
+        <label class="rcl-remarks-label" for="rcl-remark">
+          Remarks
+          <span class="rcl-muted"
+            >(required, at least {{ remarksMinLength }} characters, shared with the ULB and the State)</span
+          >
+        </label>
+        <textarea
+          id="rcl-remark"
+          class="form-control"
+          rows="3"
+          [attr.maxlength]="remarksMaxLength"
+          [class.is-invalid]="remark.invalid || (remark.touched && remarkTooShort())"
+          [formControl]="remark"
+          placeholder="Add any detail the ULB needs to correct the forms..."
+        ></textarea>
+        @if (remark.touched && remarkTooShort()) {
+          <div class="invalid-feedback d-block" role="alert">Enter at least {{ remarksMinLength }} characters.</div>
         }
-      </div>
-    </section>
-
-    <section class="rcl-section" aria-labelledby="rcl-row-heading">
-      <h3 id="rcl-row-heading" class="rcl-heading">
-        State forms <span class="rcl-heading__note">this ULB's row only</span>
-      </h3>
-      <div class="rcl-options">
-        @for (option of rowFormOptions; track option.formId) {
-          <label class="rcl-option">
-            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
-            {{ option.label }}
-          </label>
-        }
-      </div>
-
-      <label class="rcl-remarks-label" for="rcl-remark">
-        Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the ULB and the State)</span>
-      </label>
-      <textarea
-        id="rcl-remark"
-        class="form-control"
-        rows="3"
-        [attr.maxlength]="remarksMaxLength"
-        [class.is-invalid]="remark.invalid || (remark.touched && remarkTooShort())"
-        [formControl]="remark"
-        placeholder="Add any detail the ULB needs to correct the forms..."
-      ></textarea>
-      @if (remark.touched && remarkTooShort()) {
-        <div class="invalid-feedback d-block" role="alert">Enter at least {{ remarksMinLength }} characters.</div>
-      }
-    </section>
+      </section>
     }
   </mat-dialog-content>
   <mat-dialog-actions align="end">
@@ -105,22 +109,50 @@
   <mat-dialog-content>
     <p class="rcl-lead">
       The claim letter will be returned to the State for correction. The State will need to prepare and resubmit the
-      claim letter, including corrections to the ULBs marked for return and any State-wide items selected for correction.
+      claim letter, including corrections to the ULBs marked for return and any State-wide items selected for
+      correction.
     </p>
 
     <section class="rcl-section" aria-labelledby="rcl-state-heading">
       <h3 id="rcl-state-heading" class="rcl-heading">State forms</h3>
       <div class="rcl-options">
         @for (option of stateFormOptions; track option.formId) {
-          <label class="rcl-option">
-            <input type="checkbox" [checked]="isSelected(option.formId)" (change)="toggle(option.formId)" />
+          @let lock = stateFormLock(option.formId);
+          <!-- A locked form, or one whose tick rejects the State's exemption: both say why next to it. -->
+          @let note = lock ?? stateFormExemptionNote(option.formId);
+          <label class="rcl-option" [class.rcl-option--disabled]="!!lock">
+            <input
+              type="checkbox"
+              [checked]="isSelected(option.formId)"
+              [disabled]="!!lock"
+              (change)="toggle(option.formId)"
+            />
             {{ option.label }}
+            @if (note) {
+              <span class="rcl-tag">{{ note.tag }}</span>
+              <!-- Inside the label, so a click must not reach the checkbox; a tap shows the reason on touch screens. -->
+              <span
+                class="rcl-why"
+                tabindex="0"
+                role="img"
+                [attr.aria-label]="note.reason"
+                [matTooltip]="note.reason"
+                #tip="matTooltip"
+                (click)="$event.preventDefault(); tip.toggle()"
+                (keydown.enter)="$event.preventDefault(); tip.toggle()"
+                (keydown.space)="$event.preventDefault(); tip.toggle()"
+                data-cy="return-state-form-why"
+              >
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+              </span>
+            }
           </label>
         }
       </div>
 
       <label class="rcl-remarks-label" for="rcl-state-remark">
-        Remarks <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
+        Remarks
+        <span class="rcl-muted">(required, at least {{ remarksMinLength }} characters, shared with the State)</span>
       </label>
       <textarea
         id="rcl-state-remark"
@@ -136,6 +168,13 @@
       }
     </section>
 
+    @if (cascadeWarning(); as warning) {
+      <p class="rcl-cascade" role="alert" data-cy="return-cascade-warning">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <span>{{ warning }}</span>
+      </p>
+    }
+
     @if (canConfirm()) {
       <p class="rcl-outcome" aria-live="polite">
         <i class="bi bi-info-circle" aria-hidden="true"></i>
@@ -148,8 +187,8 @@
       </p>
     } @else {
       <p class="rcl-hint">
-        <i class="bi bi-info-circle" aria-hidden="true"></i> Add remarks of at least {{ remarksMinLength }} characters to
-        return the letter.
+        <i class="bi bi-info-circle" aria-hidden="true"></i> Add remarks of at least {{ remarksMinLength }} characters
+        to return the letter.
       </p>
     }
   </mat-dialog-content>
