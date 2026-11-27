@@ -17,6 +17,8 @@ export interface IUserLoggedInDetails {
   adc?: ObjectID | null;
   adcName?: string | null;
   isXVIFCProfileVerified?: boolean;
+  /** TS-1305: ULB name / "State DMA, <State>" / "MoHUA" — shown in the user menu on /forum pages. */
+  forumDisplayName?: string;
   permissionOverrides?: {
     allow: Permission[];
     deny: Permission[];
